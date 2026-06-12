@@ -1,0 +1,9 @@
+{
+  "plansDirectory": "./claude/plans",
+  "autoMemoryDirectory": "./.claude/memory",
+  "permissions": {
+    "allow": [
+      "Bash(grep *)"
+    ]
+  }
+}

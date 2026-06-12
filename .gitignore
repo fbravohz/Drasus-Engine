@@ -1,0 +1,41 @@
+# --- Rust ---
+/target/
+**/*.rs.bk
+
+# --- Flutter / Dart ---
+**/build/
+**/.dart_tool/
+**/.packages
+**/.pub/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.flutter-dev
+**/*.iml
+**/pubspec.lock
+
+# --- IDE / Editor ---
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+**/*~
+**/.favorites.json
+
+# --- OS ---
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+
+# --- Entorno / Secrets ---
+**/.env
+**/.env.local
+**/.env.*.local
+
+# --- Logs ---
+**/*.log
+
+# --- Python (posibles scripts aux) ---
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/

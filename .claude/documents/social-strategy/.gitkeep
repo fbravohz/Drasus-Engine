@@ -1,0 +1,17 @@
+# Social Strategy Documents
+
+Cada sesión de `/social-strategist` se documenta aquí en:
+```
+social-strategy-[YYYY-MM-DD]-[idioma].md
+```
+
+Ejemplo:
+- `social-strategy-2026-03-21-es.md` (Español)
+- `social-strategy-2026-03-21-en.md` (Inglés, si aplica)
+
+Estos archivos incluyen:
+- Commits procesados (con hash)
+- Historias generadas (con posts + prompts)
+- Discord premium content
+- Tracking para evitar duplicación
+- Notas e iteraciones
