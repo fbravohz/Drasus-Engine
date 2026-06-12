@@ -260,38 +260,6 @@
 
 ---
 
-### **ADR-0029: Patrón Todo en Uno (Rust + Flutter FFI)**
-
-*   **Decisión:** Adoptar una arquitectura "Todo en Uno" acoplada mediante **FFI**, donde el Core (Backend) en Rust se enlaza estáticamente junto a la interfaz (Flutter). Se abandona definitivamente Tauri/WebView y cualquier puente HTTP local; la integración es exclusivamente `flutter_rust_bridge` (FFI).
-*   **Objetivo:** Eliminar el uso de puertos locales y latencia de red, garantizando un binario de distribución comercial sumamente rápido, seguro y liviano para Windows (.exe), macOS (.app) y Linux (AppImage).
-*   **Justificación:**
-    * **Eficiencia Memoria Compartida Máxima:** En lugar de enviar payloads mediante serialización a un Webview DOM, Flutter lee y escribe objetos directamente en la memoria de Rust usando `flutter_rust_bridge` (punteros). Latencia sub-nanosegundo.
-    * **Empaquetado Completo:** Rust y Dart se compilan en un archivo binario final nativo sin motores de navegador acoplados, reduciendo significativamente el tamaño del instalador final.
-    * **Seguridad y Aislamiento:** Ejecución binaria cerrada en el OS.
-    * **Interfaz Premium Nativa (Impeller Engine):** Flutter garantiza 120FPS renderizando millones de partículas al comunicarse directamente con Vulkan/Metal en la GPU, superando abismalmente a un Canvas de navegador embebido.
-*   **Ventaja:** Cero latencia en llamadas Frontend-Backend, tamaño de ejecutable diminuto y sensación absoluta de App nativa.
-*   **Costo:** Todo estado cruza la frontera Rust↔Dart mediante comandos FFI tipados; en modo headless, vía gRPC.
-*   **Trazabilidad:** Integración FFI (rust-dart).
-*   **Resultado:** Aplicación de escritorio ultra-rápida, determinista e inyectada con la potencia de Rust desde el primer byte.
-
----
-
-
-### **ADR-0030: Persistencia Soberana "Zero-Docker"**
-
-*   **Decisión:** Prohibir el uso de dependencias de red pesadas o bases de datos externas (Redis, ClickHouse, Docker) en la arquitectura base. Toda la persistencia y analítica se realiza mediante motores embebidos (SQLite, DuckDB) y archivos planos (Parquet).
-*   **Objetivo:** Garantizar la **Soberanía Total de Datos** y simplificar el despliegue a una instalación de "un solo clic" (Client Zero Protocol).
-*   **Estrategia de Datos (Despliegue Local):**
-    * **OLTP (SQLite):** Todo el estado transaccional, libro de órdenes, estados de la app y un **Almacén de Eventos (Event Store)** inmutable para auditoría se maneja en SQLite (Modo WAL).
-    * **OLAP (DuckDB + Parquet):** Los datos históricos masivos y resultados de investigación se almacenan en archivos Parquet (**Particionado Hive-Style**) y se consultan vía DuckDB (Out-of-Core).
-    * **Excepción (SaaSCloudEngine):** El uso de contenedores (Docker/Podman) se permite estrictamente en la fase de Despliegue Headless para VPS masivo, pero NUNCA será un requisito para el usuario que instale el software localmente en su laptop.
-*   **Ventaja:** Portabilidad absoluta de datos; el usuario es dueño físico de su historial sin cuotas de nube ni mantenimiento de servidores.
-*   **Costo:** Mayor responsabilidad en los backups locales por parte del usuario.
-*   **Trazabilidad:** [duckdb-sql-engine.md](./features/duckdb-sql-engine.md).
-*   **Resultado:** Infraestructura privada de grado institucional comprimida en una arquitectura local persistente.
-
----
-
 ### **ADR-0014: Evolución Incremental de Contratos**
 
 *   **Decisión:** Las nuevas funcionalidades o "features" descubiertas durante el ciclo de vida del proyecto no generan tareas paralelas (ej. TTR-001b). En su lugar, se actualiza el contrato del Puerto (`public_interface.rs`) y se refina el TTR original en la especificación correspondiente.
@@ -349,45 +317,6 @@
     * **Slippage y Comisiones:** Modelado dinámico por activo.
 *   **Justificación:** Eliminar el sesgo de "backtest perfecto" que no sobrevive a la realidad del mercado real, garantizando que el sistema sea apto para capital institucional.
 
----
-
-### **ADR-0031: Inteligencia Artificial Híbrida (Hybrid Genesis Engine)**
-
-*   **Decisión:** Priorizar el uso de **IA Híbrida en un Hybrid Genesis Engine** que combina Regresión Simbólica nativa (como modo del motor genético NSGA-II sobre el AST, ADR-0113 — no PySR), Algoritmos Genéticos (NSGA-II) y, en fase de moonshot, Deep Reinforcement Learning (DRL).
-*   **Objetivo:** Garantizar que las señales sean legibles (Ecuaciones) pero con la potencia de descubrimiento de regímenes del DRL.
-*   **Reglas:**
-    * **Sinergia Híbrida:** El DRL descubre la "Tesis" (Macro); el GA realiza el "Tuning" (Micro).
-    * **No-Template Discovery:** No hay hipótesis humanas; el motor ensambla bloques funcionales o aprende de la serie temporal autónomamente.
-    * **Compilador AST:** Los grafos de decisión se compilan en Árboles de Sintaxis Abstracta optimizados para matrices vectorizadas (Hardware Accelerated).
-    * **Escalera de Cómputo Soberano (ADR-0112):** las tareas numéricas se resuelven primero en CPU con `ndarray`+Rayon (default); se asciende a `candle` (Rust puro, GPU dinámica opcional) solo si un benchmark lo justifica, y a `burn` solo en el moonshot DRL. **`tch-rs`/libtorch quedan erradicados** del árbol de dependencias.
-*   **Ventaja:** Auditoría total de la lógica de decisión y resiliencia ante hardware variado, sin romper el binario único (ADR-0029).
-*   **Costo:** Necesidad de mantener implementaciones CPU-first (`ndarray`/Rayon) optimizadas para componentes críticos.
-*   **Resultado:** Laboratorio de IA potente pero transparente y adaptable.
-
----
-
-### **ADR-0032: Estándares de Hardware Soberano (Single Machine Sovereignty)**
-
-*   **Decisión:** Optimizar el sistema para hardware comercial de alta gama (Prosumador), rechazando la dependencia OBLIGATORIA de clústeres elásticos o HPC en la nube.
-*   **Objetivo:** Permitir que un trader individual posea toda su infraestructura de cálculo en una estación de trabajo local (Sovereign Infrastructure).
-*   **Especificaciones Objetivo:**
-    * **CPU:** 16+ hilos (Ryzen 9 / Intel i9) para paralelización masiva de backtesting.
-    * **RAM:** 32GB-64GB para manejo de datasets Out-of-Core y caché de DuckDB.
-    * **GPU (opcional):** 8GB+ VRAM (NVIDIA RTX) como acelerador opcional vía `candle` para cargas de IA/reducción dimensional. El cómputo es CPU-first por defecto (`ndarray`/Rayon, ADR-0112); la GPU nunca es requisito.
-*   **Trade-off:** El usuario debe invertir en hardware físico inicial, pero elimina costos operativos (OpEx) recurrentes y garantiza privacidad total del IP.
-*   **Resultado:** Autonomía operativa total bajo el "Client Zero Protocol".
-
----
-
-### **ADR-0033: Arquitectura de Despliegue Trimodal**
-
-*   **Decisión:** Soportar de forma oficial tres modos de despliegue del binario Core (Rust), que modifican dinámicamente cómo se conecta con la UI (Flutter) y cómo administra sus recursos visuales.
-*   **Modos Soportados:**
-    1.  **LocalPowerUser (Default):** Flutter y Rust operan en el mismo proceso (OS) mediante FFI. Renderizado GPU completo (Impeller). Latencia cero.
-    2.  **VpsMonolithic:** Ejecución local instalada dentro de un VPS externo (Windows Server, Linux Desktop). El sistema detecta la falta de GPU o sesión RDP, ajusta una variable global que *apaga shaders y animaciones* en Flutter, reduciendo la carga del CPU host en un 90%.
-    3.  **SaaSCloudEngine (Headless CLI):** El motor Rust se compila como un Daemon independiente (sin UI) e incluye los 8 módulos (Ingest a Withdraw). Se ejecuta en un servidor remoto de alto rendimiento (Ej. Ubuntu Server CLI). La UI local de Flutter en la laptop del usuario se conecta al daemon remotamente vía gRPC/Websockets bidireccionales.
-*   **Objetivo:** Adaptar el motor algorítmico a las limitaciones del hardware donde se ejecute, separando estrictamente la computación intensiva de la visualización, brindando la máxima comodidad al usuario final (laptop local) mientras exprime el cómputo remoto (VPS).
-*   **Implicaciones:** La UI debe ser 100% "State-Driven" y capaz de desconectarse sin que el motor Rust detenga su ciclo operativo de Backtesting/Live Trading.
 ---
 
 ### **ADR-0018: Taxonomía y Topología del Pipeline (Los 8 Módulos)**
@@ -525,6 +454,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     * `portfolio_rules` siempre dominan sobre `strategy_rules` en caso de conflicto.
     * Las reglas extraídas son inmutables en el contexto de esa versión de la estrategia.
 *   **Ventaja:** Transferencia inteligente de conocimiento desde la investigación a la producción.
+
 ---
 
 ### **ADR-0025: Pre-Trade Risk 10-Steps Gate**
@@ -584,18 +514,74 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0105: Estrategia de Datos (100% Polars Nativo en Rust)**
+### **ADR-0029: Patrón Todo en Uno (Rust + Flutter FFI)**
 
-*   **Decisión:** Adoptar de forma exclusiva el ecosistema **Polars** (nativo en Rust) para todo el procesamiento de DataFrames, transformaciones analíticas (OLAP), e ingesta pesada, erradicando cualquier dependencia o herencia previa de Pandas o Python.
-*   **Objetivo:** Aprovechar todo el poder del procesamiento multi-hilo, paralelización SIMD y **Lazy Evaluation** (Evaluación Perezosa) que Polars ofrece nativamente en su implementación de Rust, logrando el máximo performance sin sobrecargas de conversión.
+*   **Decisión:** Adoptar una arquitectura "Todo en Uno" acoplada mediante **FFI**, donde el Core (Backend) en Rust se enlaza estáticamente junto a la interfaz (Flutter). Se abandona definitivamente Tauri/WebView y cualquier puente HTTP local; la integración es exclusivamente `flutter_rust_bridge` (FFI).
+*   **Objetivo:** Eliminar el uso de puertos locales y latencia de red, garantizando un binario de distribución comercial sumamente rápido, seguro y liviano para Windows (.exe), macOS (.app) y Linux (AppImage).
+*   **Justificación:**
+    * **Eficiencia Memoria Compartida Máxima:** En lugar de enviar payloads mediante serialización a un Webview DOM, Flutter lee y escribe objetos directamente en la memoria de Rust usando `flutter_rust_bridge` (punteros). Latencia sub-nanosegundo.
+    * **Empaquetado Completo:** Rust y Dart se compilan en un archivo binario final nativo sin motores de navegador acoplados, reduciendo significativamente el tamaño del instalador final.
+    * **Seguridad y Aislamiento:** Ejecución binaria cerrada en el OS.
+    * **Interfaz Premium Nativa (Impeller Engine):** Flutter garantiza 120FPS renderizando millones de partículas al comunicarse directamente con Vulkan/Metal en la GPU, superando abismalmente a un Canvas de navegador embebido.
+*   **Ventaja:** Cero latencia en llamadas Frontend-Backend, tamaño de ejecutable diminuto y sensación absoluta de App nativa.
+*   **Costo:** Todo estado cruza la frontera Rust↔Dart mediante comandos FFI tipados; en modo headless, vía gRPC.
+*   **Trazabilidad:** Integración FFI (rust-dart).
+*   **Resultado:** Aplicación de escritorio ultra-rápida, determinista e inyectada con la potencia de Rust desde el primer byte.
+
+---
+
+### **ADR-0030: Persistencia Soberana "Zero-Docker"**
+
+*   **Decisión:** Prohibir el uso de dependencias de red pesadas o bases de datos externas (Redis, ClickHouse, Docker) en la arquitectura base. Toda la persistencia y analítica se realiza mediante motores embebidos (SQLite, DuckDB) y archivos planos (Parquet).
+*   **Objetivo:** Garantizar la **Soberanía Total de Datos** y simplificar el despliegue a una instalación de "un solo clic" (Client Zero Protocol).
+*   **Estrategia de Datos (Despliegue Local):**
+    * **OLTP (SQLite):** Todo el estado transaccional, libro de órdenes, estados de la app y un **Almacén de Eventos (Event Store)** inmutable para auditoría se maneja en SQLite (Modo WAL).
+    * **OLAP (DuckDB + Parquet):** Los datos históricos masivos y resultados de investigación se almacenan en archivos Parquet (**Particionado Hive-Style**) y se consultan vía DuckDB (Out-of-Core).
+    * **Excepción (SaaSCloudEngine):** El uso de contenedores (Docker/Podman) se permite estrictamente en la fase de Despliegue Headless para VPS masivo, pero NUNCA será un requisito para el usuario que instale el software localmente en su laptop.
+*   **Ventaja:** Portabilidad absoluta de datos; el usuario es dueño físico de su historial sin cuotas de nube ni mantenimiento de servidores.
+*   **Costo:** Mayor responsabilidad en los backups locales por parte del usuario.
+*   **Trazabilidad:** [duckdb-sql-engine.md](./features/duckdb-sql-engine.md).
+*   **Resultado:** Infraestructura privada de grado institucional comprimida en una arquitectura local persistente.
+
+---
+
+### **ADR-0031: Inteligencia Artificial Híbrida (Hybrid Genesis Engine)**
+
+*   **Decisión:** Priorizar el uso de **IA Híbrida en un Hybrid Genesis Engine** que combina Regresión Simbólica nativa (como modo del motor genético NSGA-II sobre el AST, ADR-0113 — no PySR), Algoritmos Genéticos (NSGA-II) y, en fase de moonshot, Deep Reinforcement Learning (DRL).
+*   **Objetivo:** Garantizar que las señales sean legibles (Ecuaciones) pero con la potencia de descubrimiento de regímenes del DRL.
 *   **Reglas:**
-    *   **DataFrames Exclusivos:** Toda manipulación, agregación de ventanas, cálculo de indicadores y agrupamiento se orquesta utilizando la API Nativa de Polars en Rust.
-    *   **Prohibición de Alternativas Legadas:** Dado el paso a Rust, conceptos como Pandas o conversiones Zero-Copy FFI entre intérpretes carecen de sentido.
-    *   **Integración matemática:** Los cálculos analíticos profundos (regresión, monte carlo) se elaboran escribiendo expresiones nativas Polars (`expr`) o delegando a librerías de álgebra lineal de Rust.
-*   **Ventaja:** Supera radicalmente las limitaciones previas de memoria; procesa Gigabytes de mercado localmente en sub-segundos sin interbloqueos (GIL).
-*   **Costo:** Curva de aprendizaje del diseño robusto y concurrente del API de Polars en Rust.
-*   **Trazabilidad:** [hybrid-data-transformer.md](./features/hybrid-data-transformer.md).
+    * **Sinergia Híbrida:** El DRL descubre la "Tesis" (Macro); el GA realiza el "Tuning" (Micro).
+    * **No-Template Discovery:** No hay hipótesis humanas; el motor ensambla bloques funcionales o aprende de la serie temporal autónomamente.
+    * **Compilador AST:** Los grafos de decisión se compilan en Árboles de Sintaxis Abstracta optimizados para matrices vectorizadas (Hardware Accelerated).
+    * **Escalera de Cómputo Soberano (ADR-0112):** las tareas numéricas se resuelven primero en CPU con `ndarray`+Rayon (default); se asciende a `candle` (Rust puro, GPU dinámica opcional) solo si un benchmark lo justifica, y a `burn` solo en el moonshot DRL. **`tch-rs`/libtorch quedan erradicados** del árbol de dependencias.
+*   **Ventaja:** Auditoría total de la lógica de decisión y resiliencia ante hardware variado, sin romper el binario único (ADR-0029).
+*   **Costo:** Necesidad de mantener implementaciones CPU-first (`ndarray`/Rayon) optimizadas para componentes críticos.
+*   **Resultado:** Laboratorio de IA potente pero transparente y adaptable.
 
+---
+
+### **ADR-0032: Estándares de Hardware Soberano (Single Machine Sovereignty)**
+
+*   **Decisión:** Optimizar el sistema para hardware comercial de alta gama (Prosumador), rechazando la dependencia OBLIGATORIA de clústeres elásticos o HPC en la nube.
+*   **Objetivo:** Permitir que un trader individual posea toda su infraestructura de cálculo en una estación de trabajo local (Sovereign Infrastructure).
+*   **Especificaciones Objetivo:**
+    * **CPU:** 16+ hilos (Ryzen 9 / Intel i9) para paralelización masiva de backtesting.
+    * **RAM:** 32GB-64GB para manejo de datasets Out-of-Core y caché de DuckDB.
+    * **GPU (opcional):** 8GB+ VRAM (NVIDIA RTX) como acelerador opcional vía `candle` para cargas de IA/reducción dimensional. El cómputo es CPU-first por defecto (`ndarray`/Rayon, ADR-0112); la GPU nunca es requisito.
+*   **Trade-off:** El usuario debe invertir en hardware físico inicial, pero elimina costos operativos (OpEx) recurrentes y garantiza privacidad total del IP.
+*   **Resultado:** Autonomía operativa total bajo el "Client Zero Protocol".
+
+---
+
+### **ADR-0033: Arquitectura de Despliegue Trimodal**
+
+*   **Decisión:** Soportar de forma oficial tres modos de despliegue del binario Core (Rust), que modifican dinámicamente cómo se conecta con la UI (Flutter) y cómo administra sus recursos visuales.
+*   **Modos Soportados:**
+    1.  **LocalPowerUser (Default):** Flutter y Rust operan en el mismo proceso (OS) mediante FFI. Renderizado GPU completo (Impeller). Latencia cero.
+    2.  **VpsMonolithic:** Ejecución local instalada dentro de un VPS externo (Windows Server, Linux Desktop). El sistema detecta la falta de GPU o sesión RDP, ajusta una variable global que *apaga shaders y animaciones* en Flutter, reduciendo la carga del CPU host en un 90%.
+    3.  **SaaSCloudEngine (Headless CLI):** El motor Rust se compila como un Daemon independiente (sin UI) e incluye los 8 módulos (Ingest a Withdraw). Se ejecuta en un servidor remoto de alto rendimiento (Ej. Ubuntu Server CLI). La UI local de Flutter en la laptop del usuario se conecta al daemon remotamente vía gRPC/Websockets bidireccionales.
+*   **Objetivo:** Adaptar el motor algorítmico a las limitaciones del hardware donde se ejecute, separando estrictamente la computación intensiva de la visualización, brindando la máxima comodidad al usuario final (laptop local) mientras exprime el cómputo remoto (VPS).
+*   **Implicaciones:** La UI debe ser 100% "State-Driven" y capaz de desconectarse sin que el motor Rust detenga su ciclo operativo de Backtesting/Live Trading.
 
 ---
 
@@ -610,9 +596,6 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Ventaja:** Evita bloqueos por *Rate Limits* y garantiza la disponibilidad instantánea de años de histórico.
 *   **Costo:** Lógica de deduplicación y resolución de continuidad en la frontera de unión Bulk/Delta.
 *   **Trazabilidad:** [sovereign-data-fetcher.md](./features/sovereign-data-fetcher.md).
-
-
----
 
 ---
 
@@ -700,23 +683,27 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 ---
 
 ### **ADR-0042: Arquitectura de Fitness Metamórfico de Estado**
-* **¿Qué decidimos?** La función de aptitud (Fitness) del motor NSGA-II debe ser dinámica y condicional al estado de la cuenta (*Account Status*).
-* **¿Por qué?** Una estrategia optimizada para superar un *Challenge* (agresividad máxima) es letal para una cuenta fondeada (defensa de capital). El sistema debe mutar sus pesos automáticamente.
+*   **Decisión:** La función de aptitud (Fitness) del motor NSGA-II debe ser dinámica y condicional al estado de la cuenta (*Account Status*).
+*   **Objetivo:** Una estrategia optimizada para superar un *Challenge* (agresividad máxima) es letal para una cuenta fondeada (defensa de capital). El sistema debe mutar sus pesos automáticamente.
 * **Restricciones:** No se permite el cambio de modo de fitness durante una generación evolutiva activa.
 * **Efecto observable:** El sistema prioriza *Profit Factor* en Fase 1, y transmuta hacia estabilidad y defensa de *MAE* en Fase 2.
 
+---
+
 ### **ADR-0043: Protocolo de Programación Evolutiva Parcial (WildCards)**
-* **¿Qué decidimos?** El motor genético operará sobre nodos específicos denominados `wildcard_group` dentro de un AST parcial predefinido por el usuario.
-* **¿Por qué?** Permite combinar la intuición técnica humana (fijando filtros de sesión) con la fuerza bruta computacional para descubrir el "Alpha" desconocido.
+*   **Decisión:** El motor genético operará sobre nodos específicos denominados `wildcard_group` dentro de un AST parcial predefinido por el usuario.
+*   **Objetivo:** Permite combinar la intuición técnica humana (fijando filtros de sesión) con la fuerza bruta computacional para descubrir el "Alpha" desconocido.
 * **Restricciones:** Los nodos fijos definidos por el usuario son inmutables para el motor genético.
 * **Generalización (ADR-0108):** Este protocolo es la instancia fundacional ("Dominio de Señal") del Registro de Dominios Genómicos formalizado en ADR-0108. La gramática Condición→Acción aquí descrita para `wildcard_group` se generaliza a los dominios de Riesgo y Gestión de Posición (ADR-0109), Régimen y Filtro de Entorno (ADR-0110) y Portafolio y Correlación (ADR-0111).
-* **Trazabilidad:** [ast-compiler.md](./features/ast-compiler.md).
+*   **Trazabilidad:** [ast-compiler.md](./features/ast-compiler.md).
+
+---
 
 ### **ADR-0044: Framework de Dimensionamiento de Riesgo Multimodal**
-* **¿Qué decidimos?** Los modelos de dimensionamiento de posición (*Fixed Ratio*, ATR, % Riesgo) serán implementados como una *Feature* transversal consumida por Backtest, Gestión y Ejecución Real.
-* **¿Por qué?** Garantiza paridad absoluta (bit-a-bit) entre los tamaños de posición calculados en investigación y los ejecutados por el broker en vivo.
+*   **Decisión:** Los modelos de dimensionamiento de posición (*Fixed Ratio*, ATR, % Riesgo) serán implementados como una *Feature* transversal consumida por Backtest, Gestión y Ejecución Real.
+*   **Objetivo:** Garantiza paridad absoluta (bit-a-bit) entre los tamaños de posición calculados en investigación y los ejecutados por el broker en vivo.
 * **Restricciones:** El módulo de ejecución tiene prohibido implementar su propia lógica de cálculo de tamaño.
-* **Trazabilidad:** [precision-sizing-models.md](./features/precision-sizing-models.md).
+*   **Trazabilidad:** [precision-sizing-models.md](./features/precision-sizing-models.md).
 
 ---
 
@@ -862,28 +849,28 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0058: Política de Scoring Ponderado de Robustez y Veredicto en Lenguaje Natural**
 
-* **¿Qué decidimos?** Reemplazar el enfoque binario de "Muerte Súbita" (descartar estrategias por fallar un solo test) por un **Scoring Ponderado (0-100)** con 5 factores. Implementar un **Robustness Verdict Engine** basado en LLM local para emitir veredictos en lenguaje natural, identificación de puntos de ruptura y justificación semántica del score.
+*   **Decisión:** Reemplazar el enfoque binario de "Muerte Súbita" (descartar estrategias por fallar un solo test) por un **Scoring Ponderado (0-100)** con 5 factores. Implementar un **Robustness Verdict Engine** basado en LLM local para emitir veredictos en lenguaje natural, identificación de puntos de ruptura y justificación semántica del score.
 
-* **¿Por qué lo decidimos?** El enfoque de descartar estrategias por fallar un solo test genera parálisis por análisis y es estadísticamente ingenuo. Una estrategia puede tener WFA excelente pero Monte Carlo mediocre — matarla por el MC es perder una buena estrategia. El score ponderado permite decisiones granulares y el veredicto en lenguaje natural elimina la caja negra estadística para el trader retail.
+*   **Objetivo:** El enfoque de descartar estrategias por fallar un solo test genera parálisis por análisis y es estadísticamente ingenuo. Una estrategia puede tener WFA excelente pero Monte Carlo mediocre — matarla por el MC es perder una buena estrategia. El score ponderado permite decisiones granulares y el veredicto en lenguaje natural elimina la caja negra estadística para el trader retail.
 
-* **¿Qué restricciones tiene?**
+*   **Reglas:**
   - Los 5 pesos (WFA 30%, MC Trades 25%, MC Tóxico 20%, CPCV/PBO 15%, Ockham 10%) son configurables por el usuario, pero la suma DEBE ser 100%.
   - El umbral de aprobación (default: 75) es configurable.
   - El Verdict Engine DEBE producir, por defecto y sin dependencia de LLM, un **reporte estructurado determinista** por plantilla (ADR-0115). Un LLM local soberano (vía `candle` embebido) es realce opcional; PROHIBIDO exigir Ollama como requisito y PROHIBIDO depender de APIs externas.
   - El score es inmutable una vez emitido para una versión específica de estrategia.
 
-* **¿Cómo se vería en el sistema?**
+*   **Implementación:**
   - Tras ejecutar los 5 tests, el `robustness-score-aggregator` calcula el score ponderado final.
   - El `robustness-verdict-engine` toma los 5 resultados + el score final, genera un prompt y consulta al LLM local.
   - La salida incluye: veredicto textual, puntos de ruptura identificados, parámetro más sensible y recomendación.
   - El score determina el dimensionamiento de posición inicial en el módulo de ejecución.
 
-* **¿Qué cuesta?**
+*   **Costo:**
   - Complejidad adicional moderada: motor de scoring ponderado (cálculo simple) + generador de reporte estructurado determinista por plantilla.
   - Cero dependencia de runtimes externos para el Verdict Engine (ADR-0115); el LLM local soberano es opcional.
   - Nuevo contrato entre validate y execute para la transmisión del score → sizing.
 
-* **Trazabilidad:** [robustness-score-aggregator.md](./features/robustness-score-aggregator.md), [robustness-verdict-engine.md](./features/robustness-verdict-engine.md), [monte-carlo-simulator.md](./features/monte-carlo-simulator.md) (modo dual Trades/Tóxico), [validate.md](./modules/validate.md).
+*   **Trazabilidad:** [robustness-score-aggregator.md](./features/robustness-score-aggregator.md), [robustness-verdict-engine.md](./features/robustness-verdict-engine.md), [monte-carlo-simulator.md](./features/monte-carlo-simulator.md) (modo dual Trades/Tóxico), [validate.md](./modules/validate.md).
 
 ---
 
@@ -990,89 +977,90 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Ventaja:** Automatización total del ahorro de hardware; escalabilidad para cientos de features sin intervención manual.
 *   **Costo:** Disciplina en la categorización de cada nueva feature añadida al ecosistema.
 
+---
 
 ### **ADR-0067: Capa de Inferencia Estadística (EBTA)**
 
-*   **¿Qué decidimos?** Implementar un guantelete de validación estadística avanzada (EBTA) como filtro final en el módulo `validate`, incluyendo Deflated Sharpe Ratio (DSR), Romano-Wolf, Market Detrender y Logic Inversion.
-*   **¿Por qué lo decidimos?** Para neutralizar el sesgo de minería de datos (*Selection Bias*) y la ilusión de Alpha generada por tendencias alcistas de mercado (Beta). Garantiza que las estrategias aprobadas poseen una ventaja estadística real y no son producto de la suerte o el volumen de pruebas.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Implementar un guantelete de validación estadística avanzada (EBTA) como filtro final en el módulo `validate`, incluyendo Deflated Sharpe Ratio (DSR), Romano-Wolf, Market Detrender y Logic Inversion.
+*   **Objetivo:** Para neutralizar el sesgo de minería de datos (*Selection Bias*) y la ilusión de Alpha generada por tendencias alcistas de mercado (Beta). Garantiza que las estrategias aprobadas poseen una ventaja estadística real y no son producto de la suerte o el volumen de pruebas.
+*   **Reglas:** 
     - El DSR requiere el registro exacto del número de intentos ($N$) de la sesión de origen.
     - Romano-Wolf debe ejecutarse sobre bootstrap acelerado (GPU/Rust SIMD-Rayon) para evitar bloqueos del pipeline.
     - Market Detrender es obligatorio para activos con sesgo direccional histórico conocido.
-*   **¿Cómo se vería en el sistema?** 
+*   **Implementación:** 
     - Una estrategia con Sharpe de 2.0 podría ser deflactada a 1.2 por DSR si se realizaron 10,000 intentos.
     - El sistema rechaza automáticamente estrategias que pierden dinero en el escenario "Detrended".
     - El reporte final de robustez incluye el p-value ajustado por Romano-Wolf.
-*   **¿Qué cuesta?** Incremento en el tiempo de validación "HEAVY" debido al uso de bootstrap masivo. Requiere infraestructura de rastreo de intentos ($N$) en el módulo de generación.
+*   **Costo:** Incremento en el tiempo de validación "HEAVY" debido al uso de bootstrap masivo. Requiere infraestructura de rastreo de intentos ($N$) en el módulo de generación.
 *   **Trazabilidad:** [`statistical-inference-ebta.md`](./features/statistical-inference-ebta.md), [`dsr-tracking-engine.md`](./features/dsr-tracking-engine.md).
 
 ---
 
 ### **ADR-0068: Certificación de Estabilización de Volatilidad (Target Vol)**
 
-*   **¿Qué decidimos?** Implementar una certificación obligatoria de **Target Vol** antes de la aprobación de cualquier estrategia. La estrategia debe demostrar estabilidad de riesgo bajo diferentes regímenes de volatilidad.
-*   **¿Por qué lo decidimos?** Las estrategias suelen colapsar cuando la volatilidad del mercado cambia bruscamente. El escalado dinámico por Target Vol normaliza el riesgo, permitiendo que la estrategia opere con la misma "presión" estadística sin importar el ruido del mercado.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Implementar una certificación obligatoria de **Target Vol** antes de la aprobación de cualquier estrategia. La estrategia debe demostrar estabilidad de riesgo bajo diferentes regímenes de volatilidad.
+*   **Objetivo:** Las estrategias suelen colapsar cuando la volatilidad del mercado cambia bruscamente. El escalado dinámico por Target Vol normaliza el riesgo, permitiendo que la estrategia opere con la misma "presión" estadística sin importar el ruido del mercado.
+*   **Reglas:** 
     - No se permite la aprobación de estrategias que presenten desviaciones de volatilidad realizada > 30% respecto al target en el set de prueba.
     - El cálculo de volatilidad debe ser determinista y coincidir bit-a-bit entre simulación y real.
-*   **¿Cómo se vería en el sistema?** 
+*   **Implementación:** 
     - El sistema escala el tamaño de la posición inversamente a la volatilidad realizada para mantener un riesgo constante (ej. 10% anualizado).
     - Se añade un "Sello de Certificación Vol" en el reporte de robustez.
-*   **¿Qué cuesta?** Requiere cálculos continuos de volatilidad (ATR/Desviación Estándar) en la ruta crítica, aumentando levemente la latencia de ejecución.
+*   **Costo:** Requiere cálculos continuos de volatilidad (ATR/Desviación Estándar) en la ruta crítica, aumentando levemente la latencia de ejecución.
 *   **Trazabilidad:** [`volatility-stabilization.md`](./features/volatility-stabilization.md).
 
 ---
 
 ### **ADR-0069: Modelado de Fricción Institucional (Adverse Selection)**
 
-*   **¿Qué decidimos?** Integrar un motor de modelado de **Adverse Selection** y **Probabilistic Fills** en el simulador. El sistema asume estadísticamente que un porcentaje de las órdenes Límite a favor NO se llenarán (Limit Order Drop-Out) y aplica una inversión de fricción (Friction Inversion) en escenarios de Mean-Reverting.
-*   **¿Por qué lo decidimos?** Los backtests retail son excesivamente optimistas al asumir llenado 100% si el precio toca el límite. En mercados reales, especialmente en alta frecuencia o reversión a la media, el mercado suele "tocar y rebotar" sin dar liquidez a tu orden (Adverse Selection).
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Integrar un motor de modelado de **Adverse Selection** y **Probabilistic Fills** en el simulador. El sistema asume estadísticamente que un porcentaje de las órdenes Límite a favor NO se llenarán (Limit Order Drop-Out) y aplica una inversión de fricción (Friction Inversion) en escenarios de Mean-Reverting.
+*   **Objetivo:** Los backtests retail son excesivamente optimistas al asumir llenado 100% si el precio toca el límite. En mercados reales, especialmente en alta frecuencia o reversión a la media, el mercado suele "tocar y rebotar" sin dar liquidez a tu orden (Adverse Selection).
+*   **Reglas:** 
     - El "Fill Rate" nunca puede ser asumido como 100% para estrategias de microestructura.
     - El peor escenario estadístico de ejecución (60% fill rate en BBO) debe ser el estándar de estrés.
-*   **¿Cómo se vería en el sistema?** 
+*   **Implementación:** 
     - El simulador descarta aleatoriamente un % de trades que en un backtest normal habrían sido ganadores.
     - Las métricas de rentabilidad se ajustan a la realidad de la cola de ejecución.
-*   **¿Qué cuesta?** Mayor pesadez en el motor de simulación (procesamiento probabilístico trade-a-trade).
+*   **Costo:** Mayor pesadez en el motor de simulación (procesamiento probabilístico trade-a-trade).
 *   **Trazabilidad:** [`institutional-friction-modeling.md`](./features/institutional-friction-modeling.md).
 
 ---
 
 ### **ADR-0070: Monitoreo de Seguridad Operativa (Pardo Profile & SSL)**
 
-*   **¿Qué decidimos?** Implementar un sistema de vigilancia dual: **Pardo Profile Monitor** para detectar desviaciones de métricas en vivo vs histórico, y un **Strategy Stop-Loss (SSL)** mandatorio basado en el factor de seguridad del drawdown máximo histórico.
-*   **¿Por qué lo decidimos?** Para evitar el "blow-up" catastrófico. Una estrategia que funcionó en el pasado puede romperse por cambios estructurales. El sistema debe vetar la operativa si el comportamiento real (Win%, Avg Win/Loss) se desvía >50% del perfil histórico o si el drawdown vivo supera el límite estadístico.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Implementar un sistema de vigilancia dual: **Pardo Profile Monitor** para detectar desviaciones de métricas en vivo vs histórico, y un **Strategy Stop-Loss (SSL)** mandatorio basado en el factor de seguridad del drawdown máximo histórico.
+*   **Objetivo:** Para evitar el "blow-up" catastrófico. Una estrategia que funcionó en el pasado puede romperse por cambios estructurales. El sistema debe vetar la operativa si el comportamiento real (Win%, Avg Win/Loss) se desvía >50% del perfil histórico o si el drawdown vivo supera el límite estadístico.
+*   **Reglas:** 
     - El SSL es un **Hard Limit** (ADR-0010); se ejecuta sin preguntar.
     - La desviación de métricas de Pardo genera una alerta inmediata y suspensión preventiva.
-*   **¿Cómo se vería en el sistema?** 
+*   **Implementación:** 
     - Si `Live DD > HistMaxDD * 1.5`, el sistema cierra todas las posiciones y desactiva la estrategia.
     - Un panel de "Salud de Perfil" muestra el drift de Win% en tiempo real.
-*   **¿Qué cuesta?** Necesidad de persistencia de perfiles de métricas por versión de estrategia y cálculo síncrono en cada trade.
+*   **Costo:** Necesidad de persistencia de perfiles de métricas por versión de estrategia y cálculo síncrono en cada trade.
 *   **Trazabilidad:** [`operational-safety-monitor.md`](./features/operational-safety-monitor.md).
 
 ---
 
 ### **ADR-0071: Filtrado y Proyecciones Multidimensionales de Optimizaciones**
 
-*   **¿Qué decidimos?** Adoptar técnicas de proyección y filtrado dimensional (Parallel Coordinates, Cross-Filtering y UMAP/t-SNE) para analizar y evaluar optimizaciones paramétricas de más de 20 dimensiones en lugar de las tradicionales mallas tridimensionales rígidas.
-*   **¿Por qué lo decidimos?** Las optimizaciones masivas colapsan visualmente cuando se intenta modelar más de 3 dimensiones simultáneamente. El usuario necesita aislar las zonas paramétricas más robustas mediante brushing dinámico en coordenadas paralelas y condicionar las distribuciones en tiempo real usando vistas coordinadas.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Adoptar técnicas de proyección y filtrado dimensional (Parallel Coordinates, Cross-Filtering y UMAP/t-SNE) para analizar y evaluar optimizaciones paramétricas de más de 20 dimensiones en lugar de las tradicionales mallas tridimensionales rígidas.
+*   **Objetivo:** Las optimizaciones masivas colapsan visualmente cuando se intenta modelar más de 3 dimensiones simultáneamente. El usuario necesita aislar las zonas paramétricas más robustas mediante brushing dinámico en coordenadas paralelas y condicionar las distribuciones en tiempo real usando vistas coordinadas.
+*   **Reglas:** 
     - No se permite procesar el filtrado masivo de miles de backtests en el hilo principal de la UI.
     - Se debe utilizar un servicio de reducción de resolución (downsampling) y extracción rápida mediante DuckDB/Apache Arrow en el backend.
-*   **¿Cómo se vería en el sistema?** 
+*   **Implementación:** 
     - El usuario "pinta" un rango del eje de una métrica y el visor oculta automáticamente las líneas perdedoras y resalta los clústeres ganadores estables.
     - Los histogramas de otros parámetros se re-calculan instantáneamente reflejando el subconjunto filtrado.
-*   **¿Qué cuesta?** Mayor complejidad en la gestión del estado visual del frontend y mayor consumo de recursos de cómputo en la capa analítica DuckDB.
+*   **Costo:** Mayor complejidad en la gestión del estado visual del frontend y mayor consumo de recursos de cómputo en la capa analítica DuckDB.
 *   **Trazabilidad:** [`parallel-coordinates-visualizer.md`](./features/parallel-coordinates-visualizer.md), [`cross-filtering-visualizer.md`](./features/cross-filtering-visualizer.md), [`ai-dimensionality-suite.md`](./moonshots/ai-dimensionality-suite.md).
 
 ---
 
 ### **ADR-0072: PCA Toxicity Clustering**
 
-*   **¿Qué decidimos?** Implementar un módulo de reducción de dimensionalidad (PCA) y clústeres no supervisados (K-Means) en el guantelete de validación para aislar y purgar familias de estrategias tóxicas.
-*   **¿Por qué lo decidimos?** El filtrado por umbrales estáticos no detecta comportamientos tóxicos ocultos bajo combinaciones de métricas de riesgo. Agrupar las estrategias por sus características latentes permite purgar grupos espurios completos.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Implementar un módulo de reducción de dimensionalidad (PCA) y clústeres no supervisados (K-Means) en el guantelete de validación para aislar y purgar familias de estrategias tóxicas.
+*   **Objetivo:** El filtrado por umbrales estáticos no detecta comportamientos tóxicos ocultos bajo combinaciones de métricas de riesgo. Agrupar las estrategias por sus características latentes permite purgar grupos espurios completos.
+*   **Reglas:** 
     - Análisis de 10K estrategias debe resolverse en <15s usando el subproceso de IA en la CPU.
     - Se requiere inmutabilidad en las columnas del databank `toxicity_score` y `cluster_label`.
 *   **Trazabilidad:** [`pca-toxicity-analyzer.md`](./features/pca-toxicity-analyzer.md).
@@ -1081,9 +1069,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0073: Adaptive Walk-Forward Analysis Windows**
 
-*   **¿Qué decidimos?** Implementar ventanas WFA dinámicas basadas en el régimen de mercado (HMM) en lugar de ventanas de tiempo fijas.
-*   **¿Por qué lo decidimos?** Las ventanas estables en entornos de baja volatilidad fallan catastróficamente al cambiar el régimen. Ajustar el tamaño IS/OOS en tiempo de simulación según el régimen de volatilidad previene el sobreajuste.
-*   **¿Qué restricciones tiene?** 
+*   **Decisión:** Implementar ventanas WFA dinámicas basadas en el régimen de mercado (HMM) en lugar de ventanas de tiempo fijas.
+*   **Objetivo:** Las ventanas estables en entornos de baja volatilidad fallan catastróficamente al cambiar el régimen. Ajustar el tamaño IS/OOS en tiempo de simulación según el régimen de volatilidad previene el sobreajuste.
+*   **Reglas:** 
     - Las ventanas WFA se configuran dinámicamente según la clasificación de estados del régimen `regime_label` (INT).
     - No se permite procesar ventanas adaptativas sin el linaje previo del dataset de regímenes (`market_data` con `regime_label`).
 *   **Trazabilidad:** [`hmm-regime-detection.md`](./features/hmm-regime-detection.md).
@@ -1092,9 +1080,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0074: Autoencoder Outlier Detector**
 
-*   **¿Qué decidimos?** Integrar un detector de anomalías de transacciones mediante un modelo de Autoencoder entrenado en características específicas de las operaciones.
-*   **¿Por qué lo decidimos?** Prevenir que el proceso de selección y optimización favorezca estrategias cuyo rendimiento sea producto de un puñado de trades extremadamente afortunados (outliers).
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Integrar un detector de anomalías de transacciones mediante un modelo de Autoencoder entrenado en características específicas de las operaciones.
+*   **Objetivo:** Prevenir que el proceso de selección y optimización favorezca estrategias cuyo rendimiento sea producto de un puñado de trades extremadamente afortunados (outliers).
+*   **Reglas:**
     - El umbral de percentil para la detección de outliers es configurable.
     - Se debe calcular el impacto de los outliers sobre las métricas originales; si supera un umbral configurable, se penaliza el score de fitness de la estrategia.
 *   **Trazabilidad:** [`autoencoder-outlier-detector.md`](./features/autoencoder-outlier-detector.md).
@@ -1103,9 +1091,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0075: Dynamic Portfolio Optimization & Walk-Forward Rebalancing**
 
-*   **¿Qué decidimos?** Implementar la optimización de pesos por HRP (Hierarchical Risk Parity), el backtesting a nivel portafolio y el rebalanceo de parámetros dinámico (Walk-Forward Optimization de parámetros de rebalanceo).
-*   **¿Por qué lo decidimos?** Mejorar la robustez del portafolio en comparación con Markowitz estático. La optimización Walk-Forward de rebalanceo descubre las frecuencias de rebalanceo, ventanas rodantes y umbrales óptimos tras deducir la fricción realista, previniendo el sobreajuste temporal y mejorando el Sharpe Ratio.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar la optimización de pesos por HRP (Hierarchical Risk Parity), el backtesting a nivel portafolio y el rebalanceo de parámetros dinámico (Walk-Forward Optimization de parámetros de rebalanceo).
+*   **Objetivo:** Mejorar la robustez del portafolio en comparación con Markowitz estático. La optimización Walk-Forward de rebalanceo descubre las frecuencias de rebalanceo, ventanas rodantes y umbrales óptimos tras deducir la fricción realista, previniendo el sobreajuste temporal y mejorando el Sharpe Ratio.
+*   **Reglas:**
     - **Inmutabilidad de Políticas:** Toda política de rebalanceo óptima se guarda como un objeto inmutable en el Databank en formato JSON con su correspondiente hash.
     - **Backtesting en Paralelo:** El backtesting de portafolios corre en paralelo N estrategias sincronizadas a nivel de reloj común, aplicando fricción (spreads + comisiones agregadas) al portafolio y no de forma aislada.
     - **Delegación al Backtest Engine:** El backtesting a nivel de portafolio delega la simulación del reloj y el emparejamiento de órdenes al [`backtest-engine.md`](./features/backtest-engine.md), aprovechando el patrón [`ExecutableContainer`](./features/executable-container.md) (ADR-0009).
@@ -1115,9 +1103,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0076: Direct Promotion & Visual Validation of Portfolios**
 
-*   **¿Qué decidimos?** Habilitar la promoción directa de estrategias o portafolios externos al módulo `manage` (MOD-05), y requerir validación visual mediante mapas de calor y dendrogramas de correlación.
-*   **¿Por qué lo decidimos?** Permitir flujos rápidos y bypasses seguros (ADR-0022), minimizando el boilerplate para promover estrategias validadas externamente. El uso de dendrogramas proporciona una justificación visual y matemática del descarte de candidatos redundantes en la asignación HRP.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Habilitar la promoción directa de estrategias o portafolios externos al módulo `manage` (MOD-05), y requerir validación visual mediante mapas de calor y dendrogramas de correlación.
+*   **Objetivo:** Permitir flujos rápidos y bypasses seguros (ADR-0022), minimizando el boilerplate para promover estrategias validadas externamente. El uso de dendrogramas proporciona una justificación visual y matemática del descarte de candidatos redundantes en la asignación HRP.
+*   **Reglas:**
     - **Validación Obligatoria pre-Promoción:** Cualquier estrategia promovida directamente debe poseer un `audit_hash` válido de su histórico de retornos antes de aceptarse en `manage`.
 *   **Trazabilidad:** [`portfolio-data-preparation.md`](./features/portfolio-data-preparation.md), [`portfolio-rules.md`](./features/portfolio-rules.md).
 
@@ -1125,9 +1113,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0077: Portfolio Risk Metrics & Git-Like Portfolio Versioning with Clusters**
 
-*   **¿Qué decidimos?** Implementar el conjunto de métricas de riesgo de portafolio avanzado (Índice Herfindahl, CVaR, Descomposición Estacional), clustering K-Means para descorrelación de clústeres (`hrp_rank`), y el versionado inmutable Git-like de portafolios guardado en `portfolios.parquet`.
-*   **¿Por qué lo decidimos?** La gestión de riesgos a nivel portafolio requiere evaluar la concentración de activos y el riesgo de cola (CVaR) para evitar pérdidas sistémicas. El versionado tipo Git con un grafo dirigido acíclico (DAG) por ramas (`branches`) permite cambios experimentales de pesos y composiciones sin duplicar información ni corromper el linaje de auditoría.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar el conjunto de métricas de riesgo de portafolio avanzado (Índice Herfindahl, CVaR, Descomposición Estacional), clustering K-Means para descorrelación de clústeres (`hrp_rank`), y el versionado inmutable Git-like de portafolios guardado en `portfolios.parquet`.
+*   **Objetivo:** La gestión de riesgos a nivel portafolio requiere evaluar la concentración de activos y el riesgo de cola (CVaR) para evitar pérdidas sistémicas. El versionado tipo Git con un grafo dirigido acíclico (DAG) por ramas (`branches`) permite cambios experimentales de pesos y composiciones sin duplicar información ni corromper el linaje de auditoría.
+*   **Reglas:**
     - **Persistencia en Parquet:** Toda composición e historial del portafolio se guarda en `portfolios.parquet` bajo el estándar Hive-Style.
     - **Inmutabilidad:** Toda versión del portafolio (`portfolio_version_hash`) es de solo lectura una vez creada.
 *   **Trazabilidad:** [`portfolio-rules.md`](./features/portfolio-rules.md), [`portfolio-optimizer.md`](./features/portfolio-optimizer.md), [`strategy-versioning.md`](./features/strategy-versioning.md).
@@ -1136,9 +1124,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0078: Autopilot Execution & Multiplatform Infrastructure**
 
-*   **¿Qué decidimos?** Formalizar la infraestructura de ejecución de la Fase 3: "The Autopilot", que incluye un motor de ejecución directa NautilusTrader con paridad out-of-sample exacta, el `multiplatform-execution-bridge` para comunicación de comandos vía WebSockets/REST hacia terminales externas (MetaTrader, NinjaTrader, cTrader) sin exportación de lógica local ni stops, y el `multi-ticket-manager` para gestionar múltiples tickets individuales por estrategia identificados vía signal hash + timestamp.
-*   **¿Por qué lo decidimos?** Para garantizar que el capital real o las cuentas de fondeo se operen en un entorno blindado de forma multiplataforma. El desacoplamiento protege la lógica contra rastreo y permite romper la limitación de SQX de una única operación a la vez.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Formalizar la infraestructura de ejecución de la Fase 3: "The Autopilot", que incluye un motor de ejecución directa NautilusTrader con paridad out-of-sample exacta, el `multiplatform-execution-bridge` para comunicación de comandos vía WebSockets/REST hacia terminales externas (MetaTrader, NinjaTrader, cTrader) sin exportación de lógica local ni stops, y el `multi-ticket-manager` para gestionar múltiples tickets individuales por estrategia identificados vía signal hash + timestamp.
+*   **Objetivo:** Para garantizar que el capital real o las cuentas de fondeo se operen en un entorno blindado de forma multiplataforma. El desacoplamiento protege la lógica contra rastreo y permite romper la limitación de SQX de una única operación a la vez.
+*   **Reglas:**
     - **Soberanía del VPS:** No se exportará código de estrategia ni indicadores hacia los receptores externos.
     - **Unicidad de Señales:** Se prohíbe abrir una segunda posición si el `signal_hash` es idéntico al de una posición ya activa en la misma barra.
 *   **Trazabilidad:** [`broker-connector.md`](./features/broker-connector.md), [`pre-trade-validator.md`](./features/pre-trade-validator.md), [`volatility-stabilization.md`](./features/volatility-stabilization.md).
@@ -1147,9 +1135,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0079: Rules Wrappers for Portfolios & Universal Rules Injection (Challenge Mode)**
 
-*   **¿Qué decidimos?** Implementar una capa envolvente de reglas (**Rules Wrappers**) universal para portafolios de una o múltiples estrategias. Este wrapper intercepta señales de compra/venta y valida todas las restricciones configuradas (ej. Drawdown Diario absoluto, Trailing Max Drawdown, News Blackouts, FIFO/Netting) antes de permitir que la orden pase. El **Challenge Mode** opera como un perfil inyectado dentro de este wrapper, pero el sistema permite que las reglas se inyecten de forma genérica para cualquier necesidad operativa.
-*   **¿Por qué lo decidimos?** Para proporcionar máxima flexibilidad y gestión de capital global, independientemente de la naturaleza de las estrategias individuales. El uso de perfiles de reglas inyectables permite cumplir con las normas de cualquier firma de fondeo o requerimiento de riesgo sin alterar el motor central.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar una capa envolvente de reglas (**Rules Wrappers**) universal para portafolios de una o múltiples estrategias. Este wrapper intercepta señales de compra/venta y valida todas las restricciones configuradas (ej. Drawdown Diario absoluto, Trailing Max Drawdown, News Blackouts, FIFO/Netting) antes de permitir que la orden pase. El **Challenge Mode** opera como un perfil inyectado dentro de este wrapper, pero el sistema permite que las reglas se inyecten de forma genérica para cualquier necesidad operativa.
+*   **Objetivo:** Para proporcionar máxima flexibilidad y gestión de capital global, independientemente de la naturaleza de las estrategias individuales. El uso de perfiles de reglas inyectables permite cumplir con las normas de cualquier firma de fondeo o requerimiento de riesgo sin alterar el motor central.
+*   **Reglas:**
     - Las reglas globales tienen máxima soberanía sobre las estrategias individuales (ADR-0010).
     - Toda orden interceptada por la capa envolvente debe evaluarse en <10ms.
 *   **Trazabilidad:** [`portfolio-rules.md`](./features/portfolio-rules.md), [`prop-firm-grader.md`](./features/prop-firm-grader.md).
@@ -1158,9 +1146,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0080: Order-Priority Queue (Anti-Throttling)**
 
-*   **¿Qué decidimos?** Implementar una cola inteligente de órdenes basada en prioridades concurrentes con reintento inmediato y backoff exponencial para mitigar el throttling del broker.
-*   **¿Por qué lo decidimos?** Los exchanges imponen límites estrictos de tasa. Durante congestión o alta volatilidad, las órdenes críticas (Stop Loss) deben transmitirse prioritariamente para evitar liquidaciones o pérdidas catastróficas.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar una cola inteligente de órdenes basada en prioridades concurrentes con reintento inmediato y backoff exponencial para mitigar el throttling del broker.
+*   **Objetivo:** Los exchanges imponen límites estrictos de tasa. Durante congestión o alta volatilidad, las órdenes críticas (Stop Loss) deben transmitirse prioritariamente para evitar liquidaciones o pérdidas catastróficas.
+*   **Reglas:**
     - Las órdenes P0 (Stop Loss) tienen prioridad absoluta y omiten cualquier límite de cola.
     - Se requiere el uso de un heap de prioridad concurrente sincronizado en memoria (<1ms).
 *   **Trazabilidad:** [`order-priority-queue.md`](./features/order-priority-queue.md).
@@ -1169,9 +1157,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0081: Advanced Trade Management (ATM)**
 
-*   **¿Qué decidimos?** Integrar lógicas transaccionales base como Grid Trading, Hedging y Trailing Stop Mecánico en la gestión operativa multicapa.
-*   **¿Por qué lo decidimos?** Proveer lógicas convencionales de control para la micro-gestión básica de operaciones, permitiendo asimilar niveles piramidales y lógicas multi-escala.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Integrar lógicas transaccionales base como Grid Trading, Hedging y Trailing Stop Mecánico en la gestión operativa multicapa.
+*   **Objetivo:** Proveer lógicas convencionales de control para la micro-gestión básica de operaciones, permitiendo asimilar niveles piramidales y lógicas multi-escala.
+*   **Reglas:**
     - El Trailing Stop mecánico debe recalcularse estrictamente barra-a-barra (o tick-by-tick en modo Real Ticks).
     - Los niveles de Grid deben estar precalculados y persistidos para garantizar paridad.
 *   **Trazabilidad:** [`advanced-trade-management.md`](./features/advanced-trade-management.md).
@@ -1180,9 +1168,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0082: Micro-Gestión Cinética Institucional**
 
-*   **¿Qué decidimos?** Implementar un módulo defensivo hostil de micro-gestión que incluye: Micro-Scale Out Mandatorio, Z-Score Trailing Intervencionista y Tapering Logarítmico.
-*   **¿Por qué lo decidimos?** Para proteger las cuentas maestra o Prop Firms ante reversiones violentas. Evita el rastreo de stops rígidos por parte de brokers C-Book mediante cierres masivos market basados en anomalías estadísticas de PnL vivo.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar un módulo defensivo hostil de micro-gestión que incluye: Micro-Scale Out Mandatorio, Z-Score Trailing Intervencionista y Tapering Logarítmico.
+*   **Objetivo:** Para proteger las cuentas maestra o Prop Firms ante reversiones violentas. Evita el rastreo de stops rígidos por parte de brokers C-Book mediante cierres masivos market basados en anomalías estadísticas de PnL vivo.
+*   **Reglas:**
     - El Z-Score Trailing requiere cálculo en vivo sobre el PnL de las últimas operaciones abiertas.
     - El Tapering Logarítmico reduce el volumen de operación inmediatamente tras rachas fallidas consecutivas.
 *   **Trazabilidad:** [`kinetic-micro-management.md`](./features/kinetic-micro-management.md).
@@ -1190,9 +1178,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 ---
 
 ### **ADR-0083: Autopilot Dynamic Metrics Engine**
-*   **¿Qué decidimos?** Implementar la interfaz `ModuleMetricsProvider` en el módulo Autopilot (Execute) para exponer métricas en vivo en tiempo real directamente al Dashboard.
-*   **¿Por qué lo decidimos?** Permitir que la interfaz de usuario consuma métricas en vivo según la selección (`selected_metrics`), eliminando la necesidad de un proveedor centralizado.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar la interfaz `ModuleMetricsProvider` en el módulo Autopilot (Execute) para exponer métricas en vivo en tiempo real directamente al Dashboard.
+*   **Objetivo:** Permitir que la interfaz de usuario consuma métricas en vivo según la selección (`selected_metrics`), eliminando la necesidad de un proveedor centralizado.
+*   **Reglas:**
     - El cálculo de volatilidad realizada usa exactamente las últimas 20 barras de la serie temporal activa.
     - Las métricas se exponen como un diccionario plano de tipos estándar.
 *   **Trazabilidad:** [`autopilot-metrics-provider.md`](./features/autopilot-metrics-provider.md).
@@ -1201,9 +1189,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0084: Daemons Persistentes y Aislamiento de Núcleo (Core Pinning)**
 
-*   **¿Qué decidimos?** Implementar la ejecución en vivo mediante hilos de ejecución persistentes (*Daemons*) en Rust Tokio, con afinidad de CPU obligatoria (*Core Pinning*) para el **LiveNode**.
-*   **¿Por qué lo decidimos?** Garantizar latencia de microsegundos inalterable en la ejecución real, incluso bajo carga masiva de R&D (optimización genética). El aislamiento evita que el recolector de hilos de tareas pesadas interfiera con la ruta crítica de órdenes.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Implementar la ejecución en vivo mediante hilos de ejecución persistentes (*Daemons*) en Rust Tokio, con afinidad de CPU obligatoria (*Core Pinning*) para el **LiveNode**.
+*   **Objetivo:** Garantizar latencia de microsegundos inalterable en la ejecución real, incluso bajo carga masiva de R&D (optimización genética). El aislamiento evita que el recolector de hilos de tareas pesadas interfiera con la ruta crítica de órdenes.
+*   **Reglas:**
     - El núcleo reservado debe ser configurado explícitamente en el `SLA de reserva`.
     - Se prohíbe el uso de tareas efímeras (que nacen y mueren) para la gestión del LiveNode.
 *   **Trazabilidad:** [`persistent-daemons.md`](./features/persistent-daemons.md).
@@ -1212,9 +1200,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0085: Bus de Datos Pub/Sub Zero-Copy (Multiplexación)**
 
-*   **¿Qué decidimos?** Utilizar un bus de mensajes en memoria basado en canales de difusión de Rust (`tokio::sync::broadcast`) para la distribución de datos de mercado en tiempo real hacia múltiples agentes.
-*   **¿Por qué lo decidimos?** Evitar bloqueos de IP en mercados externos al abrir múltiples conexiones para el mismo símbolo. Permite que +50 agentes consuman el mismo flujo de datos con latencia de nanosegundos y cero duplicación de memoria.
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Utilizar un bus de mensajes en memoria basado en canales de difusión de Rust (`tokio::sync::broadcast`) para la distribución de datos de mercado en tiempo real hacia múltiples agentes.
+*   **Objetivo:** Evitar bloqueos de IP en mercados externos al abrir múltiples conexiones para el mismo símbolo. Permite que +50 agentes consuman el mismo flujo de datos con latencia de nanosegundos y cero duplicación de memoria.
+*   **Reglas:**
     - Un solo cliente de datos (Nautilus DataClient) por símbolo.
     - Los agentes leen por referencia inmutable, eliminando clonaciones costosas.
 *   **Trazabilidad:** [`data-bus-pubsub.md`](./features/data-bus-pubsub.md).
@@ -1223,9 +1211,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0086: Minería Descentralizada de Estrategias (La Colmena)**
 
-*   **¿Qué decidimos?** Definir y formalizar la arquitectura de incubación para **La Colmena** (Red Descentralizada de Minería de Estrategias). El sistema opera bajo un modelo cliente-servidor descentralizado donde las máquinas de terceros ("Nodos Mineros") ejecutan búsquedas y backtests en segundo plano de forma silenciosa, reportando las mejores candidatas al servidor central de Drasus Engine.
-*   **¿Por qué lo decidimos?** La búsqueda generativa masiva en universos amplios requiere potencia de cálculo extrema. Crowdsourcing de capacidad de cómputo GPU/CPU de la comunidad permite acelerar el descubrimiento de alpha a gran escala sin necesidad de infraestructura de sites dedicados, ofreciendo incentivos y recompensas justas (regalías de fondos, cobro fijo por flujo o pago por estrategias aptas).
-*   **¿Qué restricciones tiene?**
+*   **Decisión:** Definir y formalizar la arquitectura de incubación para **La Colmena** (Red Descentralizada de Minería de Estrategias). El sistema opera bajo un modelo cliente-servidor descentralizado donde las máquinas de terceros ("Nodos Mineros") ejecutan búsquedas y backtests en segundo plano de forma silenciosa, reportando las mejores candidatas al servidor central de Drasus Engine.
+*   **Objetivo:** La búsqueda generativa masiva en universos amplios requiere potencia de cálculo extrema. Crowdsourcing de capacidad de cómputo GPU/CPU de la comunidad permite acelerar el descubrimiento de alpha a gran escala sin necesidad de infraestructura de sites dedicados, ofreciendo incentivos y recompensas justas (regalías de fondos, cobro fijo por flujo o pago por estrategias aptas).
+*   **Reglas:**
     - **Sandboxing Estricto:** El código de exploración en la máquina del minero debe correr en un entorno virtual aislado (Wasm / Rust Engine estático con APIs de red/sistema deshabilitadas).
     - **Protección de IP (Propiedad Intelectual):** No se exportará el motor comercial completo de NautilusTrader ni lógica propietaria sensible. El minero solo ejecuta evaluaciones parametrizadas y empaquetadas sin acceso al código fuente.
     - **Prueba de Trabajo Cuantitativa (Proof-of-Quant):** El servidor central de Drasus Engine debe re-verificar de forma aleatoria o determinista rápida los backtests reportados para evitar envíos fraudulentos de resultados falsos.
@@ -1236,14 +1224,14 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0087: El Guardián (Global Execution Router) & El Centinela (Rust Shadow Watchdog & Kill Switch)**
 
-*   **¿Qué decidimos?** 
+*   **Decisión:** 
     - **El Guardián:** Implementar un Gestor de Riesgo Centralizado (Global Execution Router) que intercepta todas las órdenes generadas por los agentes individuales de forma pre-trade. Cierra la brecha del estado global aplicando un pipeline secuencial estricto de validación de reglas globales (10 checks tácticos que incluyen Checks de Correlación, Margen, Drawdown, y Reglas de Cuentas de Fondeo).
     - **El Centinela (Shadow Watchdog):** Reemplazar cualquier propuesta de proceso en Python por un daemon o tarea asíncrona independiente escrita 100% en **Rust** (vía `tokio` o worker nativo), garantizando un monitoreo continuo de salud/latencia (<5s) del motor principal, un Shadow Mode de validación paralela de volumen cero, y un Kill Switch atómico de barrido total (`FlattenAll()`) operable remotamente mediante una Emergency PWA.
-*   **¿Por qué lo decidimos?** 
+*   **Objetivo:** 
     - Garantizar que los agentes no puedan interactuar directamente con el exchange sin validar el estado global de riesgo y capital.
     - Cumplir de forma inquebrantable con la restricción de arquitectura exclusiva Rust/Flutter, eliminando la sobrecarga de latencia, dependencias pesadas y fallos de recolección de basura de Python.
     - Ofrecer un bypass de emergencia seguro y un monitoreo reactivo móvil sin exponer la propiedad intelectual de las estrategias.
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Soberanía Absoluta del Guardián:** Ningún agente individual posee claves de API o acceso directo de transmisión al cliente de ejecución de NautilusTrader.
     - **Independencia del Watchdog:** El Shadow Watchdog debe ejecutarse en un proceso o hilo completamente independiente del loop de trading para evitar bloqueos mutuos en caso de crash del motor de órdenes.
     - **Límite de Latencia:** La intercepción y validación del Guardián debe completarse en `<1ms` en el hot path.
@@ -1253,7 +1241,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0088: Protocolo de Incubación & Cono de Silencio (Sandbox de 7 Días, Proyección de Monte Carlo y Broken Strategy Flag)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar un Protocolo de Incubación y Sandbox avanzado con perfiles de duración configurables y cinco pilares:
     1. **Incubación Prolongada (Legacy Paper Trading, 3-6 meses):** Validación tradicional en demo durante periodos de 3 a 6 meses para certificar resiliencia a largo plazo.
     2. **Sandbox Extendido (Extended Quarantine, 21 días):** Modo intermedio entre la cuarentena acelerada y la incubación prolongada. Aplica el mismo motor de Eutanasia Predictiva y Cono de Silencio que el Sandbox de 7 días, pero sobre una ventana de 21 días, para estrategias que requieren mayor confirmación estadística antes de promoción a capital real.
@@ -1261,20 +1249,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     4. **Cono de Silencio (Auditoría Estadística):** Proyección dinámica hacia el futuro de bandas de confianza a 1, 2 y 3 sigmas basadas en simulaciones Monte Carlo previas. Calcula de forma diaria métricas de eficiencia de retorno (`Return Efficiency`) y degradación de drawdown (`Drawdown Efficiency`).
     5. **Broken Strategy Flag (Automated Kill Switch):** Mecanismo de seguridad operativo que pausa la estrategia de manera inmediata si la equidad real sale del Cono de Silencio por el borde inferior (-1 sigma), liquidando posiciones abiertas y reasignando el capital para proteger el balance general de la degradación estructural de Alpha.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para mitigar drásticamente el costo de oportunidad del capital en cuentas de fondeo, acelerando la validación estadística de meses a solo 7 días con un filtro de autodescarte ultrarrápido y seguro. Proporcionar un control matemático riguroso contra la degradación estructural de estrategias en vivo.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Inmutabilidad en Sandbox:** Queda prohibido modificar cualquier parámetro o lógica de la estrategia durante su periodo de cuarentena o incubación.
     - **Cero Conectividad Directa de API:** Las ejecuciones en cuarentena utilizan el feed de datos en tiempo real pero canalizan órdenes simuladas, evitando interacciones directas con claves de API del exchange real.
     - **Liquidación Inmediata por Deriva:** La activación del Broken Strategy Flag (-1 sigma) fuerza la cancelación de órdenes y cierre de posiciones con latencia menor a 1ms antes de pausar la estrategia en el DAG.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Selector visual en el Dashboard para configurar el tipo de incubación (Quarantine 7 días, Extended 21 días, o Legacy 3-6 meses).
     - Gráfico interactivo del Cono de Silencio con bandas sombreadas (1, 2 y 3 sigmas) sobre la equidad real en vivo.
     - Disparador automático de alerta y suspensión en la consola del operador ante purgas por rebasamiento MAE o violación de banda de confianza.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Mayor demanda computacional local en el hilo de telemetría para evaluar la MAE barra a barra en caliente y recalcular percentiles del cono de confianza diariamente.
 
 *   **Trazabilidad:** [`incubation-manager.md`](./features/incubation-manager.md), [`paper-trader.md`](./features/paper-trader.md), [`monte-carlo-simulator.md`](./features/monte-carlo-simulator.md), [`incubate.md`](./modules/incubate.md).
@@ -1283,7 +1271,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0089: Motores de Optimización de Portfolio Clásicos & Ensamblador Singular D-Score con Hedging Cointegrativo, Router de Liquidez y Daemon de Rebalanceo**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar una arquitectura trimodal de gestión de capital y rebalanceo dinámico de portafolio que soporta:
     1. **Portfolio Optimization Engine Clásico:** Modelos académicos de distribución: Markowitz (Mean-Variance estándar), Black-Litterman (ajustes por opiniones/views), Equal Weighting, HRP (Hierarchical Risk Parity), Minimum Variance, Volatility Stabilization y Cluster Risk Convergence.
     2. **Ensamblador Singular D-Score (Risk Parity Dinámico & Alpha Decay):**
@@ -1294,20 +1282,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
        - Triggers: Calendario (semanal/mensual/trimestral), cambio de régimen dinámico HMM (confianza > umbral), threshold de desviación de pesos, o alertas por VaR/CVaR.
        - Mitigación de Riesgo: Circuit Breaker que restringe a máximo 1 rebalanceo por día para evitar sobrecarga operativa por comisiones (thrashing) y Portfolio Variance Check que prohíbe rebalanceos si la varianza del portafolio es mayor a 2σ (caos del mercado).
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para sustituir fronteras eficientes estáticas de rebalanceo anual por una asignación adaptativa en caliente de grado institucional. Optimizar el uso del capital reduciendo la exposición a solapamientos correlacionados en nano-segundos y rotando capital de forma oportunista.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Prioridad del Portafolio:** Las reglas globales del portafolio (Hard Limits, VaR, limitación de drawdown) tienen prioridad jerárquica absoluta e invalidan cualquier orden o directiva de un agente individual.
     - **Circuit Breaker Inviolable:** Prohibido rebalancear más de una vez al día sin confirmación explícita del operador por seguridad.
     - **Restricción de Cointegración:** Las búsquedas de solapamientos destructivos operan a nivel de feed local en caliente en Rust Core con latencia menor a 2ms.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Panel interactivo en la UI con la matriz de pesos HRP, dendrograma interactivo y estado del rebalancer.
     - Configuración detallada en `portfolio_rules.yaml` de triggers y políticas.
     - Registro histórico inmutable de rebalanceos (`portfolio_rebalancing_history`) en SQLite para auditorías forenses.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Alta carga matemática de computación de matrices y cálculo de cointegraciones barra a barra/tick a tick en caliente, requiriendo procesamiento multi-hilo eficiente en Rust Core.
 
 *   **Trazabilidad:** [`portfolio-optimizer.md`](./features/portfolio-optimizer.md), [`portfolio-rules.md`](./features/portfolio-rules.md), [`manage.md`](./modules/manage.md).
@@ -1316,19 +1304,19 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0090: Arquitectura de Portafolios Federados (Federated Portfolio Clusters)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar una arquitectura de portafolios federados que permite coordinar múltiples contenedores de portafolios aislados y autónomos dentro de un meta-portafolio central sin interferencia de reglas cruzadas.
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para resolver la falta de sinergia y visibilidad unificada cuando un trader o institución opera múltiples subportafolios (ej. futuros y criptomonedas) en silos. Cada contenedor mantiene su gobernanza y reglas inmutables (frecuencia de rebalanceo, límites de correlación, objetivos de volatilidad) de manera independiente, compartiendo únicamente la infraestructura base (market feeds y adaptadores de broker) para optimizar recursos y mantener consistencia.
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Aislamiento Absoluto de Reglas:** Las reglas del portafolio A nunca interfieren con el portafolio B.
     - **Persistencia en Parquet y SQLite:** Las configuraciones se definen en esquemas JSON inmutables en SQLite y las métricas de rendimiento consolidadas se guardan en el lago de datos analítico.
     - **Kill Switch Global:** Existe un botón de emergencia global que detiene y liquida inmediatamente todos los subportafolios federados en paralelo ante riesgos sistémicos.
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Un Dashboard unificado (Meta-Portfolio Panel) que muestra el rendimiento agregado (Sharpe/Sortino agregado, Drawdown del clúster, correlación inter-portafolios).
     - Vistas segregadas y aisladas para las métricas de cada contenedor individual.
     - Un panel de control del Kill Switch global con confirmación atómica en <5s.
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en la capa de ruteo de telemetría y ejecución (`NautilusTrader LiveNode`) para etiquetar y dirigir con precisión las órdenes y eventos de posición al contenedor correspondiente sin retrasos en el hot-path.
 *   **Trazabilidad:** [`federated-portfolio.md`](./features/federated-portfolio.md), [`manage.md`](./modules/manage.md), [`execute.md`](./modules/execute.md).
 
@@ -1336,19 +1324,19 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0091: Simulación de Portafolio Real (Real Portfolio Backtesting)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar un motor de simulación de portafolio avanzado que evalúa múltiples estrategias de forma concurrente compartiendo un pool de capital bajo restricciones realistas de margen, interés compuesto dinámico y sincronización exacta de horarios de mercado.
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Los backtests agregados tradicionales cometen el error de asumir suma lineal de PnL independiente, lo que oculta colisiones de margen, llamadas de margen y fallos catastróficos cuando el capital total es insuficiente. Necesitamos paridad absoluta in-sample/out-of-sample simulando la contienda de recursos y el impacto de la capitalización sobre una sola cuenta unificada.
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Sincronización Determinista de Reloj:** Las estrategias se ejecutan sobre el mismo event-loop compartiendo un reloj determinista común sincronizado por el motor.
     - **Reglas de Compounding Inmutables por Período:** El interés compuesto dinámico se calcula de forma periódica inmutable y configurable, prohibiendo modificaciones intra-periodo para mantener la reproducibilidad bit-a-bit.
     - **Mapeo Riguroso de Sesiones:** El motor suspende y reanuda agentes de forma individual y determinista basándose en la configuración de sesión inmutable de cada exchange de origen.
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Panel de configuración de backtest de portafolio que permite seleccionar el tipo de compounding (diario, semanal, mensual) y el pool de capital inicial.
     - Curva de equidad agregada real que refleja el impacto del consumo de margen cruzado y las comisiones unificadas.
     - Reportes analíticos que muestran alertas de margin calls simuladas y solapamientos de sesión.
-*   **¿Qué cuesta?**
+*   **Costo:**
     Incremento notable en los tiempos de cómputo de optimizaciones masivas debido a la sincronización en memoria de múltiples agentes en el event-loop.
 *   **Trazabilidad:** [`portfolio-backtest.md`](./features/portfolio-backtest.md), [`backtest-engine.md`](./features/backtest-engine.md), [`manage.md`](./modules/manage.md).
 
@@ -1356,23 +1344,23 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0092: Copy-Trading mediante Relé Ciego de Señales (E2E)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar una topología de distribución de señales de trading de un solo sentido (Master a Copiers) utilizando un servidor relé ciego intermedio (Signal Relay) y encriptación simétrica AES-256-GCM de extremo a extremo (E2E).
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para eliminar la vulnerabilidad de seguridad y problemas de ancho de banda del Master inherentes a una arquitectura peer-to-peer (P2P) directa. Conectar múltiples clientes directamente expone la dirección IP del Master a ataques cibernéticos e inestabilidad de red. El relé ciego actúa como un intermediario sin acceso a la lógica ni datos descifrados del trade (Zero-Knowledge), optimizando la distribución de baja latencia a múltiples receptores.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero Conocimiento del Relé:** El Signal Relay nunca almacena ni tiene acceso a las claves de encriptación de sesión o el contenido descifrado de las señales.
     - **Cifrado Obligatorio en Origen:** Toda señal debe ser serializada, comprimida, cifrada (AES-256-GCM) y firmada (HMAC-SHA256) antes de ser enviada al relé.
     - **Ejecución y Control de Riesgos Local:** Las órdenes se calculan y ejecutan localmente en la terminal de cada Copier según su capital y límites propios de riesgo, sin control centralizado de los brokers por parte del Master o del Relé.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El Master configura una clave única de sesión y ve el estado de conexión saliente hacia el servidor relé y el volumen de copiers activos en un dashboard de monitoreo.
     - El Copier introduce la clave de acceso criptográfica del Master y sus credenciales locales de broker, observando su latencia de señal (rechazo si >500ms) y su cuenta replicada.
     - El Signal Relay corre en segundo plano como un contenedor o daemon que únicamente valida tokens de sesión activos y retransmite bytes binarios asíncronamente.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Carga extra en el Copier para mantener feeds de volatilidad local (ATR) para el escalado de riesgo y latencia marginal añadida por el procesamiento de cifrado/descifrado y el salto intermedio del servidor (<50ms en total).
 
 *   **Trazabilidad:** [`copy-trading-engine.md`](./features/copy-trading-engine.md), [`execute.md`](./modules/execute.md).
@@ -1381,23 +1369,23 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0093: Arquitectura de Seguridad Soberana (Sovereign Security Architecture)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar un esquema de seguridad soberana Local-First e inmutable que exige: encriptación simétrica AES-256-GCM para credenciales de API de brokers administrada por variables de entorno de sistema (Vault-ready), registro inmutable en base de datos local SQLite de toda acción y respuesta operativa para auditoría forense, y operación en modo de privacidad absoluta con cero telemetría externa.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para mitigar el riesgo de robo de claves de API y manipulación de registros de auditoría operativa, garantizando al mismo tiempo que la propiedad intelectual (estrategias y modelos) del operador retail se mantenga exclusivamente en la máquina del usuario (Soberanía de Datos).
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero Telemetría:** Prohibido el envío de cualquier dato operativo, telemetría o estadísticas fuera de la máquina local.
     - **Encriptación AES-256-GCM Obligatoria:** Todas las claves secretas en `broker_connections` deben encriptarse antes de persistir, utilizando una Master Key inyectada por el entorno.
     - **Inmutabilidad del Registro:** Las tablas `audit_log` y `events` son de solo inserción (Append-Only) y los registros deben validarse secuencialmente utilizando el hash criptográfico del registro anterior (`audit_chain_hash`).
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Al iniciar, la aplicación valida la presencia de la variable de entorno de Master Key y descifra en memoria las claves del bróker.
     - El motor de trading escribe secuencialmente en las tablas relacionales locales de SQLite en modo WAL, calculando y enlazando hashes de fila consecutivamente.
     - Las conexiones salientes de telemetría o analíticas externas están bloqueadas por diseño.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en la gestión manual de la clave maestra por el usuario y latencia mínima (<1ms) durante la encriptación/desencriptación en memoria y cálculo de hash de auditoría.
 
 *   **Trazabilidad:** [`sovereign-security.md`](./features/sovereign-security.md), [`execute.md`](./modules/execute.md).
@@ -1406,23 +1394,23 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0094: Delegación Híbrida de Cómputo (Cooperative Hybrid Compute)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Soportar una modalidad de ejecución híbrida cooperativa (HybridComputeCooperative) que mantiene el backend Rust local acoplado al Frontend vía FFI compartiendo memoria local el 100% del tiempo, pero delega dinámicamente tareas de cómputo intensivo (búsqueda genética, optimización bayesiana, backtesting masivo) o daemons de ejecución persistentes 24/7 (Autopilot) a instancias remotas (VPS o clúster local/nube) sin desacoplar el core en la máquina local.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para proporcionar una alternativa intermedia y complementaria a la migración completa a VPS (SaaSCloudEngine). Permite que la computadora local aproveche recursos gráficos y de CPU dedicados externos de manera fluida y temporal (a demanda) para análisis masivos, o de forma persistente para la operativa continua, sin perder la ultra-baja latencia FFI de la interfaz local para el uso cotidiano y la administración de datos soberanos.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Inmutabilidad del Core Local:** El backend de la PC local sigue siendo la fuente de verdad (Source of Truth) de configuraciones, bases de datos de producción (SQLite) e historial.
     - **Protocolo de Mensajería Stateless:** La comunicación con los Workers de cómputo remoto debe ser estrictamente asíncrona mediante paso de mensajes serializados (gRPC/WebSockets) que no compartan estado de memoria del core local.
     - **Reconciliación Desconectada:** Ante una pérdida de conexión del cliente local, el daemon remoto del VPS debe operar bajo reglas estrictas de control de riesgo locales (autónomas) y sincronizar el ledger de transacciones al restablecerse la conectividad.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El usuario activa y configura las credenciales de conexión del pool de VPS / Workers remotos en el panel de hardware local.
     - Al lanzar un proceso pesado (ej. optimización de portafolios), el orquestador Rust local divide las tareas, las distribuye a los Workers remotos a través de gRPC, y recolecta las métricas consolidadas en memoria local para su visualización nativa.
     - Al activar el Autopilot remoto, el core local delega el estado del motor al VPS y permite cerrar la aplicación local de forma segura, mostrando el estado sincronizado en tiempo real al reabrir la app.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en el orquestador Rust local para gestionar colas de tareas de red asíncronas, serialización/deserialización de metadatos de estrategias, y control de desincronización de estados (ledger) tras desconexiones prolongadas.
 
 *   **Trazabilidad:** [`SAD.md`](./SAD.md), [`generate.md`](./modules/generate.md), [`execute.md`](./modules/execute.md).
@@ -1431,23 +1419,23 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0095: Veto Operativo por Degradación de Robustez de Slippage y Umbrales Monte Carlo**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Establecer un veto operativo automático a nivel de pre-trade que bloquea la ejecución de cualquier orden perteneciente a una estrategia cuyo veredicto en las simulaciones Monte Carlo offline indique alta vulnerabilidad a la fricción de mercado (slippage y spread degradados), o que no posea un veredicto de robustez vigente.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para mitigar las pérdidas catastróficas por fricción invisible en entornos reales. Si las simulaciones estocásticas de estrés demuestran que el Sharpe ratio de la estrategia se desintegra bajo un deslizamiento de $3\sigma$, es estadísticamente seguro que sus operaciones reales serán perdedoras. Este bloqueo automatiza la disciplina del operador y protege el capital.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Fail-Safe por Defecto:** Si una estrategia no tiene registradas simulaciones de robustez en el databank local (SQLite/Parquet), el Pre-Trade Validator asume un estado inválido y bloquea las órdenes.
     - **Soberanía y Nivel de Veto:** El comportamiento del bloqueo (`HARD_VETO`, `WARNING_ALERT`, `DISABLED`) se configura exclusivamente a nivel de `Design Manifest` del portafolio/cuenta y no puede ser alterado dinámicamente por la estrategia.
     - **Latencia:** El check de veredicto debe realizarse mediante consulta en memoria compartida o cache indexing para mantener la validación pre-trade en menos de 1ms.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Al ingresar una señal de ejecución, el `Pre-Trade Validator` evalúa la versión de la estrategia y su `compliance_status_id`.
     - Si el veredicto es `PROP_FIRM_FRAGILE` o `TOXIC`, o carece de él, y la severidad es `HARD_VETO`, la orden se rechaza registrando el error `FAILED_ROBUSTNESS_VERDICT`.
     - Si la severidad es `WARNING_ALERT`, el sistema procesa la orden pero envía telemetría de alerta con prioridad máxima a la interfaz de usuario.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Necesidad de asegurar que toda estrategia sea sometida al guantelete de robustez Monte Carlo antes de ir en vivo, aumentando el tiempo inicial de validación.
     - Overhead menor de memoria en el hot path para mantener cargados los veredictos de robustez vigentes por versión de estrategia activa.
 
@@ -1457,23 +1445,23 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0096: Caché de Previews Locales de Nodo para Iteración Rápida**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Almacenar localmente en la base de datos de producción (SQLite, modo WAL) un caché persistente con las curvas de equidad reducidas y métricas resumidas (`node_preview_cache` JSON blob) correspondientes a cada estrategia/nodo del editor de diagramas visuales (últimos 30 días de datos, periodicidad M15, sin simulaciones complejas de Monte Carlo). Si el usuario altera un parámetro micro de la estrategia en el inspector, el caché de pre-evaluación del nodo afectado y sus sucesores se invalida de forma inmediata y reactiva, requiriendo una regeneración manual asíncrona no bloqueante.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para mitigar la latencia cognitiva de desarrollo. Ejecutar un backtest completo con todas las capas de robustez (Monte Carlo, WFA) en cada cambio de parámetro micro tarda minutos e interrumpe el flujo creativo del operador. La visualización instantánea (de 5 a 10 segundos) de curvas reducidas dentro del nodo del Strategy Inspector permite un descarte temprano y una sintonización fluida de parámetros de forma local-first.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Aislamiento de Ejecución:** El cálculo de la vista previa no puede ejecutarse en el hot-path del live trading; se despacha a un hilo de baja prioridad del orquestador.
     - **Restricción de Parámetros de Simulación:** El motor de micro-backtests opera con condiciones fijas invariables (historial de 30 días, TF M15, sin comisiones/slippage dinámicos ni Monte Carlo) para garantizar tiempos de respuesta rápidos.
     - **Gobernanza de Invalidación:** Los resultados marcados como inválidos (caché nulo) muestran una advertencia en la UI e impiden la promoción de la estrategia a fases de incubación o producción hasta que se complete una validación exhaustiva exitosa.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Al seleccionar un nodo lógico en el editor visual de Flutter, el Inspector Contextual recupera y renderiza instantáneamente una curva de equidad reducida (50 puntos de datos) y métricas básicas (Sharpe, Profit).
     - Al editar un campo de entrada (ej. período de RSI), la equidad se desvanece visualmente a un estado inactivo (rojo/gris) con un botón para "Regenerar Preview".
     - El operador presiona el botón y un spinner indica el cálculo asíncrono en Rust en segundo plano sin congelar la interacción con el lienzo.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Espacio adicional menor en la base de datos de producción para almacenar los blobs JSON serializados por cada versión/nodo lógico.
     - Overhead en la lógica del backend Rust para procesar las invalidaciones reactivas en cascada sobre el grafo del AST.
 
@@ -1483,22 +1471,22 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0097: Renderizado Gráfico Multidimensional Nativo sin WebViews**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Renderizar todos los gráficos de dispersión de alta dimensión (UMAP 2D/3D y proyecciones PCA) de manera nativa en Flutter mediante `CustomPainter` y aceleración de hardware (Impeller GPU), prohibiendo explícitamente la integración de WebViews, Plotly JS, Deck.gl o cualquier motor de dibujo web externo dentro de la aplicación.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para cumplir con el ADR-0029 (Patrón Todo en Uno) y proteger la fluidez del hilo de UI en Dart. Los WebViews rompen la consistencia del renderizado en GPU de Flutter, aumentan drásticamente el consumo de memoria RAM (>200MB por instancia) e introducen latencias por serialización JSON de grandes arrays de puntos. El dibujo directo en lienzo nativo aprovecha la aceleración física de Vulkan/Metal y mantiene estables los 120 FPS.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero Lógica Dimensional en Dart:** Toda reducción dimensional y preparación de datos (cálculo de UMAP/PCA en Polars) debe ocurrir en el backend Rust, enviando únicamente arrays vectoriales Arrow bidimensionales/tridimensionales al frontend.
     - **Límite de Densidad:** Envíos por encima de 100K puntos en el scatter plot de Flutter deben someterse a downsampling estocástico rápido en Rust antes de ser transmitidos para evitar saturación de la memoria compartida FFI.
     - **Interacción Determinista:** Las selecciones por lazo (lasso select) o caja deben procesar las intersecciones geométricas localmente en Dart en menos de 16ms.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador abre el visualizador de clústeres y el gráfico 3D gira con suavidad al interactuar con el mouse/gestos.
     - Al usar la herramienta de lazo, se dibuja un trazado cerrado libre sobre un grupo de puntos y de forma instantánea se resalta la tabla de estrategias correspondientes a las coordenadas interceptadas.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en el desarrollo de la matemática de proyección 3D a 2D y el cálculo de colisiones geométricas de lazo (lasso intersection) dentro del hilo Dart en Flutter.
 
 *   **Trazabilidad:** [`umap-scatter-visualizer.md`](./features/umap-scatter-visualizer.md), [`toxicity-purifier.md`](./features/toxicity-purifier.md).
@@ -1507,22 +1495,22 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0098: Gobernanza de Purgas y Snapshots de Databank**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Gobernar las operaciones de eliminación masiva de clústeres de estrategias tóxicas bajo un protocolo estricto de confirmación multi-paso, marcado lógico (`soft-delete` mediante columna `is_purged=true`) y generación automatizada de snapshots de catálogo en SQLite antes de procesar el descarte definitivo. Se provee una vía rápida de reversión (rollback) que recupera la integridad anterior al vuelo.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para mitigar fallos operativos críticos causados por el descarte accidental de estrategias. PCA clasifica agrupamientos de comportamiento sin conocer la lógica íntima de las estrategias; una purga errónea de clústeres podría eliminar meses de cómputo genético. El soft-delete y los snapshots garantizan que el operador posea un mecanismo rápido y de bajo costo para deshacer la purga si el impacto en los KPIs es destructivo.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Paso Obligatorio de Snapshot:** Es imposible purgar un clúster sin generar previamente un identificador de snapshot de recuperación inmutable en SQLite.
     - **Exclusión Reactiva:** Las estrategias marcadas con `is_purged=true` se ocultan de inmediato de las consultas OLAP (DuckDB) de portafolios y visualizadores, liberando los slots calientes de simulación.
     - **Límite de Reversión (Rollback Window):** El deshacer de una purga debe ejecutarse de forma atómica en menos de 5 segundos restableciendo el estado lógico original.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador presiona "Purge Cluster 04". La UI exige confirmar escribiendo el código de confirmación tras mostrarle una previsualización de impacto (ej: "Eliminará 412 estrategias, Reducción de Sharpe promedio de cartera de +0.15").
     - Si el operador decide retroceder, el panel de historial de purgas muestra una lista de descartes con un botón "Rollback / Deshacer". Al presionarlo, las estrategias reaparecen en el visualizador sin requerir recálculo de backtests.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Leve overhead de base de datos para mantener el árbol de snapshots locales e historial de purgas, y lógica de descarte lógico en las consultas DuckDB habituales.
 
 *   **Trazabilidad:** [`toxicity-purifier.md`](./features/toxicity-purifier.md), [`pca-toxicity-analyzer.md`](./features/pca-toxicity-analyzer.md).
@@ -1531,22 +1519,22 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0099: Marketplace de "Cajas Negras" con Zero-Knowledge Nodes**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Implementar un esquema de cifrado asimétrico local-first para empaquetar subgrafos lógicos visuales (Strategy AST) en binarios cerrados (Cajas Negras) que se distribuyen en un marketplace local P2P. La lógica del subgrafo se descifra exclusivamente en la memoria RAM volátil del Hot-Path durante la ejecución y se evalúa de forma opaca (Zero-Knowledge) sin revelar la estructura ni las variables del AST al comprador del nodo.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para habilitar la comercialización y uso cooperativo de estrategias entre usuarios de la plataforma sin forzar a los creadores a revelar su propiedad intelectual. La encriptación asimétrica y la carga directa en memoria evitan la ingeniería inversa del código sin requerir un servidor centralizado de ejecución en la nube.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero Volcados a Disco:** Queda estrictamente prohibido guardar el AST descifrado en archivos temporales o logs de depuración locales.
     - **Aislamiento en Memoria:** Las funciones de evaluación del subgrafo cerrado no deben emitir trazas internas de nodos ejecutados al bus de eventos de telemetría de la UI.
     - **Firma por Hardware:** Las licencias de uso se firman digitalmente contra el Hardware ID único del comprador local.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Un creador hace clic derecho en un grupo de nodos de su editor visual, selecciona "Exportar como Caja Negra", ingresa sus metadatos y genera un archivo `.qfnode` cifrado.
     - El comprador arrastra el archivo `.qfnode` a su lienzo. Se muestra como un nodo único con entradas y salidas normales, pero no tiene opción de "Doble clic para expandir" o "Editar". Al simular, el backtest se ejecuta empleando la lógica encriptada de forma transparente.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en la gestión de llaves y firmas digitales locales de licencias, y leve sobrecosto computacional durante la fase de descifrado en caliente en la inicialización de los workers.
 
 *   **Trazabilidad:** [`marketplace-cajas-negras.md`](./moonshots/marketplace-cajas-negras.md).
@@ -1555,21 +1543,21 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0100: Relegación de Microestructura L3 a SaaS Institucional y Proxies Client Zero**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Relegar el soporte de datos y simulaciones de Microestructura Nivel 3 (L3 Market-by-Order) fuera de la arquitectura base Client Zero local-first. Esta funcionalidad se clasifica con prioridad baja (P4) para la fase de incubación en moonshots y se reserva únicamente para una futura expansión de SaaS institucional. En la arquitectura local se aprueba el uso exclusivo de datos L1/L2 y métricas MAE/MFE como proxies eficientes de microestructura.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para cumplir estrictamente con el Client Zero Protocol. Los feeds de datos L3 tienen costos de $5K-$20K/mes por instrumento y generan volúmenes de datos incompatibles con el almacenamiento de computadoras de consumo de uso personal (10-50 GB/día por símbolo, superando los 200TB anuales), requiriendo infraestructuras complejas de ClickHouse en red que anulan el diseño "Zero-Docker" y local-first.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Prohibición de Feeds L3 Locales:** Ningún conector de broker local en el MVP del cliente local debe requerir feeds de Nivel 3.
     - **Paridad con NautilusTrader:** Mantener el uso del motor nativo `L3_MBO` de NautilusTrader inactivo en local, preparado para ser reactivado únicamente bajo perfiles de despliegue en la nube empresarial.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El catálogo de orígenes de datos locales no lista feeds de Nivel 3. El backtest se ejecuta de forma óptima consumiendo series temporales L1/L2.
     - El sistema simula fricciones y prioridad de colas mediante modelos analíticos de impacto de mercado en lugar de calcular colas orden por orden con feeds masivos.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Menor precisión microscópica de colas de ejecución en backtesting de alta frecuencia de milisegundos en la aplicación local, lo cual no es prioritario para traders retail y profesionales independientes.
 
 *   **Trazabilidad:** [`microestructura-l3.md`](./moonshots/microestructura-l3.md).
@@ -1578,20 +1566,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0101: Transpilación Basada en Plantillas Tera para Modelos AST**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Adoptar un motor de plantillas desacoplado (Tera) en el backend Rust para transpilar el Grafo de Lógica visual (Strategy AST) a múltiples lenguajes de programación y APIs de plataformas de trading externas (MQL4, MQL5, NinjaScript C#, EasyLanguage, Python), aislando la representación matemática del AST de la sintaxis del lenguaje destino.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para posibilitar la compatibilidad y migración fluida de los usuarios de Drasus Engine hacia entornos e infraestructuras de corretaje heredadas (MT4/5, TradeStation) sin duplicar la lógica de parseo del AST de la estrategia. La separación por plantillas facilita agregar nuevos lenguajes destino simplemente escribiendo un nuevo template de código fuente.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Validación Sintáctica Obligatoria:** Todo código transpilado debe ser validado localmente con expresiones regulares o compiladores locales antes de ser escrito en el disco duro.
     - **Preservación Semántica:** El código generado debe mantener paridad absoluta 1:1 en las condiciones lógicas de entrada, salida y stop-loss con el comportamiento del simulador en Rust.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador selecciona una estrategia aprobada en la UI, hace clic en "Exportar MQL5" y de forma instantánea se descarga un archivo `.mq5` limpio, estructurado con inputs configurables correspondientes a los parámetros del AST.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Mantenimiento y actualización periódica de las plantillas de transpilación ante cambios y actualizaciones de APIs en las plataformas propietarias de destino.
 
 *   **Trazabilidad:** [`universal-strategy-transpiler.md`](./moonshots/universal-strategy-transpiler.md).
@@ -1600,20 +1588,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0102: Anonimización Criptográfica local-first en Collective Intelligence**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Diseñar el intercambio de datos colectivos (Collective Intelligence) bajo un estricto protocolo local-first de anonimización criptográfica. Las métricas de rendimiento se alteran mediante ruido gaussiano controlado (Differential Privacy) y la topología de la estrategia se comprime a una firma hash unidireccional (SHA-256) antes de ser transmitida a la red, previniendo la ingeniería inversa de los parámetros exactos y fórmulas de la estrategia original.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para permitir que la comunidad de usuarios aprenda de patrones de rendimiento globales e ineficiencias de mercado (sabiduría de la multitud) sin obligar a los traders a revelar su propiedad intelectual confidencial ni arriesgar el arbitraje de su ventaja competitiva.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Consentimiento Explícito (Opt-In):** El intercambio de firmas está completamente desactivado por defecto en la instalación.
     - **Prohibición de Datos Crudos:** Queda estrictamente prohibido enviar ecuaciones del AST, nombres de variables reales, balances monetarios en dólares, llaves API, o IPs de servidores de trading en vivo al pool colectivo.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El panel de Collective Intelligence muestra un interruptor "Activar contribución anónima". Al activarlo, el sistema sube la firma hash `SHA256(RSI+MACD+EMA)` asociada a un Sharpe normalizado con ruido (+1.82 ± 0.05), recibiendo a cambio un feed de combinaciones recomendadas globalmente.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Pérdida de la precisión exacta de las métricas recopiladas debido al ruido inyectado, reduciendo levemente la fidelidad estadística del Meta-Learner a cambio de una privacidad inquebrantable.
 
 *   **Trazabilidad:** [`collective-intelligence.md`](./moonshots/collective-intelligence.md).
@@ -1622,20 +1610,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0103: Filosofía Dual y Sandboxing en el Sistema de Plugins Institucionales**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Gobernar la integración de plugins de terceros mediante una máquina virtual WebAssembly aislada (Wasmer Sandbox) y APIs de SDK locales expuestas vía gRPC restringido. El lanzamiento comercial del marketplace de plugins se supedita a la **Filosofía Dual**, priorizando el uso personal ("Client Zero") del fundador por un periodo de rentabilidad documentada (6-12 meses) antes de abrir la plataforma a la venta o despliegues B2B/B2C masivos.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para garantizar que la base de código sea robusta, segura y rentable en primer lugar antes de asumir costes de soporte e integración corporativos, y proteger la máquina local del trader de accesos no autorizados a datos de brokers y archivos del sistema causados por plugins comunitarios maliciosos.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Sandboxing por Defecto:** Ningún plugin de origen externo puede ejecutarse directamente en el host nativo; se cargan exclusivamente en entornos WebAssembly sin acceso al disco o red por defecto.
     - **Veto de gRPC en Live Trading:** Los plugins externos no pueden enviar órdenes al mercado real (`execute`) de forma directa; deben enrutarse por el Pre-Trade Validator y la cola de prioridad del monolito.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Un usuario descarga un plugin de visualización interactiva `.qfplugin`. El sistema inicializa Wasmer, carga el binario y renderiza los componentes gráficos en un canvas aislado. Si el plugin intenta leer archivos de claves locales, la VM bloquea la llamada reportando violación de acceso.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Complejidad en el mapeo de la API del SDK local hacia interfaces WebAssembly/gRPC y limitaciones de rendimiento gráfico para complementos complejos corriendo en entornos de sandbox virtualizados.
 
 *   **Trazabilidad:** [`institutional-plugin-system.md`](./moonshots/institutional-plugin-system.md).
@@ -1644,46 +1632,60 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0104: Traducción de Características y Pila del Roadmap Acelerado a Rust/Flutter Core**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Rechazar de forma absoluta e irreversible la adopción de una pila o monorepo basado en Python, FastAPI, herramientas de empaquetado de Python (`uv`, `pyproject.toml`) o servidores web basados en microservicios locales para el backend. En su lugar, todas las características avanzadas detalladas en el Roadmap Acelerado v2.0 (tales como la orquestación de nodos, minería genética NSGA-II, UMAP, autoencoders de anomalías, agrupamiento de toxicidad por PCA y rebalanceo dinámico de portafolios HRP/HMM) se diseñan e implementan de manera nativa en Rust para el Core/Backend y en Flutter (Dart/Impeller) para la interfaz gráfica, integrados mediante FFI local (`flutter_rust_bridge`) y flujos gRPC de respaldo para ejecución VPS Headless.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para cumplir con el postulado de **Soberanía y Máximo Rendimiento ("Zero-Docker" / "Local-First")** del sistema. Introducir Python y FastAPI incrementa de manera inaceptable la latencia en el hot-path, añade problemas de concurrencia y recolección de basura, destruye el determinismo bit-a-bit en simulaciones concurrentes masivas, y multiplica la complejidad de distribución e instalación para el operador final (Client Zero).
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Prohibición de Librerías Python en Producción:** Queda terminantemente prohibida la inclusión de scripts Python, entornos virtuales o intérpretes en el binario comercial empaquetado. 
     - **Uso Nativo de Modelos IA (escalera ADR-0112):** El entrenamiento y la ejecución de redes neuronales (como Autoencoders) o algoritmos de reducción dimensional (como UMAP) usan, en este orden, crates de Rust puro de álgebra lineal optimizada (`ndarray` + Rayon, default) → `candle` (Rust puro, GPU dinámica opcional) si un benchmark lo justifica → `burn` solo en el moonshot DRL. **Prohibido `tch-rs`/libtorch** (rompe el binario único del ADR-0029).
     - **Interfaces FFI/gRPC:** La interfaz nodal visual e inspectores se gestionan con componentes Dart/Flutter reactivos a eventos FFI de Rust, eliminando el uso de frameworks web como React o React Flow en el frontend.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El usuario diseña estrategias visualmente en Flutter. Las peticiones de micro-backtests y la compilación del AST se delegan vía comandos FFI a workers en Rust que procesan en milisegundos sin sobrecarga de red o serialización JSON compleja.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Mayor tiempo de desarrollo y complejidad en el diseño de algoritmos de Machine Learning y procesamiento matricial en Rust en comparación con sus equivalentes listos para usar en el ecosistema Python.
 
 *   **Trazabilidad:** [`SAD.md`](./SAD.md#18-plan-de-lanzamiento-rollout-strategy-v2.0), [`node-preview.md`](./features/node-preview.md).
 
 ---
 
+### **ADR-0105: Estrategia de Datos (100% Polars Nativo en Rust)**
+
+*   **Decisión:** Adoptar de forma exclusiva el ecosistema **Polars** (nativo en Rust) para todo el procesamiento de DataFrames, transformaciones analíticas (OLAP), e ingesta pesada, erradicando cualquier dependencia o herencia previa de Pandas o Python.
+*   **Objetivo:** Aprovechar todo el poder del procesamiento multi-hilo, paralelización SIMD y **Lazy Evaluation** (Evaluación Perezosa) que Polars ofrece nativamente en su implementación de Rust, logrando el máximo performance sin sobrecargas de conversión.
+*   **Reglas:**
+    *   **DataFrames Exclusivos:** Toda manipulación, agregación de ventanas, cálculo de indicadores y agrupamiento se orquesta utilizando la API Nativa de Polars en Rust.
+    *   **Prohibición de Alternativas Legadas:** Dado el paso a Rust, conceptos como Pandas o conversiones Zero-Copy FFI entre intérpretes carecen de sentido.
+    *   **Integración matemática:** Los cálculos analíticos profundos (regresión, monte carlo) se elaboran escribiendo expresiones nativas Polars (`expr`) o delegando a librerías de álgebra lineal de Rust.
+*   **Ventaja:** Supera radicalmente las limitaciones previas de memoria; procesa Gigabytes de mercado localmente en sub-segundos sin interbloqueos (GIL).
+*   **Costo:** Curva de aprendizaje del diseño robusto y concurrente del API de Polars en Rust.
+*   **Trazabilidad:** [hybrid-data-transformer.md](./features/hybrid-data-transformer.md).
+
+---
+
 ### **ADR-0106: Paradigma de Interfaz de Usuario y Dashboards Visuales de Alta Precisión**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Adoptar una separación estricta entre la visualización interactiva y el motor matemático mediante renderizado nativo GPU acelerado (Impeller) en el Frontend (Flutter), comunicándose con el Backend (Rust) exclusivamente vía FFI (Foreign Function Interface) local-first de memoria compartida o canales de telemetría asíncronos en gRPC.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Para evitar el bloqueo o retardo visual en la interfaz al graficar cientos de miles de puntos de datos históricos, métricas de brokers y simulaciones en tiempo real. La lógica pesada de agregación se delega a Polars/DuckDB en Rust, el cual realiza downsampling estructurado antes de enviar los datos al frontend.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero Cálculos Analíticos en Frontend:** Flutter es únicamente presentador; prohibido calcular coeficientes de correlación, drawdowns o retornos en el hilo Dart.
     - **Límite de Frecuencia de Actualización (Throttling):** Las señales de telemetría visuales deben limitarse a una frecuencia máxima de refresco de 100ms para evitar la saturación de los canales de la interfaz de usuario.
     - **Renderizado por GPU Impeller:** Todo elemento visual avanzado (lienzo nodal, mapas de calor dinámicos) se debe renderizar nativamente en hardware gráfico a una velocidad de refresco estable de 120 FPS / 60 FPS.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El usuario interactúa de forma fluida con mapas de calor de calidad de datos y matriz de años por meses sin experimentar congelamientos o caídas de FPS.
     - Las configuraciones de estrategias muestran diferencias visuales instantáneas (Strategy Config Diff) al contrastar los contratos lógicos almacenados localmente en SQLite.
     - Los reportes en PDF se generan server-side de forma headless y asíncrona, preservando los recursos del cliente.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Necesidad de estructurar y mantener contratos estrictos de schemas y comandos a través del puente de comunicación FFI y serializar eficientemente los objetos analíticos procesados por Rust.
 
 *   **Trazabilidad:** [`efficiency-incubation-dashboard.md`](./features/efficiency-incubation-dashboard.md), [`throttling-metrics-dashboard.md`](./features/throttling-metrics-dashboard.md), [`monthly-performance-heatmap.md`](./features/monthly-performance-heatmap.md), [`trade-analysis-bi-suite.md`](./features/trade-analysis-bi-suite.md), [`strategy-config-diff.md`](./features/strategy-config-diff.md), [`pdf-charts-rendering.md`](./features/pdf-charts-rendering.md), [`visual-stockpicker-configurator.md`](./features/visual-stockpicker-configurator.md).
@@ -1692,26 +1694,26 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0107: Integración Nativa con NautilusTrader v2 (Crates Rust, Sin Python, Sin Fork)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Integrar NautilusTrader (NT) consumiendo directamente los **crates Rust nativos de su núcleo v2** publicados en crates.io (motor de backtesting de eventos, modelo de dominio, ejecución live y adaptadores de venue) como dependencias Cargo del Core, detrás de la capa anticorrupción ya contratada en [`nautilus-integration.md`](./features/nautilus-integration.md). Se **rechaza el fork del repositorio** y se **rechaza construir un motor de ejecución desde cero**; esta última opción queda archivada como contingencia en [`sovereign-execution-engine.md`](./moonshots/sovereign-execution-engine.md).
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     - **El conflicto "Python como interfaz" desapareció upstream.** La interfaz Python/Cython corresponde a NT v1 (legado). El núcleo v2 es Rust puro: permite escribir estrategias, ejecutar backtests de alta fidelidad y operar en vivo contra brokers reales íntegramente desde Rust, sin intérprete Python en el proceso. Python quedó relegado a capa opcional de conveniencia (bindings PyO3) que este sistema NO utiliza, en cumplimiento del ADR-0104.
     - **Lo que hace valioso a NT es exactamente nuestro pilar arquitectónico.** Su reputación institucional proviene de: (1) **paridad investigación-producción** — el mismo código de estrategia corre en backtest y en vivo bajo semántica de ejecución idéntica; (2) **arquitectura event-driven determinista** con bus de mensajes en memoria de cero copias; (3) **matching engine realista** con modelos de fill y latencia configurables; (4) **resolución temporal de nanosegundos** y soporte multi-venue/multi-activo (forex, acciones, futuros, opciones, cripto); (5) un **ecosistema de más de 25 adaptadores** de brokers y proveedores de datos mantenido por terceros. Replicar esto desde cero consumiría años-persona sin generar un solo punto de Alpha diferencial: el Alpha del sistema vive en Generate/Validate (minería y robustez), no en reimplementar un matching engine.
     - **Un fork no resuelve nada y destruye valor.** NT es LGPL-3.0: un fork privado con modificaciones sigue obligado por la licencia, pierde el flujo de mejoras y adaptadores del upstream, y convierte a este proyecto en mantenedor de un motor ajeno de cientos de miles de líneas.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Versionado Congelado (FIJO):** La API Rust de NT v2 aún declara inestabilidad entre releases (serie 0.x). Las versiones de los crates se fijan exactas y su código fuente se incluye en modo vendoring local. Toda actualización del upstream es un evento deliberado: se ejecuta la suite de paridad bit-a-bit del puente antes de aceptar el cambio.
     - **Capa Anticorrupción (FIJO):** Ningún módulo de negocio importa tipos de NT. Solo la feature [`nautilus-integration`](./features/nautilus-integration.md) conoce los tipos del motor y los mapea a tipos propios del dominio. Esta capa es el cortafuegos contractual que preserva la opcionalidad de salida.
     - **Cumplimiento LGPL-3.0 (FIJO):** El binario comercial debe permitir el reenlazado de la porción LGPL (enlace dinámico de los crates de NT o entrega de objetos reenlazables). PROHIBIDO modificar el código de los crates vendorizados: cualquier cambio necesario se implementa fuera (composición contra traits públicos) o se contribuye upstream.
     - **Brechas de Adaptadores (CONFIG):** Los brokers cuyo adaptador solo es estable en NT v1 (ej. Interactive Brokers) se cubren con crates adaptadores propios escritos contra los traits públicos de cliente de datos/ejecución de NT v2, mantenidos como módulos independientes candidatos a contribución upstream. NUNCA parchando el núcleo.
     - **Cobertura de Clases de Activo (Mandato de Producto):** El puente debe tratar como ciudadanos de primera clase: acciones, forex, futuros, ETFs y CFDs. Las **opciones financieras se difieren a la última fase del roadmap** por la complejidad intrínseca del instrumento (griegas, cadenas de vencimientos, ejercicio/asignación) y el acceso problemático a datos históricos de calidad.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El backtesting masivo de Validate y el LiveNode de Execute corren dentro del mismo proceso Rust del Core (tareas Tokio), sin sidecars, sin puentes inter-proceso y sin intérpretes: la curva de equidad del backtest y la operación en vivo emergen del mismo loop de eventos determinista.
     - El operador cambia de broker o de modo (Backtest/Paper/Live) sin tocar la lógica de estrategia, porque el contrato de la capa anticorrupción es invariante al backend.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Vigilancia activa del upstream (cambios de firmas entre releases 0.x absorbidos por el puente), auditoría legal del empaquetado LGPL en cada release comercial, y el mantenimiento de adaptadores propios para los brokers no cubiertos por el núcleo v2.
 
 *   **Plan de Contingencia (Opcionalidad de Salida):** Si el upstream se abandona o vira contra los intereses del proyecto, el orden de respuesta es: (1) congelar la última versión vendorizada estable (operativa indefinidamente por ser local-first); (2) fork de mantenimiento mínimo — solo seguridad y compatibilidad, publicado bajo LGPL; (3) activar el moonshot [`sovereign-execution-engine.md`](./moonshots/sovereign-execution-engine.md). La capa anticorrupción garantiza que ninguno de estos escenarios toca la lógica de negocio.
@@ -1722,7 +1724,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0108: Arquitectura de Genomas Modulares por Dominio (Generalización del Patrón de Genes Condición→Acción)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Generalizar el mecanismo de Programación Evolutiva Parcial descrito en ADR-0043 (`wildcard_group` sobre un AST predefinido) de un mecanismo aplicado exclusivamente al dominio de Señal de Entrada/Salida, a un patrón arquitectónico transversal denominado **Gramática de Genes Condición→Acción**. Este patrón define dos categorías universales y reutilizables de nodos evolutivos:
     - **Genes de Condición:** predicados que el motor evolutivo combina y parametriza, evaluando el estado observable de un dominio determinado (mercado, posición abierta, portafolio, régimen estructural) y devolviendo un veredicto booleano o categórico en cada barra/evento.
     - **Genes de Acción:** primitivas paramétricas — ya existentes como comportamientos configurables en distintas Features — que el motor evolutivo activa, desactiva o reconfigura cuando su(s) Gen(es) de Condición asociado(s) se satisface(n).
@@ -1735,12 +1737,12 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
     Un quinto dominio candidato — Ejecución y Enrutamiento de Órdenes — fue evaluado y **excluido** del registro activo por las restricciones descritas más abajo; queda archivado como exploración de largo plazo en `/moonshots/`.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     La pregunta que originó este ADR fue si el sistema podía soportar estrategias cuya gestión de riesgo y posición muta drásticamente ante secuencias de eventos específicas (p. ej. "tras 3 pérdidas consecutivas, reducir el riesgo a 0.2% y redistribuir el Stop Loss en 3 fases y el Take Profit en 2"). La respuesta de diseño correcta no es modelar estas mutaciones como máquinas de estados finitos diseñadas a mano (un "perfil de riesgo" estático por estrategia), sino reconocer que el problema tiene **forma idéntica** al que ya resuelve WildCards para la lógica de entrada: dado un espacio de condiciones observables y un espacio de acciones paramétricas, evolucionar vía NSGA-II la combinación que maximiza el fitness multi-objetivo bajo el régimen de robustez correspondiente.
 
     Generalizar el patrón en lugar de construir motores nuevos independientes para cada idea evita triplicar la infraestructura de minería genética: el mismo motor de `wildcard_group`, el mismo orquestador NSGA-II ([nsga2-optimizer.md](./features/nsga2-optimizer.md)) y el mismo pipeline backtest → WFA → Monte Carlo se reutilizan, parametrizados por dominio. Formalizar un Registro de Dominios da además un lugar arquitectónico explícito para evaluar futuros dominios candidatos contra criterios de admisión fijos, en lugar de reabrir la arquitectura cada vez que surge una idea nueva de "qué más podríamos evolucionar".
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Wildcard Invertido Generalizado (FIJO):** `ACTIVE_GENOME_DOMAINS` puede contener cualquier subconjunto no vacío de los 4 dominios del Registro. Los genomas de los dominios **fuera** de `ACTIVE_GENOME_DOMAINS` permanecen congelados/bloqueados dentro del mismo Manifest — el "Wildcard Invertido" formalizado en ADR-0109. Cuando `ACTIVE_GENOME_DOMAINS` contiene más de un dominio, todos evolucionan **conjuntamente** como un único genoma compuesto (ver "Regla Genómica"). La co-evolución de cartera de Fase C (ADR-0111, población de Manifests) es un eje ortogonal que se combina libremente con cualquier `ACTIVE_GENOME_DOMAINS` por Manifest miembro.
     - **Regla Genómica (FIJO):** unidad de evolución de cada dominio (y del genoma compuesto cuando hay >1 dominio activo). Una Regla Genómica = 1..`MAX_CONDITIONS_PER_RULE` Genes de Condición (combinables con operadores AND/OR, de cualquier dominio en `ACTIVE_GENOME_DOMAINS`) → 1..`MAX_ACTIONS_PER_RULE` Genes de Acción simultáneos (también de cualquier dominio activo). Generaliza la estructura de reglas de entrada/salida multi-condición que el Dominio de Señal ya posee desde ADR-0043 a los 4 dominios del Registro. Cada gen conserva su etiqueta de dominio de origen para la atribución de fitness.
     - **Unicidad del Manifest (FIJO):** todos los genomas de dominio activos se serializan dentro del mismo Strategy Manifest y comparten un único `manifest_id`/`logic_hash`. Un Manifest nunca se fragmenta en documentos separados por dominio.
@@ -1748,12 +1750,12 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     - **Penalización de Complejidad Multi-Dominio (CONFIG):** la métrica de Ockham's Razor ([complexity-penalization.md](./features/complexity-penalization.md)) se extiende para sumar los grados de libertad de TODOS los genomas de dominio activos en el Manifest contra el mismo denominador de operaciones (`MIN_TRADES_PER_PARAM`), evitando que la complejidad evolutiva "migre" hacia el dominio menos penalizado para evadir el filtro.
     - **Trazabilidad de Atribución (CONFIG):** el reporte de fitness de NSGA-II debe poder atribuir, por separado, la contribución de cada genoma de dominio al score final, para que el operador entienda qué dominio impulsó una mejora o un deterioro.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - Al inspeccionar un Strategy Manifest, el operador ve una sección de genoma por cada dominio activo (Señal; Riesgo y Gestión; Régimen y Filtro; Portafolio y Correlación si la estrategia participa en una cartera co-evolucionada), cada una con sus `wildcard_group` resueltos y su contribución de fitness diferenciada.
     - Al lanzar un ciclo de Generate, el operador elige qué dominio(s) evolucionar en esa corrida (uno, varios, o la co-evolución de cartera de Fase C) y cuáles permanecen congelados desde el Manifest base — incluyendo la opción de línea base actual de evolucionar solo el Dominio de Señal con todo lo demás fijo.
     - El reporte de robustez de Validate desglosa, por dominio, la sensibilidad de la estrategia a la perturbación de su genoma respectivo, permitiendo identificar si la fragilidad proviene de la Señal, del esquema de Riesgo, del Filtro de Régimen o de la interacción de Portafolio.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Refactorización del motor de `wildcard_group` para soportar múltiples espacios de nombres de genoma dentro de un mismo AST en lugar de un único bloque homogéneo de wildcards.
     - Extensión del fitness multi-objetivo de NSGA-II para reportar atribución por dominio.
     - Mayor superficie de configuraciones válidas del pipeline Generate→Validate: cada combinación de dominios activos (incluida la co-evolución de cartera) es una configuración distinta que debe quedar cubierta por la batería de robustez correspondiente.
@@ -1764,7 +1766,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0109: Generador Genómico de Riesgo y Gestión de Posición (Fase A) — Wildcard Invertido y Réplica de Estado de Riesgo en Monte Carlo**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Instanciar, como primer dominio nuevo del Registro de Dominios Genómicos (ADR-0108), el **Generador Genómico de Riesgo y Gestión de Posición**. Este generador evoluciona, vía NSGA-II, combinaciones de:
     - **Genes de Condición de Estado** (observan el estado de la cuenta, la posición abierta y la sesión en tiempo real): drawdown de equity, racha de pérdidas consecutivas, racha de ganancias consecutivas, duración del drawdown actual, ratio de volatilidad (ATR) actual frente a histórico, desequilibrio de volumen, tiempo hasta la apertura de sesión, duración de la operación en barras, múltiplo-R no realizado, y distancia porcentual al Stop Loss.
     - **Genes de Acción de Mutación de Tamaño** (alteran el dimensionamiento de la siguiente operación o de la posición abierta): multiplicador de factor sobre el tamaño base, riesgo porcentual recalculado sobre equity, dimensionamiento Kelly acotado a un riesgo máximo, y riesgo monetario fijo independiente del tamaño de cuenta.
@@ -1774,24 +1776,24 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
     Como precondición de robustez **bloqueante** para cualquier resultado de este generador, se extiende [monte-carlo-simulator.md](./features/monte-carlo-simulator.md) con el modo **"Réplica de Estado de Riesgo"**: en cada iteración de remuestreo del Modo 1 (reordenamiento de operaciones), la máquina de estados de los Genes de Condición de este genoma (rachas, drawdown, duración) se **re-simula desde cero** sobre la secuencia reordenada, re-evaluando en cada paso qué Genes de Acción se hubieran disparado bajo esa secuencia alternativa. El backtest histórico original deja de ser la única fuente de verdad sobre qué mutaciones de riesgo ocurrieron: cada reordenamiento genera su propia trayectoria de mutaciones.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     El caso original que motivó esta iniciativa fue concreto: "si pierdo 3 veces seguidas, reduzco el riesgo a 0.2% y redistribuyo el Stop Loss en 3 fases y el Take Profit en 2". Modelar esto como un perfil de riesgo predefinido obliga a un diseñador humano a anticipar manualmente cada combinación relevante de condición→acción, exactamente el cuello de botella que WildCards ya eliminó para la lógica de entrada. Separar el espacio en Genes de Condición (qué observar) y Genes de Acción (qué hacer) permite que NSGA-II descubra combinaciones no intuitivas — por ejemplo, que la racha de pérdidas combinada con baja liquidez de sesión sea el disparador relevante, no la racha por sí sola — sin que el operador tenga que enumerarlas a priori.
 
     La Réplica de Estado de Riesgo es **el requisito técnico más crítico de este ADR**. Sin ella, el Monte Carlo actual —que reordena el PnL ya materializado— es estructuralmente ciego a genomas de riesgo dependientes del estado: el orden histórico de las operaciones determinó qué mutaciones de riesgo se dispararon y cuándo, por lo que el PnL observado ya incorpora esas decisiones bajo esa secuencia particular. Reordenar el PnL sin re-disparar la máquina de estados de riesgo produciría una curva de equidad que mezcla decisiones de riesgo tomadas bajo una secuencia con resultados de otra — un resultado internamente inconsistente que invalidaría cualquier conclusión de robustez sobre este genoma. Por eso esta capacidad se declara **bloqueante**: ningún genoma del Dominio de Riesgo y Gestión puede avanzar a la fase "En Incubación" del ciclo de vida (SAD §12) sin haber pasado por la Réplica de Estado de Riesgo.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Wildcard Invertido (FIJO):** mientras el Genoma de Riesgo y Gestión está activo para evolución, el Genoma de Señal del mismo Manifest queda bloqueado/congelado, salvo que `ACTIVE_GENOME_DOMAINS` también incluya el Dominio de Señal — en cuyo caso ambos evolucionan conjuntamente como genoma compuesto bajo la regla general de ADR-0108.
     - **Réplica de Estado de Riesgo Obligatoria (FIJO):** todo Manifest cuyo Genoma de Riesgo y Gestión contenga al menos un Gen de Condición de Estado debe pasar por el modo "Réplica de Estado de Riesgo" del Monte Carlo antes de avanzar en el ciclo de vida de la estrategia (SAD §12). Resultados de backtest o WFA simple no son suficientes.
     - **Catálogo Cerrado de Primitivas de Acción (CONFIG, extensible solo vía nuevo ADR):** los Genes de Acción de Mutación de Tamaño y de Morfología de Salida deben mapear exclusivamente a comportamientos ya expuestos como parámetros configurables por features existentes ([precision-sizing-models.md](./features/precision-sizing-models.md), [kinetic-micro-management.md](./features/kinetic-micro-management.md), [advanced-trade-management.md](./features/advanced-trade-management.md), [multi-ticket-manager.md](./features/multi-ticket-manager.md)). El generador no inventa nuevos mecanismos de ejecución; combina y parametriza los existentes.
     - **Límites de Profundidad de Morfología (CONFIG):** el número máximo de fases de salida, el número máximo de movimientos de Stop Loss encadenados y la profundidad máxima de condiciones anidadas en el genoma de riesgo son límites configurables auditados por [complexity-penalization.md](./features/complexity-penalization.md), de la misma forma que los límites existentes de complejidad del Dominio de Señal.
     - **Reproducibilidad Determinista (FIJO):** la re-simulación de la máquina de estados de riesgo durante la Réplica de Estado debe ser bit-a-bit determinista dado el mismo `manifest_id` y la misma semilla de remuestreo, en cumplimiento de ADR-0107 (paridad investigación-producción).
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador, al diseñar o revisar una estrategia con Genoma de Señal ya validado, lanza un ciclo de Generate específico para el Dominio de Riesgo y Gestión. El motor devuelve un conjunto Pareto de genomas de riesgo candidatos, cada uno mostrando sus Genes de Condición activos y los Genes de Acción que disparan.
     - El reporte de Validate de cada candidato incluye, además de las métricas estándar, una vista de trayectorias de mutación de riesgo bajo remuestreo: cuántas veces y bajo qué secuencias alternativas se habría activado cada Gen de Acción, y cómo varía el drawdown resultante.
     - En ejecución en vivo, el operador observa en tiempo real qué Genes de Condición están actualmente activos para la posición o cuenta corriente y qué Gen de Acción se disparó la última vez.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Implementación del modo Réplica de Estado de Riesgo en [monte-carlo-simulator.md](./features/monte-carlo-simulator.md): requiere mantener y re-evaluar una máquina de estados completa (no solo PnL agregado) en cada iteración de remuestreo, incrementando significativamente el costo computacional del Modo 1 cuando el Genoma de Riesgo está presente.
     - Extensión de [precision-sizing-models.md](./features/precision-sizing-models.md), [kinetic-micro-management.md](./features/kinetic-micro-management.md), [advanced-trade-management.md](./features/advanced-trade-management.md) y [multi-ticket-manager.md](./features/multi-ticket-manager.md) para exponer sus comportamientos hoy fijos/binarios como Primitivas de Acción parametrizables y direccionables individualmente por el genoma evolutivo.
     - Extensión de [complexity-penalization.md](./features/complexity-penalization.md) con un nuevo eje de grados de libertad correspondiente al Genoma de Riesgo y Gestión.
@@ -1802,31 +1804,31 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0110: Generador Genómico de Régimen y Filtro de Entorno (Fase B) — Máscaras de Permiso/Prohibición por Estructura de Mercado**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Instanciar el **Generador Genómico de Régimen y Filtro de Entorno** como segundo dominio nuevo del Registro (ADR-0108). Este generador evoluciona, vía NSGA-II, combinaciones de:
     - **Genes de Condición de Estructura de Mercado:** exponente de Hurst (persistencia o anti-persistencia de la serie de precios), entropía de Shannon del volumen (grado de aleatoriedad del flujo de órdenes), pendiente multinivel de medias móviles Hull (estructura de tendencia en múltiples horizontes simultáneos), y estado latente dominante de un modelo de Markov oculto (HMM).
     - **Genes de Acción de Permiso:** a diferencia de los Dominios de Señal y de Riesgo (que producen acciones paramétricas continuas o discretas), el espacio de acción de este dominio es deliberadamente el más simple de los tres dominios nuevos: cada combinación de Genes de Condición evoluciona hacia un veredicto binario de **Permitido / Prohibido** que se aplica como máscara de entrada al Genoma de Señal (congelado) del mismo Manifest.
 
     La robustez de este genoma se valida mediante una extensión segmentada por régimen del análisis Walk-Forward existente ([walk-forward-analyzer.md](./features/walk-forward-analyzer.md) / [cross-market-validation.md](./features/cross-market-validation.md)): además de las ventanas temporales estándar, se incorporan ventanas curadas correspondientes a regímenes históricos de referencia conocidos por su carácter extremo (capitulaciones de alta volatilidad, mercados de rango prolongado, tendencias de baja volatilidad sostenida), de forma que un genoma de régimen no pueda sobreajustarse a "permitir siempre" simplemente porque el dataset general de entrenamiento fue mayormente favorable.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Este dominio generaliza y formaliza, bajo la misma gramática Condición→Acción, tres mecanismos que ya existían de forma dispersa y con alcance fijo: [vector-time-pruning.md](./features/vector-time-pruning.md) (vetos por ventana temporal y eventos macro), [regime-guard.md](./features/regime-guard.md) (matriz de compatibilidad estrategia-régimen basada en HMM) y [hmm-regime-detection.md](./features/hmm-regime-detection.md) (clasificación de régimen). Estos tres mecanismos comparten la misma forma — observar una condición de entorno y emitir un veredicto de permiso — pero hoy son lógicas fijas, no genomas evolutivos. Convertir el espacio de condiciones de entorno (incorporando además genes de estructura de mercado más exóticos como Hurst y entropía de Shannon, no cubiertos por los mecanismos actuales) en un genoma evolutivo permite descubrir combinaciones de filtros de régimen no obvias, en lugar de depender únicamente de los umbrales y matrices que un operador definió a priori.
 
     Se eligió deliberadamente el espacio de acción binario (Permitido/Prohibido) — el más simple de los tres dominios nuevos — porque el riesgo de sobreajuste de este dominio no está en la complejidad de la acción sino en la complejidad y exotismo de las condiciones: Hurst, entropía de Shannon y estados HMM multinivel son medidas estadísticamente sutiles y fáciles de "memorizar" sobre un dataset finito. Concentrar la simplicidad en la acción y reforzar la validación de robustez (WFA segmentado por régimen) es la combinación de costo/beneficio correcta para este dominio.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Espacio de Acción Cerrado a Permiso Binario (FIJO):** los Genes de Acción de este dominio solo pueden producir un veredicto Permitido/Prohibido aplicado como máscara sobre el Genoma de Señal. Cualquier acción paramétrica (ajuste de tamaño, modificación de salida) pertenece a los Dominios de Riesgo y Gestión (ADR-0109) o Portafolio y Correlación (ADR-0111), no a este.
     - **Wildcard Invertido (FIJO, heredado de ADR-0109):** el Genoma de Señal permanece congelado mientras este genoma evoluciona, salvo que `ACTIVE_GENOME_DOMAINS` también lo incluya. Si el Manifest también posee activo el Genoma de Riesgo y Gestión (ADR-0109) y/o de Portafolio y Correlación (ADR-0111), todos los dominios en `ACTIVE_GENOME_DOMAINS` evolucionan conjuntamente como genoma compuesto (Regla Genómica cruzada, ADR-0108), aplicando la atribución de complejidad correspondiente.
     - **WFA Segmentado por Régimen Obligatorio (FIJO):** todo Manifest con un Genoma de Régimen y Filtro activo debe pasar por la extensión segmentada por régimen de [walk-forward-analyzer.md](./features/walk-forward-analyzer.md)/[cross-market-validation.md](./features/cross-market-validation.md) antes de avanzar en el ciclo de vida (SAD §12). El WFA estándar no segmentado es insuficiente para este dominio.
     - **Catálogo Cerrado de Genes de Condición (CONFIG, extensible solo vía nuevo ADR):** Hurst, entropía de Shannon de volumen, pendiente multinivel de Hull MA y estado HMM son el conjunto inicial. Nuevos genes de condición de estructura de mercado requieren validar primero que son computables determinísticamente sobre los datos históricos disponibles (criterio de admisión de ADR-0108).
     - **No Reemplazo de Mecanismos Existentes (FIJO):** [vector-time-pruning.md](./features/vector-time-pruning.md) y [regime-guard.md](./features/regime-guard.md) no se eliminan; este dominio los generaliza como una capa evolutiva adicional. Las reglas fijas/aprendidas por esos mecanismos (vetos temporales, matriz HMM de compatibilidad) siguen aplicando como filtros de base; el Genoma de Régimen y Filtro opera como una capa de refinamiento evolutivo sobre ellas.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador, sobre una estrategia con Genoma de Señal ya validado, lanza un ciclo de Generate para el Dominio de Régimen y Filtro. El motor devuelve un conjunto Pareto de combinaciones de Genes de Condición de estructura de mercado, cada una con su matriz de Permiso/Prohibición resultante.
     - El reporte de Validate muestra, para cada candidato, su desempeño desglosado por cada ventana de régimen curada (capitulación, rango, tendencia de baja volatilidad), evidenciando si el filtro generaliza o si solo "memoriza" el régimen dominante del histórico de entrenamiento.
     - En ejecución en vivo, el operador ve en tiempo real el veredicto Permitido/Prohibido vigente y qué Gen de Condición lo está sosteniendo (por ejemplo, "Prohibido: Hurst por debajo del umbral — régimen de reversión a la media detectado").
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Implementación de los Genes de Condición de estructura de mercado exótica (Hurst, entropía de Shannon, pendientes Hull multinivel) como indicadores computables de forma determinista y eficiente sobre el histórico — capacidad nueva, no derivada de mecanismos existentes.
     - Extensión de [hmm-regime-detection.md](./features/hmm-regime-detection.md) para exponer el estado latente dominante como gen de condición consumible por el genoma evolutivo, además de su uso actual en [regime-guard.md](./features/regime-guard.md).
     - Extensión de [walk-forward-analyzer.md](./features/walk-forward-analyzer.md) y [cross-market-validation.md](./features/cross-market-validation.md) para soportar ventanas curadas de régimen como dimensión adicional de segmentación, y de [complexity-penalization.md](./features/complexity-penalization.md) con el eje de grados de libertad de este genoma.
@@ -1837,31 +1839,31 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0111: Generador Genómico de Portafolio y Correlación (Fase C) — Co-evolución de Cartera y Monte Carlo de Desfase Temporal**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Instanciar el **Generador Genómico de Portafolio y Correlación** como tercer dominio nuevo del Registro (ADR-0108) — el de mayor complejidad estructural de los tres, porque su unidad de evolución no es una estrategia individual sino un **conjunto co-evolucionado de estrategias** (una cartera). Este generador evoluciona, vía NSGA-II aplicado sobre la población de la cartera completa, combinaciones de:
     - **Genes de Condición Cruzada (entre estrategias):** correlación móvil entre las curvas de equidad de los miembros de la cartera, volatilidad agregada del portafolio, solapamiento de operaciones simultáneas en la misma dirección entre miembros, y drawdown agregado del portafolio.
     - **Genes de Acción de Cartera:** activación o desactivación de un miembro de la cartera condicionada a la racha o estado de otro miembro, rotación dinámica del peso de capital entre miembros, e inyección de cobertura sintética (posición compensatoria temporal) cuando las condiciones cruzadas lo ameritan.
 
     La robustez de este genoma requiere una capacidad de Monte Carlo que **no existe hoy**: el **"Monte Carlo de Desfase Temporal"**. A diferencia del Monte Carlo del Modo 1 (que remuestrea la secuencia de operaciones de una sola estrategia), este nuevo modo remuestrea, para cada miembro de la cartera, un desfase temporal independiente sobre su propia secuencia de operaciones, recombinando las curvas de equidad desfasadas para evaluar si la correlación y el drawdown agregado observados en el backtest conjunto son un artefacto de la alineación temporal específica del histórico, o si persisten bajo desalineaciones plausibles.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Este dominio generaliza y formaliza [fit-to-portfolio-search.md](./features/fit-to-portfolio-search.md) (presión de fitness por penalización de correlación durante la generación, hoy estática y de un solo eje), [portfolio-optimizer.md](./features/portfolio-optimizer.md) y [portfolio-rules.md](./features/portfolio-rules.md). La limitación común de estos mecanismos es que tratan la relación entre estrategias de una cartera como una restricción estática aplicada en el momento de selección o generación, no como un espacio evolutivo de comportamiento dinámico entre miembros. El caso de uso que motivó toda esta iniciativa (mutación drástica de comportamiento ante secuencias de eventos) aplica con la misma fuerza a nivel de cartera: "si la estrategia A entra en racha de pérdidas, rotar capital hacia B" es estructuralmente el mismo patrón Condición→Acción que "si pierdo 3 veces seguidas, reduzco mi riesgo" — solo que la condición y la acción operan sobre el estado de otros miembros de la cartera, no sobre el propio.
 
     Es, de los tres dominios nuevos, el de **mayor complejidad** porque introduce dos quiebres respecto a ADR-0109/ADR-0110: (1) la unidad de evolución es la cartera, no la estrategia individual, lo que requiere optimización sobre una población de poblaciones; y (2) la validación de robustez requiere una nueva capacidad de Monte Carlo (Desfase Temporal) que debe construirse desde cero, a diferencia de ADR-0109 (que extiende un modo existente) y ADR-0110 (que extiende WFA existente).
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Co-evolución a Nivel de Cartera (FIJO, eje ortogonal):** este es el único dominio del Registro (ADR-0108) donde la unidad evolutiva es un conjunto de Manifests, no un Manifest individual — eje independiente de `ACTIVE_GENOME_DOMAINS` (que define qué dominios evolucionan *dentro* de cada Manifest miembro). Por defecto cada Manifest miembro mantiene sus demás genomas (Señal, Riesgo y Gestión, Régimen y Filtro) congelados durante la evolución del Genoma de Portafolio y Correlación; si el `ACTIVE_GENOME_DOMAINS` de un miembro incluye además otros dominios, ese miembro evoluciona su genoma compuesto simultáneamente con la co-evolución de cartera.
     - **Monte Carlo de Desfase Temporal Obligatorio (FIJO):** todo conjunto de Manifests con un Genoma de Portafolio y Correlación activo debe pasar por el nuevo modo "Desfase Temporal" antes de avanzar en el ciclo de vida (SAD §12). Esta capacidad se declara, igual que la Réplica de Estado de Riesgo de ADR-0109, como **bloqueante**: sin ella, la correlación medida entre miembros es un artefacto del histórico específico, no una propiedad robusta de la cartera.
     - **Tamaño Mínimo de Cartera (CONFIG):** el número mínimo de miembros necesario para que los Genes de Condición Cruzada de este genoma sean estadísticamente significativos es un umbral configurable, análogo en espíritu a `MIN_TRADES_PER_PARAM` de [complexity-penalization.md](./features/complexity-penalization.md) pero a nivel de "miembros mínimos por cartera".
     - **Origen de Miembros desde Genomas Validados (FIJO):** los miembros candidatos a una cartera co-evolucionada deben provenir de Manifests cuyos Genomas de Señal (y, si aplica, de Riesgo y Gestión y de Régimen y Filtro) ya hayan superado independientemente su propia batería de robustez (ADR-0109/ADR-0110/línea base). Este dominio no co-evoluciona estrategias crudas sin validar — evita que la optimización de cartera "rescate" miembros individualmente frágiles mediante artefactos de correlación.
     - **Acción de Cobertura Sintética Acotada (CONFIG):** la inyección de cobertura sintética debe mapear a primitivas de ejecución ya existentes, mismo principio del catálogo cerrado de ADR-0109; no introduce nuevos tipos de instrumento ni nuevos mecanismos de ejecución.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     - El operador selecciona un conjunto de estrategias ya validadas individualmente como población base de una cartera, y lanza un ciclo de Generate para el Dominio de Portafolio y Correlación. El motor devuelve un conjunto Pareto de configuraciones de cartera, cada una con sus Genes de Condición Cruzada activos y sus Genes de Acción de rotación, activación o cobertura.
     - El reporte de Validate de cartera muestra, para cada configuración candidata, el resultado del Monte Carlo de Desfase Temporal: cómo varían la correlación agregada, el drawdown de cartera y el Sharpe conjunto bajo desalineaciones temporales plausibles entre los miembros.
     - En ejecución en vivo, el operador ve el estado actual de cada Gen de Condición Cruzada (por ejemplo, "Correlación Estrategia A↔B: 0.62 — por encima del umbral") y qué Gen de Acción de cartera está vigente (por ejemplo, "Rotación activa: 70% del capital hacia Estrategia B").
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     - Diseño e implementación desde cero del Monte Carlo de Desfase Temporal en [monte-carlo-simulator.md](./features/monte-carlo-simulator.md) — la capacidad de mayor costo de todo el conjunto de ADR-0109 a ADR-0111, al no existir un modo previo del que partir.
     - Extensión de [fit-to-portfolio-search.md](./features/fit-to-portfolio-search.md), [portfolio-optimizer.md](./features/portfolio-optimizer.md) y [portfolio-rules.md](./features/portfolio-rules.md) para exponer sus reglas hoy estáticas (tope de correlación, pesos) como Genes de Acción parametrizables por el genoma evolutivo de cartera.
     - Costo computacional del NSGA-II operando sobre una población de poblaciones: cada evaluación de fitness de un individuo de cartera requiere simular el conjunto completo de miembros bajo el genoma candidato.
@@ -1872,25 +1874,25 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0112: Veredicto Gate G2 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Eliminar de forma total e irreversible la dependencia `tch-rs` (y con ella libtorch) de toda la arquitectura. El cómputo numérico pesado (Monte Carlo, autoencoders de outliers, reducción dimensional) se resuelve mediante una **escalera de adopción estrictamente ordenada**, sin saltar peldaños sin justificación medida:
     1. **`ndarray` + Rayon (primera línea, default):** álgebra lineal y permutación matricial en CPU multihilo. Cubre Monte Carlo y la mayoría de las cargas, porque ninguna de ellas es deep learning real.
     2. **`candle` (Rust puro, segunda línea):** solo si `ndarray`/Rayon se demuestran insuficientes para una carga concreta. Backends CUDA/Metal que se cargan dinámicamente **solo si hay GPU presente**; degrada a CPU sin GPU. Cero libtorch.
     3. **`burn` (tercera línea, reservado al moonshot DRL):** solo si se materializa el moonshot de Deep Reinforcement Learning *y* `candle` se demuestra insuficiente. Backend-agnóstico, lo que permite empezar en `ndarray`/wgpu y migrar.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     `tch-rs` arrastra libtorch (~2GB de C++), lo que rompe dos invariantes FIJAS: el "binario único, instalador diminuto, 3 OS" del **ADR-0029** y la soberanía "sin runtimes pesados" del **ADR-0030**. Ninguna de las cargas que motivaron `tch-rs` lo necesita: Monte Carlo es barajado/permutación de matrices (no deep learning); autoencoders y UMAP son redes pequeñas resolubles en CPU pura. El único caso que históricamente justifica un backend tipo PyTorch es el DRL, que está deliberadamente diferido a moonshot de fase lejana. Cargar 2GB de dependencia nativa para un caso que aún no existe es exactamente la complejidad sin Alpha que el sistema rechaza.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Erradicación Total (FIJO):** ningún crate del workspace declara `tch-rs` como dependencia, ni siquiera opcional, mientras no exista el moonshot DRL. La promesa de binario único del ADR-0029 es la invariante que esta decisión protege.
     - **Carga Condicional de GPU (FIJO):** cuando se llegue a `candle`/`burn`, el soporte CUDA/Metal se activa por detección en runtime; la ausencia de GPU jamás impide la ejecución (degradación a CPU), en cumplimiento del ADR-0032 (Single Machine Sovereignty).
     - **Ascenso por Evidencia (CONFIG/Gobernanza):** subir un peldaño de la escalera exige un benchmark documentado que demuestre que el peldaño inferior no alcanza. No se adopta `candle` "por si acaso".
     - **Determinismo (FIJO):** el fallback CPU debe preservar la semilla aleatoria y el determinismo bit-a-bit (ADR-0107), igual que ya exige el Monte Carlo.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     El binario de distribución pesa megabytes, no gigabytes, y se instala de un clic en los 3 OS. El Monte Carlo de 10K iteraciones corre en CPU con Rayon; si algún día un autoencoder lo exige, `candle` entra como dependencia Rust pura sin alterar el modelo de empaquetado.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Reescribir las rutas que asumían GPU/VRAM (Monte Carlo, suite de IA) para CPU-first. Es trabajo de migración acotado y elimina deuda de empaquetado.
 
 *   **Trazabilidad:** [`monte-carlo-simulator.md`](./features/monte-carlo-simulator.md), [`autoencoder-outlier-detector.md`](./features/autoencoder-outlier-detector.md), [`statistical-inference-ebta.md`](./features/statistical-inference-ebta.md), ADR-0029, ADR-0030, ADR-0031, ADR-0032, ADR-0047, ADR-0061, ADR-0104.
@@ -1899,25 +1901,25 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0113: Veredicto Gate G3 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`)**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Eliminar PySR de toda la arquitectura. La capacidad de "regresión simbólica" se resuelve en dos planos:
     1. **En el MVP:** la regresión simbólica acotada se reconoce como lo que es —**programación genética sobre árboles de expresión con un frente de Pareto precisión/complejidad**— y por tanto es un **modo del motor NSGA-II nativo ya especificado** ([`nsga2-optimizer.md`](./features/nsga2-optimizer.md)) sobre el contrato AST existente ([`ast-compiler.md`](./features/ast-compiler.md)), no una dependencia nueva.
     2. **La minería simbólica de forma libre** (descubrir ecuaciones matemáticas arbitrarias sin esqueleto humano) se **difiere a `/moonshots/`**, donde se designa la librería **`egg` (e-graphs, Rust puro)** como tecnología recomendada para la saturación de equivalencias y el control de *bloat* algebraico.
     Se **rechazan explícitamente** los evaluadores de expresiones por string en runtime (`evalexpr`, `meval`) para cualquier ruta de minería.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     PySR es Python+Julia (SymbolicRegression.jl): no existe puerto Rust y viola frontalmente el **ADR-0104**. Pero además es innecesario: la regla maestra del MVP ("copia descarada de SQX") lo confirma — SQX **no hace** regresión simbólica libre; hace ensamblado genético sobre un catálogo cerrado de bloques, que es exactamente el patrón WildCards/Condición→Acción del ADR-0043/0108 ya diseñado. El núcleo de NSGA-II (non-dominated sorting + crowding distance) es código propietario de ~250 líneas; el valor vive en la representación del genoma y el fitness por dominio, no en un framework externo. `egg` es genuinamente excelente, pero su feature asesina (saturación algebraica anti-*bloat*) solo cobra valor sobre **álgebra libre**, no sobre la gramática de catálogo cerrado del MVP, donde el *bloat* se controla con `MAX_CONDITIONS_PER_RULE` y Ockham. Los evaluadores `evalexpr`/`meval` parsean y caminan un árbol genérico por evaluación, con asignaciones en heap: meterlos en el loop de minería destruiría el rendimiento (anti-patrón frente a ADR-0047).
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Cero PySR / Cero Python (FIJO):** heredado del ADR-0104. Ningún documento de arquitectura o feature nombra PySR como tecnología.
     - **AST Tipado, no Evaluador de Strings (FIJO):** el AST es un `enum` tipado de Rust evaluado por dos vías — compilación a expresiones columnar Polars (ruta vectorizada) o `match` plano (ruta secuencial). Prohibido introducir `evalexpr`/`meval` en rutas de minería; su único uso tolerable sería una fórmula tecleada por el usuario en una UI de configuración.
     - **`egg` Parqueado, no Importado (Gobernanza):** `egg` solo entra al workspace cuando se active el moonshot de minería simbólica libre, no antes.
     - **Higiene de Dependencias (FIJO, ADR-0020/Anti-Obsolescencia):** los nombres de crates de GA "de catálogo" propuestos en análisis exploratorios (p. ej. `oxen`, `rhea`, `oxigene`, `rs-genetic`) **no se adoptan**: varios no son crates de GA reales/mantenidos. El motor genético es nativo; Rayon es la única dependencia de paralelismo.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     El operador evoluciona estrategias con el mismo motor NSGA-II nativo, eligiendo dominios genómicos (ADR-0108). Si en el futuro se quiere descubrimiento de ecuaciones libres, el moonshot lo provee con `egg`, sin tocar el motor del MVP.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Purgar las menciones residuales a PySR en ADR-0031/0057 y en las features. Reconocer la regresión simbólica como modo del motor existente no añade infraestructura nueva.
 
 *   **Trazabilidad:** [`nsga2-optimizer.md`](./features/nsga2-optimizer.md), [`ast-compiler.md`](./features/ast-compiler.md), [`glass-box-ai-translator.md`](./features/glass-box-ai-translator.md), [`moonshots/pysr-signal-discovery.md`](./moonshots/pysr-signal-discovery.md), ADR-0031, ADR-0043, ADR-0057, ADR-0104, ADR-0108.
@@ -1926,7 +1928,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0114: Veredicto Gate G4 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Formalizar el simulador como **motor dual** con dos rutas independientes en código unidas por un contrato de consistencia:
     - **Ruta Express (exploración/minería):** enfoque **híbrido** en dos sub-fases. (1) Pre-cálculo **vectorizado** columnar (Polars/SIMD) de toda la lógica **sin estado** —indicadores, señales, genes de Condición de los Dominios de Señal y de Régimen/Filtro—, produciendo arrays de señales. (2) Un **mini-loop secuencial plano** en Rust que consume esas señales y resuelve la lógica **con estado** —sizing, stops dinámicos, curva de capital y el Dominio de Riesgo y Gestión (ADR-0109) completo—. Modo de datos: 1m OHLC con 4 fases.
     - **Ruta Event-Driven (validación de alta fidelidad):** crates nativos de NautilusTrader v2 (ADR-0107), con ticks reales (mercados centralizados) o reconstrucción de pseudo-ticks (OTC). Garantiza paridad simulación/vivo.
@@ -1935,20 +1937,20 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
     Se **elimina el KPI absoluto** de "100K–500K bars/sec" de toda la documentación: era una métrica de vanidad. El criterio de rendimiento pasa a ser **relativo y competitivo**: ser medible y demostrablemente más rápido que MetaTrader 5, StrategyQuant X y QuantConnect en la misma máquina.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     Forzar un único motor event-driven tick-a-tick a la minería masiva es un error arquitectónico (asfixia la exploración); forzar un único motor vectorizado puro impide modelar la gestión de riesgo dependiente de estado (ADR-0109) y rompe la paridad sim/vivo del ADR-0107. El enfoque híbrido disuelve la falsa dicotomía: **se vectoriza lo que no tiene memoria y se recorre en orden lo que sí la tiene**, y esa frontera coincide exactamente con la división de Dominios Genómicos del ADR-0108 (Señal/Régimen sin estado → vectorizado; Riesgo/Gestión con estado → secuencial). El mini-loop secuencial es además la estructura que hace viable la Réplica de Estado de Riesgo del Monte Carlo (ADR-0109). El diferencial frente a SQX (que paraleliza pero recalcula indicadores por candidata) es pre-calcular los indicadores **una sola vez** de forma vectorizada y reutilizarlos en toda la población.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Contrato de Consistencia Conservadora (FIJO):** como el usuario puede promover a incubación un resultado solo-Express, la Ruta Express **nunca puede ser más optimista que la Event-Driven**. Se garantiza por dos reglas inflexibles: **(a) Bar-Open Alignment obligatorio** —toda señal calculada al cierre de la barra N se ejecuta al precio de apertura de la barra N+1, sin entradas a precios intermedios— y **(b) Regla Intrabar Pesimista** —si SL y TP se alcanzan dentro de la misma vela, se asume siempre que el Stop Loss se ejecutó primero—.
     - **Frontera Sin-Estado / Con-Estado (FIJO):** ningún cálculo dependiente del estado de cuenta/posición se ejecuta en la sub-fase vectorizada; ningún cálculo puramente analítico sobre datos de mercado obliga al mini-loop secuencial.
     - **Modo de Motor como Parámetro del Contrato (FIJO):** el simulador expone `Express | EventDriven` como entrada del llamador. El sistema no introduce gates automáticos de promoción.
     - **Compuertas de Robustez Independientes (FIJO):** la libertad de elegir Express no exime de las compuertas bloqueantes — la Réplica de Estado de Riesgo (ADR-0109) y el Desfase Temporal de cartera (ADR-0111) siguen siendo obligatorias antes de incubar los genomas correspondientes, sea cual sea la ruta elegida.
     - **Criterio de Rendimiento Relativo (CONFIG/Gobernanza):** prohibido reintroducir KPIs absolutos de throughput como criterio de salida. El benchmark de CI compara contra plataformas de referencia, no contra un número fijo.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     El operador lanza una corrida nocturna en Ruta Express y obtiene miles de candidatas evaluadas con sesgo pesimista; selecciona finalistas y las re-corre en Ruta Event-Driven para confirmar paridad antes de incubar. La curva de equidad del Motor B y la operación en vivo emergen del mismo loop de eventos determinista (ADR-0107).
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Mantener dos rutas de código y una suite que verifique el contrato de consistencia (que Express jamás supere a Event-Driven en optimismo). Es el costo que compra simultáneamente velocidad de descubrimiento y confianza institucional.
 
 *   **Trazabilidad:** [`backtest-engine.md`](./features/backtest-engine.md), [`nsga2-optimizer.md`](./features/nsga2-optimizer.md), [`monte-carlo-simulator.md`](./features/monte-carlo-simulator.md), [`slippage-models.md`](./features/slippage-models.md), [`institutional-metrics.md`](./features/institutional-metrics.md), ADR-0017, ADR-0047, ADR-0107, ADR-0108, ADR-0109.
@@ -1957,21 +1959,21 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0115: Veredicto Gate G5 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     El `robustness-verdict-engine` produce, **por defecto y sin ninguna dependencia de LLM**, un **reporte estructurado determinista** en lenguaje natural generado por plantilla a partir del score ponderado y de los puntos de quiebre ya calculados. Se **elimina Ollama como requisito**: el "DEBE operar con LLM local (Ollama)" del ADR-0058 queda derogado. Un LLM local soberano (vía `candle`, modelo cuantizado embebido, nunca un runtime externo) es un **realce estrictamente opcional** detrás de feature flag, jamás una dependencia del camino crítico.
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     El veredicto en lenguaje natural es confort/UX puro (clasificado Vanidad, F8 en el ROADMAP), no Alpha. Lo que mueve dinero —el sizing inicial— lo determina el **score determinista** del `robustness-score-aggregator`, que es matemática reproducible; el LLM solo narraría un número que ya existe. Exigir Ollama (un runtime externo que descarga modelos de varios GB y corre como proceso servidor aparte) contradice el binario único del ADR-0029 y la soberanía sin runtimes del ADR-0030. Esta decisión **repara una contradicción interna**, no solo cierra un gate.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Determinismo del Reporte (FIJO):** el reporte base se deriva por plantilla determinista del score y los breakpoints; mismo input → mismo texto. No depende de muestreo estocástico de ningún modelo.
     - **LLM Opcional y Soberano (CONFIG):** si se habilita, la inferencia es local vía `candle` embebido; **prohibido** Ollama como requisito y **prohibidas** las APIs externas (heredado del ADR-0051).
     - **El Score Manda (FIJO):** el LLM, si está presente, actúa solo como traductor semántico; nunca modifica el score, los parámetros ni emite señales.
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     Al cerrar la validación, el operador ve un veredicto textual claro ("sobrevive en el 98% de las mutaciones; parámetro más sensible: Trailing Stop; punto de quiebre: spread > 2.5 pips") generado de forma determinista, en una instalación de un clic sin runtimes externos. Quien quiera prosa más rica activa el LLM opcional.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Diseñar la plantilla determinista de reporte (esfuerzo bajo). Se elimina la dependencia operativa de Ollama y su superficie de fallo.
 
 *   **Trazabilidad:** [`robustness-verdict-engine.md`](./features/robustness-verdict-engine.md), [`robustness-score-aggregator.md`](./features/robustness-score-aggregator.md), [`glass-box-ai-translator.md`](./features/glass-box-ai-translator.md), ADR-0029, ADR-0030, ADR-0051, ADR-0058.
@@ -1980,23 +1982,22 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0116: Veredicto Gate G6 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas**
 
-*   **¿Qué decidimos?**
+*   **Decisión:**
     Confirmar `flutter_rust_bridge` (ADR-0029/0019) como viable a escala, bajo una **regla de oro fija**: **nunca se cruza la frontera FFI con más resolución de datos de la que la pantalla puede dibujar**. Toda reducción a resolución de viewport (downsampling) ocurre en el backend Rust (Polars/DuckDB) antes del cruce. Para los casos de transferencia masiva legítima y poco frecuente (carga de un dataset a un visualizador), se usa `ZeroCopyBuffer` transportando buffers Arrow IPC, con validación de lifetime. Los streams de alta frecuencia aplican throttling (p. ej. 100ms) y backpressure **en Rust antes de cruzar**. El modo headless usa gRPC como fallback (ADR-0033).
 
-*   **¿Por qué lo decidimos?**
+*   **Objetivo:**
     El supuesto riesgo de "zero-copy de 1M+ puntos" es en gran parte un falso problema: una curva de 1M de puntos se renderiza en ~2000px; transferir el millón es desperdicio. Reducir en backend a lo que el humano puede distinguir elimina la presión sobre la frontera FFI y respeta el ADR-0098 ("Cero Lógica Dimensional en Dart"). Lo que queda es un spike de medición, no un riesgo existencial.
 
-*   **¿Qué restricciones tiene?**
+*   **Reglas:**
     - **Downsampling en Backend (FIJO):** prohibido transmitir a Flutter arrays por encima de la resolución útil del viewport; la reducción es responsabilidad de Rust (refuerza ADR-0098).
     - **`ZeroCopyBuffer` Acotado (CONFIG):** reservado a cargas masivas reales; no es el camino por defecto de los streams.
     - **Throttling en Origen (FIJO):** la limitación de frecuencia y el backpressure se aplican en Rust antes del FFI, no en Dart.
     - **Fallback gRPC (FIJO):** el modo headless/VPS degrada a gRPC sin cambiar la lógica de negocio (ADR-0033).
 
-*   **¿Cómo se vería en el sistema?**
+*   **Implementación:**
     El usuario ve curvas y scatter plots fluidos a 120 FPS porque recibe solo los puntos dibujables; al cargar un dataset completo para inspección, el backend entrega un `ZeroCopyBuffer` Arrow puntual.
 
-*   **¿Qué cuesta?**
+*   **Costo:**
     Implementar las rutinas de downsampling por viewport y validar la semántica de lifetime del `ZeroCopyBuffer`. El spike F0 ya planificado mide latencia de stream con throttle y tiempo de transferencia masiva.
 
 *   **Trazabilidad:** [`binary-arrow-transport.md`](./features/binary-arrow-transport.md), ADR-0019, ADR-0029, ADR-0033, ADR-0098.
-

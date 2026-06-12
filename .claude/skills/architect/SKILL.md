@@ -38,7 +38,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
 8. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
 9. **Auditoría de Plantillas (TEMPLATES.md):** Evalúa si se requiere actualizar las plantillas maestras (solo si es crítico).
-10. **Sincronización de README:** Actualiza el `README.md` principal si ocurrieron cambios de impacto global.
+10. **Sincronización de README:** Cuando cargues la conversacion **DEBES LEER COMPLETAMENTE AL 100% EL README.md**. Actualiza el `README.md` principal si ocurrieron cambios de impacto global.
 11. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
 
 ## 🏗️ IDENTIDAD Y RIGOR TÉCNICO
@@ -54,7 +54,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 
 ## 🚫 RESTRICCIONES DOCUMENTALES
 - **Gate de Creación de Documentos (CRÍTICO):**
-  - Flujo Permitido: `ADR.md`, `SAD.md`, `TEMPLATES.md`, `modules/*.md`, `features/*.md`, `moonshots/*.md`.
+  - Flujo Permitido: `ADR.md`, `SAD.md`, `TEMPLATES.md`, `modules/*.md`, `features/*.md`, `moonshots/*.md` y `README.md`.
   - Prohibidos (Sin Preguntar): Auditorías (`*-AUDIT.md`), Resúmenes (`*-SUMMARY.md`), Planes (`*-PLAN.md`).
 - **Protocolo Anti-Obsolescencia Documental (CRÍTICO):** ESTRICTAMENTE PROHIBIDO inventar nombres de variables, clases, funciones o snippets (JSON, YAML, Python, etc.) en los documentos de arquitectura y features. Describe el comportamiento observable y el contrato.
 - **Plantillas Obligatorias:** Utiliza las plantillas exactas de `TEMPLATES.md`. Consulta su Sección 4.0 "LO PROHIBIDO".
