@@ -214,6 +214,14 @@ Si algo falla → corrige antes de enviar.
 - **Bloqueo de Avance (MANDATORIO):** PROHIBIDO avanzar basándose en sugerencias pasadas. Requiere instrucción explícita del usuario en el mensaje ACTUAL.
 - **Supremacía de Usuario:** Las instrucciones explícitas del usuario siempre anulan este archivo.
 
+### Principio de Inclusión ante la Duda (regla del usuario)
+
+**"Ante la duda: prefiero tenerlo y no necesitarlo, que necesitarlo y no tenerlo."**
+
+Cuando dudes GENUINAMENTE entre incluir algo u omitirlo —si una entidad debería persistir, si un campo de su Perfil Técnico aplica, si conviene exponer un puerto— **inclúyelo**. Es más barato tener un campo preparado que migrar la base de datos después (es la filosofía de la Inundación de Fundaciones, ADR-0020 V2).
+
+Límite (no lo conviertas en pretexto): esto resuelve dudas **dentro** del marco del Filtro de Relevancia por Perfil, **hacia** la inclusión. NO autoriza calcar los 25 campos, ni meter campos de grupos ajenos al perfil de la entidad, ni saltarse el filtro. La duda se resuelve incluyendo; la certeza de que algo no corresponde al perfil se respeta excluyendo.
+
 ---
 
 ## Protocolo de Gobernanza del Skill

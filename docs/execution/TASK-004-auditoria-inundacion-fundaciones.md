@@ -81,6 +81,61 @@ Respuesta: **SÍ, hay candidatos transversales que probablemente deban entrar al
 
 ---
 
+## DECISIONES TOMADAS (Fase 2 — Tech-Lead + Usuario, 2026-06-13)
+
+### Bloque 1 — Reclasificaciones de perfil (CERRADO, 11/11)
+| Feature | Perfil FINAL | Nota |
+|---|---|---|
+| dsr-tracking-engine | **B (IA/R&D)** | B engloba lo de Auditoría (B = I+II+III+IV ⊇ D = I+II+IV) + linaje; Grupo I universal da la inmutabilidad del conteo N |
+| adversarial-noise-agent | **B (IA/R&D)** | confirmado |
+| contextual-fitness-scorer | **B (IA/R&D)** | confirmado |
+| audit-event-store | **D (Auditoría)** | es el registro forense en sí |
+| databank-lake | **B (IA/R&D)** | data lake R&D, no hot-path |
+| strategy-self-explanation | **B (IA/R&D)** | etiqueta "Documentación" no existe |
+| cross-market-validation | **B (IA/R&D)** | etiqueta "Ops/Validación" no existe |
+| robust-reporting | **D (Auditoría)** | etiqueta "C. Auditoría" mixta |
+| quantops-daemon | **D (Auditoría)** | daemon CI/CD |
+| secure-updater | **D (Auditoría)** | actualizador firmado |
+| trade-analysis-bi-suite | **D (Auditoría, persiste)** | aplica mantra "ante la duda, tenerlo": persiste reportes |
+
+### Principio establecido (grabado en `base/SKILL.md`)
+**"Ante la duda: prefiero tenerlo y no necesitarlo, que necesitarlo y no tenerlo."** Resuelve dudas DENTRO del filtro por perfil, hacia la inclusión. NO autoriza calcar 25 ni meter grupos ajenos.
+
+### Aprendizaje de modelo (para aplicar en todo el corpus)
+Los perfiles son ACUMULATIVOS: B (I+II+III+IV) ⊇ D (I+II+IV). Una feature de R&D que también quiere rastro forense NO necesita ser "híbrida B+D" — B ya la cubre. El caso híbrido REAL es B vs C (no se contienen: B tiene III/linaje, C tiene V/latencia).
+
+### Bloque 4 — Campos nuevos al catálogo: APROBADO escalar al Architect
+Los 3: `compliance_status_id`, `portfolio_container_id`, campo de linaje jerárquico (`parent_id`). El Architect (Opus) los registra en ADR-0020 V2 con su grupo, vía Mecanismo de Mantenimiento.
+
+### Bloque 2 — Hot-Path con linaje: CERRADO (híbrido, mantener trazabilidad)
+Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido documentado, mantienen linaje (alineado con el mantra). Subdivisión confirmada:
+- **Hot-Path + Linaje (C+III):** order-fsm, order-flow-microstructure, volume-profile-router, portfolio-rules.
+- **IA/R&D + Latencia (B+V latencia):** hmm-regime-detection, portfolio-optimizer, incubation-manager.
+- Fase 3: documentar el híbrido en su Contrato de Persistencia + corregir etiquetas de campo mal puestas (ej. order-fsm usa `indicator_state_hash` para un snapshot de ejecución).
+
+### Bloque 3 + features sin contrato (P5) — CERRADO (todas persisten, mantra aplicado)
+| Feature | Perfil FINAL |
+|---|---|
+| statistical-inference-ebta | **B** |
+| strategy-ast-copilot | **B** (linaje prompt→AST) |
+| operational-safety-monitor | **D** |
+| persistent-daemons | **C** |
+| federated-portfolio | **C** (usa `portfolio_container_id`) |
+| event-driven-pipeline-triggers | **D** |
+| volatility-stabilization | **C** |
+| institutional-friction-modeling | **B** |
+| institutional-metrics | **B** (híbrido con latencia) |
+| kinetic-micro-management | **C** |
+| worker-isolation-orchestrator | **C/D** (infra; afinar en Fase 3) |
+| equity-curve-tracker | **B** (auditoría + linaje) |
+| zui-navigation | **persiste** preferencias de UI → perfil mínimo (Grupo I + II Soberanía) |
+| efficiency-incubation-dashboard | **B** (guarda config del dashboard) |
+| fractional-differencer | **A** (persiste series transformadas + linaje del `d`) |
+
+**FASE 2 COMPLETA.** Todas las decisiones de perfil tomadas. Siguiente = Fase 3 (aplicación masiva) precedida por el registro de campos nuevos en el ADR (Architect).
+
+---
+
 ## PLAN DE EJECUCIÓN (retomar en próxima sesión)
 **Decisión del usuario (2026-06-13): primero decidir diseño, luego corregir TODO junto.**
 
