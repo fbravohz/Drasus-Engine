@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/shared",
+    "crates/ingest",
+    "crates/generate",
+    "crates/validate",
+    "crates/incubate",
+    "crates/manage",
+    "crates/execute",
+    "crates/feedback",
+    "crates/withdraw",
+]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+license = "Proprietary"
