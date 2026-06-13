@@ -31,4 +31,4 @@ Explora el uso de algoritmos de **Computación Cuántica** para resolver problem
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios** para cada corrida cuántica.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para cada corrida cuántica.

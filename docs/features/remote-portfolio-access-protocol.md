@@ -29,7 +29,7 @@ Protocolo de acceso remoto autenticado con seguridad a nivel de campo (Field-Lev
 
 ## 5. Estructura Interna (FCIS)
 - **Core:** Motores de enmascaramiento dinámico (Field Masking) y funciones puras para el cálculo de distancias/correlación.
-- **Shell:** Servidor de red en puerto perimetral (gRPC/FastAPI), gestión de autenticación JWT y persistencia de accesos en SQLite.
+- **Shell:** Servidor de red en puerto perimetral (gRPC vía `tonic` / HTTP vía `axum`), gestión de autenticación JWT y persistencia de accesos en SQLite.
 - **Frontera Pública:** Endpoints expuestos (Ej. `/rpap/v1/trades/range`, `/rpap/v1/analytics/correlation`).
 
 ## 6. Ciclo de Vida de la Feature

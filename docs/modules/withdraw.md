@@ -14,6 +14,71 @@ El retiro no es un acto de monitoreo (eso lo hace Feedback), sino un acto de **G
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/withdraw/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: detección de degradación, veredicto de retiro (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca Performance Monitor, Regime Guard, Order FSM
+├── persistence.rs        # Acceso a SQLite WAL (lectura/escritura)
+├── schemas.rs            # Definición de tablas: retirement_records, terminal_snapshots
+└── types.rs              # Tipos de entrada/salida: DegradationAlert, RetirementReason, ArchivalConfirmation
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre |
+| | `logic_hash` | Hash del motor de retiro |
+| | `data_snapshot_id` | Snapshot PIT del mercado |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del servicio de auditoría |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto de supervivencia (ReasonCode) |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot técnico |
+| | `execution_latency_ms` | Latencia de procesamiento |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-001 | **EPIC-7** | Monitoreo de supervivencia (Performance Monitor) |
+| TTR-002 | **EPIC-7** | Cierre de ciclo de vida (Order FSM) |
+| TTR-003 | **EPIC-7** | Vigilancia de coherencia (Regime Guard) |
+| TTR-004 | **EPIC-7** | Rastreo final (Equity Curve Tracker) |
+| TTR-005 | **EPIC-7** | KPIs de decadencia (Institutional Metrics) |
+| TTR-006 | **EPIC-7** | Detección macro (HMM Regime Detection) |
+| TTR-007 | **EPIC-7** | Límites soberanos (Portfolio Rules) |
+| TTR-008 | **EPIC-7** | Alerta terminal (Notification) |
+| TTR-009 | **EPIC-7** | Archivo inmutable (Audit Log) |
+| TTR-999 | **EPIC-7** | Protocolo Fail-Fast Safe (ADR-0066) |
+
+---
+
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Vigilancia de Perfil:** Coordina las alertas de [performance-monitor](../features/performance-monitor.md) para detectar drift.
@@ -156,19 +221,7 @@ El retiro no es un acto de monitoreo (eso lo hace Feedback), sino un acto de **G
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** 
-Toda sesión de retiro y archivo registra el set de relevancia técnica para Ops/Auditoria:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único del retiro/archivo |
-| | `created_at` | Timestamp de cierre honorífico |
-| | `audit_hash` | Hash del PnL acumulado final |
-| | `audit_chain_hash` | Hash de la integridad del historial completo |
-| **II. Soberanía** | `owner_id` | Usuario que autoriza el retiro |
-| | `compliance_status_id` | Veredicto de supervivencia (ReasonCode) |
-| **III. Hardware** | `node_id` | ID del hardware físico |
-| | `process_id` | PID del servicio de auditoría |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento (Cierre de linaje).

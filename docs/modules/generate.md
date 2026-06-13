@@ -16,6 +16,99 @@ También es posible que el usuario cree una estrategia manualmente y la inyecte 
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/generate/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: fitness, selección Pareto, mutación (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca NSGA-II, AST Compiler, Databank; maneja errores
+├── persistence.rs        # Acceso a SQLite WAL y Parquet (lectura/escritura)
+├── schemas.rs            # Definición de tablas: candidates, populations, generation_jobs
+└── types.rs              # Tipos de entrada/salida: CandidateGenome, ParetoFront, GenerationConfig
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre (linaje genético) |
+| | `logic_hash` | Hash del motor evolutivo (NSGA/Simbólico nativo) |
+| | `data_snapshot_id` | Snapshot PIT del dataset de entrenamiento |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del worker de generación |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico (CPU/GPU) |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto de riesgo |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot de fitness consolidado |
+| | `execution_latency_ms` | Latencia de evaluación |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-008 | **EPIC-2** | Compilación de lógica procedural (AST Compiler) |
+| TTR-024 | **EPIC-2** | Contrato de diseño (Design Manifest) |
+| TTR-001 | **EPIC-3** | Evolución híbrida (NSGA-II + DRL Genesis) |
+| TTR-002 | **EPIC-3** | Minería SQL (Analytic Discovery) |
+| TTR-009 | **EPIC-3** | Versionado de linaje (Strategy Versioning) |
+| TTR-016 | **EPIC-3** | Resolución de comodines (WildCards) |
+| TTR-019 | **EPIC-3** | Persistencia R&D (Databank Lake) |
+| TTR-022 | **EPIC-3** | Evaluación evolutiva (Backtest Engine) |
+| TTR-023 | **EPIC-3** | Lotaje evolutivo (Precision Sizing) |
+| TTR-025 | **EPIC-3** | Diseño manual (Visual DAG Editor) |
+| TTR-026 | **EPIC-3** | Ajuste fino (Parameter Optimization) |
+| TTR-027 | **EPIC-3** | Desacople (Async Job Executor) |
+| TTR-028 | **EPIC-3** | Indicadores dinámicos (Adaptive Volume) |
+| TTR-030 | **EPIC-3** | Auditoría forense R&D (Audit Log) |
+| TTR-035 | **EPIC-3** | Registro de intentos N para DSR |
+| TTR-040 | **EPIC-3** | Registro de dominios genómicos (ADR-0108) |
+| TTR-003 | EPIC-4 | Detección de régimen awareness (HMM) |
+| TTR-004 | EPIC-4 | Test de canasta (Universal Basket) |
+| TTR-005 | EPIC-4 | Optimización bayesiana (Intelligent Fine-Tuning) |
+| TTR-010 | EPIC-9+ | Deep Learning (Model-Free Alpha) |
+| TTR-011 | **EPIC-3** | Enrutador de señales (Feature Router) |
+| TTR-012 | **EPIC-3** | Hemisferios de asimetría (Strategy Ensemble) |
+| TTR-014 | EPIC-9+ | Dimensionalidad AI |
+| TTR-015 | **EPIC-3** | Fitness metamórfico (NSGA-II Tuning) |
+| TTR-017 | EPIC-6 | Presión de descorrelación (Fit-to-Portfolio) |
+| TTR-018 | EPIC-8 | Diseño guiado (AST Copilot) |
+| TTR-020 | EPIC-9+ | Simbolismo (Symbolic Discovery nativo) |
+| TTR-021 | **EPIC-3** | Ortogonalidad (Zero-Crossing Filter) |
+| TTR-029 | **EPIC-3** | Aislamiento genético (Worker Isolation) |
+| TTR-031 | **EPIC-3** | Builder Telemetry (Monitoreo Operativo) |
+| TTR-032 | EPIC-9+ | Recolección de Alpha (Alpha Harvesting Gateway) |
+| TTR-033 | EPIC-9+ | Traducción AI (Glass-Box AI Translator) |
+| TTR-034 | EPIC-6 | Fundaciones de portafolio (Portfolio Data Preparation) |
+| TTR-036 | EPIC-9+ | Minería descentralizada (La Colmena) |
+| TTR-037 | EPIC-8 | Vistas previas rápidas (Node Preview) |
+| TTR-038 | EPIC-7 | Disparadores reactivos (Event-Driven Pipeline Triggers) |
+| TTR-039 | EPIC-8 | Inspección de superficie de parámetros (Plateau Co-Pilot) |
+| TTR-999 | **EPIC-3** | Protocolo Fail-Fast Safe (ADR-0066) |
+
+---
+
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Flujo Evolutivo:** Inicia la búsqueda llamando a [nsga2-optimizer](../features/nsga2-optimizer.md).
@@ -474,23 +567,7 @@ También es posible que el usuario cree una estrategia manualmente y la inyecte 
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamientos (ADR-0020 V2):** 
-Las tablas de candidatos y poblaciones registran el set de relevancia técnica para AI/R&D:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la población/candidato |
-| | `created_at` | Timestamp de generación |
-| | `audit_hash` | Hash de la población resultante |
-| | `audit_chain_hash` | Hash de la secuencia de mutación/cruce |
-| **II. Soberanía** | `owner_id` | Usuario responsable de la búsqueda |
-| | `manifest_id` | ID del diseño (Genoma) evaluado |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor evolutivo (NSGA/Simbólico nativo) |
-| | `data_snapshot_id` | Ref al dataset de entrenamiento usado |
-| | `indicator_state_hash` | Snapshot de fitness consolidado |
-| | `version_node_id` | Versión de la estrategia en el DAG |
-| **IV. Hardware** | `node_id` | ID del hardware físico (CPU/GPU) |
-| | `process_id` | PID del worker de generación |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Git-like (DAG).
@@ -506,15 +583,6 @@ Las tablas de candidatos y poblaciones registran el set de relevancia técnica p
 
 **Consumido por:**
 - [`validate`](../modules/validate.md) — para la certificación de robustez de la población (bloquea hasta tener candidatas listas para someter a pruebas estadísticas).
-
----
-
-## Estructura Interna (FCIS — ADR-0002)
-
-Para garantizar la testabilidad y el desacoplamiento, este módulo se divide en:
-- **Core (Lógica Pura):** Ubicado en `domain/logic.rs`. Cero dependencias de base de datos o I/O.
-- **Shell (Infraestructura):** Ubicado en `persistence/` y `orchestrator.rs`. Maneja el acceso a SQLite y la orquestación de tareas.
-- **Frontera Pública:** Ubicada en `public_interface.rs`. Es el único punto de entrada para otros módulos.
 
 ---
 

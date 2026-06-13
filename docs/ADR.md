@@ -394,14 +394,26 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Contrato Global de Persistencia (El Set Maestro de 25 Campos):**
     *   **I. Identidad & Integridad:** `id` (UUID), `created_at` (Nanosegundos), `updated_at`, `audit_hash` (SHA-256), `audit_chain_hash` (Blockchain-lite link), `event_sequence_id` (Recovery sequence).
     *   **II. Soberanía & Propiedad:** `owner_id` (Dueño capital/IP), `institutional_tag` (Environment), `manifest_id` (Design Contract), `access_token_id` (Auth Tracking).
-    *   **III. Linaje Alpha & Datos:** `version_node_id` (DAG Link), `parent_id` (Puntero Genético), `logic_hash` (Commit Código/Binario), `data_snapshot_id` (PIT Market Snapshot), `transformation_id` (Raw vs Synthetic flag).
+    *   **III. Linaje Alpha & Datos:** `version_node_id` (DAG Link), `parent_id` (Puntero Genético), `logic_hash` (Commit Código/Binario), `data_snapshot_id` (PIT Market Snapshot), `transformation_id` (ID del paso/tipo de transformación aplicado; auditable, p. ej. Raw vs Synthetic vs derivado).
     *   **IV. Infraestructura & Ops:** `process_id` (Job Anchor), `session_id` (Runtime Grouping), `node_id` (Hardware ID).
     *   **V. Forense & Ejecución:** `portfolio_container_id` (Governance), `compliance_status_id` (Veredicto Riesgo), `risk_audit_id` (Ticket detallado riesgo), `indicator_state_hash` (Technical Snapshot), `execution_latency_ms`, `source_signal_id` (Signal link), `signature_hash` (HMAC signals).
 
 
-*   **Aplicación:**
-    * Los modelos de persistencia (Schemas) y tablas deben incluir estos campos desde la migración 0001.
-    * Las especificaciones de cada **Feature** deben definir sus campos específicos + estos campos base.
+*   **Aplicación (Contrato Lógico, NO molde físico de 25 columnas):**
+    * **Vocabulario lógico obligatorio:** Los 25 campos son un **contrato lógico** (vocabulario canónico de gobernanza), no 25 columnas calcadas en cada tabla. Definen *qué nombre y semántica* tiene cada anclaje cuando una entidad lo requiere.
+    * **Grupo I universal:** El grupo **I. Identidad & Integridad** (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) es **universal**: aparece en toda tabla sin excepción.
+    * **Resto por Filtro de Relevancia por Perfil (Tabla Canónica):** Los grupos II–V se inyectan de forma **selectiva según el Perfil Técnico** de la Feature. PROHIBIDO copy-paste masivo de los 25 campos en una tabla, módulo o documento. La tabla siguiente es la **fuente única de verdad** del filtro: `architect/SKILL.md` y `TEMPLATES.md` DEBEN referenciarla por nombre de perfil, NUNCA redefinirla con su propia lista (evita que ambos documentos diverjan entre sí).
+
+        | Perfil Técnico | Cuándo aplica (qué tipo de Feature) | Grupos que se inyectan (además del Grupo I, siempre universal) |
+        |---|---|---|
+        | **A. Datos / Ingest** | Adquisición, limpieza, normalización o transformación de datos de mercado | III (Linaje Alpha & Datos) + IV (Infraestructura & Ops) |
+        | **B. IA / R&D** | Generación, optimización o detección basada en modelos / lógica evolutiva | II (Soberanía & Propiedad) + III, subset "Pesos/Arquitectura" (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id`) + IV |
+        | **C. Ops / Hot-Path** | Ruta crítica de ejecución, objetivo de latencia ≤1ms | II + IV + V, subset "Latencia" (`execution_latency_ms`, `source_signal_id`) |
+        | **D. Ops / Auditoría** | Registro forense, cumplimiento o reconciliación | II + IV |
+
+        Dentro de cada grupo asignado, la Feature toma solo los campos concretos que tienen sentido para lo que esa tabla representa — no el grupo completo (ver ejemplos ya aplicados en `features/adaptive-volume-indicators.md` Perfil B, `features/broker-connector.md` Perfil C, `features/audit-log.md` Perfil D). Si una Feature combina rasgos de más de un perfil, lo documenta explícitamente en su propia sección "Contrato de Persistencia" — no se crea un quinto perfil ad-hoc sin pasar por el Mecanismo de Mantenimiento (más abajo).
+    * **Materialización en EPIC-0:** En Épica 0 el contrato se materializa como **tabla ancla de referencia** (`foundation_master_fields`, migración 0001), no como 25 columnas replicadas. Las features posteriores definen sus campos propios + los campos base que su perfil exige.
+    * **Coherencia con el SAD:** Esto realiza el principio **"esquema Distribuidor y Basado en Requisitos"** del SAD: cada Feature define su propio contrato de persistencia, pero todas obedecen el **Contrato Global**.
 *   **Mecanismo de Mantenimiento y Propagación:**
     1. **Detección:** Si se identifica un campo o requisito técnico repetido en 3+ features, o un requerimiento crítico en documentos de negocio (ej. Masterplan), se eleva a "Fundación Global".
     2. **Actualización de ADR-0020 V2:** Se añade el nuevo campo/hook a este ADR como estándar obligatorio.
@@ -686,7 +698,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Decisión:** La función de aptitud (Fitness) del motor NSGA-II debe ser dinámica y condicional al estado de la cuenta (*Account Status*).
 *   **Objetivo:** Una estrategia optimizada para superar un *Challenge* (agresividad máxima) es letal para una cuenta fondeada (defensa de capital). El sistema debe mutar sus pesos automáticamente.
 * **Restricciones:** No se permite el cambio de modo de fitness durante una generación evolutiva activa.
-* **Efecto observable:** El sistema prioriza *Profit Factor* en Fase 1, y transmuta hacia estabilidad y defensa de *MAE* en Fase 2.
+* **Efecto observable:** El sistema prioriza *Profit Factor* en Épica 1, y transmuta hacia estabilidad y defensa de *MAE* en Épica 2.
 
 ---
 
@@ -831,7 +843,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0056: Portfolio Data Preparation (HMM & Matriz Pearson)**
 
-*   **Decisión:** Institucionalizar la preparación de datos post-generación (Fase 1) delegando la normalización de curvas de equidad, el cálculo de la matriz de correlación de Pearson y la asignación del `regime_label` (vía HMM) como requisitos técnicos invariables antes de la optimización del portafolio (HRP).
+*   **Decisión:** Institucionalizar la preparación de datos post-generación (Épica 1) delegando la normalización de curvas de equidad, el cálculo de la matriz de correlación de Pearson y la asignación del `regime_label` (vía HMM) como requisitos técnicos invariables antes de la optimización del portafolio (HRP).
 *   **Objetivo:** Eliminar la redundancia computacional en fases avanzadas y habilitar una optimización de portafolio adaptativa basada en la segmentación matemática del régimen diario (Trending/Ranging/Crash).
 *   **Mecanismo:** El `Data Sanitizer` inyecta el `regime_label` usando un HMM pre-entrenado. Tras el descubrimiento genético, se calcula una matriz de correlación temporal que reside en DuckDB, sirviendo como base inmutable para el módulo `manage`.
 *   **Trazabilidad:** [portfolio-data-preparation.md](./features/portfolio-data-preparation.md).
@@ -967,9 +979,9 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Decisión:** Institucionalizar una clasificación de **Intensidad de Cómputo** (Compute Intensity) como metadato mandatorio para toda feature de validación y análisis.
 *   **Objetivo:** Lograr escalabilidad infinita en el guantelete de robustez sin necesidad de configurar manualmente el orden de ejecución para cada nueva feature.
 *   **Categorías de Intensidad:**
-    1.  **LIGHT (Fase 0):** Operaciones puramente analíticas sobre metadatos o resultados previos (ej. Ockham, Sharpe, WinRate). Costo CPU: Despreciable.
-    2.  **MEDIUM (Fase 1):** Requiere ejecuciones de backtest limitadas o locales (ej. Sensitivity, Rule Ablation). Costo CPU: Moderado.
-    3.  **HEAVY (Fase 2):** Requiere procesamiento masivo, paralelización extrema o uso de GPU (ej. Monte Carlo 10K, CPCV, Cross-Market). Costo CPU/GPU: Crítico.
+    1.  **LIGHT (Épica 0):** Operaciones puramente analíticas sobre metadatos o resultados previos (ej. Ockham, Sharpe, WinRate). Costo CPU: Despreciable.
+    2.  **MEDIUM (Épica 1):** Requiere ejecuciones de backtest limitadas o locales (ej. Sensitivity, Rule Ablation). Costo CPU: Moderado.
+    3.  **HEAVY (Épica 2):** Requiere procesamiento masivo, paralelización extrema o uso de GPU (ej. Monte Carlo 10K, CPCV, Cross-Market). Costo CPU/GPU: Crítico.
 *   **Mecanismo de Cascada (Fail-Fast):**
     *   El **Orquestador de Validación (MOD-03)** escanea dinámicamente las features activas y las ordena por su `ComputeIntensity`.
     *   **Ejecución Secuencial por Bloques:** Se ejecutan todas las LIGHT; si alguna falla el umbral de "Muerte Súbita", se aborta toda la cadena. Luego MEDIUM, luego HEAVY.
@@ -1124,7 +1136,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ### **ADR-0078: Autopilot Execution & Multiplatform Infrastructure**
 
-*   **Decisión:** Formalizar la infraestructura de ejecución de la Fase 3: "The Autopilot", que incluye un motor de ejecución directa NautilusTrader con paridad out-of-sample exacta, el `multiplatform-execution-bridge` para comunicación de comandos vía WebSockets/REST hacia terminales externas (MetaTrader, NinjaTrader, cTrader) sin exportación de lógica local ni stops, y el `multi-ticket-manager` para gestionar múltiples tickets individuales por estrategia identificados vía signal hash + timestamp.
+*   **Decisión:** Formalizar la infraestructura de ejecución de la Épica 3: "The Autopilot", que incluye un motor de ejecución directa NautilusTrader con paridad out-of-sample exacta, el `multiplatform-execution-bridge` para comunicación de comandos vía WebSockets/REST hacia terminales externas (MetaTrader, NinjaTrader, cTrader) sin exportación de lógica local ni stops, y el `multi-ticket-manager` para gestionar múltiples tickets individuales por estrategia identificados vía signal hash + timestamp.
 *   **Objetivo:** Para garantizar que el capital real o las cuentas de fondeo se operen en un entorno blindado de forma multiplataforma. El desacoplamiento protege la lógica contra rastreo y permite romper la limitación de SQX de una única operación a la vez.
 *   **Reglas:**
     - **Soberanía del VPS:** No se exportará código de estrategia ni indicadores hacia los receptores externos.
@@ -1217,7 +1229,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     - **Sandboxing Estricto:** El código de exploración en la máquina del minero debe correr en un entorno virtual aislado (Wasm / Rust Engine estático con APIs de red/sistema deshabilitadas).
     - **Protección de IP (Propiedad Intelectual):** No se exportará el motor comercial completo de NautilusTrader ni lógica propietaria sensible. El minero solo ejecuta evaluaciones parametrizadas y empaquetadas sin acceso al código fuente.
     - **Prueba de Trabajo Cuantitativa (Proof-of-Quant):** El servidor central de Drasus Engine debe re-verificar de forma aleatoria o determinista rápida los backtests reportados para evitar envíos fraudulentos de resultados falsos.
-    - **Inmutabilidad y Trazabilidad:** Cada resultado aceptado en el databank debe incluir el linaje completo, firma de hash del minero, y los 25 campos de la inundación de fundaciones de datos (ADR-0020 V2).
+    - **Inmutabilidad y Trazabilidad:** Cada resultado aceptado en el databank debe incluir el linaje completo, firma de hash del minero, y los campos de inundación de fundaciones que su Perfil Técnico exija (Grupo I universal + Perfil IA/R&D; Filtro de Relevancia, ADR-0020 V2).
 *   **Trazabilidad:** [`la-colmena.md`](./moonshots/la-colmena.md).
 
 ---
@@ -1872,7 +1884,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0112: Veredicto Gate G2 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`)**
+### **ADR-0112: Veredicto SPIKE-002 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`)**
 
 *   **Decisión:**
     Eliminar de forma total e irreversible la dependencia `tch-rs` (y con ella libtorch) de toda la arquitectura. El cómputo numérico pesado (Monte Carlo, autoencoders de outliers, reducción dimensional) se resuelve mediante una **escalera de adopción estrictamente ordenada**, sin saltar peldaños sin justificación medida:
@@ -1899,7 +1911,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0113: Veredicto Gate G3 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`)**
+### **ADR-0113: Veredicto SPIKE-003 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`)**
 
 *   **Decisión:**
     Eliminar PySR de toda la arquitectura. La capacidad de "regresión simbólica" se resuelve en dos planos:
@@ -1926,7 +1938,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0114: Veredicto Gate G4 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora**
+### **ADR-0114: Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora**
 
 *   **Decisión:**
     Formalizar el simulador como **motor dual** con dos rutas independientes en código unidas por un contrato de consistencia:
@@ -1957,13 +1969,13 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0115: Veredicto Gate G5 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito**
+### **ADR-0115: Veredicto SPIKE-005 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito**
 
 *   **Decisión:**
     El `robustness-verdict-engine` produce, **por defecto y sin ninguna dependencia de LLM**, un **reporte estructurado determinista** en lenguaje natural generado por plantilla a partir del score ponderado y de los puntos de quiebre ya calculados. Se **elimina Ollama como requisito**: el "DEBE operar con LLM local (Ollama)" del ADR-0058 queda derogado. Un LLM local soberano (vía `candle`, modelo cuantizado embebido, nunca un runtime externo) es un **realce estrictamente opcional** detrás de feature flag, jamás una dependencia del camino crítico.
 
 *   **Objetivo:**
-    El veredicto en lenguaje natural es confort/UX puro (clasificado Vanidad, F8 en el ROADMAP), no Alpha. Lo que mueve dinero —el sizing inicial— lo determina el **score determinista** del `robustness-score-aggregator`, que es matemática reproducible; el LLM solo narraría un número que ya existe. Exigir Ollama (un runtime externo que descarga modelos de varios GB y corre como proceso servidor aparte) contradice el binario único del ADR-0029 y la soberanía sin runtimes del ADR-0030. Esta decisión **repara una contradicción interna**, no solo cierra un gate.
+    El veredicto en lenguaje natural es confort/UX puro (clasificado Vanidad, EPIC-8 en el ROADMAP), no Alpha. Lo que mueve dinero —el sizing inicial— lo determina el **score determinista** del `robustness-score-aggregator`, que es matemática reproducible; el LLM solo narraría un número que ya existe. Exigir Ollama (un runtime externo que descarga modelos de varios GB y corre como proceso servidor aparte) contradice el binario único del ADR-0029 y la soberanía sin runtimes del ADR-0030. Esta decisión **repara una contradicción interna**, no solo cierra un gate.
 
 *   **Reglas:**
     - **Determinismo del Reporte (FIJO):** el reporte base se deriva por plantilla determinista del score y los breakpoints; mismo input → mismo texto. No depende de muestreo estocástico de ningún modelo.
@@ -1980,7 +1992,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
 ---
 
-### **ADR-0116: Veredicto Gate G6 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas**
+### **ADR-0116: Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas**
 
 *   **Decisión:**
     Confirmar `flutter_rust_bridge` (ADR-0029/0019) como viable a escala, bajo una **regla de oro fija**: **nunca se cruza la frontera FFI con más resolución de datos de la que la pantalla puede dibujar**. Toda reducción a resolución de viewport (downsampling) ocurre en el backend Rust (Polars/DuckDB) antes del cruce. Para los casos de transferencia masiva legítima y poco frecuente (carga de un dataset a un visualizador), se usa `ZeroCopyBuffer` transportando buffers Arrow IPC, con validación de lifetime. Los streams de alta frecuencia aplican throttling (p. ej. 100ms) y backpressure **en Rust antes de cruzar**. El modo headless usa gRPC como fallback (ADR-0033).
@@ -1998,6 +2010,6 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     El usuario ve curvas y scatter plots fluidos a 120 FPS porque recibe solo los puntos dibujables; al cargar un dataset completo para inspección, el backend entrega un `ZeroCopyBuffer` Arrow puntual.
 
 *   **Costo:**
-    Implementar las rutinas de downsampling por viewport y validar la semántica de lifetime del `ZeroCopyBuffer`. El spike F0 ya planificado mide latencia de stream con throttle y tiempo de transferencia masiva.
+    Implementar las rutinas de downsampling por viewport y validar la semántica de lifetime del `ZeroCopyBuffer`. El spike EPIC-0 ya planificado mide latencia de stream con throttle y tiempo de transferencia masiva.
 
 *   **Trazabilidad:** [`binary-arrow-transport.md`](./features/binary-arrow-transport.md), ADR-0019, ADR-0029, ADR-0033, ADR-0098.

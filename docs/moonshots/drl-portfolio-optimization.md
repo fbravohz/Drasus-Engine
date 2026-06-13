@@ -31,5 +31,5 @@ Utiliza agentes de **Aprendizaje por Refuerzo Profundo (DRL)** para gestionar la
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Cada sesión de entrenamiento y decisión del agente registra los **25 campos mandatorios**.
+- Cada sesión de entrenamiento y decisión del agente registra el **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2).
 - Metadatos: `logic_hash` (Model architecture), `data_snapshot_id` (Environment states).

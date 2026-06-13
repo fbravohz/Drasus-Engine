@@ -36,5 +36,5 @@ Hibridación de dos o más estrategias maestras mediante **extracción neuro-sim
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios** (Perfil IA / R&D) por cada evento de fusión, incluyendo el linaje de las estrategias de origen.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) por cada evento de fusión, incluyendo el linaje de las estrategias de origen.
 - **Relegación:** R&D experimental. Se relaciona con la síntesis multi-canal existente (`strategy-ensemble`) y el hub de meta-aprendizaje (`meta-learning-hub`); permanece en `/moonshots/` hasta demostrar alpha medible de la fusión.

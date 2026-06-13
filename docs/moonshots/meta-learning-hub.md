@@ -31,4 +31,4 @@ El Meta-Learning Hub implementa el concepto de "Aprender a Aprender". En lugar d
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios**.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2).

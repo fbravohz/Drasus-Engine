@@ -16,6 +16,97 @@ El usuario siempre tiene la capacidad de vetar cualquier decisión automática d
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/execute/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: FSM de órdenes, pre-trade checks (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca Pre-Trade Validator, Broker Connector, Watchdog
+├── persistence.rs        # Acceso a SQLite WAL (lectura/escritura)
+├── schemas.rs            # Definición de tablas: orders, fills, pre_trade_logs, event_store
+└── types.rs              # Tipos de entrada/salida: Order, Fill, TacticalClearance, KillSwitchSignal
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre |
+| | `logic_hash` | Hash del motor de ejecución |
+| | `data_snapshot_id` | Snapshot PIT del mercado |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del motor de ejecución real |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto del Pre-Trade Validator |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot técnico |
+| | `execution_latency_ms` | Latencia señal-a-broker (Hot-Path) |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-001 | **EPIC-5** | Validación táctica (Pre-Trade Validator & 10 Pasos) |
+| TTR-002 | **EPIC-5** | Despliegue de órdenes (Broker Connector) |
+| TTR-003 | **EPIC-5** | Vigilancia de emergencia (System Watchdog) |
+| TTR-004 | **EPIC-5** | Telemetría institutional |
+| TTR-005 | **EPIC-5** | Persistencia crítica e inmunidad (Event Store) |
+| TTR-014 | **EPIC-5** | Estados atómicos (Order FSM) |
+| TTR-015 | **EPIC-5** | Deslizamiento (Slippage Models) |
+| TTR-016 | **EPIC-5** | Rastreo (Equity Curve Tracker) |
+| TTR-019 | **EPIC-5** | Alertas (Notification) |
+| TTR-020 | **EPIC-5** | Asíncrona (Async Job Executor) |
+| TTR-021 | **EPIC-5** | Afinidad (Production Optimization) |
+| TTR-022 | **EPIC-5** | Forense (Audit Log) |
+| TTR-023 | **EPIC-5** | Temporal (Clock) |
+| TTR-024 | **EPIC-5** | Vigilancia Pardo y SSL (Operational Safety) |
+| TTR-026 | **EPIC-5** | Bridge multiplataforma (Multiplatform Execution Bridge) |
+| TTR-027 | **EPIC-5** | Gestor multi-ticket (Multi-Ticket Manager) |
+| TTR-028 | **EPIC-5** | Cola anti-throttling (Order-Priority Queue) |
+| TTR-032 | **EPIC-5** | Daemons persistentes (LiveNode Aisle) |
+| TTR-033 | **EPIC-5** | Multiplexación (Data Bus) |
+| TTR-034 | **EPIC-5** | Protocolo de recuperación (Crash Recovery) |
+| TTR-038 | **EPIC-5** | Seguridad soberana (Sovereign Security) |
+| TTR-040 | **EPIC-5** | Auto-auditoría de portafolios vivos |
+| TTR-006 | **EPIC-6** | Bridge de ejecución (Nautilus Integration) |
+| TTR-011 | **EPIC-6** | Guardia de microestructura (Pre-Trade Order Flow) |
+| TTR-013 | **EPIC-6** | Dimensionamiento táctico (Live Sizing con Robustness Score) |
+| TTR-017 | **EPIC-6** | Adaptación (HMM Regime) |
+| TTR-018 | **EPIC-6** | Aislamiento (Executable Container) |
+| TTR-025 | **EPIC-6** | Escalado de volatilidad (Target Vol) |
+| TTR-029 | **EPIC-6** | Advanced Trade Management (ATM) |
+| TTR-030 | **EPIC-6** | Micro-gestión cinética |
+| TTR-031 | **EPIC-6** | Autopilot Metrics Provider |
+| TTR-035 | **EPIC-7** | Auditor de rendimiento (Real-Time Auditor) |
+| TTR-036 | **EPIC-6** | Despacho y aislamiento federado (Federated Execution) |
+| TTR-037 | EPIC-9+ | Copy-Trading (Signal Relay & Risk Scaling) |
+| TTR-039 | **EPIC-6** | Monitor de latencia de broker (Throttling Metrics Dashboard) |
+| TTR-041 | **EPIC-6** | Genes de acción del genoma de riesgo y gestión de posición (ADR-0108/ADR-0109) |
+
+---
+
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Validación Táctica:** Antes de enviar, coordina el paso de la orden por [pre-trade-validator](../features/pre-trade-validator.md).
@@ -462,20 +553,7 @@ El usuario siempre tiene la capacidad de vetar cualquier decisión automática d
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** 
-Las tablas de órdenes y fills reales registran el set de relevancia técnica para Ops/Hot-Path:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la orden/fill |
-| | `created_at` | Timestamp de origen (nanosegundos) |
-| | `audit_hash` | Hash de la transacción (Firma digital) |
-| | `audit_chain_hash` | Hash de la secuencia de fills de la sesión |
-| **II. Soberanía** | `owner_id` | Usuario responsable del capital real |
-| | `compliance_status_id` | Veredicto del Pre-Trade Validator |
-| **III. Hardware** | `node_id` | ID del hardware físico ejecutor |
-| | `process_id` | PID del motor de ejecución real |
-| | `execution_latency_ms` | Latencia señal-a-broker (Hot-Path) |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: FSM para atomicidad de estados.

@@ -58,7 +58,7 @@ Abstrae canales de notificación (email, webhook, Slack, SMS). El Core dispara e
 
 - **Local-First (ADR-0016):** 100% Local (Orquestación de envíos). El mensaje se genera localmente.
 - **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Toda notificación y registro de entrega registra el set completo de **25 campos mandatorios** (ver ADR-0020 V2 V2).
+    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
     - Metadatos de comunicación: `audit_chain_hash` (Secuencia de alertas), `logic_hash` (Template version), `event_sequence_id`.
     - Soberanía & Destreza: `owner_id`, `access_token_id`.
     - Integridad: `node_id`, `process_id`, `signature_hash`.

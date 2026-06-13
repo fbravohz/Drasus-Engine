@@ -14,6 +14,77 @@ Es el módulo encargado de decidir cuándo una estrategia ya no es apta para ope
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/feedback/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: reconciliación, detección de anomalías, veredicto Pardo (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca Trade Reconciler, Anomaly Detector, Pardo Comparison
+├── persistence.rs        # Acceso a SQLite WAL y Parquet (lectura/escritura)
+├── schemas.rs            # Definición de tablas: performance_drifts, anomalies, continuity_verdicts
+└── types.rs              # Tipos de entrada/salida: ReconciliationReport, AnomalyReport, ContinuityVerdict
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre |
+| | `logic_hash` | Hash del motor de feedback |
+| | `data_snapshot_id` | Snapshot PIT del stream de ejecución |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del servicio monitor |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico supervisor |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto de riesgo |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot de la anomalía detectada |
+| | `execution_latency_ms` | Latencia de análisis |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-001 | **EPIC-7** | Reconciliación de operativa (Trade Reconciler) |
+| TTR-002 | **EPIC-7** | Veredicto de continuidad (Pardo Comparison) |
+| TTR-003 | **EPIC-7** | Autopsia de anomalías (Anomaly Detector) |
+| TTR-004 | **EPIC-7** | Auditoría masiva (Queryable Audit Shell) |
+| TTR-005 | **EPIC-7** | Atribución (Factor Decomposition) |
+| TTR-006 | **EPIC-7** | Rastreo (Equity Curve Tracker) |
+| TTR-007 | **EPIC-7** | Métricas institucionales |
+| TTR-008 | **EPIC-7** | Correlación (Signal Correlation Analyzer) |
+| TTR-009 | **EPIC-7** | Avisos (Notification) |
+| TTR-010 | **EPIC-7** | Forense temporal (Time Warp Debugger) |
+| TTR-011 | **EPIC-7** | Sellado forense (Audit Log) |
+| TTR-012 | **EPIC-7** | Reporte robusto (Robust Reporting) |
+| TTR-013 | **EPIC-7** | Monitoreo cinético |
+| TTR-014 | **EPIC-7** | Métricas Autopilot |
+| TTR-015 | **EPIC-7** | Reporte de auto-auditoría (Cost Reconciler) |
+| TTR-016 | **EPIC-7** | Reconstrucción táctil de fricción (Interactive Stress Lab) |
+
+---
+
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Reconciliación de Realidad:** Coordina el balance de la sesión llamando a [trade-reconciler](../features/trade-reconciler.md).
@@ -219,23 +290,7 @@ Es el módulo encargado de decidir cuándo una estrategia ya no es apta para ope
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** 
-Las auditorías y autopsias de sesión registran el set de relevancia técnica para AI/R&D:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la auditoría/anomalía |
-| | `created_at` | Timestamp de detección |
-| | `audit_hash` | Hash del reporte de autopsia |
-| | `audit_chain_hash` | Hash de la integridad del feed de eventos |
-| **II. Soberanía** | `owner_id` | Usuario responsable del capital evaluado |
-| | `institutional_tag` | Tag de auditoría (AUDIT/MONITOR) |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor del vigilante |
-| | `data_snapshot_id" | Ref al stream de ejecución/latencias |
-| | `indicator_state_hash` | Snapshot de la anomalía detectada |
-| | `version_node_id` | Versión de la estrategia en el DAG |
-| **IV. Hardware** | `node_id` | ID del hardware físico supervisor |
-| | `process_id` | PID del servicio monitor |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento (Feedback Loop).

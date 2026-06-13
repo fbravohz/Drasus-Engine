@@ -1,7 +1,7 @@
 # Graph Neural Networks para Contagio Macro (SQX Mod 18)
 
 **Carpeta:** `./moonshots/`
-**Estado:** Moonshot (Fase 5 - Experimental)
+**Estado:** Moonshot (Épica 5 - Experimental)
 **Última actualización:** 2026-06-06
 
 ---
@@ -24,7 +24,7 @@ Modelado de mercados financieros como grafos dinámicos utilizando Graph Neural 
 
 ### **TTR-001: Modelado de Redes en Framework DL Nativo Rust (Candle/Burn)**
 *   **¿Cuál es el problema?** Las matrices tradicionales de correlación no capturan la naturaleza no lineal ni la dirección de la propagación del riesgo en redes de activos grandes.
-*   **¿Qué tiene que pasar?** Diseñar un pipeline basado en un framework DL nativo Rust (candle/burn, según Gate G2 del ROADMAP) con soporte para Graph Neural Networks que estructure los activos como nodos y las relaciones como aristas dirigidas ponderadas para entrenar modelos de propagación de shocks.
+*   **¿Qué tiene que pasar?** Diseñar un pipeline basado en un framework DL nativo Rust (candle/burn, según SPIKE-002 del ROADMAP) con soporte para Graph Neural Networks que estructure los activos como nodos y las relaciones como aristas dirigidas ponderadas para entrenar modelos de propagación de shocks.
 *   **¿Cómo sé que está hecho?**
     - [ ] El modelo genera predicciones de contagio de volatilidad con menor error cuadrático medio que los modelos multivariados tradicionales VAR.
 *   **¿Qué no puede pasar?**
@@ -33,4 +33,4 @@ Modelado de mercados financieros como grafos dinámicos utilizando Graph Neural 
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios** (Perfil IA / R&D) para cada inferencia sobre la estructura del grafo macro.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para cada inferencia sobre la estructura del grafo macro.

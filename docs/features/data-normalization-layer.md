@@ -35,7 +35,7 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 ## Ciclo de Vida de la Feature — Data Normalization Layer
 
 ### Entrada
-- DataFrame crudo desde Ingest (Polars/Pandas).
+- DataFrame crudo desde Ingest (Polars).
 - Metadatos del broker (símbolo original, convención de nombres).
 
 ### Proceso
@@ -78,7 +78,7 @@ Cada mapeo de símbolo registra el set de relevancia técnica para Datos:
 | | `created_at` | Timestamp de registro |
 | | `audit_hash` | Hash de la configuración del símbolo |
 | **II. Linaje** | `source_id` | ID del broker fuente |
-| | `transformation_id" | ID del mapeo institucional |
+| | `transformation_id` | ID del mapeo institucional |
 | | `logic_hash` | Hash del traductor de esquemas |
 | **III. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del normalizador |

@@ -38,5 +38,5 @@ Diferenciador frente a StrategyQuant X: SQX solo ofrece un filtro de correlació
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios** (Perfil IA / R&D) por cada análisis topológico de portafolio.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) por cada análisis topológico de portafolio.
 - **Relegación:** R&D no prioritario para el operador retail individual (Foco Retail-First). Permanece en `/moonshots/` hasta validar valor operativo. La detección de co-caída para retail se cubre hoy de forma suficiente con la matriz de correlación y CVaR existentes.

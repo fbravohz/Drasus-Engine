@@ -16,6 +16,76 @@ Una estrategia que pasa esta fase es promovida al portafolio real.
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/incubate/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: comparación Pardo, métricas de drift (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca Paper Trader, Pardo Comparison; maneja ciclo de vida
+├── persistence.rs        # Acceso a SQLite WAL (lectura/escritura)
+├── schemas.rs            # Definición de tablas: incubation_sessions, virtual_trades, drift_metrics
+└── types.rs              # Tipos de entrada/salida: IncubationSession, VirtualFill, DriftVerdict
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre |
+| | `logic_hash` | Hash del motor paper (FSM/Nautilus version) |
+| | `data_snapshot_id` | Snapshot PIT del stream de datos en vivo |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del worker de incubación |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto de riesgo |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot del drift medido (Pardo Profile) |
+| | `execution_latency_ms` | Latencia de procesamiento |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-001 | **EPIC-5** | Despliegue de Paper Trading |
+| TTR-002 | **EPIC-5** | Comparación de consistencia (Pardo) |
+| TTR-003 | **EPIC-5** | Gestión de vida de orden (Order FSM) |
+| TTR-004 | **EPIC-5** | Gestión de sesión (Incubation Manager) |
+| TTR-005 | **EPIC-5** | Aislamiento virtual (Executable Container) |
+| TTR-007 | **EPIC-5** | Conexión live (Broker Connector) |
+| TTR-008 | **EPIC-5** | Deslizamiento (Slippage Models) |
+| TTR-009 | **EPIC-5** | Rastreo paper (Equity Curve Tracker) |
+| TTR-010 | **EPIC-5** | KPIs (Institutional Metrics) |
+| TTR-011 | **EPIC-5** | Linaje (Strategy Versioning) |
+| TTR-012 | **EPIC-5** | Auditoría virtual (Audit Log) |
+| TTR-013 | **EPIC-5** | Temporal (Clock) |
+| TTR-014 | **EPIC-5** | Monitoreo de cuarentena (Efficiency Dashboard) |
+| TTR-006 | EPIC-8 | Retroactiva (Time Warp Debugger) |
+| TTR-999 | **EPIC-5** | Protocolo Fail-Fast Safe (ADR-0066) |
+
+---
+
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Despliegue Virtual:** Inicia la operación en vivo (sin capital real) llamando a [paper-trader](../features/paper-trader.md).
@@ -210,23 +280,7 @@ Una estrategia que pasa esta fase es promovida al portafolio real.
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamientos (ADR-0020 V2):** 
-Las sesiones de paper trading registran el set de relevancia técnica para AI/R&D:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la sesión de incubación |
-| | `created_at` | Timestamp de inicio |
-| | `audit_hash` | Hash de la equidad virtual al cierre |
-| | `audit_chain_hash` | Hash de la secuencia de órdenes vituales |
-| **II. Soberanía** | `owner_id` | Usuario responsable del capital virtual |
-| | `manifest_id` | ID del diseño evaluado |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor paper (FSM/Nautilus version) |
-| | `data_snapshot_id" | Ref al stream de datos en vivo consumido |
-| | `indicator_state_hash` | Snapshot del drift medido (Pardo Profile) |
-| | `version_node_id` | Versión de la estrategia en el DAG |
-| **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
-| | `process_id` | PID del worker de incubación |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0017: Simulación de Alta Fidelidad (Paper Trading).

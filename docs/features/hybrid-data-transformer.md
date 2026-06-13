@@ -3,26 +3,26 @@
 **Carpeta:** `./features/hybrid-data-transformer/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0105 (Estrategia de Datos Híbrida Polars/Pandas 80/20)
+**Decisión Arquitectónica Asociada:** ADR-0105 (Estrategia de Datos Híbrida Polars/ndarray), ADR-0013 (Stack 100% Rust Nativo)
 
 ## ¿Qué es?
 
-Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo rendimiento de **Polars** para el procesamiento masivo (ETL, limpieza, agregaciones) y reserva **Pandas** exclusivamente para la interoperabilidad con librerías legacy o para datasets pequeños.
+Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo rendimiento de **Polars** para el procesamiento masivo (ETL, limpieza, agregaciones) y reserva **`ndarray`/`linfa`** exclusivamente para el consumo estadístico y de modelos de ML nativos en Rust.
 
-**Problema:** Pandas es lento e ineficiente en memoria para >1M de filas. Polars es rápido pero no todas las librerías de IA (scikit-learn, statsmodels) lo soportan nativamente.
-**Solución:** Orquestar transformaciones en Polars y convertir a Pandas solo en la frontera de consumo final mediante Zero-Copy.
+**Problema:** Los intérpretes externos (Python/Pandas) introducen latencia de serialización, GIL y doble ecosistema de dependencias. Polars es rápido pero el consumo estadístico avanzado (regresiones, modelos lineales) requiere matrices densas en memoria contigua.
+**Solución:** Orquestar transformaciones en Polars y convertir a `ndarray` solo en la frontera de consumo estadístico mediante Zero-Copy vía Apache Arrow.
 
 ## Comportamientos Observables
 
 - [ ] El sistema procesa 5GB de datos en memoria sin colapsar la RAM del usuario gracias al procesamiento columnar de Polars.
 - [ ] Las transformaciones (normalización, limpieza al vuelo) se ejecutan utilizando todos los núcleos del procesador central (CPU).
-- [ ] Cuando se requiere un modelo estadístico (ej: OLS), el sistema convierte el bloque de datos resultante (pequeño) a Pandas instantáneamente.
+- [ ] Cuando se requiere un modelo estadístico (ej: OLS vía `linfa`), el sistema convierte el bloque de datos resultante (pequeño) a `ndarray` instantáneamente.
 
 ## Restricciones
 
-- NUNCA se usa Pandas para la fase de Ingesta ETL masiva.
+- NUNCA se usa un intérprete externo para la fase de Ingesta ETL masiva.
 - NUNCA se materializan DataFrames intermedios en Polars si se puede usar *Lazy Evaluation* (`scan_parquet`).
-- Toda conversión a Pandas debe usar la extensión de PyArrow para evitar duplicación de memoria (Zero-Copy).
+- Toda conversión a `ndarray` debe usar Apache Arrow como puente para evitar duplicación de memoria (Zero-Copy).
 
 ## Parámetros Configurables
 
@@ -30,7 +30,7 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 |---|---|---|---|---|
 | POLARS_THREADS | Auto | 1 - Max | Hilos que Polars usa para cálculos paralelos | CONFIG |
 | LAZY_MODE | True | True/False | Si true, usa Lazy Frames para optimizar filtros | [FIJO] |
-| INTEROP_THRESHOLD | 100,000 | - | Tamaño máximo de filas para priorizar interoperabilidad Pandas | CONFIG |
+| INTEROP_THRESHOLD | 100,000 | - | Tamaño máximo de filas para priorizar conversión a `ndarray` | CONFIG |
 
 ## Ciclo de Vida de la Feature — Hybrid Data Transformer
 
@@ -42,11 +42,11 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 - Construye un `LazyFrame` en Polars.
 - Ejecuta limpieza estructural (duplicados, nulos, tipado datetime).
 - Aplica agregaciones columnares (EJ: OHLCV a barras de 1h).
-- Si el consumidor requiere Pandas: Ejecuta `collect().to_pandas()`.
+- Si el consumidor requiere matrices densas: Ejecuta `collect()` y conversión Zero-Copy a `ndarray` vía Arrow.
 
 ### Salida
 - `Polars.DataFrame` (para persistencia Parquet).
-- `Pandas.DataFrame` (para consumo en librerías legacy).
+- `ndarray::Array2<f64>` (para consumo estadístico y modelos `linfa`).
 - Esquema unificado de tipos (float64 para precios, datetime64[ns] para tiempo).
 
 ### Contextos de Uso
@@ -63,7 +63,7 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 - Implementa la lógica de "Clean-on-the-fly" usando Polars para saturar la CPU en transformaciones columnares masivas.
 
 ### **TTR-002: Puente de Interoperabilidad Zero-Copy**
-- Implementa la conversión optimizada Polars <-> Pandas asegurando que el tipado estricto se mantenga consistente.
+- Implementa la conversión optimizada Polars → `ndarray` vía Apache Arrow asegurando que el tipado estricto se mantenga consistente.
 
 ## Gobernanza y Estándares (Fijos)
 
@@ -80,8 +80,8 @@ Cada ejecución de transformación registra el set de relevancia técnica para D
 | | `audit_hash` | Hash del DataFrame Polars resultante |
 | | `audit_chain_hash` | Hash de la integridad del pipeline ETL |
 | **II. Linaje** | `source_id` | Ref al dataset crudo (input) |
-| | `transformation_id" | ID del paso de transformación (80/20) |
-| | `logic_hash` | Hash de la lógica Polars/Pandas |
+| | `transformation_id` | ID del paso de transformación (80/20) |
+| | `logic_hash` | Hash de la lógica Polars/ndarray |
 | **III. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del motor de transformación |
 | | `execution_latency_ms" | Tiempo de procesamiento multihilo |

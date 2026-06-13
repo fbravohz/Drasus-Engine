@@ -76,7 +76,7 @@ El motor de simulación implementa modelos de fidelidad progresiva para garantiz
     *   **Fricción Realista Institucional (ADR-0017):** Configuración de Triple Swap (reloj de simulación), limitación de penetración (Pardo) exigiendo que el precio atraviese el límite por $X$ ticks, y diferenciación entre Settlement e Histórico (Davey).
     *   **Ruteo por Perfil de Volumen:** Suspensión automática ante caídas de liquidez detectadas en el pre-volumen para evitar deslizamientos excesivos.
 
-*   **Fase 3: The Autopilot (Ejecución Institucional):**
+*   **Épica 3: The Autopilot (Ejecución Institucional):**
     *   **Live Execution Engine con Paridad Real:** Ejecución determinista acoplada a NautilusTrader para mantener paridad inquebrantable Out-Of-Sample.
     *   **Multiplatform Execution Bridge:** Comunicación nativa vía FFI/gRPC o canales binarios hacia terminales externas, enviando comandos genéricos sin exportación de lógica local.
     *   **Multi-Ticket Manager:** Gestión concurrente de múltiples tickets individuales por estrategia identificados vía signal hash y timestamp para romper limitaciones de una operación simultánea.
@@ -88,7 +88,7 @@ El sistema está optimizado para hardware de alto rendimiento doméstico (Sovere
 | Operación | Motor por defecto | Acelerador opcional (si se justifica) | Nota |
 | :--- | :--- | :--- | :--- |
 | **HPC Monte Carlo** (10K iter) | CPU `ndarray` + Rayon/SIMD | `candle` (GPU dinámica) | Es permutación matricial, no deep learning (ADR-0061) |
-| **UMAP** (100K puntos) | CPU Rust `ndarray` | `candle` | Reducción dimensional, F8 |
+| **UMAP** (100K puntos) | CPU Rust `ndarray` | `candle` | Reducción dimensional, EPIC-8 |
 | **Autoencoder** (10K trades) | CPU Rust puro (`candle`) | `candle` (GPU dinámica) | Red pequeña; no requiere libtorch |
 *Regla de Carga:* la ausencia de GPU jamás impide la ejecución; toda carga corre en CPU preservando el determinismo (ADR-0107).
 
@@ -1276,13 +1276,16 @@ El conocimiento arquitectónico generado en sesiones de alta densidad debe ser "
 
 ### 17.8 Protocolo de Integridad Cruzada (Cross-Document Integrity - CODI)
 Ningún documento es una isla. Todo cambio técnico significativo conlleva una revisión de impacto transversal:
-1.  **Análisis de Onda:** Ante un cambio en una Feature, auditar: SAD (Topología), ADR (Decisiones), TEMPLATES (Estándares) y Workflow (Operación).
+1.  **Análisis de Sprint:** Ante un cambio en una Feature, auditar: SAD (Topología), ADR (Decisiones), TEMPLATES (Estándares) y Workflow (Operación).
 2.  **Sincronización Atómica:** El cambio no se considera "commiteado" hasta que todos los mirrors y referencias cruzadas han sido actualizados.
 3.  **Trazabilidad de Impacto:** Mantener las dependencias explícitas para facilitar la identificación del radio de acción de cada cambio.
 
 ### 17.9 Protocolo de Inundación Institucional (Audit Readiness)
 Al crear o refactorizar cualquier entidad de persistencia (Tabla, Archivo Parquet, Evento):
-1.  **Inundación Obligatoria:** Inyectar el set maestro de **25 campos mandatorios** definido en [ADR-0020 V2](./ADR.md#adr-0020-v2).
+1.  **Inundación Obligatoria (selectiva por perfil):** Inyectar el **grupo I (Identidad & Integridad)** de forma universal en toda entidad, y el resto de los **25 campos del contrato lógico** de forma **selectiva según el Perfil Técnico** (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría), conforme a la tabla canónica de Filtro de Relevancia definida en [ADR-0020 V2](./ADR.md#adr-0020-v2). El contrato es un vocabulario lógico obligatorio, no 25 columnas calcadas en cada tabla.
+
+    > **Ejemplo concreto (dos capas que NO deben confundirse):** la tabla `foundation_master_fields` (migración 0001) es el **catálogo de referencia** con las 25 columnas — existe UNA sola vez en todo el sistema, no se replica. Las tablas propias de cada módulo/feature (ADR-0003: cada módulo es dueño de sus tablas) NUNCA tienen esas 25 columnas; tienen sus columnas de dominio + el Grupo I completo (6 columnas, universal) + solo los campos concretos de su Perfil Técnico. Ej: la tabla de `adaptive-volume-indicators` (Perfil B / IA-R&D) lleva sus valores de indicador + Grupo I + (`owner_id`, `institutional_tag`, `manifest_id` de II) + (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id` de III) + (`node_id`, `process_id`, `execution_latency_ms` de IV) — nada de Grupo V, porque su perfil no lo cubre.
+
 2.  **Hooks Forenses:** Definir el rastro de evidencia específico (latencias, estados internos) para alimentar el módulo de `feedback`.
 3.  **Soberanía Multi-tenant:** Asegurar que `institutional_tag` y `owner_id` están correctamente mapeados en la capa de interacción (Shell).
 
@@ -1339,7 +1342,7 @@ Para asegurar el 100% de trazabilidad entre el PRD y la implementación, se util
 
 ## 20. Gobernanza y Soberanía de Datos
 
-Drasus Engine es un sistema **Local-First (ADR-0016)**. La persistencia se realiza en el sistema de archivos del usuario mediante SQLite para estados y Parquet para datos históricos. El usuario retiene el control total de su IP (estrategias) y capital, sin dependencia obligatoria de servicios en la nube. Toda entidad de datos sigue el set maestro de **25 campos mandatorios (ADR-0020 V2)** para asegurar auditabilidad institucional.
+Drasus Engine es un sistema **Local-First (ADR-0016)**. La persistencia se realiza en el sistema de archivos del usuario mediante SQLite para estados y Parquet para datos históricos. El usuario retiene el control total de su IP (estrategias) y capital, sin dependencia obligatoria de servicios en la nube. Toda entidad de datos obedece el **Contrato Global (ADR-0020 V2)**: el grupo I de Identidad & Integridad es universal y el resto del contrato lógico se inyecta de forma selectiva por perfil, asegurando auditabilidad institucional sin replicar 25 columnas en cada tabla.
 
 ---
 

@@ -70,7 +70,7 @@ El **Transporte Binario Arrow** permite la transmisión de alta velocidad de gra
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Cada paquete de datos transmitido o registrado por esta feature debe portar el set maestro de 25 campos para auditoría forense:
+Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020 V2), detallados en la tabla — NO el catálogo completo de 25 campos:
 
 | Campo | Tipo | Descripción |
 | :--- | :--- | :--- |

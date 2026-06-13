@@ -132,13 +132,15 @@ type: templates
    - **Local-First (ADR-0016):** [100% Local | Justificar dependencia externa].
    - **Fidelidad (ADR-0017):** [Baja (Barras) | Alta (4-ticks) | Institucional (Slippage Dinámico)].
    - **Inundación de Fundaciones (ADR-0020 V2):** 
-      - **OBLIGATORIO:** Inyección selectiva basada en el **Perfil Técnico** de la feature:
-         - **A. Perfil Datos / Ingest:** Foco en Identidad + Linaje + Hardware de Ingesta.
-         - **B. Perfil IA / R&D:** Foco en Identidad + Soberanía IP + Pesos/Arquitectura + Hardware.
-         - **C. Perfil Ops / Hot-Path:** Foco en Identidad + Hardware + Latencia (Máximo 1ms).
+      - **OBLIGATORIO:** El **Grupo I (Identidad & Integridad)** es universal — va siempre, en toda tabla. Además, asigna a la feature UNO de los 4 Perfiles Técnicos de la **tabla canónica de ADR-0020 V2** (no la copies aquí, referénciala):
+         - **A. Datos / Ingest:** Identidad + Linaje de Datos (III) + Hardware (IV).
+         - **B. IA / R&D:** Identidad + Soberanía (II) + Pesos/Arquitectura, subset de III (IV).
+         - **C. Ops / Hot-Path:** Identidad + Soberanía (II) + Hardware (IV) + Latencia, subset de V (≤1ms).
+         - **D. Ops / Auditoría:** Identidad + Soberanía (II) + Hardware (IV).
+      - **PROHIBIDO copy-paste masivo:** de cada grupo asignado, toma solo los campos concretos relevantes para esta tabla — no el grupo completo.
       - **Hooks Forenses:** [Describir ganchos específicos: ej. latencia de DOM, linaje de genoma, firmas digitales].
    - **Contrato de Persistencia:** 
-     - Campos de auditoría maestra (id, created_at, audit_hash) + los específicos del perfil elegido.
+     - Tabla `Categoría | Campo | Descripción` con el Grupo I completo + los campos concretos del Perfil elegido (ver `features/adaptive-volume-indicators.md` como ejemplo de formato).
    - **Rastro de Evidencia:** Qué datos específicos emite para el módulo de `feedback` (causalidad).
 
 8. **Decisión Arquitectónica Asociada** (Solo si aplica)

@@ -69,11 +69,7 @@ Es un motor de orquestación de simulaciones diseñado para evaluar una estrateg
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Cada reporte de backtest multi-activo debe portar el set maestro de 25 campos para auditoría forense:
-
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
-
-Cada reporte de backtest multi-activo registra el set de relevancia técnica para AI/R&D:
+Perfil **B (IA/R&D)**: Grupo I (universal) + Soberanía (II) + Pesos/Arquitectura, subset de III + Hardware (IV). Solo los campos relevantes para un reporte de backtest multi-activo (Filtro de Relevancia, ADR-0020 V2):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

@@ -51,7 +51,7 @@ Es la capa de adaptación que permite a Drasus Engine usar NautilusTrader como m
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Cada interacción con el motor NautilusTrader y transferencia de eventos debe portar el set maestro de 25 campos para auditoría forense:
+Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020 V2), detallados en la tabla — NO el catálogo completo de 25 campos:
 
 | Campo | Tipo | Descripción |
 | :--- | :--- | :--- |

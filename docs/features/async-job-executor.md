@@ -1,9 +1,11 @@
 # Async Job Executor — Patrón Asincrónico de Operaciones Costosas
 
 **Carpeta:** `./features/async-job-executor/`  
-**Estado:** Lista para implementar  
-**Última actualización:** 2026-04-08  
+**Estado:** 🟡 Parcial — núcleo durable + recuperación tras crash (gate EPIC-0) implementados y probados; TTR-007 (integración con módulos costosos) secuenciado a EPIC-2+.  
+**Última actualización:** 2026-06-12  
 **Decisión Arquitectónica Asociada:** ADR-0011 (Operaciones Asincrónicas)
+
+> 🟡 **Parcial** 2026-06-12 · Orden [STORY-005](../execution/STORY-005-async-job-executor.md) · TTR-001..006 implementados (cola Tokio+SQLite, worker pool, persistencia `jobs`/`job_results` append-only, **recuperación en startup**, progreso, cancelación). **Gate EPIC-0 demostrado:** test de recuperación tras crash sobre DB en archivo (`jobs_survive_simulated_crash_and_are_recovered_on_restart`). Auditado Tech-Lead: 62 tests verdes, clippy `-D warnings` limpio, cobertura workspace 90.80%. Pendiente: TTR-007 (integración con `generate`/`validate`/etc.) a EPIC-2+; cobertura del worker pool concurrente se completa con cargas reales.
 
 ---
 
@@ -144,7 +146,7 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 
 ## Tareas (TTRs)
 
-### **TTR-ASYNC-EXECUTOR-001: Implementar Job Queue con AsyncIO + SQLite**
+### **TTR-ASYNC-EXECUTOR-001: Implementar Job Queue con Tokio + SQLite**
 
 **Qué hace:** Crear JobExecutor que maneja jobs en memoria (rápido) + SQLite (durabilidad).
 
@@ -330,7 +332,7 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 
 - **Local-First (ADR-0016):** 100% Local. La cola de trabajos y sus resultados se gestionan íntegramente en el hardware local.
 - **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Toda tarea y resultado de job registra el set completo de **25 campos mandatorios** (ver ADR-0020 V2 V2).
+    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
     - Metadatos de concurrencia e integridad: `process_id` (Worker ID), `session_id`, `node_id` (Hardware Fingerprint), `audit_chain_hash`, `logic_hash` (Executor version), `event_sequence_id`.
     - Soberanía: `owner_id`, `access_token_id`.
 
@@ -342,7 +344,7 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 - **Requiere:** ADR-0011 (patrón definido)
 - **Requiere:** SQLite con WAL (persistencia)
 - **Requiere:** SQLx Migrator (migraciones para tablas jobs/results)
-- **Requiere:** AsyncIO (Rust)
+- **Requiere:** Tokio (runtime async de Rust)
 - **Habilita:** Operaciones costosas sin bloquear UI
 - **Habilita:** ADR-0012 (multi-pipeline si se usa job executor para pipelines)
 

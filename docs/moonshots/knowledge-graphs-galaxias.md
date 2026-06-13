@@ -33,4 +33,4 @@ Base de datos orientada a grafos (Neo4j/embebida) que modela las relaciones sem�
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Registro de **25 campos mandatorios** para la trazabilidad de nodos del grafo en cada mutación registrada.
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para la trazabilidad de nodos del grafo en cada mutación registrada.

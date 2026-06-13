@@ -37,4 +37,4 @@ Este módulo busca superar el análisis de correlación tradicional mediante el 
 ---
 
 ## Gobernanza y Estándares (ADR-0020 V2)
-- Cada grafo descubierto y análisis de intervención registra los **25 campos mandatorios**.
+- Cada grafo descubierto y análisis de intervención registra el **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2).

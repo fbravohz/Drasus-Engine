@@ -18,6 +18,119 @@ El veredicto final — APROBADA, EN REVISIÓN, o RECHAZADA — es permanente. No
 
 ---
 
+## Épica 0: Esqueleto Fundacional
+
+### Estructura de Archivos (FCIS — ADR-0003)
+
+```
+crates/validate/
+├── public_interface.rs   # Frontera pública: único punto de entrada para otros módulos
+├── logic.rs              # Lógica pura: scoring ponderado, métricas, filtros (sin DB, sin I/O)
+├── orchestrator.rs       # Coordinación: invoca Backtest, WFA, MC, CPCV; maneja cascada LIGHT/MEDIUM/HEAVY
+├── persistence.rs        # Acceso a SQLite WAL y Parquet (lectura/escritura)
+├── schemas.rs            # Definición de tablas: test_results, test_analysis, validation_jobs
+└── types.rs              # Tipos de entrada/salida: TestScore, RobustnessVerdict, ValidationReport
+```
+
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+
+| Categoría | Campo | Descripción |
+|---|---|---|
+| **I. Identidad e Integridad** | `id` | UUID del registro |
+| | `created_at` | Timestamp de creación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación |
+| | `audit_hash` | SHA-256 del contenido del registro |
+| | `audit_chain_hash` | Hash encadenado al registro anterior |
+| | `event_sequence_id` | Secuencia de recuperación post-crash |
+| **II. Soberanía y Propiedad** | `owner_id` | Dueño del capital/IP |
+| | `institutional_tag` | Etiqueta de entorno (PROD/PAPER/CHALLENGE) |
+| | `manifest_id` | Contrato de diseño vinculado |
+| | `access_token_id` | Token de autenticación usado |
+| **III. Linaje Alpha y Datos** | `version_node_id` | Nodo en el DAG de versiones |
+| | `parent_id` | Puntero al registro padre |
+| | `logic_hash` | Hash del motor de validación |
+| | `data_snapshot_id` | Snapshot PIT del dataset de prueba |
+| | `transformation_id` | ID del paso/tipo de transformación aplicado |
+| **IV. Infraestructura y Ops** | `process_id` | PID del worker de validación |
+| | `session_id` | Agrupación de runtime |
+| | `node_id` | ID del hardware físico (CPU/GPU) |
+| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| | `compliance_status_id` | Veredicto de riesgo (APROBADA/RECHAZADA/REVISAR) |
+| | `risk_audit_id` | Ticket detallado de riesgo |
+| | `indicator_state_hash` | Snapshot de métricas evaluadas |
+| | `execution_latency_ms` | Latencia de validación |
+| | `source_signal_id` | Link a señal origen |
+| | `signature_hash` | HMAC de señales |
+
+### TTRs Etiquetados por Fase
+
+| TTR | Fase | Descripción corta |
+|---|---|---|
+| TTR-001 | **EPIC-2** | Compilación y validación Zero-Trust (AST Compiler) |
+| TTR-002 | **EPIC-2** | Integridad de simulación (PIT Validator) |
+| TTR-003 | **EPIC-2** | Inferencia histórica (Backtest Engine) |
+| TTR-008 | **EPIC-2** | Kernel de simulación (Nautilus Integration) |
+| TTR-011 | **EPIC-2** | Validación de sizing (Backtest Calibration) |
+| TTR-019 | **EPIC-2** | KPIs (Institutional Metrics) |
+| TTR-020 | **EPIC-2** | Certificación (Strategy Versioning) |
+| TTR-021 | **EPIC-2** | Auditoría forense (Audit Log) |
+| TTR-024 | **EPIC-2** | Eficiencia del modelo (Perfect Profit Benchmark) |
+| TTR-004 | **EPIC-4** | Guantelete de robustez decagonal (HPC Hybrid MC) |
+| TTR-005 | **EPIC-4** | Reporte visual (Downsampling & Arrow) |
+| TTR-006 | **EPIC-4** | Auditoría de generalización (Basket Stress Test) |
+| TTR-007 | **EPIC-4** | Auditoría de liquidez (Volume Profile Stress) |
+| TTR-012 | **EPIC-4** | Filtro de fondeo (Prop-Firm Grader) |
+| TTR-013 | **EPIC-4** | Poda temporal (Vector-Time Pruning) |
+| TTR-014 | **EPIC-4** | Decoupling inercial (Alpha Decoupling) |
+| TTR-015 | **EPIC-4** | Canasta correlacionada (Cross-Market) |
+| TTR-016 | **EPIC-4** | Descomposición (Factor Decomposition) |
+| TTR-017 | **EPIC-4** | Correlación (Signal Correlation Analyzer) |
+| TTR-018 | **EPIC-4** | Rastreo WFA (Equity Curve Tracker) |
+| TTR-022 | **EPIC-4** | Analítica masiva (DuckDB SQL Engine) |
+| TTR-023 | **EPIC-4** | Estrés de volatilidad (Adaptive Volume) |
+| TTR-025 | **EPIC-4** | Aislamiento de componentes (Monkey Test) |
+| TTR-026 | **EPIC-4** | Guillotina de Ockham (Complexity Penalization) |
+| TTR-027 | **EPIC-4** | Búsqueda de meseta (Topological Plateau Finder) |
+| TTR-028 | **EPIC-4** | Optimización secuencial (Hierarchical Optimization) |
+| TTR-029 | **EPIC-4** | Red Team (Adversarial Noise Agent) |
+| TTR-030 | **EPIC-4** | Auditoría descendente (Fragility Gradient) |
+| TTR-031 | **EPIC-4** | Lógica adaptativa (Efficiency Ratio Filter) |
+| TTR-032 | **EPIC-4** | Scoring ponderado (Robustness Score Aggregator) |
+| TTR-033 | **EPIC-4** | Veredicto en lenguaje natural (Robustness Verdict Engine) |
+| TTR-035 | **EPIC-4** | Evaluación geométrica (Cluster Contiguo 3x3) |
+| TTR-036 | **EPIC-4** | Tests incrementales (Inheritance + Delta) |
+| TTR-037 | **EPIC-4** | Preparación visual MC (Spaghetti & Confidence Cone) |
+| TTR-038 | **EPIC-4** | Capa de inferencia estadística (EBTA) |
+| TTR-039 | **EPIC-4** | Certificación de estabilidad de volatilidad (Target Vol) |
+| TTR-040 | **EPIC-4** | Modelado de fricción institucional (Adverse Selection) |
+| TTR-043 | **EPIC-4** | PCA Toxicity Analyzer (ADR-0072) |
+| TTR-048 | **EPIC-4** | Mapa de calor mensual (Monthly Performance Heatmap) |
+| TTR-055 | **EPIC-4** | Adaptive WFA Windows (ADR-0073) |
+| TTR-056 | **EPIC-4** | Autoencoder Outlier Detector (ADR-0074) |
+| TTR-057 | **EPIC-4** | Design Manifest Quality Gate (ADR-0053) |
+| TTR-058 | **EPIC-4** | Simulación de portafolio real (Portfolio Backtest) |
+| TTR-059 | **EPIC-4** | Compuertas de robustez por dominio genómico (ADR-0108) |
+| TTR-034 | EPIC-7 | Matriz microrodante nocturna (Continuous Rolling WFM) |
+| TTR-041 | EPIC-8 | Filtrado dimensional (Parallel Coordinates) |
+| TTR-042 | EPIC-8 | Filtrado cruzado (Cross-Filtering) |
+| TTR-044 | EPIC-8 | Laboratorio de estrés interactivo (Interactive Stress Lab) |
+| TTR-045 | EPIC-8 | Co-piloto de mesetas (Plateau Co-Pilot) |
+| TTR-046 | EPIC-8 | Etiquetado manual de regímenes (Manual Regime Tagger) |
+| TTR-047 | EPIC-8 | Fitness contextual multi-régimen (Contextual Fitness Scorer) |
+| TTR-049 | EPIC-8 | Visor de diferencias (Strategy Config Diff) |
+| TTR-050 | EPIC-8 | Suite BI de análisis (Trade Analysis BI Suite) |
+| TTR-051 | EPIC-8 | Generador de gráficos PDF (PDF Charts Rendering) |
+| TTR-052 | EPIC-8 | Navegación temporal (Time-Warp UI) |
+| TTR-053 | EPIC-8 | Exploración multidimensional (UMAP Scatter Plot) |
+| TTR-054 | EPIC-8 | Purga de clústeres tóxicos (Toxicity Purifier) |
+| TTR-999 | **EPIC-4** | Protocolo Fail-Fast Safe (ADR-0066) |
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Envío una estrategia candidata → el sistema la somete a todas las pruebas y devuelve un veredicto
@@ -573,7 +686,7 @@ El veredicto final — APROBADA, EN REVISIÓN, o RECHAZADA — es permanente. No
 *   **Descripción:** Invoca al [`design-manifest`](../features/design-manifest.md) como el filtro final ineludible de aprobación.
 *   **Reglas de Orquestación:**
     - Evalúa las métricas de la estrategia contra el esquema de metas SMART del contrato inicial.
-    - Bloquea el paso a la Fase 3 de incubación si alguna condición no se cumple milimétricamente o el Robustness Score final está por debajo del umbral del Gatekeeper.
+    - Bloquea el paso a la Épica 3 de incubación si alguna condición no se cumple milimétricamente o el Robustness Score final está por debajo del umbral del Gatekeeper.
 *   **Entrada:** `test_results`, `SmartGoalsConfig`.
 *   **Salida:** `design_manifest_verdict` (APROBADO / RECHAZADO).
 *   **Precondición:** Guantelete de robustez (TTR-004) y tests secundarios completados.
@@ -689,23 +802,7 @@ El veredicto final — APROBADA, EN REVISIÓN, o RECHAZADA — es permanente. No
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamientos (ADR-0020 V2):** 
-Cada validación y test de robustez registra el set de relevancia técnica para AI/R&D:
-
-| Categoría | Campo | Descripción |
-| :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único del job de validación |
-| | `created_at` | Timestamp de proceso |
-| | `audit_hash` | Hash del veredicto final |
-| | `audit_chain_hash` | Hash de la secuencia de tests (WFA/MC) |
-| **II. Soberanía** | `owner_id` | Usuario responsable de la certificación |
-| | `manifest_id` | ID del diseño evaluado |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de validación |
-| | `data_snapshot_id" | Ref al snapshot PIT (Point-In-Time) |
-| | `indicator_state_hash` | Snapshot del score de robustez consolidado |
-| | `version_node_id` | Versión de la estrategia en el DAG |
-| **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
-| | `process_id` | PID del worker de validación |
+- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Reproducible (DAG).

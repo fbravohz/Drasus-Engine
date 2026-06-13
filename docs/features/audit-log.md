@@ -1,8 +1,10 @@
 # Audit Log — Registro de Auditoría Inmutable
 
 **Carpeta:** `./features/audit-log/`
-**Estado:** Lista para implementar
-**Última actualización:** 2026-04-08
+**Estado:** 🟡 Parcial — TTR-001 (registro inmutable append-only + hash chain) implementado. TTR-002 (reconciliación Nautilus) diferido a EPIC-2+.
+**Última actualización:** 2026-06-12
+
+> 🟡 **Parcial** 2026-06-12 · TTR-001 en código (`crates/shared`, migración `0002_audit_log.sql`, triggers append-only + verificación de cadena) · Orden de trabajo [STORY-004](../execution/STORY-004-audit-log.md) · Pendiente: TTR-002 (EPIC-2+).
 
 ---
 
@@ -112,16 +114,30 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Cada evento en `audit_events` registra el set absoluto de **25 campos mandatorios** (ver ADR-0020 V2 V2).
-    - Causalidad Forense: `audit_chain_hash` (encadenamiento físico), `event_sequence_id` (orden de replay), `logic_hash` (código exacto).
-    - Soberanía: `owner_id`, `access_token_id`, `manifest_id`.
-    - Contexto: `indicator_state_hash`, `data_snapshot_id`.
+- **Inundación de Fundaciones (ADR-0020 V2) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, forense de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020 V2.
+
+| Categoría | Campo | Descripción |
+| :--- | :--- | :--- |
+| **I. Identidad & Integridad** | `id` | UUID del evento (`log_id`) |
+| | `created_at` | Timestamp del evento (nanosegundos) |
+| | `updated_at` | Igual a `created_at` (append-only) |
+| | `audit_hash` | SHA-256 del contenido + enlace previo |
+| | `audit_chain_hash` | `audit_hash` de la fila anterior (NULL solo en la fila génesis) |
+| | `event_sequence_id` | Posición monótona en la cadena (orden de replay) |
+| **II. Soberanía & Propiedad** | `owner_id` | Dueño del capital/IP (nullable: no todo evento tiene uno) |
+| | `institutional_tag` | Entorno (PROD/PAPER/CHALLENGE) — obligatorio |
+| | `manifest_id` | Contrato de diseño vinculado (nullable) |
+| | `access_token_id` | Rastreo de autenticación (nullable) |
+| **IV. Infraestructura & Ops** | `process_id` | Ancla del job que disparó el evento — obligatorio |
+| | `session_id` | Agrupación de runtime (nullable) |
+| | `node_id` | ID del hardware físico (nullable) |
+
+- **Campos propios de la feature (TTR-001):** `action_type`, `entity_type`, `entity_id`, `details_json` — definidos en "Entrada"/"Restricciones" de este documento, no en ADR-0020 V2.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0015: Arquitectura de Causalidad (Audit Log como fuente de verdad para Feedback).
     - ADR-0016: Local-First (Soberanía de datos de auditoría).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020 V2: Inundación de Fundaciones — Perfil D (Ops/Auditoría).
 
 ---
 
