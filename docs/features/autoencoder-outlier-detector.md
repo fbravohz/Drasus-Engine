@@ -137,8 +137,10 @@ El modelo neural se implementa con una arquitectura de perceptrón multicapa (ML
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del modelo y análisis |
 | | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Última actualización del análisis |
 | | `audit_hash` | Hash del reporte de outliers generado |
 | | `audit_chain_hash` | Hash de la integridad de los trades |
+| | `event_sequence_id` | Secuencia del evento de análisis |
 | **II. Soberanía** | `owner_id` | Dueño de la IP evaluada |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del modelo de Autoencoder |

@@ -72,8 +72,10 @@ Toda cápsula de ejecución registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del contenedor |
 | | `created_at` | Timestamp de creación |
+| | `updated_at` | Timestamp de última actualización del contenedor |
 | | `audit_hash` | Hash de integridad del contenedor |
 | | `audit_chain_hash` | Hash del linaje de despliegue |
+| | `event_sequence_id` | Orden secuencial del contenedor en el DAG |
 | **II. Soberanía** | `owner_id` | Autor responsable |
 | | `manifest_id` | ID del contrato de diseño |
 | | `access_token_id` | Token de autorización |

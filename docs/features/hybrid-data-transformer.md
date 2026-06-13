@@ -77,8 +77,10 @@ Cada ejecución de transformación registra el set de relevancia técnica para D
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la transformación |
 | | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Timestamp de última actualización del registro de transformación |
 | | `audit_hash` | Hash del DataFrame Polars resultante |
 | | `audit_chain_hash` | Hash de la integridad del pipeline ETL |
+| | `event_sequence_id` | Secuencia ordinal del paso dentro del pipeline ETL |
 | **II. Linaje** | `source_id` | Ref al dataset crudo (input) |
 | | `transformation_id` | ID del paso de transformación (80/20) |
 | | `logic_hash` | Hash de la lógica Polars/ndarray |

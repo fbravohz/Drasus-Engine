@@ -150,14 +150,16 @@ Toda ejecución de backtest y resultado registra el set de relevancia técnica p
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del backtest |
 | | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Última actualización del resultado |
 | | `audit_hash` | Hash del PnL reportado |
 | | `audit_chain_hash` | Hash del stream de eventos matching |
+| | `event_sequence_id` | Secuencia del evento de backtest |
 | **II. Soberanía** | `owner_id` | Usuario responsable del capital simulado |
 | | `manifest_id` | ID del diseño de la estrategia |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor (Nautilus/Polars version) |
 | | `data_snapshot_id` | Ref al dataset histórico utilizado |
 | | `indicator_state_hash` | Snapshot de métricas (Sharpe/DD) |
-| | `version_node_id" | Versión de la estrategia en el DAG |
+| | `version_node_id` | Versión de la estrategia en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
 | | `process_id` | PID del motor de simulación |
 

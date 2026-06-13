@@ -129,8 +129,10 @@ Toda corrida de simulación de portafolio registra los metadatos de relevancia t
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la simulación de portafolio |
 | | `created_at` | Timestamp de inicio del backtest (nanosegundos) |
+| | `updated_at` | Timestamp de última actualización del registro |
 | | `audit_hash` | Hash SHA-256 de los parámetros y composición del backtest |
 | | `audit_chain_hash` | Hash de enlace temporal con corridas anteriores |
+| | `event_sequence_id` | Secuencia ordinal del evento de simulación en el DAG |
 | **II. Soberanía** | `owner_id` | Identificador del dueño de la IP/Estrategias |
 | | `manifest_id` | ID del Design Manifest de calidad aplicado |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del binario del motor de simulación en ejecución |

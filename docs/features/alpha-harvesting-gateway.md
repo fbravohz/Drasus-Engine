@@ -63,7 +63,7 @@ Permite incorporar "Alpha" descubierto por otros nodos sin revelar su código fu
 - **Local-First (ADR-0016):** 100% Local. No llama "home" al origen.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - **Perfil elegido:** B. Perfil IA / R&D
-  - **Identidad:** `id` del import, `audit_chain_hash`.
+  - **Identidad:** `id` del import, `created_at`, `audit_hash`, `audit_chain_hash`.
   - **Soberanía:** `institutional_tag` fijado como EXTERNAL_ALPHA.
   - **Pesos/Arquitectura:** `logic_hash` del AST importado verificado en base a firma criptográfica.
 

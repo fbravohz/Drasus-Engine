@@ -130,7 +130,7 @@ La interfaz implementa un **Motor de Estado UI** acoplado al JSON AST global con
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `logic_hash`, `manifest_id`, `version_node_id`, `node_id`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `logic_hash`, `manifest_id`, `version_node_id`, `node_id`.
 - **Rastro de Evidencia:** Emite hash de invalidación y auditoría de parámetros expuestos para el módulo de `feedback`.
 
 ---

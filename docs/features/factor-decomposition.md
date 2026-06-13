@@ -74,8 +74,10 @@ Toda descomposición registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la autopsia |
 | | `created_at` | Timestamp de cálculo |
+| | `updated_at` | Timestamp de última actualización del registro |
 | | `audit_hash` | Hash del reporte de pureza |
 | | `audit_chain_hash` | Hash del rastro de evidencia |
+| | `event_sequence_id` | Orden secuencial de la descomposición |
 | **II. Soberanía** | `owner_id` | Responsable del análisis |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de regresión |

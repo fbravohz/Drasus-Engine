@@ -74,8 +74,10 @@ Cada escritura particionada registra el set de relevancia técnica:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del bloque/archivo |
 | | `created_at` | Timestamp de escritura |
+| | `updated_at` | Timestamp de última reescritura/compactación del bloque |
 | | `audit_hash` | Hash de integridad del archivo Parquet |
 | | `audit_chain_hash` | Hash de la integridad del set completo |
+| | `event_sequence_id` | Secuencia ordinal de escrituras del job de particionado |
 | **II. Linaje** | `source_id" | Ref al dataset origen |
 | | `transformation_id` | ID del esquema Hive aplicado |
 | | `logic_hash` | Hash del motor de particionado |

@@ -74,8 +74,10 @@ Cada corrida de optimización inteligente registra el set de relevancia técnica
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del Job de optimización |
 | | `created_at` | Timestamp de inicio |
+| | `updated_at` | Última actualización del job |
 | | `audit_hash` | Hash de los parámetros óptimos finales |
 | | `audit_chain_hash` | Hash de la secuencia de puntos evaluados |
+| | `event_sequence_id` | Secuencia del evento de optimización |
 | **II. Soberanía** | `owner_id` | Usuario que solicitó la optimización |
 | | `manifest_id` | ID del diseño evaluado |
 | | `institutional_tag` | Etiqueta de entorno de ejecución |
@@ -85,6 +87,5 @@ Cada corrida de optimización inteligente registra el set de relevancia técnica
 | | `version_node_id` | Versión de la estrategia en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del proceso orquestador |
-| | `execution_latency_ms` | Tiempo total de cómputo bayesiano |
 
 ## Gobernanza y Estándares (Fijos)

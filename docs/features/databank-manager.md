@@ -53,7 +53,7 @@ Cada inserción en el Databank registra el set de relevancia técnica para AI/R&
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la configuración de clustering |
 | | `indicator_state_hash` | Snapshot de métricas (Sharpe/DD) |
 | | `version_node_id` | Versión del genoma en el catálogo |
-| **IV. Hardware** | `node_id" | ID del hardware físico del databank |
+| **IV. Hardware** | `node_id` | ID del hardware físico del databank |
 | | `process_id` | PID del worker de DuckDB |
 
 ---

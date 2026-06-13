@@ -98,7 +98,10 @@ La auto-auditoría de portafolios vivos es un sistema de monitoreo en tiempo rea
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | UUID del cálculo de expectativa |
 | | `created_at` | Timestamp de auditoría en nanosegundos |
+| | `updated_at` | Última actualización del cálculo |
 | | `audit_hash` | Hash del vector de spreads utilizado |
+| | `audit_chain_hash` | Hash de la cadena de cálculos previos |
+| | `event_sequence_id` | Secuencia del evento de recálculo |
 | **II. Soberanía** | `owner_id` | Identificador del operador local |
 | **IV. Hardware** | `node_id` | Identificador del host de ejecución |
 | | `process_id` | PID de ejecución |

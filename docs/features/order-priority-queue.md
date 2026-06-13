@@ -50,6 +50,7 @@ Se gestiona a través del objeto `OrderPriorityConfig`:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Hot-Path.
+    - **I. Identidad & Integridad (universal):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - Obligatorio incluir en cada guardado: `execution_latency_ms` (latencia total desde emisión hasta confirmación), `compliance_status_id` (veredicto de envío exitoso).
 - **Dependencias:** Utilizado primordialmente en `execute`.

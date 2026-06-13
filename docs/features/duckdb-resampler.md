@@ -75,7 +75,10 @@ Cada remuestreo registra el set de relevancia técnica para Datos:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del remuestreo |
 | | `created_at` | Timestamp de ejecución SQL |
+| | `updated_at` | Timestamp de última actualización del registro |
 | | `audit_hash` | Hash del resultado Arrow |
+| | `audit_chain_hash` | Hash del linaje de transformación |
+| | `event_sequence_id` | Orden secuencial del remuestreo |
 | **II. Linaje** | `source_id` | Ref al archivo Parquet fuente |
 | | `transformation_id` | ID de la temporalidad generada |
 | | `logic_hash` | Hash de la consulta SQL/DuckDB |

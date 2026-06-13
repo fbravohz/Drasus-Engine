@@ -184,6 +184,7 @@ Calcula matrices de correlación entre señales (señal vs señal) y entre seña
 | | `created_at` | Timestamp de cálculo |
 | | `audit_hash` | Hash de la matriz resultante |
 | | `audit_chain_hash` | Hash del timeline de diversificación |
+| | `event_sequence_id` | Secuencia del evento de cálculo |
 | **II. Soberanía** | `owner_id` | Autor de las señales |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor analítico |

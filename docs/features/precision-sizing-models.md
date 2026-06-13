@@ -110,7 +110,11 @@ Proporciona un framework unificado y determinista para el cálculo del tamaño d
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador del cálculo de sizing |
+| | `created_at` | Timestamp del cálculo de sizing |
+| | `updated_at` | Timestamp de última actualización del registro |
 | | `audit_hash` | Hash de la fórmula y variables de entrada |
+| | `audit_chain_hash` | Hash de enlace con el cálculo de sizing anterior |
+| | `event_sequence_id` | Secuencia ordinal del evento de cálculo |
 | **IV. Hardware** | `node_id` | ID del hardware de ejecución |
 | **V. Forense** | `process_id` | PID del servicio de riesgo |
 | | `logic_hash` | Hash del modelo matemático activo |

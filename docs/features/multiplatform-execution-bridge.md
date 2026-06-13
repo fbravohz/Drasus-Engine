@@ -89,6 +89,7 @@ Esta feature aplica el perfil de **Ops / Hot-Path**:
 | **III. Hardware** | `node_id` | ID del hardware físico ejecutor |
 | | `process_id` | PID del motor de ejecución real |
 | | `execution_latency_ms` | Latencia señal-a-broker (Máximo 1ms) |
+| | `source_signal_id` | ID de la señal original que originó la orden/fill |
 
 ---
 

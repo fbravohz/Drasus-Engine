@@ -99,7 +99,10 @@ Cada veredicto de calidad registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del veredicto |
 | | `created_at` | Timestamp de evaluación final |
+| | `updated_at` | Timestamp de última actualización del veredicto |
 | | `audit_hash` | Hash del certificado de robustez |
+| | `audit_chain_hash` | Hash del linaje de evaluación |
+| | `event_sequence_id` | Orden secuencial del veredicto en el DAG |
 | **II. Soberanía** | `owner_id` | Autor que promueve la estrategia |
 | | `manifest_id` | ID del contrato legal de la estrategia |
 | | `institutional_tag` | Tag de cumplimiento (Firmado) |

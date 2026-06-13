@@ -88,6 +88,7 @@ Toda evaluación de compatibilidad de régimen registra el set de relevancia té
 | | `created_at` | Timestamp de comprobación |
 | | `audit_hash` | Hash del estado del mercado (HMM) |
 | | `audit_chain_hash` | Hash del historial de coherencia |
+| | `event_sequence_id` | Secuencia del evento de validación |
 | **II. Soberanía** | `owner_id` | Autor de la estrategia |
 | | `manifest_id` | ID del contrato de diseño legal |
 | | `access_token_id` | Token de autorización operativa |

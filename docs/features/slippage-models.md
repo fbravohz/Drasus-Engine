@@ -84,6 +84,7 @@ Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 | | `created_at` | Timestamp de estimación |
 | | `audit_hash` | Hash de integridad del modelo L2 |
 | | `audit_chain_hash` | Hash de la sesión de simulación |
+| | `event_sequence_id` | Secuencia del evento de cálculo |
 | **II. Soberanía** | `owner_id` | Responsable del entorno |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del modelo de impacto (Pardo/Nautilus) |
@@ -91,7 +92,6 @@ Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 | | `indicator_state_hash` | Puntos básicos (bps) estimados |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del simulador de fricción |
-| | `execution_latency_ms` | Latencia de cálculo de impacto |
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0002: Arregrística entera para precios (int64).

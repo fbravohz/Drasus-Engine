@@ -113,10 +113,10 @@ El Robustness Verdict Engine es un motor de interpretación que convierte los re
 - **Local-First (ADR-0016):** El veredicto base es determinista por plantilla, sin runtimes externos. El realce LLM opcional opera 100% local vía `candle` embebido (ADR-0115). Cero Ollama, cero servicios externos.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - Perfil: AI / R&D.
-  - **I. Identidad & Integridad:** `id`, `created_at`, `audit_hash`, `event_sequence_id`.
+  - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.
   - **III. Linaje Alpha & Datos:** `version_node_id`, `logic_hash`, `data_snapshot_id`.
-  - **IV. Infraestructura & Ops:** `process_id`, `node_id`, `execution_latency_ms`.
+  - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
 - **Rastro de Evidencia:** Emite `verdict_text`, `rupture_points`, `most_sensitive_parameter`, `score_explanation` y `recommendations` para consumo del módulo de feedback.
 - **Determinismo Asistido por LLM (ADR-0051):** El LLM actúa exclusivamente como traductor semántico. No modifica parámetros ni emite señales.
 

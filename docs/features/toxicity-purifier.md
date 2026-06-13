@@ -97,7 +97,7 @@ Provee un panel con un scatter plot PCA 3D nativo y una tabla analítica que det
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. Los snapshots e historiales se graban de manera privada en la base SQLite.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `audit_hash`, `process_id`, `compliance_status_id`, `risk_audit_id`, `execution_latency_ms`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `process_id`, `node_id`.
 - **Rastro de Evidencia:** Emite el rastro de la purga e impacto para su análisis en `feedback` y actualización del ledger.
 
 ---

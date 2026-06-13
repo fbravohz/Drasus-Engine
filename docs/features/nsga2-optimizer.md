@@ -153,8 +153,10 @@ Cada Job de optimización evolutiva y generación de población registra el set 
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del Job de optimización |
 | | `created_at` | Timestamp de inicio de la evolución |
+| | `updated_at` | Timestamp de última actualización del Job |
 | | `audit_hash` | Hash de la Frontera Pareto final |
 | | `audit_chain_hash` | Hash de la secuencia de semillas genéticas |
+| | `event_sequence_id` | Índice secuencial de generaciones evolutivas |
 | **II. Soberanía** | `owner_id` | Usuario que lanzó el descubrimiento |
 | | `institutional_tag` | Etiqueta de entorno (ADR-0020 V2) |
 | | `manifest_id` | ID del diseño de búsqueda legal |
@@ -162,10 +164,9 @@ Cada Job de optimización evolutiva y generación de población registra el set 
 | | `data_snapshot_id` | Puntero a los datos de entrenamiento |
 | | `indicator_state_hash` | Snapshot del hypervolume/fitness promedio |
 | | `version_node_id` | Versión en la base de conocimiento (DAG) |
+| | `active_genome_domain` | Dominio genómico evolucionado por este Job (Señal / Riesgo y Gestión / Régimen y Filtro / Portafolio y Correlación) |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de optimización |
-| | `execution_latency_ms` | Tiempo total de evolución |
-| **III. Pesos/Arquitectura** | `active_genome_domain` | Dominio genómico evolucionado por este Job (Señal / Riesgo y Gestión / Régimen y Filtro / Portafolio y Correlación) |
 
 ## Gobernanza y Estándares (Fijos)
 

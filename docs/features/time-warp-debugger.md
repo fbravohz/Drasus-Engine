@@ -104,7 +104,7 @@ Para evitar la explosión de consumo de memoria RAM que causaría mantener millo
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `audit_hash`, `process_id`, `execution_latency_ms`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `process_id`, `node_id`.
 - **Rastro de Evidencia:** Emite logs de telemetría de rendimiento de consultas (número de particiones y latencia) para optimización en `feedback`.
 
 ---

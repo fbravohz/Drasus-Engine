@@ -158,7 +158,7 @@ Cada nodo del Grafo de Versiones (DAG) registra el set de relevancia técnica pa
 | | `audit_hash` | Hash del snapshot de configuración |
 | | `audit_chain_hash` | Hash de integridad del timeline del DAG |
 | **II. Soberanía** | `owner_id` | Autor de la versión |
-| | `manifest_id" | ID del contrato de diseño |
+| | `manifest_id` | ID del contrato de diseño |
 | | `access_token_id` | Token de autorización de cambios |
 | **III. Pesos/Arquitectura** | `logic_hash` | Huella digital de la configuración lógica |
 | | `parent_id` | ID del nodo padre (DAG Link) |

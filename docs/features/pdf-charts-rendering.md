@@ -82,7 +82,10 @@ El `PDF Charts Rendering` es el componente de backend (server-side/headless) enc
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `audit_hash`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría.
+    - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+    - **II. Soberanía:** `owner_id` (usuario que solicitó el reporte).
+    - **IV. Infra & Ops:** `node_id`, `process_id` (worker que generó el PDF).
 - **Rastro de Evidencia:** Emite un registro de auditoría de reportes generados para el módulo de `feedback`.
 
 ---
