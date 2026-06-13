@@ -93,16 +93,20 @@ Motor de **fitness contextual multi-régimen**. En lugar de un único número es
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Hereda la del cálculo de métricas base.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil Ops/Auditoría)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil B IA/R&D)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador del score contextual |
 | | `created_at` | Timestamp del cálculo |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del mapa de prioridades aplicado |
+| | `audit_chain_hash` | Hash encadenado de la secuencia de scores |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Analista que configuró las prioridades |
 | | `manifest_id` | Estrategia evaluada |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la partición por régimen |
+| | `version_node_id` | Versión del scorer aplicado |
 
 - **Rastro de Evidencia:** Emite a `feedback` el régimen donde la estrategia obtuvo el peor sub-score (vulnerabilidad dominante).
 

@@ -72,8 +72,10 @@ Toda detección de anomalía registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la anomalía |
 | | `created_at` | Timestamp de detección |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del rastro de evidencia causal |
 | | `audit_chain_hash` | Hash del timeline de incidentes |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Autor de la IP evaluada |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del modelo de detección (PCA/OLS) |

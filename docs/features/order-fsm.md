@@ -125,24 +125,27 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
 
-Toda orden y posición registra el set de relevancia técnica para AI/R&D:
+Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legítimo (resultado forense-reproducible de cada transición de orden). El linaje se mantiene a propósito.
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único (atómico) |
 | | `created_at` | Timestamp de transición (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del estado actual |
 | | `audit_chain_hash` | Hash del historial de la sesión |
+| | `event_sequence_id` | Secuencia de recuperación de la FSM |
 | **II. Soberanía** | `owner_id` | Dueño responsable |
 | | `manifest_id` | ID del contrato de diseño legal |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de ejecución (FSM) |
-| | `indicator_state_hash` | Snapshot técnico T-0 (Margen/Precio) |
+| **III. Linaje (híbrido)** | `logic_hash` | Hash del motor de ejecución (FSM) |
 | | `version_node_id` | Versión de la estrategia en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del ejecutor/worker |
-| | `execution_latency_ms` | Latencia de transición interna |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de transición interna (hot-path) |
+| | `source_signal_id` | Señal de origen que disparó la transición |
+| | `indicator_state_hash` | Snapshot técnico T-0 de la ejecución (Margen/Precio) — Grupo V, recategorizado desde III |
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: Máquina de Estados FSM (int64).

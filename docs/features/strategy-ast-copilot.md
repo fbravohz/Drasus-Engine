@@ -50,6 +50,20 @@ Resuelve la frustrante curva de aprendizaje de ensamblar bloques visuales manual
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Soberanía Asistida:** Permite LLM en Cloud pero el backend de validación y la lógica final operan localmente.
-- **Inundación de Fundaciones (ADR-0020 V2):**
-  - **Perfil IA:** Identidad + Autenticidad.
-  - **Contrato de Persistencia:** Registro de la semilla (prompt) original y el `audit_hash` para propósitos forenses.
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — linaje prompt→AST (II + III subset + IV).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único de la generación AST |
+  | | `created_at` | Timestamp de la generación |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash forense del prompt + AST resultante |
+  | | `audit_chain_hash` | Hash encadenado del historial de iteraciones |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Autor del prompt |
+  | | `manifest_id` | Estrategia generada |
+  | **III. Pesos/Arquitectura** | `logic_hash` | Hash del AST producido |
+  | | `parent_id` | Semilla (prompt) original de la que deriva el AST (linaje) |
+  | | `version_node_id` | Versión del AST en el DAG |
+  | **IV. Hardware** | `node_id` | ID del hardware/host de generación |
+  | | `process_id` | PID del proceso del copiloto |

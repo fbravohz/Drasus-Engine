@@ -68,8 +68,10 @@ Toda cuenta y trade virtual registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del trade virtual |
 | | `created_at` | Timestamp de ejecución (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del balance virtual |
 | | `audit_chain_hash` | Hash de la secuencia de trades de la sesión |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la IP de la estrategia |
 | | `manifest_id` | ID del contrato de diseño legal |
 | | `institutional_tag` | Etiqueta de entorno (ADR-0020 V2) |
@@ -79,7 +81,7 @@ Toda cuenta y trade virtual registra el set de relevancia técnica para AI/R&D:
 | | `version_node_id` | ID de la versión en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de incubación |
-| | `execution_latency_ms" | Latencia simulada de ejecución |
+| | `execution_latency_ms` | Latencia simulada de ejecución |
 
 
 ---

@@ -92,10 +92,10 @@ QuantOps Daemon es la evolución de la automatización manual de flujos de traba
 
 - **Local-First (ADR-0016):** 100% Local. Daemon corre en el servidor de la máquina anfitriona (Linux Headless o Windows Background).
 - **Inundación de Fundaciones (ADR-0020 V2):** 
-   - **Perfil Ops / Hot-Path:** 
-   - Identidad (`id`, `created_at`, `audit_hash`).
-   - Hardware (`node_id`, `process_id` del daemon asíncrono).
-   - Soberanía (`owner_id` para trazabilidad de quién configuró el cron).
+   - **Perfil D (Ops / Auditoría):** daemon CI/CD de orquestación, no ruta crítica de latencia.
+   - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+   - **II. Soberanía & Propiedad:** `owner_id` (quién configuró el cron), `institutional_tag`.
+   - **IV. Infraestructura & Ops:** `node_id`, `process_id` (del daemon asíncrono), `session_id`.
 - **Contrato de Persistencia:** Tabla `notification_configs` y `pipeline_schedules` integradas a la metadata del sistema.
 
 ## 9. Dependencias y Bloqueantes

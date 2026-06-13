@@ -79,9 +79,9 @@ Cada remuestreo registra el set de relevancia técnica para Datos:
 | | `audit_hash` | Hash del resultado Arrow |
 | | `audit_chain_hash` | Hash del linaje de transformación |
 | | `event_sequence_id` | Orden secuencial del remuestreo |
-| **II. Linaje** | `source_id` | Ref al archivo Parquet fuente |
+| **III. Linaje** | `data_snapshot_id` | Ref al archivo Parquet fuente |
 | | `transformation_id` | ID de la temporalidad generada |
 | | `logic_hash` | Hash de la consulta SQL/DuckDB |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del motor DuckDB |
 | | `execution_latency_ms` | Tiempo de ejecución de la consulta |

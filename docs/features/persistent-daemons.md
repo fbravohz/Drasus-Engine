@@ -72,6 +72,30 @@ Esta feature implementa hilos de ejecución de larga duración en Rust (Tokio ta
     - [ ] Si fuerzo la detención del proceso, el sistema lanza una alerta visual y sonora en < 2 segundos.
     - [ ] Hay un log que registra cada latido de vida exitoso.
 
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Ops/Hot-Path)
+
+Daemon de ejecución real (core pinning, latencia crítica) → Perfil C (I + II + IV + V latencia):
+
+| Categoría | Campo | Descripción |
+| :--- | :--- | :--- |
+| **I. Identidad** | `id` | Identificador único del daemon/sesión |
+| | `created_at` | Timestamp de arranque (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
+| | `audit_hash` | Hash de integridad del estado del daemon |
+| | `audit_chain_hash` | Hash encadenado del historial de heartbeats |
+| | `event_sequence_id` | Secuencia de recuperación del daemon |
+| **II. Soberanía** | `owner_id` | Propietario de la cuenta/estrategia en ejecución |
+| | `institutional_tag` | Tag de entorno (LIVE / PAPER) |
+| **IV. Hardware** | `node_id` | ID del hardware físico (núcleo fijado / core pinning) |
+| | `process_id` | PID del daemon persistente |
+| | `session_id` | Agrupación de runtime |
+| **V. Forense & Ejecución (latencia)** | `execution_latency_ms` | Latencia de ciclo del daemon en hot-path |
+| | `source_signal_id` | Señal/evento de mercado procesado |
+
+- **Rastro de Evidencia:** Emite heartbeats y latencias de ciclo al módulo `feedback`.
+
+---
+
 ## Dependencias
 
 **Depende de:**

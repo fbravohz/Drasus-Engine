@@ -82,8 +82,11 @@ Cada job de descarga registra el set de relevancia técnica:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del job |
 | | `created_at` | Timestamp de inicio |
+| | `updated_at` | Timestamp de última modificación del registro |
+| | `audit_hash` | Hash de integridad del job de descarga |
 | | `audit_chain_hash` | Hash de integridad de la sesión |
-| **II. Linaje** | `source_id` | URL/Endpoint de la descarga |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | URL/Endpoint de la descarga (linaje de origen) |
 | | `session_id` | Sesión global vinculada |
-| **III. Hardware** | `node_id` | ID del hardware físico receptor |
+| **IV. Hardware** | `node_id` | ID del hardware físico receptor |
 | | `process_id` | PID del manager de descargas |

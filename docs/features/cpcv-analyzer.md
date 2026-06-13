@@ -90,8 +90,10 @@ Esta feature registra el set de relevancia técnica para **AI / R&D**:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | ID único del job de análisis CPCV |
 | | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del reporte de PBO |
 | | `audit_chain_hash` | Hash vinculado al dataset de optimización original |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Identificador del analista/estación responsable |
 | | `logic_hash` | Hash de la versión del algoritmo CPCV |
 | | `manifest_id` | Ref al contrato de diseño de la estrategia |

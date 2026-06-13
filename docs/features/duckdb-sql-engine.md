@@ -84,8 +84,10 @@ Es el motor analítico central de Drasus Engine para **Procesamiento Analítico 
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. Los datos residen en la carpeta de usuario.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Cada consulta registra el `audit_hash` del archivo consultado y `process_id`.
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil A (Datos / Ingest)**.
+    - **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash` (del archivo consultado), `audit_chain_hash`, `event_sequence_id`.
+    - **III. Linaje:** `data_snapshot_id` (del mercado, para asegurar que el análisis se hizo sobre datos inalterados).
+    - **IV. Hardware:** `node_id`, `process_id`.
     - **Hooks Forenses:** Registra el `data_snapshot_id` del mercado para asegurar que el análisis se hizo sobre datos inalterados.
 - **Contrato de Persistencia:** Interactúa con archivos Parquet (Historical Bars / Fact Tables).
 

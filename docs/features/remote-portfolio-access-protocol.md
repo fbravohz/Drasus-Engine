@@ -71,7 +71,7 @@ Protocolo de acceso remoto autenticado con seguridad a nivel de campo (Field-Lev
 - **Local-First (ADR-0016):** El servidor maestro opera en la infraestructura física del dueño, accesado a través de túneles SSH/VPN. Cero delegación a SaaS de terceros.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - **Perfil: Ops / Auditoría.** 
-  - Foco en la trazabilidad inmutable. Las tablas de acceso de RPAP DEBEN inyectar: `id` (UUID), `created_at` (Nanosegundos), `audit_hash`, `owner_id`, `institutional_tag`, `access_token_id`, y `node_id`.
+  - Foco en la trazabilidad inmutable. Las tablas de acceso de RPAP DEBEN inyectar: `id` (UUID), `created_at` (Nanosegundos), `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `owner_id`, `institutional_tag`, `access_token_id`, y `node_id`.
 
 ## 9. Dependencias y Bloqueantes
 **Depende de:**

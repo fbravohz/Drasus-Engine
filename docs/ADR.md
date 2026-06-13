@@ -406,10 +406,10 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 
         | Perfil Técnico | Cuándo aplica (qué tipo de Feature) | Grupos que se inyectan (además del Grupo I, siempre universal) |
         |---|---|---|
-        | **A. Datos / Ingest** | Adquisición, limpieza, normalización o transformación de datos de mercado | III (Linaje Alpha & Datos) + IV (Infraestructura & Ops) |
-        | **B. IA / R&D** | Generación, optimización o detección basada en modelos / lógica evolutiva | II (Soberanía & Propiedad) + III, subset "Pesos/Arquitectura" (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id`) + IV |
-        | **C. Ops / Hot-Path** | Ruta crítica de ejecución, objetivo de latencia ≤1ms | II + IV + V, subset "Latencia" (`execution_latency_ms`, `source_signal_id`) |
-        | **D. Ops / Auditoría** | Registro forense, cumplimiento o reconciliación | II + IV |
+        | **A. Datos / Ingest** | Adquisición, limpieza, normalización o transformación de datos de mercado | III (Linaje Alpha & Datos, incl. `parent_id` cuando hay linaje jerárquico padre-hijo) + IV (Infraestructura & Ops) |
+        | **B. IA / R&D** | Generación, optimización o detección basada en modelos / lógica evolutiva | II (Soberanía & Propiedad) + III, subset "Pesos/Arquitectura" (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id`, `parent_id` cuando hay linaje jerárquico DAG/herencia) + IV |
+        | **C. Ops / Hot-Path** | Ruta crítica de ejecución, objetivo de latencia ≤1ms | II + IV + V, subset "Latencia" (`execution_latency_ms`, `source_signal_id`) + V, subset "Gobernanza" cuando aplica (`portfolio_container_id`, `compliance_status_id`) |
+        | **D. Ops / Auditoría** | Registro forense, cumplimiento o reconciliación | II + IV + V, subset "Gobernanza/Cumplimiento" cuando aplica (`portfolio_container_id`, `compliance_status_id`, `risk_audit_id`, `signature_hash`) |
 
         Dentro de cada grupo asignado, la Feature toma solo los campos concretos que tienen sentido para lo que esa tabla representa — no el grupo completo (ver ejemplos ya aplicados en `features/adaptive-volume-indicators.md` Perfil B, `features/broker-connector.md` Perfil C, `features/audit-log.md` Perfil D). Si una Feature combina rasgos de más de un perfil, lo documenta explícitamente en su propia sección "Contrato de Persistencia" — no se crea un quinto perfil ad-hoc sin pasar por el Mecanismo de Mantenimiento (más abajo).
     * **Materialización en EPIC-0:** En Épica 0 el contrato se materializa como **tabla ancla de referencia** (`foundation_master_fields`, migración 0001), no como 25 columnas replicadas. Las features posteriores definen sus campos propios + los campos base que su perfil exige.
@@ -419,6 +419,11 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
     2. **Actualización de ADR-0020 V2:** Se añade el nuevo campo/hook a este ADR como estándar obligatorio.
     3. **Inundación Retroactiva:** El agente audita TODAS las features y módulos existentes para inyectar el nuevo anclaje en sus secciones de "Gobernanza" y "Contrato de Persistencia".
     4. **Sincronización de Plantillas:** Se actualiza `TEMPLATES.md` para que futuras creaciones nazcan con la nueva fundación.
+*   **Registro de Mantenimiento (campos promovidos al filtro por perfil):**
+    *   **2026-06-13 — TASK-004, Fase 3 (Architect):** Tres campos transversales detectados en ≥3 features cada uno se habilitan explícitamente en la **tabla canónica de perfiles** (ya existían en el Set Maestro de 25, pero no estaban expuestos en ningún subset de perfil; el conteo del catálogo se mantiene en **25 campos**, no se inventa nada nuevo):
+        *   `parent_id` (Grupo III — Linaje Alpha & Datos): linaje jerárquico padre-hijo de DAG / herencia. Pedido por `strategy-versioning`, `incremental-test-engine`, `databank-lake`. Se expone en perfiles **A** y **B** (los que portan Grupo III), cuando la entidad modela una relación padre-hijo. Grupo III es el correcto: el linaje vive ahí junto a `version_node_id` (DAG link).
+        *   `portfolio_container_id` (Grupo V — Forense & Ejecución, subset "Gobernanza"): agrupador de portafolio. Pedido por `fit-to-portfolio-search`, `cross-market-validation`, `federated-portfolio`. Se expone en perfiles **C** y **D** (los que portan Grupo V/Gobernanza); las features **B** que lo necesiten lo documentan como híbrido en su Contrato de Persistencia. Grupo V es el correcto: es gobernanza forense de a qué portafolio pertenece una entidad de ejecución/auditoría.
+        *   `compliance_status_id` (Grupo V — Forense & Ejecución, subset "Cumplimiento"): estado/veredicto de cumplimiento normativo. Pedido por `toxicity-purifier`, `copy-trading-engine`, `prop-firm-grader`, `multiplatform-execution-bridge`. Se expone en perfiles **C** y **D**. Grupo V es el correcto: es un veredicto de riesgo/cumplimiento, semánticamente forense, no de soberanía (II).
 *   **Costo:** Leve sobrecosto inicial de diseño, pero ahorro masivo en mantenimiento y evolución del sistema.
 
 ---

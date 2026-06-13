@@ -111,7 +111,11 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 
 * **Local-First (ADR-0016):** 100% Local. La validación se realiza en la máquina del usuario; la red solo se utiliza asíncronamente para refrescar el token de heartbeat.
 * **Inundación de Fundaciones (ADR-0020 V2):**
-  * **Perfil Ops / Auditoría:** Foco en Identidad del Hardware, Soberanía de los Datos del Cliente y Auditoría Local de Accesos.
+  * **Perfil D (Ops / Auditoría):** Foco en Identidad del Hardware, Soberanía de los Datos del Cliente y Auditoría Local de Accesos.
+  * **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+  * **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `access_token_id`.
+  * **IV. Infraestructura & Ops:** `node_id` (huella de hardware), `process_id`.
+  * **V. Forense (Gobernanza):** `signature_hash` (firma de hardware), `compliance_status_id` (estado de la licencia).
   * **Hooks Forenses:** Registro de intentos fallidos de validación de firma de hardware en el log local protegido.
 * **Contrato de Persistencia:**  
   Los metadatos de la licencia se guardan cifrados en el almacén local del sistema utilizando claves derivadas de la huella digital.

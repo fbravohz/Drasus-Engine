@@ -160,8 +160,10 @@ Filtra señales de trading para detectar aquellas que son ortogonales (independi
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del filtrado |
 | | `created_at` | Timestamp de validación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto de ortogonalidad |
 | | `audit_chain_hash` | Hash de la integridad de la señal |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la IP de la señal |
 | | `manifest_id` | ID del contrato de diseño |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del modelo de factores (FF-5) |

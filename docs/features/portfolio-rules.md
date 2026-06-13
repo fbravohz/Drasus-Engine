@@ -99,24 +99,29 @@ Componente de gobernanza encargado de imponer los límites de seguridad globales
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
 
-Toda evaluación de reglas registra el set de relevancia técnica para AI/R&D:
+Híbrido: Perfil C (check de riesgo en hot-path) + linaje III legítimo (reproducibilidad del veredicto de reglas).
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del veredicto |
 | | `created_at` | Timestamp del check de regla |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del estado del portafolio T-0 |
 | | `audit_chain_hash` | Hash del timeline de cumplimiento |
+| | `event_sequence_id` | Secuencia de recuperación del check |
 | **II. Soberanía** | `owner_id` | Dueño del entorno |
 | | `manifest_id` | ID del contrato de diseño legal |
 | | `access_token_id` | Token de autorización de cambios |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del set de reglas activo |
-| | `indicator_state_hash` | Veredicto final del Juez de Invariantes |
+| **III. Linaje (híbrido)** | `logic_hash` | Hash del set de reglas activo |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del monitor de riesgo |
-| | `execution_latency_ms` | Latencia del check (< 10ms target) |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia del check (< 10ms target) |
+| | `source_signal_id` | Evento de portafolio que disparó la evaluación |
+| | `indicator_state_hash` | Veredicto final del Juez de Invariantes (Grupo V) |
+| | `portfolio_container_id` | Agrupador del portafolio evaluado (Gobernanza) |
+| | `compliance_status_id` | Estado de cumplimiento del perfil de fondeo (Challenge/Funded) |
 
 ---
 

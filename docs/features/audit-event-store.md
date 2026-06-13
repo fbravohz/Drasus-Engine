@@ -48,23 +48,25 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría)
 
-Cada evento registrado contiene el set de relevancia técnica para AI/R&D:
+Es el registro forense en sí. Perfil D (Auditoría = I + II + IV + V Gobernanza/Cumplimiento):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del evento |
 | | `created_at` | Timestamp atómico (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del cuerpo del evento (JSON) |
 | | `audit_chain_hash` | Hash de integridad de la cadena (WAL) |
+| | `event_sequence_id` | Secuencia de recuperación / orden del WAL |
 | **II. Soberanía** | `owner_id` | Dueño inmutable del rastro |
 | | `institutional_tag` | Tag de cumplimiento institucional |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor emisor |
-| | `version_node_id` | ID de la versión en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico de escritura |
 | | `process_id` | PID del escritor de eventos |
 | | `session_id` | Sesión operativa global |
+| **V. Forense (Gobernanza)** | `risk_audit_id` | Ticket de riesgo asociado al evento |
+| | `signature_hash` | Firma HMAC del evento sellado |
 
 ---
 

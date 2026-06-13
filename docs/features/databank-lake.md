@@ -69,15 +69,17 @@ En lugar de almacenar objetos de estrategia gigantes (JSON AST) en cada iteraci�
 * **¿Qué tiene que pasar?** Al promover, Orquestador Rust toma la Semilla inyectando sus valores numéricos en una plantilla base inmutable, reconstruyendo el árbol de dependencias (AST) y guardándolo como Agente definitivo.
 * **¿Cómo sé que está hecho?**
   - [ ] El clic en la interfaz envía una señal de promoción y se observa un nuevo registro en SQLite con su Snapshot de Perfil histórico (Pardo Profile) atado.
-* **¿Qué no puede pasar?** Modificar los parámetros base durante la rehidratación o perder el historial `parent_strategy_id`.
+* **¿Qué no puede pasar?** Modificar los parámetros base durante la rehidratación o perder el historial `parent_id` (link genético padre).
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local (Soberanía Parquet + DuckDB).
 - **Inundación de Fundaciones (ADR-0020 V2):** 
-    - **Perfil Ops / Hot-Path:** Identidad + Soberanía + Hardware + Latencia (Máximo 1ms).
-- **Contrato de Persistencia (Semillas Parquet):** 
-    - Identidad: `strategy_id` (UUID del run), `parent_strategy_id` (Link genético padre).
-    - Métricas: `fitness_score`, `sharpe_ratio`, `max_drawdown_pct`, `dna_payload` (JSON).
+    - **Perfil B (IA / R&D):** data lake R&D efímero (semillas genéticas), no ruta crítica de ejecución.
+    - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+    - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.
+    - **III. Pesos/Arquitectura (subset):** `logic_hash`, `data_snapshot_id`, `version_node_id`, `parent_id` (link genético padre, canónico).
+    - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
+- **Contrato de Persistencia (Semillas Parquet):** Grupo I completo + Perfil B arriba (`parent_id` = link genético padre), más los campos propios de negocio: `fitness_score`, `sharpe_ratio`, `max_drawdown_pct`, `dna_payload` (JSON).
 
 ## 9. Decisión Arquitectónica Asociada
 - ADR-0053: Separación Databank R&D vs Producción (Semillas vs AST).

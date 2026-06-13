@@ -46,8 +46,10 @@ Cada inserción en el Databank registra el set de relevancia técnica para AI/R&
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la estrategia/portafolio |
 | | `created_at` | Timestamp de indexación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del cuerpo Parquet persistido |
 | | `audit_chain_hash` | Hash de la integridad del catálogo |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Propietario del Alpha |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la configuración de clustering |

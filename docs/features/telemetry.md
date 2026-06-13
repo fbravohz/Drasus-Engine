@@ -57,7 +57,10 @@ Toda serie de telemetría porta el set de relevancia técnica:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador de la muestra métrica |
 | | `created_at` | Timestamp de captura |
+| | `updated_at` | Timestamp de última modificación del registro |
+| | `audit_hash` | Hash de integridad de la muestra |
 | | `audit_chain_hash` | Hash de integridad del stream técnico |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `institutional_tag` | Tag de firma/entorno operativo |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del emisor de telemetría |
 | | `session_id` | Sesión global vinculada |

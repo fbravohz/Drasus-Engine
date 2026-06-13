@@ -65,6 +65,9 @@ Resuelve el problema de la "Caja Negra Evolutiva", permitiendo al gestor auditar
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First / Cloud-Hybrid:** Se recomienda ejecución en API o local Llama 3 por privacidad de Alpha.
 - **Inundación de Fundaciones (ADR-0020 V2):**
-  - **Perfil Documentación:** Identidad + Linaje Genético.
-  - **Contrato de Persistencia:** (id, created_at, logic_hash, version_node_id, owner_id).
+  - **Perfil B (IA / R&D):** la explicación deriva de la generación de la estrategia; la etiqueta "Documentación" no existe en la tabla canónica.
+  - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+  - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.
+  - **III. Pesos/Arquitectura (subset):** `logic_hash`, `version_node_id`.
+  - **Contrato de Persistencia:** Grupo I completo + Perfil B (II + III subset) arriba.
   - **Hooks Forenses:** Hash criptográfico de la explicación ligada al `logic_hash` de la estrategia, evidenciando el contrato de auditoría.

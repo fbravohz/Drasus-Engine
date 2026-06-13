@@ -130,13 +130,15 @@ Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la auditoría |
-| | `created_at" | Timestamp de ejecución |
+| | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto PIT |
 | | `audit_chain_hash` | Hash de la cadena de veredictos |
-| **II. Linaje** | `source_id" | Ref al dataset externo auditado |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | Ref al dataset externo auditado (PIT) |
 | | `transformation_id` | ID del paso de limpieza PIT |
 | | `logic_hash` | Hash del algoritmo PIT |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del auditor PIT |
 
 ## Gobernanza y Estándares (Fijos)

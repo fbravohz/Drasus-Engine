@@ -93,7 +93,7 @@ El **Visualizador de Vistas Coordinadas** (Cross-Filtering) es un componente de 
 - **Fidelidad:** Alta fidelidad de agregación de datos por bins.
 - **Inundación de Fundaciones (ADR-0020 V2):** 
     - Perfil: IA / R&D.
-    - **I. Identidad & Integridad:** `id`, `created_at`, `audit_hash`, `event_sequence_id`.
+    - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.
     - **III. Linaje Alpha & Datos:** `version_node_id`, `logic_hash`, `data_snapshot_id`.
     - **IV. Infraestructura & Ops:** `process_id`, `node_id`.

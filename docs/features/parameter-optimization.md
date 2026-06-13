@@ -67,8 +67,10 @@ Busca los parámetros óptimos de una estrategia usando Grid Search (exhaustivo)
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la sesión de búsqueda |
 | | `created_at` | Timestamp de inicio |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de los parámetros ganadores |
 | | `audit_chain_hash` | Hash de la secuencia de búsqueda |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Usuario que optimiza |
 | | `manifest_id` | ID del diseño de la estrategia |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de optimización |

@@ -76,7 +76,10 @@ Cada reducción visual registra el set de relevancia técnica:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del proceso |
 | | `created_at` | Timestamp de ejecución |
+| | `updated_at` | Timestamp de última modificación del registro |
+| | `audit_hash` | Hash de integridad del proceso de downsampling |
 | | `audit_chain_hash` | Hash de integridad visual (LTTB state) |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Usuario que visualiza los datos |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del algoritmo de downsampling |
 | | `data_snapshot_id` | Ref al dataset crudo (input) |

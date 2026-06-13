@@ -76,9 +76,12 @@ Cada mapeo de símbolo registra el set de relevancia técnica para Datos:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del mapeo |
 | | `created_at` | Timestamp de registro |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la configuración del símbolo |
-| **II. Linaje** | `source_id` | ID del broker fuente |
+| | `audit_chain_hash` | Hash encadenado del historial del registro |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | ID del broker fuente |
 | | `transformation_id` | ID del mapeo institucional |
 | | `logic_hash` | Hash del traductor de esquemas |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del normalizador |

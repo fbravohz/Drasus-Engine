@@ -73,7 +73,22 @@ Implementar la validación automática mediante la inversión de señales de ent
 ## Gobernanza y Estándares
 
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - **Perfil IA / R&D:** Foco en Linaje de Generación ($N$) + Hardware de Cómputo (VRAM).
-- **Contrato de Persistencia:** Campos de auditoría (DSR Score, p-value, Detrended Sharpe).
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — inferencia estadística sobre el linaje de generación ($N$ pruebas).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único de la inferencia |
+  | | `created_at` | Timestamp del cálculo |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad del veredicto estadístico |
+  | | `audit_chain_hash` | Hash encadenado del historial |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Dueño del experimento |
+  | | `manifest_id` | Estrategia/genoma evaluado |
+  | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de inferencia (EBTA) |
+  | | `data_snapshot_id` | Snapshot de los retornos analizados |
+  | | `version_node_id` | Versión del motor estadístico |
+  | **IV. Hardware** | `node_id` | ID del hardware de cómputo (VRAM) |
+  | | `process_id` | PID del proceso de inferencia |
+- **Contrato de Persistencia:** Grupo I completo + Perfil B arriba, más los campos propios: `dsr_score`, `p_value`, `detrended_sharpe`.
 - **Rastro de Evidencia:** Veredicto de significancia para el módulo de `feedback`.

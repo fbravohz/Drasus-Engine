@@ -96,11 +96,13 @@ Cada descarga registra el set de relevancia técnica para Datos:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del job de descarga |
 | | `created_at` | Timestamp de inicio |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del archivo comprimido |
 | | `audit_chain_hash` | Hash de la secuencia de descarga |
-| **II. Linaje** | `source_id` | URL/Endpoint de la fuente Bulk/REST |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | URL/Endpoint de la fuente Bulk/REST |
 | | `data_snapshot_id` | Ref al snapshot del broker |
 | | `logic_hash` | Hash del driver del fetcher |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de descarga |
 | | `execution_latency_ms` | Tiempo total de descarga |

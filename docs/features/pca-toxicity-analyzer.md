@@ -82,7 +82,7 @@ Es un módulo de validación avanzada que aplica técnicas de aprendizaje no sup
 
 ### Inundación de Fundaciones (ADR-0020 V2)
 - **Perfil AI / R&D:**
-  - **I. Identidad & Integridad:** `id`, `created_at`, `audit_hash`.
+  - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía IP & Propiedad:** `owner_id`.
   - **III. Linaje Alpha & Datos:** `logic_hash`, `data_snapshot_id`.
   - **IV. Infraestructura & Ops:** `node_id`.

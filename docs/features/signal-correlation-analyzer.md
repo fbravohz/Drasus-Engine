@@ -182,6 +182,7 @@ Calcula matrices de correlación entre señales (señal vs señal) y entre seña
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del reporte |
 | | `created_at` | Timestamp de cálculo |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la matriz resultante |
 | | `audit_chain_hash` | Hash del timeline de diversificación |
 | | `event_sequence_id` | Secuencia del evento de cálculo |

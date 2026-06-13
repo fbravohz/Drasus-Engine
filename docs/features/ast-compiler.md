@@ -106,7 +106,10 @@ Cada genoma de estrategia compilado por este motor debe portar el set filtrado d
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la compilación |
 | | `created_at` | Timestamp de compilación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash forense para inmutabilidad del genoma |
+| | `audit_chain_hash` | Hash encadenado del historial de compilaciones |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Autor de la estrategia |
 | | `institutional_tag` | Etiqueta de la firma/experimento |
 | | `manifest_id` | ID del contrato de diseño legal |

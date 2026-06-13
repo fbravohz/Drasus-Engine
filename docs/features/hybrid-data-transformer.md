@@ -81,9 +81,9 @@ Cada ejecución de transformación registra el set de relevancia técnica para D
 | | `audit_hash` | Hash del DataFrame Polars resultante |
 | | `audit_chain_hash` | Hash de la integridad del pipeline ETL |
 | | `event_sequence_id` | Secuencia ordinal del paso dentro del pipeline ETL |
-| **II. Linaje** | `source_id` | Ref al dataset crudo (input) |
+| **III. Linaje** | `data_snapshot_id` | Ref al dataset crudo (input) |
 | | `transformation_id` | ID del paso de transformación (80/20) |
 | | `logic_hash` | Hash de la lógica Polars/ndarray |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del motor de transformación |
-| | `execution_latency_ms" | Tiempo de procesamiento multihilo |
+| | `execution_latency_ms` | Tiempo de procesamiento multihilo |

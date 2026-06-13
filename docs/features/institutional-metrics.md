@@ -53,6 +53,22 @@ Para evitar la "sobreingeniería", organizamos las métricas en capas lógicas:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
-    - Obligatorio incluir en cada guardado: `logic_hash`, `audit_chain_hash`.
+- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil B (IA / R&D), híbrido B+latencia** (cálculo de métricas con extractor de microestructura sensible a latencia).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único del cálculo de métricas |
+  | | `created_at` | Timestamp del cálculo |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad del set de métricas |
+  | | `audit_chain_hash` | Hash encadenado del historial |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Dueño de la configuración |
+  | | `manifest_id` | Estrategia evaluada |
+  | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor dual de cálculo |
+  | | `data_snapshot_id` | Snapshot de trades de origen (MAE/MFE) |
+  | | `version_node_id` | Versión del muestrario de métricas |
+  | **IV. Hardware** | `node_id` | ID del hardware físico |
+  | | `process_id` | PID del proceso de cálculo |
+  | **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia del extractor de microestructura |
 - **Dependencias:** Consumido masivamente por los módulos `validate`, `manage` y `feedback`.

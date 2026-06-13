@@ -100,7 +100,10 @@ El sistema de disparadores de pipelines basado en eventos permite automatizar la
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | UUID de la ejecución del trigger |
 | | `created_at` | Timestamp de disparo en nanosegundos |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la configuración de reglas evaluada |
+| | `audit_chain_hash` | Hash encadenado del historial de disparos |
+| | `event_sequence_id` | Secuencia de recuperación del disparo |
 | **II. Soberanía** | `owner_id` | Identificador del operador local |
 | **IV. Hardware** | `node_id` | Identificador de hardware físico del host |
 | | `process_id` | PID del daemon de monitoreo |

@@ -69,20 +69,27 @@ El motor de detección de regímenes utiliza **Modelos Ocultos de Markov (HMM)**
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil B IA/R&D, híbrido B+latencia)
+
+Híbrido: Perfil B (IA/R&D, lleva linaje III) + latencia V legítima (clasificación ≤20ms en hot-path).
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la inferencia de régimen |
 | | `created_at` | Timestamp del evento de mercado |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del resultado combinado |
+| | `audit_chain_hash` | Hash encadenado de la secuencia de inferencias |
+| | `event_sequence_id` | Secuencia de recuperación de la inferencia |
 | **II. Soberanía** | `owner_id` | Dueño del proceso de clasificación |
 | **III. Linaje** | `logic_hash` | Hash de los pesos del modelo HMM y ARIMA |
 | | `data_snapshot_id` | Referencia a las últimas 1000 transacciones L1 Crudas |
-| | `parent_id` | ID del Alpha Blueprint orquestador |
+| | `version_node_id` | Versión del modelo en el DAG |
+| | `parent_id` | ID del Alpha Blueprint orquestador (linaje jerárquico) |
 | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
-| | `execution_latency_ms` | Latencia de decodificación L1 (Hot-path) |
-| **V. Forense** | `compliance_status_id` | Veredicto de Liquidez/Estancamiento (Veto ARIMA) |
+| | `process_id` | PID del proceso de clasificación |
+| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de decodificación L1 (Hot-path ≤20ms) |
+| | `compliance_status_id` | Veredicto de Liquidez/Estancamiento (Veto ARIMA) |
 | | `indicator_state_hash` | Vector de estados (α, β) del filtro dinámico |
 
 ## Gobernanza y Estándares (Fijos)

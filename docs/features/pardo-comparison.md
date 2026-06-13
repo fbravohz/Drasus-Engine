@@ -82,8 +82,10 @@ Toda comparación Pardo registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la autopsia |
 | | `created_at` | Timestamp del veredicto |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto de consistencia |
 | | `audit_chain_hash` | Hash del rastro de evidencia causal |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Autor que solicita la validación |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la fórmula de comparación |
@@ -91,7 +93,7 @@ Toda comparación Pardo registra el set de relevancia técnica para AI/R&D:
 | | `indicator_state_hash` | Drift Score actual |
 | | `version_node_id` | ID de la versión evaluada en el DAG |
 | **IV. Hardware** | `node_id` | ID del hardware físico (Juez) |
-| | `process_id" | PID del evaluador estadístico |
+| | `process_id` | PID del evaluador estadístico |
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0015: Arquitectura de Causalidad y Aprendizaje.

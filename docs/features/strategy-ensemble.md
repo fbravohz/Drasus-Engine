@@ -174,8 +174,10 @@ Orquesta canales (NSGA-II, Simbólico, HMM) en estrategias híbridas mediante **
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la síntesis |
 | | `created_at` | Timestamp de ensamble |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la estrategia híbrida |
 | | `audit_chain_hash` | Link a la integridad del bus de barras |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la IP colectiva |
 | | `manifest_id` | ID del contrato de diseño del ensemble |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de fusión (Weighted Voting) |

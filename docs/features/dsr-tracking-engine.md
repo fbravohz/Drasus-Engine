@@ -58,6 +58,10 @@ Implementar el algoritmo de Welford para calcular media y varianza en un solo pa
 
 - **Local-First (ADR-0016):** 100% Local (SQLite WAL).
 - **Inundación de Fundaciones (ADR-0020 V2):** 
-    - **Perfil Datos / Ingest:** Foco en Identidad de Sesión + Linaje de Pruebas.
-- **Contrato de Persistencia:** Tabla `mining_sessions` (session_id, trials_count, sharpe_variance, start_time, end_time).
+    - **Perfil B (IA / R&D):** minería genética / varianza de Sharpe = R&D. B engloba el rastro de auditoría (B = I+II+III+IV ⊇ D = I+II+IV) y aporta el linaje. El Grupo I universal da la inmutabilidad del conteo $N$.
+    - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+    - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.
+    - **III. Pesos/Arquitectura (subset):** `logic_hash`, `data_snapshot_id`, `version_node_id`, `parent_id` (linaje de pruebas).
+    - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
+- **Contrato de Persistencia:** Tabla `mining_sessions` con el Grupo I completo + campos del Perfil B arriba, más los campos propios de negocio (`trials_count`, `sharpe_variance`, `start_time`, `end_time`).
 - **Rastro de Evidencia:** Proporciona los parámetros $N$ y $\sigma^2$ para el módulo `validate`.

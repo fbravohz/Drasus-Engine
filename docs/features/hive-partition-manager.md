@@ -78,8 +78,8 @@ Cada escritura particionada registra el set de relevancia técnica:
 | | `audit_hash` | Hash de integridad del archivo Parquet |
 | | `audit_chain_hash` | Hash de la integridad del set completo |
 | | `event_sequence_id` | Secuencia ordinal de escrituras del job de particionado |
-| **II. Linaje** | `source_id" | Ref al dataset origen |
+| **III. Linaje** | `data_snapshot_id` | Ref al dataset origen |
 | | `transformation_id` | ID del esquema Hive aplicado |
 | | `logic_hash` | Hash del motor de particionado |
-| **III. Hardware** | `node_id` | ID del hardware físico (Storage Node) |
+| **IV. Hardware** | `node_id` | ID del hardware físico (Storage Node) |
 | | `process_id` | PID del proceso de escritura |

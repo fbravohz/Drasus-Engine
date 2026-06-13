@@ -85,13 +85,15 @@ Toda sanitización registra el set de relevancia técnica para Datos:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la sanitización |
 | | `created_at` | Timestamp de inicio del proceso |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del dato limpio resultante |
 | | `audit_chain_hash` | Hash de la secuencia de 6 capas de calidad |
-| **II. Linaje** | `data_snapshot_id` | Ref al dataset crudo original (input) |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | Ref al dataset crudo original (input) |
 | | `transformation_id` | ID del paso de limpieza (Capa 1-6) |
 | | `logic_hash` | Hash de la lógica del motor sanitizador |
 | | `indicator_state_hash` | Estadísticas del dataset (outliers/gaps detectados) |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de limpieza |
 | | `execution_latency_ms` | Tiempo total de sanitización |
 

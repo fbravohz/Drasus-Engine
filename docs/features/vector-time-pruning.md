@@ -61,7 +61,7 @@ Convierte datos estadísticos anómalos (positivos o negativos) en vetos físico
 
 - **Inundación de Fundaciones (ADR-0020 V2):** 
     - Perfil: Ops / Auditoría.
-    - **I. Identidad & Integridad:** `id`, `created_at`, `audit_hash`.
+    - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.
     - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
     - **V. Forense & Ejecución:** `compliance_status_id`, `risk_audit_id`.

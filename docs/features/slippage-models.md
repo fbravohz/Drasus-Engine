@@ -82,6 +82,7 @@ Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del cálculo |
 | | `created_at` | Timestamp de estimación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del modelo L2 |
 | | `audit_chain_hash` | Hash de la sesión de simulación |
 | | `event_sequence_id` | Secuencia del evento de cálculo |

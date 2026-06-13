@@ -65,23 +65,27 @@ El **Ruteador por Perfil de Volumen** es una capa de seguridad en la ejecución 
 - **Qué tiene que pasar:** Implementar la lógica que calcula el llenado (*fill*) proyectado sobre el perfil actual.
 - **Criterio de éxito:** Bloquear órdenes que tendrían un slippage > 2x el spread promedio.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
 
-Cada decisión de ruteo registra el set de relevancia técnica:
+Híbrido: Perfil C (veto de liquidez <0.5ms) + linaje III legítimo (reproducibilidad del veredicto de ruteo).
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del evento de ruteo |
 | | `created_at` | Timestamp de la señal entrante |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto de ruteo |
 | | `audit_chain_hash` | Hash de la secuencia de perfiles |
+| | `event_sequence_id` | Secuencia de recuperación del ruteo |
 | **II. Soberanía** | `owner_id` | Dueño del algoritmo de riesgo |
 | | `manifest_id` | ID del diseño evaluado |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor de cálculo de perfil |
+| **III. Linaje (híbrido)** | `logic_hash` | Hash del motor de cálculo de perfil |
 | | `data_snapshot_id` | Puntero a los ticks/quotes usados |
-| | `indicator_state_hash` | Snapshot del perfil de volumen T-0 |
 | | `version_node_id` | Versión de la política de riesgo |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del proceso de ejecución |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia del veto de liquidez (hot-path) |
+| | `source_signal_id` | Señal entrante que disparó el ruteo |
+| | `indicator_state_hash` | Snapshot del perfil de volumen T-0 (Grupo V) |
 
 ## Gobernanza y Estándares (Fijos)

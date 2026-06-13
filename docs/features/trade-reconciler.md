@@ -65,8 +65,10 @@ Cada reporte de reconciliación registra el set de relevancia técnica para AI/R
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la reconciliación |
 | | `created_at` | Timestamp de autopsia (EOD) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del reporte de discrepancias |
 | | `audit_chain_hash` | Hash de la secuencia de auditoría |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño operativo del capital |
 | | `manifest_id` | ID del contrato de diseño legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor reconciliador |

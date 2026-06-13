@@ -125,21 +125,24 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Cada reporte de incubación y sesión activa registra el set de relevancia técnica de perfil Ops / Hot-Path:
+Cada reporte de incubación y sesión activa registra el set de relevancia técnica. **Perfil B (IA/R&D), híbrido B+latencia** (lleva linaje III de la estrategia incubada + telemetría de latencia):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la sesión de incubación |
 | | `created_at` | Timestamp de inicio de la incubación (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
+| | `audit_hash` | Hash de integridad del estado de la sesión |
 | | `audit_chain_hash` | Hash criptográfico del historial de la sesión |
+| | `event_sequence_id` | Secuencia de recuperación de la sesión |
 | **II. Soberanía** | `owner_id` | Propietario del capital o cuenta simulada |
 | | `institutional_tag` | Tag de cumplimiento (AUDIT / OPERATIONAL) |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash de la lógica de trading inmutable |
-| | `indicator_state_hash` | Snapshot del drift medido (Return / Drawdown Efficiency) |
+| **III. Linaje** | `logic_hash` | Hash de la lógica de trading inmutable |
 | | `version_node_id` | Identificador en el DAG de versiones de la estrategia |
 | **IV. Hardware** | `node_id` | ID único del hardware físico ejecutor |
 | | `process_id` | PID del worker que gestiona la sesión de sandbox |
-| | `execution_latency_ms` | Latencia de cálculo de la telemetría en tiempo real |
+| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo de la telemetría en tiempo real |
+| | `indicator_state_hash` | Snapshot del drift medido (Return / Drawdown Efficiency) (Grupo V) |
 
 ---
 

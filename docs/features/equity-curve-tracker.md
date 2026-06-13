@@ -189,14 +189,16 @@ Mantiene un registro barra-por-barra (o tick-por-tick) del capital, beneficio/p�
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — tracking de equity con auditoría + linaje.
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del snapshot de equity |
 | | `created_at` | Timestamp de la barra/tick |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del balance actual |
 | | `audit_chain_hash` | Hash del historial de performance |
+| | `event_sequence_id` | Secuencia de recuperación del snapshot |
 | **II. Soberanía** | `owner_id` | Dueño del portafolio/capital |
 | | `manifest_id` | ID del contrato de diseño |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del tracker PnL (Nautilus core) |

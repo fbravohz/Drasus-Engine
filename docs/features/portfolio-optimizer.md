@@ -237,22 +237,25 @@ Adicionalmente, incorpora el **Auto-Rebalancing Daemon** (scheduler nativo Tokio
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Cada reporte de rebalanceo y sesión de optimización registra el set de relevancia técnica de perfil Ops / Hot-Path:
+Cada reporte de rebalanceo y sesión de optimización registra el set de relevancia técnica. **Perfil B (IA/R&D), híbrido B+latencia** (lleva linaje III + latencia V <2ms del Voiding Gate):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del evento de rebalanceo/snapshot |
 | | `created_at` | Timestamp del cálculo de pesos (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la matriz de covarianza y pesos óptimos |
 | | `audit_chain_hash` | Hash acumulativo del historial de rebalanceos |
+| | `event_sequence_id` | Secuencia de recuperación del rebalanceo |
 | **II. Soberanía** | `owner_id` | Responsable legal de la cuenta agregada |
 | | `institutional_tag` | Tag de cumplimiento operativo (LIVE / AUDIT) |
-| **III. Pesos/Arquitectura** | `logic_hash` | Hash del solver de optimización (HRP/Markowitz) |
-| | `indicator_state_hash` | Snapshot del vector de pesos resultantes |
+| **III. Linaje** | `logic_hash` | Hash del solver de optimización (HRP/Markowitz) |
 | | `version_node_id` | Identificador del portafolio en el DAG de versiones |
 | **IV. Hardware** | `node_id` | ID único del hardware físico ejecutor |
 | | `process_id` | PID del daemon de rebalanceo |
-| | `execution_latency_ms` | Latencia de cálculo del rebalanceo / cointegración |
+| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo del rebalanceo / cointegración (<2ms) |
+| | `indicator_state_hash` | Snapshot del vector de pesos resultantes (Grupo V) |
+| | `portfolio_container_id` | Agrupador del portafolio optimizado (Gobernanza) |
 
 ---
 

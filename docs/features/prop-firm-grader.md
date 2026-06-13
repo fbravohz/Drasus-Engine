@@ -45,6 +45,9 @@ Se inyecta mediante el objeto `PropFirmComplianceConfig`. Aquí algunos perfiles
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
-    - Obligatorio incluir en cada guardado: `compliance_status_id` (veredicto final), `risk_audit_id` (razón del rechazo si aplica).
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil D (Ops / Auditoría)** — calificación de cumplimiento de prop-firm.
+    - **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+    - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`.
+    - **IV. Infraestructura & Ops:** `node_id`, `process_id`.
+    - **V. Forense (Gobernanza):** `compliance_status_id` (veredicto final), `risk_audit_id` (razón del rechazo si aplica), `portfolio_container_id` (cuenta de fondeo evaluada).
 - **Dependencias:** Utilizado primordialmente en `validate`, `execute` y `withdraw`.

@@ -70,9 +70,11 @@ Cada importación manual registra el set de relevancia técnica:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la importación |
 | | `created_at` | Timestamp de inicio |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del archivo crudo importado |
 | | `audit_chain_hash` | Hash de la secuencia de asimilación |
-| **II. Linaje** | `source_id` | Nombre/Ruta del archivo original |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | Nombre/Ruta del archivo original |
 | | `logic_hash` | Hash del parser utilizado |
-| **III. Hardware** | `node_id` | ID del hardware físico de importación |
+| **IV. Hardware** | `node_id` | ID del hardware físico de importación |
 | | `process_id` | PID del worker de parseo |

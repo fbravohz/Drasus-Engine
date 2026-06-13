@@ -93,5 +93,20 @@ El **Operational Safety Monitor** es el guardián de la integridad del capital e
 
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Alta (Tick-by-Tick logic).
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría.
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil D (Ops / Auditoría)** — registro forense de veredictos de salud y kill-switches (I + II + IV + V Gobernanza).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único del veredicto de salud |
+  | | `created_at` | Timestamp del check (nanosegundos) |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad del veredicto |
+  | | `audit_chain_hash` | Hash encadenado del historial de salud |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Dueño del sistema monitorizado |
+  | | `institutional_tag` | Tag de entorno (LIVE / PAPER) |
+  | **IV. Hardware** | `node_id` | ID del hardware físico monitorizado |
+  | | `process_id` | PID del watchdog |
+  | **V. Forense (Gobernanza)** | `compliance_status_id` | Veredicto de salud/cumplimiento operativo |
+  | | `risk_audit_id` | Ticket de riesgo asociado al kill-switch |
 - **Rastro de Evidencia:** Emite `safety_verdict` y `drift_metrics` para `feedback`.

@@ -85,13 +85,16 @@ Toda restauración de sesión de emergencia registra el set de relevancia técni
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del evento de recuperación |
 | | `created_at` | Timestamp de arranque (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la conciliación exitosa |
 | | `audit_chain_hash` | Firma del rastro de incidentes encadenados |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Propietario responsable de la cuenta |
 | | `compliance_status_id` | Código de veredicto del reconciliador |
-| **III. Hardware** | `node_id` | Identificador del hardware físico local |
+| **IV. Hardware** | `node_id` | Identificador del hardware físico local |
 | | `process_id` | PID del daemon LiveNode |
-| **IV. Latencia** | `recovery_latency_ms` | Tiempo total empleado en reconciliación (Target <= 10s) |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de la operación de recuperación (subset Latencia) |
+| | `recovery_latency_ms` | Variante específica: tiempo total de reconciliación (Target <= 10s); medida derivada de `execution_latency_ms` aplicada al flujo de recuperación |
 
 ---
 

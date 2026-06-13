@@ -86,6 +86,7 @@ Toda evaluación de compatibilidad de régimen registra el set de relevancia té
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la validación |
 | | `created_at` | Timestamp de comprobación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del estado del mercado (HMM) |
 | | `audit_chain_hash` | Hash del historial de coherencia |
 | | `event_sequence_id` | Secuencia del evento de validación |

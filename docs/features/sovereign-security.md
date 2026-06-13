@@ -114,7 +114,7 @@ Sovereign Security establece el marco de ciberseguridad local e integridad de da
 - **Local-First (ADR-0016):** 100% Local. No depende de ningún KMS o almacenamiento en la nube externo.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - Aplica Perfil **Ops / Auditoría** para las tablas de auditoría y eventos.
-  - Campos de persistencia obligatorios: `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `owner_id`, `institutional_tag`, `process_id`, `session_id`, `node_id`.
+  - Campos de persistencia obligatorios: `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `owner_id`, `institutional_tag`, `process_id`, `session_id`, `node_id`.
 
 ---
 

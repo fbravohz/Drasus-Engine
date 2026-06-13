@@ -59,5 +59,5 @@ Resuelve el problema de falsos positivos donde una estrategia parece ser brillan
 - **Fidelidad:** Ejecución asíncrona sobre matrices `ndarray` Rust nativo post-simulación.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - **Perfil R&D / Auditoría:** Identidad + Soberanía + Hardware.
-  - **Contrato de Persistencia:** Campos de auditoría maestra (id, created_at, audit_hash, version_node_id, logic_hash, indicator_state_hash, institutional_tag, node_id, process_id).
+  - **Contrato de Persistencia:** Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + auditoría maestra (`version_node_id`, `logic_hash`, `indicator_state_hash`, `institutional_tag`, `node_id`, `process_id`).
   - **Rastro de Evidencia:** El valor del Alpha puro y su curva de degradación se emite continuamente a `feedback`.

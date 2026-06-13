@@ -155,6 +155,7 @@ Cada nodo del Grafo de Versiones (DAG) registra el set de relevancia técnica pa
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del nodo de versión |
 | | `created_at` | Timestamp de creación inmutable |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del snapshot de configuración |
 | | `audit_chain_hash` | Hash de integridad del timeline del DAG |
 | **II. Soberanía** | `owner_id` | Autor de la versión |

@@ -94,12 +94,14 @@ Esta feature aplica el perfil de **Ops / Hot-Path**:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la orden/fill |
 | | `created_at` | Timestamp de origen (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la transacción (Firma digital) |
 | | `audit_chain_hash` | Hash de la secuencia de fills de la sesión |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | | `phase_id` | Índice de fase de salida dentro de `Split_Position(N_Fases)` (ADR-0109); `null` si la posición no está fragmentada |
 | **II. Soberanía** | `owner_id` | Usuario responsable del capital real |
 | | `compliance_status_id` | Veredicto del Pre-Trade Validator |
-| **III. Hardware** | `node_id` | ID del hardware físico ejecutor |
+| **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
 | | `process_id` | PID del motor de ejecución real |
 | | `execution_latency_ms` | Latencia señal-a-broker (Máximo 1ms) |
 | | `source_signal_id` | ID de la señal original que originó la orden/fill |

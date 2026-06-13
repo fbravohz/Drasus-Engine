@@ -74,5 +74,21 @@ El motor de **Institutional Friction Modeling** inyecta realismo probabilístico
 
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Institucional (Pardo Penetration).
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Datos / Ingest.
+- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil B (IA / R&D)** — modela fricción institucional como parte del R&D de validación.
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único del modelo de fricción |
+  | | `created_at` | Timestamp del cálculo |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad del fill simulado |
+  | | `audit_chain_hash` | Hash encadenado del historial de fills |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Dueño de la configuración de fricción |
+  | | `manifest_id` | Estrategia evaluada |
+  | **III. Pesos/Arquitectura** | `logic_hash` | Hash del Probabilistic Fill Engine |
+  | | `data_snapshot_id` | Snapshot de mercado base del fill |
+  | | `version_node_id` | Versión del modelo de fricción |
+  | **IV. Hardware** | `node_id` | ID del hardware físico |
+  | | `process_id` | PID del proceso de simulación |
 - **Rastro de Evidencia:** Emite `fill_events` y `dropped_orders_count` para `feedback`.

@@ -64,7 +64,11 @@ Resuelve el problema del sobreajuste (Curve Fitting). Si una ineficiencia es rea
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
 - **Inundación de Fundaciones (ADR-0020 V2):**
-  - **Perfil Ops / Validación:** Foco en Identidad + Hardware (Multiprocesamiento) + Soberanía.
-  - **Contrato de Persistencia:** Campos de auditoría (id, created_at, audit_hash, parent_id, logic_hash, portfolio_container_id).
+  - **Perfil B (IA / R&D):** motor estadístico comparativo entre mercados; la etiqueta "Ops/Validación" no existe en la tabla canónica.
+  - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+  - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.
+  - **III. Pesos/Arquitectura (subset):** `logic_hash`, `data_snapshot_id`, `version_node_id`, `parent_id` (linaje de la validación).
+  - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
+  - **Híbrido (V Gobernanza):** `portfolio_container_id` — agrupador de portafolio; campo de Grupo V que esta feature B necesita, documentado aquí como híbrido (mantra de inclusión).
   - **Rastro de Evidencia:** El nivel de degradación en mercados hermanos se envía a `feedback` como rastro de estabilidad.
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0110):** esta feature es parte de la Compuerta de Robustez del Dominio de Régimen y Filtro de Entorno (validación cruzada de la máscara Permitido/Prohibido). Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

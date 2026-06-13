@@ -98,7 +98,10 @@ Herramienta de **etiquetado visual manual de regímenes históricos**. Complemen
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador de la zona etiquetada |
 | | `created_at` | Timestamp de creación de la etiqueta |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del intervalo + regla dura |
+| | `audit_chain_hash` | Hash encadenado del historial del registro |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Analista que definió la zona |
 | | `manifest_id` | Estrategia evaluada contra la zona |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la regla dura aplicada |

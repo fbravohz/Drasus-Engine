@@ -99,7 +99,10 @@ Panel de control **táctil y reactivo** que permite al analista deformar la curv
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador del snapshot de estrés |
 | | `created_at` | Timestamp del escenario fijado |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del vector de deslizadores aplicado |
+| | `audit_chain_hash` | Hash encadenado del historial del registro |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Analista que ejecutó el estrés |
 | | `manifest_id` | Estrategia sometida a estrés |
 | **IV. Hardware** | `node_id` | ID del hardware donde se computó |

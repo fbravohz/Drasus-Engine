@@ -124,20 +124,25 @@ El **Federated Portfolio** es una arquitectura avanzada que permite la coexisten
 
 ### Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Toda transacción y cambio de estado del portafolio federado registra los metadatos de relevancia técnica para AI/R&D (Perfil Ops / Hot-Path):
+Toda transacción y cambio de estado del portafolio federado registra los metadatos de relevancia técnica. **Perfil C (Ops / Hot-Path)** (I + II + IV + V latencia/gobernanza):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del evento federado |
 | | `created_at` | Timestamp del evento con precisión de nanosegundos |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash SHA-256 del estado consolidado del clúster |
 | | `audit_chain_hash` | Hash de la cadena temporal para trazabilidad inmutable |
+| | `event_sequence_id` | Secuencia de recuperación del evento federado |
 | **II. Soberanía** | `owner_id` | Identificador del operador (Trader A, B, etc.) |
 | | `manifest_id` | ID del manifiesto de diseño inmutable |
 | | `access_token_id` | Firma de autorización del proceso local |
-| **III. Hardware** | `node_id` | Identificador único de la máquina local |
+| **IV. Hardware** | `node_id` | Identificador único de la máquina local |
 | | `process_id` | PID del hilo del ejecutor reservado (`Core Pinning`) |
-| | `execution_latency_ms` | Latencia exacta de enrutamiento y validación (<1ms target) |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia exacta de enrutamiento y validación (<1ms target) |
+| | `source_signal_id` | Señal de origen del evento federado |
+| | `portfolio_container_id` | Contenedor de portafolio federado (Gobernanza) |
+| | `compliance_status_id` | Veredicto de cumplimiento del ruleset del contenedor |
 
 *   **Rastro de Evidencia:** El contenedor emite señales estructuradas del cumplimiento del ruleset local y logs detallados de cualquier descarte de señal por veto de correlación o VaR para alimentar el análisis causal del módulo `feedback`.
 

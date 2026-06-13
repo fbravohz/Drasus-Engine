@@ -66,6 +66,6 @@ Resuelve el problema de generar cientos de algoritmos rentables que terminan hac
 - **Local-First (ADR-0016):** 100% Local.
 - **Inundación de Fundaciones (ADR-0020 V2):**
   - **Perfil IA / R&D:** Identidad + Linaje Genético + Hardware.
-  - **Contrato de Persistencia:** (id, created_at, parent_id, version_node_id, portfolio_container_id, process_id).
+  - **Contrato de Persistencia:** Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `parent_id`, `version_node_id` (III) + `portfolio_container_id` (V Gobernanza, híbrido) + `process_id` (IV).
   - **Rastro de Evidencia:** El grado de correlación penalizado se registra en la bitácora de generación.
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0111):** Esta feature es el origen FIJO del Gen de Condición de Correlación de Curva de Equidad Rodante del Dominio de Portafolio y Correlación. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

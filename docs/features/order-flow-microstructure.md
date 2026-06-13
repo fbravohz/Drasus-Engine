@@ -46,17 +46,22 @@ Esta feature provee las métricas de alta frecuencia necesarias para detectar la
 ### **TTR-003: Volume Imbalance BBO Node**
 - **Qué tiene que pasar:** Implementar un nodo de microestructura que monitoree el DOM L2 en tiempo real y dispare una señal de compra/venta cuando el volumen de órdenes limite en el Best Bid supere al del Best Offer por más de 300% (o viceversa).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
+
+Híbrido: Perfil C (Ops/Hot-Path) + linaje III legítimo (snapshot DOM/tick reproducible).
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del snapshot de flujo |
 | | `created_at` | Timestamp de alta resolución (ns) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del DOM snapshot |
+| | `audit_chain_hash` | Hash encadenado de la secuencia de snapshots |
+| | `event_sequence_id` | Índice secuencial de ticks para reconstrucción (recovery) |
 | **II. Soberanía** | `owner_id` | Identificador del dueño del feed de datos |
-| **III. Linaje** | `data_snapshot_id` | Snap del libro de órdenes (DOM) en el momento del trade |
-| | `indicator_state_hash` | Estado del CVD y VWAP en la ejecución |
-| **IV. Hardware** | `node_id" | ID del hardware físico (Network Interface Card) |
+| **III. Linaje (híbrido)** | `data_snapshot_id` | Snap del libro de órdenes (DOM) en el momento del trade |
+| **IV. Hardware** | `node_id` | ID del hardware físico (Network Interface Card) |
 | | `process_id` | PID del motor de ticks |
-| | `execution_latency_ms` | Latencia de actualización del DOM / Pipeline |
-| **V. Forense** | `event_sequence_id` | Índice secuencial de ticks para reconstrucción |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de actualización del DOM / Pipeline (hot-path) |
+| | `source_signal_id` | Señal/tick de origen del snapshot |
+| | `indicator_state_hash` | Estado del CVD y VWAP en la ejecución (Grupo V) |

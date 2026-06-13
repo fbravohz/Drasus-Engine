@@ -73,6 +73,21 @@ Aplicación de los pesos sobre la serie de precios. Debe usar Polars o Rust SIMD
 Lógica iterativa que busca el menor valor de $d$ que logre superar el umbral de ADF, maximizando la retención de memoria.
 
 ## Gobernanza y Estándares
-- **Perfil Datos / Ingest:** Foco en Identidad + Linaje + Hardware (Aceleración vectorial).
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil A (Datos / Ingest)** — persiste series transformadas + linaje del orden $d$ (I + III + IV).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único de la serie diferenciada |
+  | | `created_at` | Timestamp de la transformación |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad de la serie resultante |
+  | | `audit_chain_hash` | Hash encadenado del historial de transformaciones |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **III. Linaje** | `data_snapshot_id` | Puntero a la serie cruda de origen (PIT) |
+  | | `transformation_id` | ID del paso de diferenciación fraccional aplicado |
+  | | `parent_id` | Serie padre de la que deriva (linaje de la transformación) |
+  | | `version_node_id` | Versión del transformador en el DAG |
+  | **IV. Hardware** | `node_id` | ID del hardware físico (aceleración vectorial) |
+  | | `process_id` | PID del motor de convolución |
 - **Local-First:** 100% Local.
 - **Rastro de Evidencia:** Emite el valor de $d$ óptimo y la estadística ADF al módulo de `feedback`.

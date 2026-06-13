@@ -89,13 +89,15 @@ Toda validación pre-milio registra el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la validación |
 | | `created_at` | Timestamp de ejecución (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del estado de cuenta evaluado |
 | | `audit_chain_hash` | Hash del rastro de cumplimiento |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño responsable |
 | | `manifest_id` | ID del contrato de diseño legal |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del validador |
-| **IV. Latencia** | `execution_latency_ms` | Latencia de validación (< 1ms target) |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de validación (< 1ms target) |
 | | `latency_ns` | Latencia en nanosegundos para alta resolución |
 
 - **Decisión Arquitectónica Asociada:**

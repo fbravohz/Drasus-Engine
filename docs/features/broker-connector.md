@@ -84,8 +84,10 @@ Toda interacción con el conector registra el set de relevancia técnica para AI
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la interacción |
 | | `created_at` | Timestamp de envío/recepción |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del mensaje normalizado |
 | | `audit_chain_hash` | Hash de la sesión del conector |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la cuenta |
 | | `access_token_id` | Token de autorización (API Key Ref) |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del adaptador Nautilus |

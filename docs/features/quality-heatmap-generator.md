@@ -73,10 +73,12 @@ Cada escaneo de calidad genera un registro de persistencia filtrado para Datos:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del escaneo |
 | | `created_at` | Timestamp de generación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Correlación forense con el CSV/Parquet origen |
 | | `audit_chain_hash` | Hash de integridad del bloque analizado |
-| **II. Linaje** | `source_id` | ID de la fuente (Sovereign Fetcher ID) |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | ID de la fuente (Sovereign Fetcher ID) |
 | | `transformation_id` | ID del pipeline de sanitización usado |
 | | `logic_hash` | Hash de las reglas de calidad activas |
-| **III. Hardware** | `node_id` | ID del hardware físico escaneador |
+| **IV. Hardware** | `node_id` | ID del hardware físico escaneador |
 | | `process_id` | PID del worker DuckDB/Polars |

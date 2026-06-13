@@ -73,27 +73,27 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
     - [ ] El `Shadow Watchdog` reporta el cierre de workers en el puerto 8002.
 * **¿Qué no puede pasar?** PROHIBIDO dejar procesos de NautilusTrader activos tras el cierre del orquestador.
 
-## Persistencia (Filtro de Relevancia AI/R&D — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría de infraestructura)
 
-Cada Job u operación gestionada por este orquestador debe portar el set filtrado de metadatos para auditoría de infraestructura y hardware:
+Orquestación/aislamiento de procesos worker (infra), no hot-path de mercado → **Perfil D** (I + II + IV), con linaje de job padre-hijo documentado como híbrido legítimo (orquestador→worker):
 
-| Campo | Tipo | Categoría | Descripción |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | Identidad | Identificador único del Job de ejecución |
-| `created_at` | INT64 | Identidad | Timestamp de inicio de la tarea |
-| `updated_at` | INT64 | Identidad | Última actualización de latido (heartbeat) |
-| `owner_id` | UUID | Soberanía | Usuario que lanzó el Job |
-| `institutional_tag` | VARCHAR | Soberanía | Etiqueta de cumplimiento organizacional |
-| `manifest_id` | UUID | Soberanía | ID del diseño evaluado |
-| `access_token_id` | UUID | Soberanía | Token de seguridad del worker |
-| `logic_hash` | VARCHAR | AI/Arquitectura | Hash del binario/lógica cargada en el worker |
-| `indicator_state_hash` | VARCHAR | AI/Arquitectura | Snapshot de indicadores post-ejecución |
-| `version_node_id` | UUID | AI/Arquitectura | Versión de la estrategia en el DAG |
-| `parent_id` | UUID | AI/Arquitectura | ID del proceso padre (Orquestador Rust) |
-| `process_id` | INT32 | Hardware | OS PID del proceso worker |
-| `session_id` | UUID | Hardware | Sesión de orquestación global |
-| `node_id` | VARCHAR | Hardware | ID del hardware de asignación |
+| Categoría | Campo | Descripción |
+| :--- | :--- | :--- |
+| **I. Identidad** | `id` | Identificador único del Job de ejecución |
+| | `created_at` | Timestamp de inicio de la tarea |
+| | `updated_at` | Última actualización de latido (heartbeat) |
+| | `audit_hash` | Hash de integridad del estado del Job |
+| | `audit_chain_hash` | Hash encadenado del historial de heartbeats |
+| | `event_sequence_id` | Secuencia de recuperación del Job |
+| **II. Soberanía** | `owner_id` | Usuario que lanzó el Job |
+| | `institutional_tag` | Etiqueta de cumplimiento organizacional |
+| | `manifest_id` | ID del diseño evaluado |
+| | `access_token_id` | Token de seguridad del worker |
+| **III. Linaje (híbrido)** | `parent_id` | ID del proceso padre (Orquestador Rust) — linaje job padre-hijo |
+| **IV. Hardware** | `process_id` | OS PID del proceso worker |
+| | `session_id` | Sesión de orquestación global |
+| | `node_id` | ID del hardware de asignación |
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local (Headless support).
-- **Inundación de Fundaciones (ADR-0020 V2):** Cada proceso worker debe registrar su `process_id` y `parent_node_id` en el log de auditoría.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil D + linaje híbrido. Cada proceso worker registra su `process_id` y su `parent_id` (orquestador) en el log de auditoría.

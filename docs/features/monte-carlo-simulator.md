@@ -134,8 +134,10 @@ Cada reporte de robustez y simulación Monte Carlo registra el set de relevancia
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del reporte MC |
 | | `created_at` | Timestamp de inicio de simulación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del reporte final |
 | | `audit_chain_hash` | Hash de la secuencia de semillas |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Usuario que ejecutó la prueba |
 | | `institutional_tag` | Tag de cumplimiento (AUDIT/R&D) |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor del simulador |

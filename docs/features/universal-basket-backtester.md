@@ -75,8 +75,10 @@ Perfil **B (IA/R&D)**: Grupo I (universal) + Soberanía (II) + Pesos/Arquitectur
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del reporte de canasta |
 | | `created_at` | Timestamp de inicio del Job |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto de generalización |
 | | `audit_chain_hash` | Hash de la integridad de la canasta (Símbolos) |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Usuario que lanzó el stress test |
 | | `institutional_tag` | Etiqueta de cumplimiento/entorno |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor del backtester universal |

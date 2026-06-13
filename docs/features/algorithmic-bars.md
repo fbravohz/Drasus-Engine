@@ -81,12 +81,14 @@ Toda barra algorítmica generada registra el set de relevancia técnica para Dat
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la barra |
 | | `created_at` | Timestamp de cierre (nanosegundos) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad de la barra OHLCV |
 | | `audit_chain_hash` | Hash de la secuencia de barras |
-| **II. Linaje** | `source_id` | Ref al stream de ticks origen |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
+| **III. Linaje** | `data_snapshot_id` | Ref al stream de ticks origen |
 | | `transformation_id` | ID del tipo de barra (Renko/Range) |
 | | `logic_hash` | Hash del motor de construcción |
-| **III. Hardware** | `node_id` | ID del hardware físico |
+| **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del proceso de construcción |
 | | `execution_latency_ms` | Tiempo de construcción de la barra |
 

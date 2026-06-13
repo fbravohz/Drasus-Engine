@@ -132,7 +132,7 @@ type: templates
    - **Local-First (ADR-0016):** [100% Local | Justificar dependencia externa].
    - **Fidelidad (ADR-0017):** [Baja (Barras) | Alta (4-ticks) | Institucional (Slippage Dinámico)].
    - **Inundación de Fundaciones (ADR-0020 V2):** 
-      - **OBLIGATORIO:** El **Grupo I (Identidad & Integridad)** es universal — va siempre, en toda tabla. Además, asigna a la feature UNO de los 4 Perfiles Técnicos de la **tabla canónica de ADR-0020 V2** (no la copies aquí, referénciala):
+      - **OBLIGATORIO:** El **Grupo I (Identidad & Integridad)** es universal — va siempre, en toda tabla, con sus **6 campos completos**: `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`. No omitas ninguno (causa raíz del patrón P1: faltaban típicamente `updated_at` y `event_sequence_id`). Además, asigna a la feature UNO de los 4 Perfiles Técnicos de la **tabla canónica de ADR-0020 V2** (no la copies aquí, referénciala):
          - **A. Datos / Ingest:** Identidad + Linaje de Datos (III) + Hardware (IV).
          - **B. IA / R&D:** Identidad + Soberanía (II) + Pesos/Arquitectura, subset de III (IV).
          - **C. Ops / Hot-Path:** Identidad + Soberanía (II) + Hardware (IV) + Latencia, subset de V (≤1ms).

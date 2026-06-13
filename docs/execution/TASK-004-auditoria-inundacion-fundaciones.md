@@ -4,7 +4,7 @@
 |---|---|
 | **ID** | TASK-004 |
 | **Tipo** | Task (auditoría documental, sin código) |
-| **Estado** | 🟡 En curso — Fase 1 (diagnóstico) COMPLETA; Fase 2 (decisiones de diseño) PENDIENTE |
+| **Estado** | ✅ COMPLETA — Fases 1 (diagnóstico), 2 (decisiones), 3 (aplicación) y 4 (plantilla) cerradas y auditadas. Pendiente solo: moonshots (TASK futura) |
 | **Responsable** | Tech-Lead + Usuario (línea de defensa final). Diagnóstico: 13 agentes Sonnet en paralelo |
 | **Creada** | 2026-06-13 |
 
@@ -132,7 +132,17 @@ Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido docu
 | efficiency-incubation-dashboard | **B** (guarda config del dashboard) |
 | fractional-differencer | **A** (persiste series transformadas + linaje del `d`) |
 
-**FASE 2 COMPLETA.** Todas las decisiones de perfil tomadas. Siguiente = Fase 3 (aplicación masiva) precedida por el registro de campos nuevos en el ADR (Architect).
+**FASE 2 COMPLETA.** Todas las decisiones de perfil tomadas.
+
+### FASE 3 + 4 EJECUTADAS Y AUDITADAS (2026-06-13)
+**Architect (Opus, 1 invocación en background, 154 ediciones) — auditado por Tech-Lead.**
+- **ADR-0020 V2:** los 3 campos "nuevos" YA existían en el Set Maestro de 25 (no expuestos en subsets de perfil). Conteo se mantiene en **25**. Expuestos en la tabla canónica: `parent_id`→III (A, B); `portfolio_container_id`→V Gobernanza (C, D); `compliance_status_id`→V Cumplimiento (C, D). Con "Registro de Mantenimiento" fechado.
+- **TEMPLATES.md (Fase 4, causa raíz):** Grupo I default ahora muestra los 6 campos explícitos + nota de P1.
+- **Bloques 1/2/3-P5 aplicados:** 11 reclasificaciones, 7 híbridos documentados, 15 contratos diseñados. Etiquetas de campo corregidas (ej. order-fsm `indicator_state_hash` III→V).
+- **P1 Grupo I:** completado en todo el corpus. **P4:** `source_id`→`data_snapshot_id`, etiquetas/typos corregidos.
+- **Auditoría Tech-Lead:** verificado ADR/TEMPLATES/databank-lake→B/order-fsm; campos fuera de catálogo=0; typos=0. **Defecto corregido por el Tech-Lead:** el Architect sobre-afirmó "0 Grupo I incompletas"; quedaban 5 (monthly-performance-heatmap, node-preview, remote-portfolio-access-protocol, sovereign-security, umap-scatter-visualizer) → completadas a mano. async-job-executor referencia el Grupo I por texto + su código ya lo tiene (aceptable).
+
+**TASK-004 CERRADA.** Único pendiente: auditoría de los 41 moonshots (TASK futura).
 
 ---
 

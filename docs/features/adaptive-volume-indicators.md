@@ -71,8 +71,10 @@ Cada cálculo de indicador porta el set de relevancia técnica para AI/R&D:
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del cálculo |
 | | `created_at` | Timestamp de la barra de origen |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del feed |
 | | `audit_chain_hash` | Hash de la secuencia de valores previos |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la configuración técnica |
 | | `institutional_tag` | Etiqueta de cumplimiento/entorno |
 | | `manifest_id` | ID del diseño de la estrategia |

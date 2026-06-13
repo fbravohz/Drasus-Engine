@@ -67,8 +67,10 @@ Toda evaluación de performance y detección de drift registra el set de relevan
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del reporte |
 | | `created_at` | Timestamp de evaluación |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del P&L Snapshot T-0 |
 | | `audit_chain_hash` | Hash de la sesión de monitoreo |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño responsable de la estrategia |
 | | `institutional_tag` | Tag de cumplimiento institucional |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la fórmula de KPI (Sharpe/DD) |

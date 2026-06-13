@@ -72,7 +72,22 @@ Se gestiona a través del objeto `KineticMicroManagementConfig`:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
-    - Obligatorio incluir en cada guardado: `indicator_state_hash` (Z-Score calculado), `event_sequence_id` (para reconstrucción exacta post-reinicio).
+- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil C (Ops / Hot-Path)** — gestión intra-trade en ruta crítica de ejecución.
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único del evento de micro-gestión |
+  | | `created_at` | Timestamp del ajuste (nanosegundos) |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad del estado del trade |
+  | | `audit_chain_hash` | Hash encadenado del historial de ajustes |
+  | | `event_sequence_id` | Secuencia de recuperación exacta post-reinicio |
+  | **II. Soberanía** | `owner_id` | Dueño de la posición gestionada |
+  | | `manifest_id` | Estrategia de origen |
+  | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
+  | | `process_id` | PID del worker de ejecución |
+  | **V. Forense & Ejecución (latencia)** | `execution_latency_ms` | Latencia del ajuste intra-trade |
+  | | `source_signal_id` | Señal de origen del scale-out / trailing |
+  | | `indicator_state_hash` | Z-Score calculado en el momento del ajuste (Grupo V) |
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0109):** Esta feature es Primitiva de Acción del Dominio de Riesgo y Gestión de Posición. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.
 - **Dependencias:** Utilizado primordialmente en `execute` y `feedback`.

@@ -99,7 +99,10 @@ Asistente visual de **auditoría topológica manual** de parámetros. El motor d
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador de la selección de parámetro |
 | | `created_at` | Timestamp de la decisión |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de la rejilla evaluada |
+| | `audit_chain_hash` | Hash encadenado del historial del registro |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Analista que fijó el parámetro |
 | | `manifest_id` | Estrategia afectada |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del par de parámetros elegido |

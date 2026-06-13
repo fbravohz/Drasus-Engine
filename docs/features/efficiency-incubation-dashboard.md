@@ -83,7 +83,21 @@ El `Efficiency & Incubation Dashboard` es la interfaz de visualización y contro
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `version_node_id`, `node_id`, `audit_hash`.
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — guarda la configuración del dashboard de eficiencia (II + III subset + IV).
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único de la config del dashboard |
+  | | `created_at` | Timestamp de creación |
+  | | `updated_at` | Timestamp de última modificación del registro |
+  | | `audit_hash` | Hash de integridad de la configuración |
+  | | `audit_chain_hash` | Hash encadenado del historial de cambios |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Dueño del dashboard |
+  | | `manifest_id` | Estrategia/incubación observada |
+  | **III. Pesos/Arquitectura** | `version_node_id` | Versión de la vista del dashboard |
+  | **IV. Hardware** | `node_id` | ID del hardware físico |
+  | | `process_id` | PID del proceso de render |
 - **Rastro de Evidencia:** Emite el estado de consistencia del cono al módulo de `feedback`.
 
 ---

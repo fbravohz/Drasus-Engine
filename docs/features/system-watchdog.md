@@ -93,14 +93,16 @@ Toda alerta de riesgo y ejecución de Kill Switch registra el set de relevancia 
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único del incidente |
 | | `created_at` | Timestamp del disparo (Heartbeat) |
+| | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash de integridad del sistema T-0 |
 | | `audit_chain_hash` | Hash de la secuencia de incidentes |
+| | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Autor responsable del capital |
 | | `access_token_id` | Token de autorización de pánico |
-| **III. Hardware** | `node_id` | ID del hardware físico supervisor |
+| **IV. Hardware** | `node_id` | ID del hardware físico supervisor |
 | | `process_id` | PID del watchdog independiente |
-| **IV. Latencia** | `execution_latency_ms` | Reacción al pánico (milisegundos) |
-| | `heartbeat_latency_ms` | Latencia del último latido detectado |
+| **V. Forense & Ejecución** | `execution_latency_ms` | Reacción al pánico (milisegundos) |
+| | `heartbeat_latency_ms` | Variante específica: latencia del último latido detectado; medida derivada de `execution_latency_ms` aplicada al heartbeat |
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0010: Reglas Dinámicas (Watchdog como ejecutor de Hard Limits).

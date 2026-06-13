@@ -106,7 +106,19 @@ El sistema permite transitar en milisegundos desde el monitoreo global del porta
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. DuckDB realiza consultas directo en archivos Parquet locales.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `owner_id`, `session_id`, `node_id`, `execution_latency_ms`.
+- **Inundación de Fundaciones (ADR-0020 V2): Perfil mínimo (Grupo I universal + II Soberanía)** — persiste preferencias de navegación/UI; no es R&D, hot-path ni auditoría forense, así que no lleva linaje ni latencia.
+
+  | Categoría | Campo | Descripción |
+  | :--- | :--- | :--- |
+  | **I. Identidad** | `id` | Identificador único de la preferencia de UI |
+  | | `created_at` | Timestamp de creación |
+  | | `updated_at` | Timestamp de última modificación de la preferencia |
+  | | `audit_hash` | Hash de integridad de la config de navegación |
+  | | `audit_chain_hash` | Hash encadenado del historial de cambios |
+  | | `event_sequence_id` | Secuencia de recuperación |
+  | **II. Soberanía** | `owner_id` | Usuario dueño de la preferencia |
+  | **IV. Hardware** | `session_id` | Sesión de UI asociada |
+  | | `node_id` | ID del hardware/cliente |
 - **Rastro de Evidencia:** Loguea latencias de zoom y carga de gráficos para análisis de rendimiento en `feedback`.
 
 ---

@@ -81,7 +81,7 @@ El `Visual StockPicker Configurator` es la interfaz gráfica que permite al oper
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Datos / Ingest. Registra `source_id`, `audit_hash`, `node_id`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Datos / Ingest. Registra `data_snapshot_id` (linaje de origen), `audit_hash`, `node_id`.
 - **Rastro de Evidencia:** Emite cambios en la definición del universo para el módulo de `feedback`.
 
 ---
