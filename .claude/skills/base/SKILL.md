@@ -47,6 +47,33 @@ El lenguaje debe ser técnicamente exacto pero directo, limpio y digerible. Si a
 
 ---
 
+## Habla en Cristiano (Comunicación con el Usuario)
+
+**El usuario no vive dentro de los documentos.** Los identificadores ágiles (`EPIC-n`, `SPRINT-n`, `STORY-###`, `SPIKE-###`, `TASK-###`, `BUG-###`) y los términos técnicos (`TTR`, `ADR-XXXX`, `FCIS`, `PIT`, `DSR`, nombres de features) son atajos INTERNOS. El usuario NO está obligado a conocerlos.
+
+**Regla:** la PRIMERA vez que uses un identificador o término interno en un mensaje al usuario, tradúcelo a lenguaje llano entre paréntesis o, mejor, usa la descripción llana como texto principal y deja el código como referencia secundaria.
+
+- ❌ "Despacho STORY-001 + STORY-002 y cierro SPIKE-001 antes del Sprint 1."
+- ✅ "Monto el esqueleto del proyecto y la base de datos (STORY-001 y STORY-002). Antes de seguir, confirmo que la pieza de NautilusTrader compila (SPIKE-001)."
+
+**Traducciones de referencia (úsalas siempre):**
+
+| Identificador / término | Traducción para el usuario |
+|---|---|
+| `EPIC-0`, `EPIC-1`… | "Épica: gran bloque de trabajo" (Épica 0 / Fundación, Épica 1 / Datos…) |
+| `SPRINT-n` | "tanda de trabajo" |
+| `STORY-###` | "una historia: un trabajo que lleva código" |
+| `SPIKE-###` | "investigación de un riesgo técnico bloqueante" |
+| `TASK-###` | "trabajo sin código (investigación, administrativo)" |
+| `BUG-###` | "corrección de un defecto" |
+| `TTR` | "tarea técnica concreta dentro de un feature" |
+| `ADR-XXXX` | "decisión de arquitectura ya tomada y documentada" |
+| `FCIS` | "núcleo de lógica pura + cáscara delgada que hace entrada/salida" |
+
+**Si una respuesta no se entiende en una sola lectura por exceso de códigos, está MAL redactada.** Prefiero un mensaje más largo y claro que uno corto y cifrado.
+
+---
+
 ## Cómo Lograr Claridad: Las Tres Prácticas
 
 ### 1. Estructura Simple
@@ -74,15 +101,13 @@ Después, el detalle técnico.
 
 ---
 
-## Eficiencia y Densidad (Eficiencia de Tokens)
-
-### Antes de Actuar
+## Antes de Actuar
 
 - Piensa antes de actuar. Lee los archivos existentes antes de escribir código.
 - No vuelvas a leer archivos a menos que hayan cambiado.
 - Prueba tu razonamiento antes de declarar la tarea terminada.
 
-### Protocolo de Lectura Progresiva (Archivos Extensos)
+## Protocolo de Lectura Progresiva (Archivos Extensos)
 
 Cuando se solicite lectura completa de un archivo que exceda el límite de una sola llamada (>2000 líneas / >50KB), sigue este procedimiento:
 
@@ -99,28 +124,26 @@ Cuando se solicite lectura completa de un archivo que exceda el límite de una s
 4. **Paralelismo:** Las lecturas con distinto offset pueden dispararse en paralelo en un solo turno si los offsets son conocidos de antemano (ej. archivos indexados).
 5. **Prohibido:** Leer el mismo rango dos veces. Leer con offset incorrecto (fuera de secuencia). Saltar bloques sin cubrirlos.
 
-### Smart-Caveman Redefinido
-
-Máxdensidad de información, cero densidad de prosa.
-
-| Elemento | Evita | Usa |
-|----------|-------|-----|
-| Introducción | "Ahora voy a explicarte..." | Ve directo al punto. |
-| Conectores | "Es interesante observar que..." | Ninguno. Frase → Frase. |
-| Cortesía | "Espero que entiendas" | No existe. Directo. |
-| Redundancia | "El motor, como mencioné, hace X..." | Menciona X una sola vez. |
-| Abreviaturas | Incompletas o inventadas | Solo estándar industrial (API, BD, RSI). |
-
-### Síntesis No-Destructiva
-
-- Sé conciso optimizando la legibilidad. PROHIBIDO el resumen extremo que mutile la intención técnica.
-- Protocolo Anti-Poda: Nunca elimines bloques informativos bajo el pretexto de "resumen".
-- Preservación Obligatoria: Si refactorizas, el 100% de la información (criterios de éxito, contexto) debe preservarse en el destino. La síntesis debe ser literal en su significado técnico.
-
-### Edición de Archivos (Crítico)
+## Edición de Archivos (Crítico)
 
 - **Protocolo Anti-Overwrite:** NUNCA uses `write_to_file` con `Overwrite: true` en archivos de documentación existentes (salvo reparaciones críticas de corrupción). Usa siempre `Edit` para cambios quirúrgicos.
 - **Precisión Quirúrgica:** Al editar archivos extensos (>50 líneas), realiza cambios en bloques pequeños. EVITA re-escribir el archivo completo para prevenir la pérdida de densidad documental involuntaria.
+
+---
+
+## Sellado de Implementación y Reproducibilidad
+
+Dos reglas universales para CUALQUIER rol (Tech-Lead, ingenieros, Architect):
+
+### 1. Sellar lo implementado (con fecha)
+Cuando completes una unidad de especificación — un **TTR**, una **Feature**, un **Módulo**, o realices en código una **decisión de ADR** — vas a su documento fuente y lo marcas como implementado, con fecha y enlace a la Orden de Trabajo que lo ejecutó.
+- Formato del sello (banner al inicio del documento, o de la sección del TTR):
+  `> ✅ **Implementado** YYYY-MM-DD · Orden de trabajo [<ID>](../execution/<ID>-<slug>.md)`
+- Si solo está parcial: `> 🟡 **Parcial** YYYY-MM-DD · <qué falta> · Orden [<ID>](...)`.
+- Da trazabilidad en ambos sentidos: del diseño a su ejecución y viceversa. NUNCA marques implementado lo que no verificaste.
+
+### 2. Dar siempre los comandos de validación
+Al cerrar cualquier trabajo, entrega al usuario los **comandos exactos** (copy/paste) para que reproduzca y valide por su cuenta (build, tests, lints, o el comando de la herramienta). El usuario debe poder verificar sin depender de tu palabra ni de buscar en el chat. Esos comandos también quedan escritos en la Orden de Trabajo (sección 5).
 
 ---
 

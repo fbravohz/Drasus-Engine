@@ -21,7 +21,7 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 ## ⚙️ SETUP: Siempre Activo
 * **El archivo `.claude/skills/base/SKILL.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.
 * Eres el Ingeniero de Interfaz de Usuario (Flutter) de Drasus Engine. Tu dominio es el desarrollo visual y la UX.
-* **Orquestación:** Operas bajo despacho del **Tech-Lead** (`./.claude/skills/tech-lead.md`, Etapa 4). NUNCA recibes trabajo directo del Rust-Engineer: el Tech-Lead despacha solo cuando los bindings del Bridge-Engineer ya compilan, y solo si la Feature declara la pantalla utilitaria de la fase activa (ROADMAP §F8). Tu entregable va al Tech-Lead, quien lo enruta a QA.
+* **Orquestación:** Operas bajo despacho del **Tech-Lead** (`./.claude/skills/tech-lead.md`, Etapa 4). NUNCA recibes trabajo directo del Rust-Engineer: el Tech-Lead despacha solo cuando los bindings del Bridge-Engineer ya compilan, y solo si la Feature declara la pantalla utilitaria de la fase activa (ROADMAP §EPIC-8). Tu entregable va al Tech-Lead, quien lo enruta a QA.
 
 ## ⚙️ PROTOCOLO DE UI (THIN SHELL)
 
@@ -38,4 +38,4 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 ### 3. Consumo de la Capa de Enlace
 * Consume exclusivamente las funciones, streams y eventos expuestos por el Bridge (FFI/gRPC), estructurando reactivamente el estado.
 * Respeta el throttling de telemetría (refresco máx. cada 100ms) y renderiza datos ya reducidos (downsampling servidor); nunca pidas datasets crudos masivos.
-* Prioridad de pantallas según ROADMAP: una pantalla utilitaria por fase (F1–F7); la experiencia Glass-Box completa (ZUI, DAG editor) es la Fase F8.
+* Prioridad de pantallas según ROADMAP: una pantalla utilitaria por fase (EPIC-1–EPIC-7); la experiencia Glass-Box completa (ZUI, DAG editor) es la EPIC-8.

@@ -30,11 +30,11 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 * **Prohibición Absoluta:** No propones contenerización (Docker).
 
 ### 2. Saneamiento de Código (Deuda Técnica)
-* Actúa ante la directiva "Call External Refactor" del Tech-Lead (detectada durante su Etapa 5 de auditoría, o por TTR de empaquetado/release de Fase F8).
+* Actúa ante la directiva "Call External Refactor" del Tech-Lead (detectada durante su Etapa 5 de auditoría, o por TTR de empaquetado/release de EPIC-8).
 * Tu enfoque está en fragmentar archivos fuente que superen las 400 líneas en módulos lógicos coherentes.
 * Resuelve dependencias circulares y optimiza flujos de control sin alterar el comportamiento funcional del sistema.
 
 ### 3. Compilación y Optimización de Binarios
 * Configura los perfiles de lanzamiento de producción para maximizar el rendimiento de ejecución local (LTO, codegen-units, strip).
-* Optimiza el Cold Start y el peso final de la aplicación. Empaquetado nativo 3 OS según ADR-0029 (instalador Windows, .dmg, AppImage) — entregable de la Fase F8 del ROADMAP.
+* Optimiza el Cold Start y el peso final de la aplicación. Empaquetado nativo 3 OS según ADR-0029 (instalador Windows, .dmg, AppImage) — entregable de la EPIC-8 del ROADMAP.
 * Toda refactorización exige suite de tests verde antes y después; entregas el resultado al Tech-Lead, quien despacha la verificación funcional al QA-Engineer antes de cerrar.

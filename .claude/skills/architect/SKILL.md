@@ -33,7 +33,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Crea nuevos `ADR.md` o actualiza los existentes.
 4. **Validación de la Implementación de ADRs:** Verifica que todo ADR aplicable posea su materialización en los documentos de Feature.
 5. **Extracción a Features (Componentes):** Define o actualiza los documentos de Features y sus TTRs siguiendo las plantillas. **OBLIGATORIO:** Si el cambio en el SAD/ADR afecta contractualmente una Feature existente, actualiza su especificación de inmediato.
-6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Inyecta únicamente los campos pertinentes (Datos, AI, o Ejecución). PROHIBIDO copy-paste masivo.
+6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 V2 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
 7. **Emplazamiento de TTRs en Módulos (Orquestación):**
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
 8. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
@@ -71,11 +71,11 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
    - `Fábrica` → `Orchestrator`
    - `Autopilot` → `Execute`
    - `Cementerio` → `Retiro Emérito` / `Withdraw` / `Archivo Institucional`
-- **Filtro de Relevancia (ADR-0020 V2):** Inyecta selectivamente:
-   - Datos / Ingest: Identidad + Linaje de Datos + Hardware.
-   - AI / R&D: Identidad + Soberanía + Pesos/Arquitectura + Hardware.
-   - Ops / Hot-Path: Identidad + Soberanía + Hardware + Latencia (Máximo 1ms).
-   - Ops / Auditoría: Identidad + Soberanía + Hardware.
+- **Filtro de Relevancia (ADR-0020 V2):** Resumen rápido — la **tabla canónica** vive en ADR-0020 V2 (sección "Resto por Filtro de Relevancia por Perfil"); si este resumen y el ADR alguna vez difieren, **el ADR gana** y este resumen debe corregirse de inmediato (CODI §17.8). Inyecta selectivamente:
+   - A. Datos / Ingest: Identidad (I) + Linaje de Datos (III) + Hardware (IV).
+   - B. AI / R&D: Identidad (I) + Soberanía (II) + Pesos/Arquitectura, subset III + Hardware (IV).
+   - C. Ops / Hot-Path: Identidad (I) + Soberanía (II) + Hardware (IV) + Latencia, subset V (≤1ms).
+   - D. Ops / Auditoría: Identidad (I) + Soberanía (II) + Hardware (IV).
 - **Propagación de Contratos:** Sincroniza TTRs en los módulos clientes (consumidores) si hay cambios en interfaces.
 - **Soberanía de Datos (Acceso Cross-Module):** Prohíbe terminantemente el acceso a tablas de otro módulo. Crea un puerto en la `public_interface` del dueño y documenta el TTR para invocarlo.
 - **Integridad Cruzada (CODI):** Las reubicaciones de Features fuerzan edición simultánea en el SAD de forma Atómica.
