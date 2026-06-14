@@ -167,6 +167,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`walk-forward-analyzer`](../features/walk-forward-analyzer.md)** — Orquestación de ventanas móviles.
 - **[`monte-carlo-simulator`](../features/monte-carlo-simulator.md)** — Análisis de robustez por remuestreo.
 - **[`factor-decomposition`](../features/factor-decomposition.md)** — Descomposición Alpha/Beta y Atribución.
+- **[`alpha-purity-analyzer`](../features/alpha-purity-analyzer.md)** — Veredicto de significancia estadística del Alpha (P-Value, Score de Pureza).
 - **[`signal-correlation-analyzer`](../features/signal-correlation-analyzer.md)** — Diversificación de señales.
 - **[`equity-curve-tracker`](../features/equity-curve-tracker.md)** — Tracking de capital y PnL.
 - **[`institutional-metrics`](../features/institutional-metrics.md)** — Motor asimétrico de KPIs estadísticos.
@@ -362,6 +363,16 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** `factor_loadings_report`.
 *   **Precondición:** Simulación completada.
 *   **Postcondición:** Atribución de rendimiento.
+
+### **TTR-060: Orquestación de Pureza de Alpha (Alpha Purity Analyzer)**
+*   **Descripción:** Invoca a [`alpha-purity-analyzer`](../features/alpha-purity-analyzer.md) para certificar la significancia estadística del Alpha.
+*   **Reglas de Orquestación:**
+    *   Rechaza la estrategia si el P-Value del Alpha supera `P_VALUE_THRESHOLD` (Alpha indistinguible de cero).
+    *   Anula el Alpha si el R² supera `MAX_RSQUARED_REPLICA` (clon del mercado).
+*   **Entrada:** `simulated_equity_curve`, `benchmark_series`.
+*   **Salida:** `alpha_purity_score`, `alpha_p_value`, `purity_verdict`.
+*   **Precondición:** Simulación de robustez completada.
+*   **Postcondición:** Firma de pureza adjunta al veredicto final.
 
 ### **TTR-017: Orquestación de Correlación (Signal Correlation Analyzer)**
 *   **Descripción:** Invoca a [`signal-correlation-analyzer`](../features/signal-correlation-analyzer.md) para control de ortogonalidad.

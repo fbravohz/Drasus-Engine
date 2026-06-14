@@ -112,7 +112,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 ## Comportamientos Observables (Orquestación)
 
 - [ ] **Flujo Evolutivo:** Inicia la búsqueda llamando a [nsga2-optimizer](../features/nsga2-optimizer.md).
-- [ ] **Descubrimiento Simbólico:** (Opcional) Invoca a [pysr-signal-discovery](../moonshots/pysr-signal-discovery.md) para refinar ecuaciones de señal.
+- [ ] **Descubrimiento Simbólico:** (Opcional) Invoca a [symbolic-signal-discovery](../moonshots/symbolic-signal-discovery.md) para refinar ecuaciones de señal.
 - [ ] **Marcado de Régimen:** Asegura que cada candidata generada sea evaluada en el contexto de [hmm-regime-detection](../features/hmm-regime-detection.md).
 - [ ] **Inyección Manual:** Permite al usuario saltar la orquestación y subir una estrategia propia directamente.
 
@@ -145,7 +145,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 ## Features Consumidas (Reutilizables)
 
 - **[`nsga2-optimizer`](../features/nsga2-optimizer.md)** — Optimización multiobjetivo (Sharpe↑, DD↓, WR↑)
-- **[`pysr-signal-discovery`](../moonshots/pysr-signal-discovery.md)** — Descubrimiento de ecuaciones simbólicas
+- **[`symbolic-signal-discovery`](../moonshots/symbolic-signal-discovery.md)** — Descubrimiento de ecuaciones simbólicas
 - **[`hmm-regime-detection`](../features/hmm-regime-detection.md)** — Detección de régimen (regime-aware generation)
 - **[`zero-crossing-filter`](../features/zero-crossing-filter.md)** — Filtrado de señales ortogonales (alpha puro)
 - **[`strategy-ensemble`](../features/strategy-ensemble.md)** — Síntesis multi-canal (NSGA+Simbólico nativo+HMM)
@@ -349,7 +349,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** Candidatos almacenados sin bloqueo de I/O, listos para la capa visual.
 
 ### **TTR-020: Orquestación de Simbolismo (Symbolic Discovery nativo)**
-*   **Descripción:** Invoca a [`pysr-signal-discovery`](../moonshots/pysr-signal-discovery.md) (motor simbólico nativo, moonshot — ADR-0113) para encontrar ecuaciones puras.
+*   **Descripción:** Invoca a [`symbolic-signal-discovery`](../moonshots/symbolic-signal-discovery.md) (motor simbólico nativo, moonshot — ADR-0113) para encontrar ecuaciones puras.
 *   **Reglas de Orquestación:**
     *   Alimenta la búsqueda matemática y traduce sus ecuaciones a AST compatibles con el genoma base.
 *   **Entrada:** `market_vectors`.

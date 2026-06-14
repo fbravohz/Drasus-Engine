@@ -82,6 +82,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-014 | **EPIC-7** | Métricas Autopilot |
 | TTR-015 | **EPIC-7** | Reporte de auto-auditoría (Cost Reconciler) |
 | TTR-016 | **EPIC-7** | Reconstrucción táctil de fricción (Interactive Stress Lab) |
+| TTR-017 | **EPIC-7** | Diagnóstico de pureza de Alpha (Alpha Purity Analyzer) |
 
 ---
 
@@ -117,6 +118,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`pardo-comparison`](../features/pardo-comparison.md)** — Validación de drift estadístico y consistencia.
 - **[`anomaly-detector`](../features/anomaly-detector.md)** — Detección de patrones anómalos de ejecución.
 - **[`factor-decomposition`](../features/factor-decomposition.md)** — Análisis de atribución (Alpha vs Beta) y origen de anomalías.
+- **[`alpha-purity-analyzer`](../features/alpha-purity-analyzer.md)** — Diagnóstico de significancia del Alpha (¿murió el Alpha o el Beta?).
 - **[`equity-curve-tracker`](../features/equity-curve-tracker.md)** — Monitoreo de degradación de capital consolidado.
 - **[`institutional-metrics`](../features/institutional-metrics.md)** — Cálculo de KPIs para análisis de supervivencia.
 - **[`signal-correlation-analyzer`](../features/signal-correlation-analyzer.md)** — Detección de ruptura de diversificación.
@@ -285,6 +287,16 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** `friction_explaining_vector`, `autopsy_snapshot`.
 *   **Precondición:** Degradación detectada (TTR-002/TTR-003).
 *   **Postcondición:** Evidencia táctil de fricción adjunta a la autopsia de sesión.
+
+### **TTR-017: Orquestación de Diagnóstico de Pureza (Alpha Purity Analyzer)**
+*   **Descripción:** Invoca a [`alpha-purity-analyzer`](../features/alpha-purity-analyzer.md) para diagnosticar la causa de una degradación detectada en vivo.
+*   **Reglas de Orquestación:**
+    *   Distingue si la caída se debe a muerte del Alpha (la lógica perdió eficacia) o al apagado del Beta (el mercado/régimen dejó de empujar).
+    *   El diagnóstico alimenta el veredicto de continuidad/retiro (TTR-002).
+*   **Entrada:** `live_returns`, `benchmark_series`.
+*   **Salida:** `alpha_decay_diagnosis`.
+*   **Precondición:** Degradación detectada (TTR-002/TTR-003).
+*   **Postcondición:** Causa raíz (Alpha vs Beta) registrada en la autopsia de sesión.
 
 ---
 

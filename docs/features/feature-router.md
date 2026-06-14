@@ -25,7 +25,7 @@ Feature Router implementa un mecanismo para activar/desactivar features dinámic
   ```yaml
   features:
     active: ["audit-log", "order-fsm", "clock", "notification"]
-    disabled: ["pysr-signal-discovery"]
+    disabled: ["symbolic-signal-discovery"]
   ```
   → En startup, sistema carga configuración
   → Busca cada feature en FEATURE_REGISTRY

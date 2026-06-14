@@ -156,7 +156,7 @@ Orquesta canales (NSGA-II, Simbólico, HMM) en estrategias híbridas mediante **
 
 **Depende de:**
 - `nsga2-optimizer` (canales NSGA candidatos)
-- `pysr-signal-discovery` (canal Simbólico Nativo, regresión simbólica libre) — *moonshot feature*
+- `symbolic-signal-discovery` (canal Simbólico Nativo, regresión simbólica libre) — *moonshot feature*
 - `hmm-regime-detection` (modelos HMM entrenados)
 - `backtest-engine` (para evaluar ensemble en histórico)
 

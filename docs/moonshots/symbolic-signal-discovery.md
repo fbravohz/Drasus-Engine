@@ -1,6 +1,6 @@
 # Symbolic Signal Discovery — Descubrimiento de Ecuaciones de Señal (Moonshot)
 
-**Carpeta:** `./moonshots/pysr-signal-discovery/`
+**Carpeta:** `./moonshots/symbolic-signal-discovery/`
 **Estado:** Moonshot (diferido — post-rentabilidad, ADR-0103)
 **Última actualización:** 2026-06-11 (reescrito por ADR-0113: erradicación de PySR; motor simbólico nativo + `egg`)
 
