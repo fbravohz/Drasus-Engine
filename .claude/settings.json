@@ -5,5 +5,8 @@
     "allow": [
       "Bash(grep *)"
     ]
+  },
+  "attribution": {
+    "commit": ""
   }
 }
