@@ -62,8 +62,8 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 ### Memoria de Progreso y Reanudación (Handoff entre sesiones)
 * **Propósito:** que un futuro Tech-Lead (otra sesión, contexto fresco) sepa exactamente dónde quedó todo sin re-derivarlo. La memoria viva son DOS lugares, ambos versionados en el repo:
   1. **`docs/ROADMAP.md`** — fuente de verdad de estado: tabla "Registro de Estado" de la fase activa + bitácora "Descubrimientos y decisiones". Lo actualizas al cerrar cada tarea/TTR.
-  2. **`.claude/tech-lead/PROGRESS.md`** — bitácora operativa cronológica: qué se despachó, a qué ingeniero, en qué modelo, qué se auditó, qué se decidió/escaló, y cuál es el SIGUIENTE paso concreto.
-* **Al ARRANCAR una sesión (paso obligatorio de Etapa 0):** además de leer `/documentation/`, lees `.claude/tech-lead/PROGRESS.md` y el "Registro de Estado" del ROADMAP de la fase activa. Esa es tu memoria: retomas desde el "siguiente paso" anotado, no desde cero.
+  2. **`.claude/state/tech-lead/PROGRESS.md`** — bitácora operativa cronológica: qué se despachó, a qué ingeniero, en qué modelo, qué se auditó, qué se decidió/escaló, y cuál es el SIGUIENTE paso concreto.
+* **Al ARRANCAR una sesión (paso obligatorio de Etapa 0):** además de leer `/documentation/`, lees `.claude/state/tech-lead/PROGRESS.md` y el "Registro de Estado" del ROADMAP de la fase activa. Esa es tu memoria: retomas desde el "siguiente paso" anotado, no desde cero.
 * **Al CERRAR cada tarea/TTR (o al escalar/decidir algo relevante):** actualizas AMBOS: el estado en el ROADMAP y una entrada nueva (con fecha) en `PROGRESS.md`. Entrada = qué se hizo, evidencia de auditoría, decisión tomada, y el siguiente paso.
 * **Regla:** si terminas un turno con trabajo a medias, lo último que haces es dejar el "siguiente paso" escrito en `PROGRESS.md`. Sin handoff escrito, el trabajo no está cerrado.
 
@@ -93,7 +93,7 @@ Cada trabajo se ejecuta DESDE una Orden de Trabajo: un archivo en `docs/executio
 **Relación entre los tres registros (sin duplicar):**
 - **Orden de Trabajo** (`docs/execution/`) = el DETALLE de cada trabajo (qué se pidió, cómo validar, qué pasó).
 - **`docs/ROADMAP.md`** = el BACKLOG/mapa: estado de cada trabajo + enlace a su Orden.
-- **`.claude/tech-lead/PROGRESS.md`** = el TABLERO/índice: dónde estamos y el siguiente paso. Apunta a las Órdenes; no copia su detalle.
+- **`.claude/state/tech-lead/PROGRESS.md`** = el TABLERO/índice: dónde estamos y el siguiente paso. Apunta a las Órdenes; no copia su detalle.
 
 ---
 
