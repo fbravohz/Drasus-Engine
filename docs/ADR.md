@@ -282,6 +282,7 @@
     * Los módulos deben emitir telemetría de éxito/fallo específica de su fase (ej: latencia de ejecución, calidad de datos de ingesta, intervalos de confianza de validación).
     * La evidencia debe ser inmutable y residir en el `audit-log` o tablas de veredicto.
     * El módulo de Feedback consume esta evidencia para producir los *Learning Constraints* que alimentan un nuevo ciclo en MOD-02.
+    * **Separación Analista vs Actuador (orden MOD-07 → MOD-08):** El monitoreo, la detección de degradación y el diagnóstico de su causa (¿murió el Alpha o solo el Beta/régimen?) son responsabilidad EXCLUSIVA de Feedback (MOD-07, el Analista). Feedback **emite** el veredicto de retiro; Withdraw (MOD-08, el Actuador) únicamente lo **ejecuta** (transición FSM, ventana de veto, archivo institucional) y NO monitorea ni decide. Esta separación fija el orden canónico del pipeline: el diagnóstico (07) precede a la salida controlada (08).
 *   **Ventaja:** Transforma el sistema de un pipeline lineal a una red de aprendizaje que se adapta sin intervención humana manual.
 *   **Costo:** Mayor complejidad en el diseño de los Puertos de cada módulo; requerimiento de un esquema de auditoría común y estricto.
 *   **Resultado:** Un "Cerebro Central" estadístico (Feedback) con visibilidad total de las causas de degradación en cualquier punto del pipeline.
@@ -1939,7 +1940,7 @@ Un pipeline unificado donde el aprendizaje (Feedback) precede al olvido sistemá
 *   **Costo:**
     Purgar las menciones residuales a PySR en ADR-0031/0057 y en las features. Reconocer la regresión simbólica como modo del motor existente no añade infraestructura nueva.
 
-*   **Trazabilidad:** [`nsga2-optimizer.md`](./features/nsga2-optimizer.md), [`ast-compiler.md`](./features/ast-compiler.md), [`glass-box-ai-translator.md`](./features/glass-box-ai-translator.md), [`moonshots/pysr-signal-discovery.md`](./moonshots/pysr-signal-discovery.md), ADR-0031, ADR-0043, ADR-0057, ADR-0104, ADR-0108.
+*   **Trazabilidad:** [`nsga2-optimizer.md`](./features/nsga2-optimizer.md), [`ast-compiler.md`](./features/ast-compiler.md), [`glass-box-ai-translator.md`](./features/glass-box-ai-translator.md), [`moonshots/symbolic-signal-discovery.md`](./moonshots/symbolic-signal-discovery.md), ADR-0031, ADR-0043, ADR-0057, ADR-0104, ADR-0108.
 
 ---
 

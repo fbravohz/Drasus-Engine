@@ -76,7 +76,7 @@ El motor de simulación implementa modelos de fidelidad progresiva para garantiz
     *   **Fricción Realista Institucional (ADR-0017):** Configuración de Triple Swap (reloj de simulación), limitación de penetración (Pardo) exigiendo que el precio atraviese el límite por $X$ ticks, y diferenciación entre Settlement e Histórico (Davey).
     *   **Ruteo por Perfil de Volumen:** Suspensión automática ante caídas de liquidez detectadas en el pre-volumen para evitar deslizamientos excesivos.
 
-*   **Épica 3: The Autopilot (Ejecución Institucional):**
+*   **Épica 3: Ejecución Institucional (Execute):**
     *   **Live Execution Engine con Paridad Real:** Ejecución determinista acoplada a NautilusTrader para mantener paridad inquebrantable Out-Of-Sample.
     *   **Multiplatform Execution Bridge:** Comunicación nativa vía FFI/gRPC o canales binarios hacia terminales externas, enviando comandos genéricos sin exportación de lógica local.
     *   **Multi-Ticket Manager:** Gestión concurrente de múltiples tickets individuales por estrategia identificados vía signal hash y timestamp para romper limitaciones de una operación simultánea.
@@ -97,7 +97,7 @@ El sistema está optimizado para hardware de alto rendimiento doméstico (Sovere
     *   **Sinergia GA-DRL:** El motor utiliza agentes de Aprendizaje por Refuerzo Profundo (PPO/DQN) para descubrir "Regímenes de Recompensa" y proponer una "Tesis de Alpha" (Macro-lógica). El Genetic Builder (NSGA-II) realiza el ajuste fino (Tuning) de umbrales y topologías de grafos para garantizar paridad operativa.
     *   **Sovereign AI Wizard (Copilot):** Asistente **opcional** de LLM local soberano (vía `candle` embebido, nunca Ollama como requisito — ADR-0115) para la construcción guiada del Grafo de Lógica (Strategy AST); nunca para veredictos ni datos operativos. Actúa como fontanero determinista (ej. *"Crea filtro de spread"*) eliminando alucinaciones, y ofrece **Strategy Self-Explanation** para auditar en lenguaje humano los modelos complejos.
     *   **Descubrimiento No-Template:** Descubrimiento de ineficiencias matemáticas sin hipótesis humanas previas, ensamblando bloques funcionales o aprendiendo directamente de la serie temporal.
-    *   **Compilador AST de Lógica Procedural:** Conversión automática de grafos lógicos en Árboles de Sintaxis Abstracta (AST) optimizados para ejecución vectorizada en matrices de hardware acelerado (Rust SIMD/CUDA).
+    *   **Compilador AST de Lógica Procedural:** Conversión automática de grafos lógicos en Árboles de Sintaxis Abstracta (AST) optimizados para ejecución vectorizada en CPU (Rust SIMD); aceleración GPU opcional vía `candle` (ADR-0112), nunca requisito.
     *   **Minería Simbólica (Rust nativo, ADR-0113):** Descubrimiento de ecuaciones matemáticas Alpha ($Alpha = f(x)$) como **modo del motor genético NSGA-II sobre el AST** (no PySR), priorizando la transparencia sobre "cajas negras". La minería simbólica de forma libre se difiere a moonshot (`egg`).
     *   **Fit-to-Portfolio Search:** Búsqueda proactiva que inyecta presión evolutiva para castigar correlaciones > 0.3 con el portafolio actual durante la fase generativa, forzando diversificación estructural temprana.
     *   **NSGA-II (Rust Native):** Descubrimiento multiobjetivo (Sharpe vs DD) para optimización de Pareto.
@@ -204,7 +204,7 @@ Para garantizar escalabilidad y eficiencia extrema, el módulo `validate` no uti
 
 *   **Statistical Inference Layer (EBTA — Robustness Filter):**
     *   **Deflated Sharpe Ratio (DSR):** Ajuste matemático del Sharpe Ratio basado en el número de intentos ($N$) y la varianza de los resultados en la fase de minería genética, combatiendo el *Selection Bias*.
-    *   **White's Reality Check (WRC) & Romano-Wolf:** Pruebas de significancia estadística ajustadas para múltiples hipótesis (Family-Wise Error Rate). Romano-Wolf actúa como el estándar de oro mediante bootstrap acelerado por GPU.
+    *   **White's Reality Check (WRC) & Romano-Wolf:** Pruebas de significancia estadística ajustadas para múltiples hipótesis (Family-Wise Error Rate). Romano-Wolf actúa como el estándar de oro mediante bootstrap CPU-first (`ndarray`/Rayon); aceleración GPU opcional vía `candle` (ADR-0112).
     *   **Market Detrender:** Eliminación de la componente Beta (tendencia base) para aislar el Alpha puro. Las estrategias que no sobreviven al mercado "aplanado" son rechazadas.
     *   **Logic Inversion:** Verificación de robustez estructural invirtiendo las señales de entrada para validar que la lógica no es producto del ruido.
 
@@ -233,14 +233,14 @@ El sistema reemplaza el enfoque binario de "Muerte Súbita" (descartar estrategi
 **Regla de Aprobación:** Estrategia con Score > 75 se considera "Aprobable". El score determina el dimensionamiento de posición inicial: a mayor score, mayor lotaje.
 
 **Robustness Verdict Engine (Veredictos en Lenguaje Natural):**
-- **Veredicto en Lenguaje Humano:** Un LLM local resume los resultados del guantelete de robustez. Ejemplo: *"La estrategia sobrevive en el 98% de las mutaciones. El parámetro más sensible es el Trailing Stop. Fijado en el centro del rango estable (45 pips). Listo para revisión"*.
+- **Veredicto en Lenguaje Humano:** Un motor de **plantillas deterministas** (ADR-0115) compone el resumen del guantelete de robustez; un LLM local soberano (`candle`) es realce opcional, nunca requisito ni dependencia de Ollama. Ejemplo: *"La estrategia sobrevive en el 98% de las mutaciones. El parámetro más sensible es el Trailing Stop. Fijado en el centro del rango estable (45 pips). Listo para revisión"*.
 - **Identificación de Puntos de Ruptura:** Alerta sobre condiciones específicas donde el sistema colapsa. Ejemplo: *"Falla críticamente si el spread promedio supera los 2.5 pips"*.
 - **Score Explicable:** Justificación semántica de por qué una estrategia obtuvo un score determinado.
 - **Arquitectura:** El Verdict Engine consume los 5 resultados individuales de los tests y el score ponderado, y genera por **plantilla determinista** (ADR-0115) un veredicto estructurado con hallazgos y recomendaciones. Sin dependencia de LLM ni Ollama; un LLM local soberano (`candle`) es realce opcional.
 
 **Componentes asociados:**
-- [`robustness-score-aggregator`](../features/robustness-score-aggregator.md) — Motor de consolidación de los 5 scores individuales en el score ponderado final.
-- [`robustness-verdict-engine`](../features/robustness-verdict-engine.md) — Motor LLM de veredictos en lenguaje natural.
+- [`robustness-score-aggregator`](./features/robustness-score-aggregator.md) — Motor de consolidación de los 5 scores individuales en el score ponderado final.
+- [`robustness-verdict-engine`](./features/robustness-verdict-engine.md) — Motor de veredictos por plantilla determinista (ADR-0115); LLM local opcional, sin Ollama.
 
 **Traducción a Position Sizing:** El módulo de ejecución recibe el score de robustez como parámetro de entrada para los modelos de dimensionamiento de posición. Mayor score implica mayor fracción de riesgo asignable.
 
@@ -316,7 +316,7 @@ Provee la infraestructura de comunicación entre la UI en Flutter y los motores 
 1. **LocalPowerUser (FFI):** Ejecución nativa por defecto. Flutter UI y Rust Core operan en la misma máquina local compartiendo memoria mediante FFI (`flutter_rust_bridge`). Latencia FFI/gRPC eliminada.
 2. **VpsMonolithic:** Ejecución local en un VPS de bajos recursos gráficos vía Escritorio Remoto (RDP). Se activa una variable global para renderizar Flutter en modo Software (sin shaders complejos) preservando los recursos del CPU del VPS.
 3. **SaaSCloudEngine (Headless CLI):** Todo el backend de Rust (los 8 módulos: Ingest a Withdraw) se compila como un Daemon CLI que se ejecuta 24/7 en un servidor de alta densidad (VPS o Contenedor Bare-Metal). La UI local en Flutter se conecta a este demonio vía **gRPC / WebSockets**, permitiendo control total y visualización acelerada en GPU desde la laptop del usuario sin interrumpir las operaciones del servidor.
-4. **HybridComputeCooperative (Local FFI + Remote Workers):** El backend Rust local corre acoplado al Frontend local vía FFI 100% del tiempo. Mantiene la base de datos transaccional SQLite en local. Sin embargo, delega de forma asíncrona tareas analíticas intensivas (backtesting masivo, optimización) o procesos de ejecución persistentes 24/7 (Autopilot remoto) a una o varias instancias daemon remotas en VPS vía gRPC/WebSockets, permitiendo la desconexión segura del cliente local sin interrumpir la operación del VPS.
+4. **HybridComputeCooperative (Local FFI + Remote Workers):** El backend Rust local corre acoplado al Frontend local vía FFI 100% del tiempo. Mantiene la base de datos transaccional SQLite en local. Sin embargo, delega de forma asíncrona tareas analíticas intensivas (backtesting masivo, optimización) o procesos de ejecución persistentes 24/7 (Execute remoto) a una o varias instancias daemon remotas en VPS vía gRPC/WebSockets, permitiendo la desconexión segura del cliente local sin interrumpir la operación del VPS.
 
 
 #### Asignación de Puertos (Configuración de Red)
@@ -442,22 +442,16 @@ Drasus Engine habilita la distribución segura y de baja latencia de ejecución 
 
 ### 4.1 Nivel 1: Contexto
 ```
-┌─────────────────────────┐
-│      Brokers            │
-│  (Binance, Interactive  │
-│   Brokers, etc.)        │
-└────────┬────────────────┘
-         │ (FFI/gRPC)
-         │
-    ┌────▼──────────────────────┐
+    ┌───────────────────────────┐
     │       Flutter UI          │
     │ (Dart + Impeller Engine)  │
     └────────┬──────────────────┘
              │ (Local: FFI / Remoto: gRPC)
-    ┌────────▼──────────────────┐
-    │   Drasus Engine Backend   │
-    │        (Rust Core)        │
-    └────────┬──────────────────┘
+    ┌────────▼──────────────────┐      ┌─────────────────────────┐
+    │   Drasus Engine Backend   │◄────►│       Brokers           │
+    │        (Rust Core)        │ API/ │  (Binance, Interactive  │
+    │   [broker-connector]      │  WS  │   Brokers, etc.)        │
+    └────────┬──────────────────┘      └─────────────────────────┘
              │
     ┌────────▼──────────────────┐
     │      SQLite Local         │
@@ -616,7 +610,7 @@ El sistema se organiza en una interfaz zoomable (ZUI) de 3 niveles de profundida
 3. **Nivel 3: Strategy Inspector (Micro):** Inspección de estrategias individuales con gráficos interactivos nativos Flutter CustomPainter/Impeller de alta frecuencia (downsampling LTTB), visualización de genoma (AST), cono de confianza Monte Carlo y editor de código embebido nativo Flutter para inyección de código (Escape Hatch 90/10) evaluado en motor nativo de scripting en Rust (Rhai).
 
 ### 6.1 El "Happy Path" (Máxima Confianza)
-`Fleet Status` (Detección oportunidad) → `Orquestador` (Ejecución Generate/Validate) → `Strategy Inspector` (Inspección robustez) → `Deploy` (Incubación, perfil Extended de 21 días — ADR-0088) → `Live Trading`.
+`Fleet Status` (Detección oportunidad) → `Orquestador` (Ejecución Generate/Validate) → `Strategy Inspector` (Inspección robustez) → `Deploy` (Incubación; perfil configurable: Cuarentena 7 días / Extendido 21 días / Legacy 3-6 meses — ADR-0088) → `Live Trading`.
 
 ---
 
@@ -653,7 +647,7 @@ Cliente (FFI/gRPC)
     │      → "job_id=12347" (asincrónico)
     │      → Cuando finaliza: ValidationPort.get_verdict(strategy_id="S1") → APROBADA
     │
-    ├─► PaperTradingPort.start_session(strategy_id="S1", duration_months=3)
+    ├─► PaperTradingPort.start_session(strategy_id="S1", profile=EXTENDED)   # perfil de incubación configurable (ADR-0088)
     │      → "session_id=sess_001" (sesión iniciada)
     │
     ├─► ExecutionPort.start_execution(portfolio_id="P1", broker="ibkr")
@@ -667,14 +661,14 @@ Cliente (FFI/gRPC)
 ```
 ### 6.3 El Motor de Producción: Nautilus LiveNode
 
-#### 5.2.1 Procesos Persistentes (Daemons)
+#### 6.3.1 Procesos Persistentes (Daemons)
 En R&D se usan Workers efímeros que nacen, calculan y mueren. En Producción se necesitan **Procesos Persistentes (Daemons)**. El Core en Rust orquesta un hilo en segundo plano (Tokio task) dedicado exclusivamente a la ejecución en vivo y paper trading, inicializando el componente **LiveNode** de NautilusTrader.
 
 - **Aislamiento de Entorno:** El proceso en vivo corre en su propio núcleo lógico mediante afinidad de CPU (*Core Pinning*), totalmente aislado de los Workers de R&D. Si se lanza una optimización genética masiva que consume el 99% del hardware, el sistema operativo garantiza que el núcleo reservado para el LiveNode mantenga latencia de microsegundos para ejecutar órdenes reales.
 - **Componentes del LiveNode:** Conectividad nativa con brokers (Binance, IBKR, Oanda), loop de eventos determinista (Local-First) y gestión de órdenes mediante el FSM operativo descrito en la sección 12.
 - **Reconstrucción de Inventario:** El Event Store (persistencia local en modo WAL) registra cada evento de ejecución, permitiendo reconstruir el estado del inventario tras un reinicio o caída del proceso.
 
-#### 5.2.2 Multiplexación de Datos (El Bus Pub/Sub)
+#### 6.3.2 Multiplexación de Datos (El Bus Pub/Sub)
 Si se abren 50 conexiones individuales con un mercado para 50 agentes en el mismo símbolo, la IP se banea instantáneamente. La solución:
 
 1. **Conexión Única (Single Data Client):** El LiveNode levanta un solo cliente de datos hacia el mercado por símbolo.
@@ -693,7 +687,7 @@ Módulo generate: Generar candidatos ──► Crear planos de estrategia (descu
     ↓
 Módulo validate: Validar estrategia ──► Suite completa de pruebas → APROBADA
     ↓
-Módulo incubate: Ejecución paper trading ──► Test forward de 3-6 meses → PROMOVIDA
+Módulo incubate: Ejecución paper trading ──► Test forward (perfil configurable: 7/21 días o 3-6 meses, ADR-0088) → PROMOVIDA
     ↓
 Módulo manage: Optimizar portafolio ──► Combinar estrategias, establecer reglas
     ↓
@@ -758,6 +752,7 @@ Las siguientes características son componentes independientes que se organizan 
 | **Plateau Co-Pilot** | `/features/plateau-copilot.md` | Mapa de calor 2D con sugerencia de meseta (IA) y selección manual del parámetro de producción (delega geometría a Topological Plateau Finder). | `validate`, `generate` |
 | **Manual Regime Tagger** | `/features/manual-regime-tagger.md` | Etiquetado visual de crisis (Drag & Tag) y reglas duras de desempeño por zona crítica. | `ingest`, `validate` |
 | **Contextual Fitness Scorer** | `/features/contextual-fitness-scorer.md` | Fitness multidimensional diseccionado por régimen con gráfico de radar (sustituye el fitness plano estático). | `validate`, `manage` |
+| **Incremental Test Engine** | `/features/incremental-test-engine.md` | Herencia de resultados de validación por hashing de parámetros (ahorra >80% de recomputación). | `validate`, `generate` |
 
 
 
@@ -765,7 +760,7 @@ Las siguientes características son componentes independientes que se organizan 
 | Feature | Localización | Descripción | Consumido por |
 |---|---|---|---|
 | **NSGA-II Optimizer** | `/features/nsga2-optimizer.md` | Optimización multi-objetivo (Sharpe↑, DD↓, WR↑) | `generate` |
-| **Symbolic Signal Discovery** | `/moonshots/pysr-signal-discovery.md` | Descubrimiento automático de ecuaciones de alpha (regresión simbólica libre, moonshot con `egg`; no PySR — ADR-0113) | `generate` |
+| **Symbolic Signal Discovery** | `/moonshots/symbolic-signal-discovery.md` | Descubrimiento automático de ecuaciones de alpha (regresión simbólica libre, moonshot con `egg`; no PySR — ADR-0113) | `generate` |
 | **Fit-to-Portfolio Search** | `/features/fit-to-portfolio-search.md` | Búsqueda generativa con presión evolutiva de correlación < 0.3 | `generate`, `manage` |
 | **Strategy AST Copilot** | `/features/strategy-ast-copilot.md` | Asistente determinista LLM para topología estructural | `generate` |
 | **Glass-Box AI Translator** | `/features/glass-box-ai-translator.md` | Traducción de pesos DRL a AST visual y premisas en lenguaje natural (Semantic Explainer) | `generate`, `manage`, `withdraw` |
@@ -789,6 +784,7 @@ Las siguientes características son componentes independientes que se organizan 
 |---|---|---|---|
 | **Backtest Engine** | `/features/backtest-engine.md` | Motor de backtesting rápido y determinista | `validate`, `incubate` |
 | **Portfolio Backtest** | `/features/portfolio-backtest.md` | Motor de simulación multiestrategia concurrente compartiendo capital y horarios | `manage`, `validate` |
+| **Portfolio Optimizer** | `/features/portfolio-optimizer.md` | Motores de pesaje (Markowitz, HRP, Risk-Parity, Min-Variance) y rebalanceo Walk-Forward | `manage` |
 | **Paper Trader** | `/features/paper-trader.md` | Simulación de trading sin capital real en tiempo real con alta fidelidad. | `incubate` |
 | **Incubation Manager** | `/features/incubation-manager.md` | Orquestador de perfiles de incubación (Quarantine 7 días, Extended 21 días, Legacy 3-6 meses) con cono de confianza Monte Carlo (ADR-0088). | `incubate` |
 | **Slippage Models** | `/features/slippage-models.md` | Modelado de slippage (spread, market impact) | `backtest-engine`, `execute` |
@@ -867,7 +863,7 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
    └─► Acceso datos: Guardar candidatos → estado = Pendiente
 
 3. validate: Validar estrategia [Proceso offline, reproducible]
-   ├─► Features consumidas: [pit-data-validator], [backtest-engine], [walk-forward-analysis], [factor-decomposition], [alpha-purity-analyzer], [zero-crossing-filter], [signal-correlation-analyzer], [equity-curve-tracker], [slippage-models], [institutional-metrics], [audit-log], [pca-toxicity-analyzer], [autoencoder-outlier-detector]
+   ├─► Features consumidas: [pit-data-validator], [backtest-engine], [walk-forward-analyzer], [factor-decomposition], [alpha-purity-analyzer], [zero-crossing-filter], [signal-correlation-analyzer], [equity-curve-tracker], [slippage-models], [institutional-metrics], [audit-log], [pca-toxicity-analyzer], [autoencoder-outlier-detector]
 
    ├─► Validación PIT: Asegurar datos sin look-ahead
    ├─► Backtesting: Ejecución histórica con slippage realista
@@ -911,17 +907,18 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
    ├─► Acceso datos: Guardar ejecución en transacción
    └─► Supervisión: Latido de vida + botón de emergencia + detección anomalías
 
-7. withdraw: Monitorear degradación [Continuo, en segundo plano]
-   ├─► Lógica pura: Comparar con perfil esperado
-   ├─► Detectar: Cambio PnL, colapso rendimiento, drawdown excedido, cambio régimen
-   ├─► Orquestación: Iniciar retiro
-   └─► Acceso datos: Notificar a manage → rebalanceo necesario
-
-8. feedback: Reconciliación diaria [Al cierre batch]
-   ├─► Lógica pura: Reconciliar spreads (real vs esperado)
-   ├─► Lógica pura: Reconciliar ejecuciones (paper vs vivo)
+7. feedback: Veredicto de salud y cierre de bucle [Continuo + cierre batch] — ANALISTA
+   ├─► Features consumidas: [pardo-comparison], [trade-reconciler], [anomaly-detector], [factor-decomposition], [alpha-purity-analyzer], [equity-curve-tracker], [audit-log]
+   ├─► Lógica pura: Reconciliar real vs esperado (spreads, paper vs vivo)
+   ├─► Lógica pura: Diagnosticar causa de degradación (¿murió el Alpha o solo el Beta/régimen?)
    ├─► Detectar anomalías: Cambios ejecución, brechas datos, correlaciones rotas
-   └─► Acceso datos: Sugerir mejoras a generate
+   ├─► Orquestación: Emitir veredicto de continuidad/retiro (señal AUTO_WITHDRAW si procede)
+   └─► Acceso datos: Sugerir constraints a generate (cierre de bucle causal, ADR-0015)
+
+8. withdraw: Salida controlada [Actuador del veredicto de feedback]
+   ├─► Lógica pura: Recibir veredicto de retiro (no monitorea; el monitoreo es de feedback)
+   ├─► Orquestación: Transición FSM Ejecutando → En Pausa (ventana de veto) → Retirado/Archivo
+   └─► Acceso datos: Archivar métricas terminales y notificar a manage → rebalanceo
 ```
 
 ### Persistencia
@@ -939,7 +936,7 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 | validate → incubate | Validación aprobada + robustez mínima configurable | Forward testing en vivo |
 | incubate → manage | Pardo test pasado + drift aceptable (configurable) | Promoción a portafolio candidato |
 | execute → feedback | Orden ejecutada / anomalía detectada | Delta real vs esperado disponible |
-| feedback → withdraw | Veredicto de retiro (Drift > umbral) | Estrategia enviada a cementerio para archivo |
+| feedback → withdraw | Veredicto de retiro (Drift > umbral) | Estrategia enviada a Retiro Emérito (Archivo Institucional) |
 | withdraw → generate | Archivo completado + Insights | Nuevo ciclo con restricciones del fallo |
 por usuario (ver ADR-0008: Configurabilidad Universal)*
 
@@ -1080,7 +1077,7 @@ Para asegurar que el pipeline sea reproducible y agnóstico, se definen los sigu
                                ▼
                     ┌─────────────────────────────────────┐
                     │  EN INCUBACIÓN                      │
-                    │  (ejecución simulada 3-6 meses)    │
+                    │  (simulada; perfil config. ADR-0088)│
                     └──────────┬──────────────────────────┘
                                │ incubación: pasa validación
                                ▼
@@ -1199,7 +1196,7 @@ El sistema está estructurado en capas de dependencia que definen el orden lógi
 ### Capa de Forward Testing
 **MOD-04 (incubate)** depende de MOD-03.
 * Requiere estrategias aprobadas en validación.
-* Prueba en tiempo forward (3-6 meses histórico futuro).
+* Prueba en tiempo forward (perfil de incubación configurable: 7/21 días o 3-6 meses — ADR-0088).
 * Filtra overfitting y cambios de régimen.
 
 ### Capa de Orquestación
@@ -1216,15 +1213,14 @@ Estas capas operan en paralelo mientras el portafolio está activo. No tienen re
 * Ejecuta en tiempo real.
 * Registra todas las decisiones automáticas en audit trail.
 
-**MOD-08 (withdraw)** monitorea en paralelo con MOD-06.
-* Observa P&L en vivo desde MOD-06.
-* Detecta degradación de estrategias.
-* Propone retiro controlado (automático si regla lo permite, con veto window).
+**MOD-07 (feedback)** — Analista. Observa TODOS los módulos en paralelo.
+* Recolecta datos de ejecución (MOD-06), validación histórica (MOD-03) y P&L del portafolio.
+* Detecta degradación y anomalías transversales; diagnostica la causa (Alpha muerto vs Beta/régimen).
+* Emite el veredicto de continuidad/retiro y retroalimenta constraints a MOD-02 (cierre de bucle, ADR-0015).
 
-**MOD-07 (feedback)** observa TODOS los módulos.
-* Recolecta datos de ejecución (MOD-06), validación histórica (MOD-03), P&L (MOD-08).
-* Detecta anomalías transversales.
-* Retroalimenta sugerencias a MOD-02 para siguiente iteración de generación.
+**MOD-08 (withdraw)** — Actuador. Ejecuta el veredicto de retiro emitido por MOD-07 (no monitorea).
+* Gestiona la transición del FSM: Ejecutando → En Pausa (ventana de veto) → Retirado/Archivo.
+* Archiva métricas terminales y notifica a MOD-05 (manage) para rebalanceo.
 
 ---
 
@@ -1346,4 +1342,4 @@ Drasus Engine es un sistema **Local-First (ADR-0016)**. La persistencia se reali
 
 ---
 
-**Documento versión 4.1** | Última actualización: 2026-06-09
+**Documento versión 4.2** | Última actualización: 2026-06-14

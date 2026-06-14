@@ -37,6 +37,7 @@ Las features son las piezas de **Lógica Pura** (Functional Core) o drivers de i
 | [**algorithmic-bars**](./features/algorithmic-bars.md) | Es un procesador de datos de mercado que transforma el flujo de ticks en barras basadas en eventos de precio o volumen, en lugar de intervalos de... | ingest |
 | [**alpha-decoupling**](./features/alpha-decoupling.md) | Aisla el rendimiento puro de la estrategia (Alpha) eliminando el efecto inercial del mercado general (Beta). Resuelve el problema de falsos... | manage, validate |
 | [**alpha-harvesting-gateway**](./features/alpha-harvesting-gateway.md) | Es un portal de ingesta (Gateway) que permite recibir, desencriptar y refinar estrategias anonimizadas provenientes de la mente colectiva (o peers)... | generate |
+| [**alpha-purity-analyzer**](./features/alpha-purity-analyzer.md) | Motor estadístico que mide cuánto del rendimiento es habilidad real (Alpha) y cuánto exposición pasiva (Beta), emitiendo el veredicto de significancia (P-Value, Score de Pureza). | validate, feedback |
 | [**anomaly-detector**](./features/anomaly-detector.md) | Componente encargado de detectar comportamientos atípicos y fallos de modelo. Su misión es el **Aprendizaje de Fallas**: transforma anomalías... | feedback |
 | [**ast-compiler**](./features/ast-compiler.md) | El **Compilador de Árbol de Sintaxis Abstracta (AST)** es el primer filtro del protocolo **Zero-Trust Validation**. Traduce el diseño visual de la... | generate |
 | [**async-job-executor**](./features/async-job-executor.md) | Async Job Executor implementa un patrón de tres fases para ejecutar operaciones computacionalmente costosas (backtesting, generación, optimización)... | Todos |
@@ -208,7 +209,7 @@ Proyectos de investigación avanzada y alta complejidad.
 | [**monetization-stripe**](./moonshots/monetization-stripe.md) | El sistema de monetización conecta el ecosistema de facturación externa Stripe con la estructura de control de accesos del SaaS, regulando qué cara... |
 | [**neuro-symbolic-fusion**](./moonshots/neuro-symbolic-fusion.md) | Fusión neuro-simbólica de estrategias maestras (El Colisionador) |
 | [**predictive-quant-oracles**](./moonshots/predictive-quant-oracles.md) | Inferencia bayesiana de fragilidad y estancamiento futuro (Alpha no validado) |
-| [**pysr-signal-discovery**](./moonshots/pysr-signal-discovery.md) | Descubrimiento simbólico de señales alpha |
+| [**symbolic-signal-discovery**](./moonshots/symbolic-signal-discovery.md) | Descubrimiento simbólico de señales alpha |
 | [**quantum-portfolio-solver**](./moonshots/quantum-portfolio-solver.md) | Explora el uso de algoritmos de Computación Cuántica para resolver problemas de optimización combinatoria complejos, como la selección de activos y... |
 | [**saas-cloud-engine**](./moonshots/saas-cloud-engine.md) | Arquitectura y orquestación masiva para despliegue Cloud/VPS de alta densidad |
 | [**saas-gateway**](./moonshots/saas-gateway.md) | El Gateway central de acceso regula los flujos de comunicación externa en la nube entre los Thin Clients Flutter local y el clúster de ejecución or... |
