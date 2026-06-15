@@ -345,6 +345,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0114**](./ADR.md#adr-0114-veredicto-spike-004--motor-de-backtest-dual-con-ruta-express-hibrida-vectorizada-secuencial-modo-de-motor-elegido-por-el-usuario-y-contrato-de-consistencia-conservadora) | Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora |
 | [**ADR-0115**](./ADR.md#adr-0115-veredicto-spike-005--verdict-engine-determinista-sin-llm-erradicacion-de-ollama-como-requisito) | Veredicto SPIKE-005 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito |
 | [**ADR-0116**](./ADR.md#adr-0116-veredicto-spike-006--downsampling-obligatorio-en-backend-como-condicion-de-la-frontera-ffi-zerocopybuffer-solo-para-cargas-masivas) | Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas |
+| [**ADR-0117**](./ADR.md#adr-0117-entrega-progresiva-de-cascara-delgada-por-feature--techo-fijo-ventana-de-verificacion-y-redefinicion-de-epic-8-como-unificacion-zui) | Entrega Progresiva de Cáscara Delgada por Feature — Techo Fijo, Ventana de Verificación y Redefinición de EPIC-8 como Unificación ZUI |
 
 ---
 ## 📖 Arquitectura y Gobernanza

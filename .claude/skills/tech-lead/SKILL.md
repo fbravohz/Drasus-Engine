@@ -124,7 +124,7 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
   2. Recorres `modules/*.md` del/los módulo(s) de esa fase → filtras TTRs P0 cuya Precondición ya está `Completado` (cadena Entrada/Salida/Precondición/Postcondición).
   3. Aplicas §5 (Gobernanza ROADMAP): si el TTR no corresponde a la fase activa, o los SPIKE-001-SPIKE-006 bloqueantes no están resueltos (gate EPIC-0), el TTR queda `Secuenciado / En Espera` — eliges el siguiente candidato.
   4. Para el TTR seleccionado, lees su(s) Feature(s) referenciada(s) en `features/*.md` y los ADRs citados.
-* Acción: clasificas el TTR/Feature como (a) "matemática/estrategia/métrica" → activa Etapas 1 y 6, y/o (b) "superficie UI/headless" declarada en la Feature → activa Etapas 3-4.
+* Acción: clasificas el TTR/Feature como (a) "matemática/estrategia/métrica" → activa Etapas 1 y 6, y/o (b) su Contrato de Integración UI (TEMPLATES.md §3.8) declara "Superficie propia" → activa Etapas 3-4 bajo el Techo Fijo (ADR-0117). Si declara "Ventana de Verificación" (Feature de plomería, sin superficie propia), Etapas 3-4 no se activan directamente para ella — ver §5.
 
 **Etapa 1 — Validación Cuantitativa Pre-Código (Quant-Engineer)**
 * Trigger: Feature spec marcada como matemática/estrategia (Etapa 0).
@@ -147,12 +147,13 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
 **Etapa 4 — Interfaz (Flutter-Engineer)**
 * Trigger: bindings del Bridge compilando y disponibles.
 * Restricción dura: Flutter-Engineer NUNCA recibe trabajo directo de Rust-Engineer; siempre despachado por ti vía entregable del Bridge-Engineer.
-* Salida esperada: UI Thin Shell consumiendo streams/funciones expuestas, sin lógica de negocio.
+* Salida esperada: Cáscara Delgada (UI Thin Shell) bajo el Techo Fijo de ADR-0117 — sin lógica de negocio, como pestaña/sección nueva (máximo una por Feature) del Panel Operativo Fundacional. Cumple la Superficie de Verificación Funcional (SVF) declarada en el Contrato de Integración UI de la Feature (TEMPLATES.md §3.8): (a) control que dispara la operación real vía `public_interface`, (b) visualización del resultado real vía FFI/gRPC (ADR-0106/ADR-0116), (c) observable persistido visible tras recargar.
+* **Gate de Integración (ADR-0117):** antes de cerrar, revisas si alguna Feature de plomería completada previamente declaró esta Feature como su Ventana de Verificación ("deuda de integración visual" registrada en `PROGRESS.md`/ROADMAP). Si la hay, el observable correspondiente DEBE quedar visible en esta Cáscara Delgada — si no, la Etapa 4 no está completa.
 
 **Etapa 5 — Validación QA (QA-Engineer)**
 * Dos modos de despacho:
   * **Continuo:** despachas cada entregable de Etapas 2-4 individualmente apenas se produce (tests unitarios, SLAs por ruta, determinismo).
-  * **Gate final:** antes de declarar la Feature lista, despachas validación del conjunto completo (Frontend sin lógica, FCIS, Zero-Docker, soberanía de datos).
+  * **Gate final:** antes de declarar la Feature lista, despachas validación del conjunto completo (Frontend sin lógica, FCIS, Zero-Docker, soberanía de datos, y si la Feature declara "Superficie propia": SVF cumplida + Gate de Integración resuelto, ADR-0117).
 * Si QA detecta defecto:
   * Defecto de implementación → regresas el entregable al engineer dueño (no corrige QA).
   * Defecto de diseño/spec → escalas a Architect (ver §3).
@@ -188,7 +189,7 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
   * Escalas el veredicto al Architect (§3) para que lo registre como ADR — tú no redactas ADRs.
 * **Dependencias Duras (ROADMAP §5):** antes de despachar el TTR de una fase, verificas que los criterios de salida de las fases dependientes (ej. EPIC-2 depende de EPIC-1, EPIC-3 depende de EPIC-2, DSR de EPIC-4 depende de N contado desde EPIC-3) estén `Completado`. Si no, bloqueas y escalas al Architect solo si el bloqueo revela una inconsistencia de secuenciación en el ROADMAP; si es simplemente "aún no completado", esperas.
 * **KPIs por Fase (ROADMAP §6):** en Etapa 5 (QA-Engineer), el SLA exigido es el correspondiente a la fase ACTIVA del TTR según la tabla de KPIs (ej. no exigir <1ms de pre-trade validation a un entregable de EPIC-2). QA-Engineer rechaza solo contra el SLA de SU ruta/fase, nunca contra la tabla completa.
-* **Pista Transversal de UI (ROADMAP §EPIC-8, nota final):** Etapas 3-4 (Bridge/Flutter) solo se activan si la Feature spec declara la pantalla utilitaria asignada a la fase activa (máximo una por fase, EPIC-1-EPIC-7). Cualquier otra superficie UI queda `Secuenciado / En Espera` hasta EPIC-8.
+* **Cáscara Delgada por Feature (ADR-0117, sustituye la antigua "Pista Transversal de UI"):** Etapas 3-4 (Bridge/Flutter) se activan para CUALQUIER Feature cuya spec declare "Superficie propia" en su Contrato de Integración UI (TEMPLATES.md §3.8) — en la misma Story que su backend, sin esperar a EPIC-8 y sin cuota "una pantalla por fase". Si la Feature declara "Ventana de Verificación" (es plomería, sin superficie propia), Etapas 3-4 no se activan para ella directamente; registras en `PROGRESS.md`/ROADMAP el observable pendiente contra la Feature consumidora declarada — se resuelve cuando esa Feature consumidora pase por Etapa 4 (Gate de Integración).
 
 ---
 
