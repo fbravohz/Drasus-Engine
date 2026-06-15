@@ -1,6 +1,6 @@
 # ROADMAP de Desarrollo — Drasus Engine (ex-QuantForge)
 
-**Versión:** 2.0 | **Fecha:** 2026-06-12 (v2.0: Unificación con EXECUTION-PLAN.md en un solo mapa de implementación. v1.2: SPIKE-002–SPIKE-006 resueltos vía ADR-0112 a 0116. v1.1: SPIKE-001 resuelto vía ADR-0107)
+**Versión:** 2.1 | **Fecha:** 2026-06-15 (v2.1: Cáscara Delgada por Feature desde el día 1 — Techo Fijo + Ventana de Verificación (ADR-0117); EPIC-8 redefinido como Unificación ZUI; SPIKE-006 → Panel Operativo Fundacional. v2.0: Unificación con EXECUTION-PLAN.md en un solo mapa de implementación. v1.2: SPIKE-002–SPIKE-006 resueltos vía ADR-0112 a 0116. v1.1: SPIKE-001 resuelto vía ADR-0107)
 **Autor:** Auditoría arquitectónica (Tech Lead)
 **Principio rector:** *Alpha-First.* Cada fase debe acortar la distancia entre el código y el dinero generado en mercados reales. Todo lo que no genere Alpha, lo proteja (defensa de capital = Alpha preservado) o lo multiplique (velocidad de descubrimiento), se pospone.
 
@@ -31,7 +31,7 @@ Estos riesgos invalidaban supuestos centrales de la documentación. **Los 6 gate
 | SPIKE-003 | **PySR "en Rust"** — ✅ **RESUELTO (ADR-0113)** | SAD §2.3: "Minería Simbólica (Rust)" + múltiples menciones a PySR | PySR es Python+Julia. No existe puerto Rust. | **Veredicto:** erradicar PySR. La regresión simbólica acotada es un modo del motor NSGA-II nativo sobre el AST; la minería simbólica libre se difiere a moonshot con `egg`. Se rechazan `evalexpr`/`meval` en hot-path. |
 | SPIKE-004 | **Motor de backtest dual** — ✅ **RESUELTO (ADR-0114)** | (KPI absoluto de bars/sec eliminado por humo) | Forzar event-loop tick-a-tick a la minería masiva asfixia la exploración; vectorizar puro impide la gestión de riesgo con estado (ADR-0109). | **Veredicto:** motor dual. Ruta Express híbrida (vectorizado para lo sin-estado + mini-loop secuencial para lo con-estado) + ruta Event-Driven (NT v2) para fidelidad. Modo elegido por el usuario; contrato de consistencia conservadora (FIJO). Criterio relativo: superar a MT5/SQX/QuantConnect. |
 | SPIKE-005 | **Ollama/LLM local** — ✅ **RESUELTO (ADR-0115)** | ADR-0058 exigía LLM local | Ollama es un runtime externo — contradice "cero runtimes" (ADR-0029/0030). | **Veredicto:** Verdict Engine determinista por plantilla, sin LLM por defecto. Ollama derogado como requisito; LLM local soberano (`candle`) opcional. |
-| SPIKE-006 | **flutter_rust_bridge a escala** — ✅ **RESUELTO (ADR-0116)** | ADR-0029/0019 | Verificar streams de alta frecuencia (throttling 100ms) y paso Arrow zero-copy con arrays de 1M+ puntos. | **Veredicto:** downsampling obligatorio en backend (nunca cruzar más resolución que el viewport, ADR-0098). `ZeroCopyBuffer` solo para cargas masivas; throttling en Rust; gRPC fallback (ADR-0033). Spike EPIC-0 confirma números. |
+| SPIKE-006 | **flutter_rust_bridge a escala** — ✅ **RESUELTO (ADR-0116)** | ADR-0029/0019 | Verificar streams de alta frecuencia (throttling 100ms) y paso Arrow zero-copy con arrays de 1M+ puntos. | **Veredicto:** downsampling obligatorio en backend (nunca cruzar más resolución que el viewport, ADR-0098). `ZeroCopyBuffer` solo para cargas masivas; throttling en Rust; gRPC fallback (ADR-0033). Spike EPIC-0 confirma números. **El spike deja de ser desechable: su entrega es el Panel Operativo Fundacional (ADR-0117).** |
 
 **Salida de Épica 0 = los 6 gates con veredicto + ADRs actualizados.** Sin esto, no se escribe código de producción.
 
@@ -42,7 +42,7 @@ Estos riesgos invalidaban supuestos centrales de la documentación. **Los 6 gate
 ```
 EPIC-0 Fundación+Spikes → EPIC-1 Datos → EPIC-2 Motor Backtest → EPIC-3 Generación → EPIC-4 Guantelete
                                                                           ↓
-EPIC-8 UI Glass-Box ← EPIC-7 Feedback+AutoPipeline ← EPIC-6 Manage+Live ← EPIC-5 PRIMER DINERO REAL
+EPIC-8 Unificación ZUI ← EPIC-7 Feedback+AutoPipeline ← EPIC-6 Manage+Live ← EPIC-5 PRIMER DINERO REAL
 ```
 
 | Fase | Nombre | Módulos | Duración est.* | Entregable Alpha |
@@ -55,7 +55,7 @@ EPIC-8 UI Glass-Box ← EPIC-7 Feedback+AutoPipeline ← EPIC-6 Manage+Live ← 
 | EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (mínimo) | 6–8 sem | **Estrategia viva en cuenta real/fondeo vía bridge MT5** |
 | EPIC-6 | Portafolio y Ejecución Nativa | `manage` + `execute` (completo) | 8–10 sem | Portafolio multi-estrategia con brokers nativos |
 | EPIC-7 | Ciclo Cerrado 24/7 | `feedback` + `withdraw` + QuantOps | 4–6 sem | Fábrica autónoma: genera→valida→incuba→opera→aprende |
-| EPIC-8 | Glass-Box UI | UI completa | 8–12 sem | Editor visual DAG, ZUI, visualizadores |
+| EPIC-8 | Unificación ZUI y Pulido | UI (unificación + pulido) | 8–12 sem | ZUI unificada (ADR-0028), visualizadores avanzados, empaquetado |
 | EPIC-9+ | Moonshots | según ROI | — | Colmena, Marketplace, SaaS, Copy-Trading, etc. |
 
 \* Estimaciones para 1 dev senior + agentes IA, jornada completa. Son relativas: lo importante es el orden y los criterios de salida, no el calendario.
@@ -72,10 +72,10 @@ EPIC-8 UI Glass-Box ← EPIC-7 Feedback+AutoPipeline ← EPIC-6 Manage+Live ← 
 - Migraciones SQLx embebidas: la migración 0001 crea la tabla ancla `foundation_master_fields` con el catálogo de 25 campos (referencia única); las tablas por feature aplican Grupo I universal + su Perfil Técnico (ADR-0006, ADR-0020 V2).
 - Features transversales P0: [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`crash-recovery`](./features/crash-recovery.md) (ADR-0027 Event Store), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md).
 - CLI con Clap como primera interfaz (la UI Flutter NO bloquea ninguna fase hasta EPIC-8; cada fase expone sus comandos por CLI primero).
-- Spike FFI: ventana Flutter mínima + `flutter_rust_bridge` + stream Arrow (SPIKE-006). Solo "hello world" de infraestructura, cero pantallas de producto.
+- Spike FFI → Panel Operativo Fundacional (ADR-0117): ventana Flutter real + `flutter_rust_bridge` + stream Arrow (SPIKE-006), mostrando en vivo el estado de [`clock`](./features/clock.md), la cola de [`async-job-executor`](./features/async-job-executor.md) y la bitácora de [`audit-log`](./features/audit-log.md) — la primera Cáscara Delgada, no un descartable.
 - Validar los veredictos ya documentados de los SPIKE-001–SPIKE-006 (§2). Todos tienen ADR (SPIKE-001: ADR-0107; SPIKE-002–SPIKE-006: ADR-0112 a 0116). En EPIC-0 solo queda el trabajo residual: smoke test de compilación/vendoring de los crates NT v2 y empaquetado LGPL (SPIKE-001); smoke test de cómputo CPU-first `ndarray`/Rayon (SPIKE-002); spike de medición del motor Express híbrido y el contrato de consistencia (SPIKE-004); spike FFI con downsampling y throttling (SPIKE-006).
 
-**Criterio de salida:** `cargo test` verde en esqueleto; migración 0001 aplica los 25 campos; job asíncrono sobrevive a un kill -9 y se recupera (ADR-0011); veredictos SPIKE-001–SPIKE-006 documentados y sus validaciones residuales ejecutadas.
+**Criterio de salida:** `cargo test` verde en esqueleto; migración 0001 aplica los 25 campos; job asíncrono sobrevive a un kill -9 y se recupera (ADR-0011); veredictos SPIKE-001–SPIKE-006 documentados y sus validaciones residuales ejecutadas; el Panel Operativo Fundacional (ADR-0117) opera mostrando en vivo clock, cola de trabajos y bitácora de auditoría — primera Cáscara Delgada entregada.
 
 #### Plan de Ejecución de EPIC-0 — Paso a Paso
 
@@ -110,9 +110,9 @@ Cada spike entrega veredicto binario + Plan B si aplica. Los 6 spikes corren en 
 | SPIKE-003 | Prototipo del modo simbólico nativo (regresión simbólica como modo del NSGA-II sobre el AST) | Quant-Engineer | Confirmar que funciona sin PySR | Veredicto documentado — resta validación |
 | SPIKE-004 | Spike de medición del motor Express híbrido vs MT5/SQX/QuantConnect (criterio relativo, sin KPI absoluto) | Rust-Engineer + Quant-Engineer | Confirmar ventaja competitiva y contrato de consistencia | Veredicto documentado — resta validación |
 | SPIKE-005 | Implementar la plantilla determinista del Verdict Engine (sin LLM) | Rust-Engineer | Confirmar veredicto reproducible sin Ollama | Veredicto documentado — resta validación |
-| SPIKE-006 | Spike FFI: ventana Flutter mínima + `flutter_rust_bridge` + stream Arrow con downsampling y throttling | Bridge-Engineer | Confirmar latencia de stream con throttle 100ms | Veredicto documentado — resta validación |
+| SPIKE-006 | Spike FFI → Panel Operativo Fundacional (ADR-0117): ventana Flutter + `flutter_rust_bridge` + stream Arrow con downsampling y throttling, mostrando clock/cola/auditoría en vivo | Bridge-Engineer + Flutter-Engineer | Confirmar latencia de stream con throttle 100ms y entregar la primera Cáscara Delgada operativa | Veredicto documentado — resta validación |
 
-**Nota:** El único spike con UI permitida en EPIC-0 es SPIKE-006, y es exclusivamente "hello world" de infraestructura — cero pantallas de producto.
+**Nota:** SPIKE-006 es el único spike de EPIC-0 con superficie UI: su entrega es el Panel Operativo Fundacional (ADR-0117), la primera Cáscara Delgada real (no descartable) y la Ventana de Verificación conjunta de [`clock`](./features/clock.md), [`async-job-executor`](./features/async-job-executor.md) y [`audit-log`](./features/audit-log.md).
 
 ##### Backlog EPIC-0 — Sprint de Trabajo por Sprints
 
@@ -151,7 +151,7 @@ Cada spike entrega veredicto binario + Plan B si aplica. Los 6 spikes corren en 
 2. **QA continuo:** Cada entregable pasa por QA apenas se produce (tests unitarios, determinismo); el gate final (TASK-001) audita el conjunto. Defecto de implementación → regresa al ingeniero; defecto de diseño → escalar al Architect.
 3. **Bloqueo EPIC-1+:** Prohibido despachar TTRs de EPIC-1 hasta que los 6 gates estén cerrados.
 4. **SLA aplicable:** En EPIC-0 solo se exige recuperación post-crash menor a 10 segundos. Prohibido exigir SLAs de fases futuras.
-5. **Sin UI de producto:** La pista de UI inicia en EPIC-1 (una pantalla utilitaria por fase). En EPIC-0 solo existe el spike SPIKE-006.
+5. **Cáscara Delgada desde EPIC-0 (ADR-0117):** la única superficie UI de EPIC-0 es el Panel Operativo Fundacional (SPIKE-006) — clock, cola de trabajos y bitácora de auditoría en vivo. Desde EPIC-1, cada Feature con superficie UI declarada entrega su Cáscara Delgada (Techo Fijo, ADR-0117) en la misma Story que su backend; no hay cuota "una pantalla por fase".
 6. **Cero invención:** Si algún TTR resulta ambiguo durante el despacho, se bloquea y se escala al Architect con evidencia — los ingenieros no rellenan vacíos de spec.
 
 ##### Registro de Estado EPIC-0
@@ -175,6 +175,7 @@ Cada spike entrega veredicto binario + Plan B si aplica. Los 6 spikes corren en 
 - **2026-06-12 — `transformation_id`:** es un identificador (TEXT/UUID) del paso de transformación, no un flag booleano. Glosa corregida en ADR-0020 V2 y los 8 módulos.
 - **2026-06-12 — STORY-003 `clock` completado.** Reloj en `crates/shared` (núcleo determinista + cáscara `SystemClock`). Determinismo bit-a-bit verificado. **Pendiente diferido a STORY-004:** las postcondiciones de `clock.md` (TTR-001/002) piden registrar en auditoría el `ntp_sync_offset`, el `virtual_process_id` y la delta real/virtual. No se implementó porque (a) requiere que exista `audit-log` (STORY-004), y (b) el Architect debe definir el perfil de persistencia/auditoría de la entidad `clock` (campos propios de `clock` + subconjunto del contrato por perfil, ADR-0020 V2). **Acción al llegar a STORY-004:** escalar a Architect para definir ese perfil y entonces implementar el rastro de auditoría del reloj.
 - **2026-06-12 — Perfil de auditoría del reloj resuelto (Architect, escalamiento §3).** Veredicto: los tres "campos" citados por `clock.md` (`ntp_sync_offset`, proceso virtual de simulación, delta real/virtual) NO existen en el catálogo ADR-0020 V2 y son **payload de evento** (`details_json` opaco de `AuditEventContent`), no columnas; el `virtual_process_id` huérfano se sustituye por `session_id` del catálogo (Grupo IV). El reloj NO tiene persistencia propia: emite a la bitácora existente vía `AuditEventContent`, **Perfil D (Ops/Auditoría)**. Granularidad acotada a 3 eventos (`CLOCK_NTP_SYNC` al arranque, `CLOCK_MODE_TRANSITION` en REAL↔SIMULATION, `CLOCK_SESSION_CLOSE` con la delta acumulada) — PROHIBIDO auditar el hot-path. **ADR-0020 V2 sin cambios** (campos no son transversales a 3+ features). `clock.md` corregido. **Implicación para STORY-004:** el rastro del reloj ya es implementable sin inventar campos.
+- **2026-06-15 — ADR-0117 (Architect, escalamiento por cambio de metodología de fases UI):** veredicto: Cáscara Delgada por Feature desde el día uno, bajo Techo Fijo (Superficie de Verificación Funcional) + Ventana de Verificación para features de plomería + Gate de Integración anti-deuda. SPIKE-006 se convierte en el Panel Operativo Fundacional (Ventana de Verificación conjunta de `clock`/`async-job-executor`/`audit-log`). EPIC-8 se redefine como "Unificación ZUI" (ya no construye la UI desde cero). ROADMAP (§2, §4 EPIC-0/EPIC-8), SAD §6.4/§18, TEMPLATES.md §3.8 y `tech-lead/SKILL.md` §5 actualizados.
 
 ---
 
@@ -314,17 +315,17 @@ Cada spike entrega veredicto binario + Plan B si aplica. Los 6 spikes corren en 
 
 ---
 
-### EPIC-8 — Glass-Box UI (Flutter completo)
+### EPIC-8 — Unificación ZUI y Pulido (antes "Glass-Box UI")
 
-**Objetivo:** Hasta aquí el sistema operó por CLI + paneles mínimos. Ahora se construye la experiencia que SQX no puede ofrecer.
+**Objetivo (redefinido por ADR-0117):** Desde EPIC-0, cada Feature con superficie UI declarada entrega su Cáscara Delgada (Techo Fijo) junto a su backend — ver "Entrega Progresiva de Cáscara Delgada" más abajo. Al llegar aquí, el Panel Operativo Fundacional ya creció con una pestaña/sección por cada Feature con UI de EPIC-1–EPIC-7. EPIC-8 ya NO construye la interfaz desde cero: **unifica** esas pestañas en la navegación fractal de 3 niveles, **pule** (theming, animaciones, responsive) y construye lo que requiere datos agregados de múltiples fases o fue diferido por veredicto SPIKE.
 
-- ZUI 3 niveles (ADR-0028): Fleet Command → Orchestrator (DAG editor con `petgraph` + CustomPainter) → Strategy Inspector.
-- [`visual-dag-editor`](./features/visual-dag-editor.md), [`node-preview`](./features/node-preview.md) (ADR-0096), [`zui-navigation`](./features/zui-navigation.md).
-- Visualizadores: [`umap-scatter-visualizer`](./features/umap-scatter-visualizer.md), [`parallel-coordinates-visualizer`](./features/parallel-coordinates-visualizer.md), [`cross-filtering-visualizer`](./features/cross-filtering-visualizer.md), [`interactive-stress-lab`](./features/interactive-stress-lab.md), [`plateau-copilot`](./features/plateau-copilot.md), [`toxicity-purifier`](./features/toxicity-purifier.md) (ADR-0098), [`time-warp-debugger`](./features/time-warp-debugger.md), [`monthly-performance-heatmap`](./features/monthly-performance-heatmap.md) interactivo.
-- [`robustness-verdict-engine`](./features/robustness-verdict-engine.md) (LLM local, SPIKE-005), [`glass-box-ai-translator`](./features/glass-box-ai-translator.md), AST Copilot.
-- Empaquetado comercial: [`flutter-packaging-manager`](./features/flutter-packaging-manager.md), [`licensing-system`](./features/licensing-system.md), instaladores 3 OS (ADR-0029).
+- **Unificación ZUI 3 niveles (ADR-0028):** reorganiza las pestañas/secciones del Panel Operativo Fundacional (entregadas EPIC-0–EPIC-7) en Fleet Command → Orchestrator (DAG editor con `petgraph` + CustomPainter) → Strategy Inspector. [`visual-dag-editor`](./features/visual-dag-editor.md), [`node-preview`](./features/node-preview.md) (ADR-0096), [`zui-navigation`](./features/zui-navigation.md).
+- **Pulido visual:** theming, animaciones, layouts responsivos sobre las Cáscaras Delgadas ya funcionales — diferido por el Techo Fijo (ADR-0117).
+- **Visualizadores que requieren datos agregados multi-fase:** [`umap-scatter-visualizer`](./features/umap-scatter-visualizer.md), [`parallel-coordinates-visualizer`](./features/parallel-coordinates-visualizer.md), [`cross-filtering-visualizer`](./features/cross-filtering-visualizer.md), [`interactive-stress-lab`](./features/interactive-stress-lab.md), [`plateau-copilot`](./features/plateau-copilot.md), [`toxicity-purifier`](./features/toxicity-purifier.md) (ADR-0098), [`time-warp-debugger`](./features/time-warp-debugger.md), [`monthly-performance-heatmap`](./features/monthly-performance-heatmap.md) interactivo.
+- **Diferidos por veredicto SPIKE-005/ADR-0115:** [`robustness-verdict-engine`](./features/robustness-verdict-engine.md) (LLM local), [`glass-box-ai-translator`](./features/glass-box-ai-translator.md), AST Copilot.
+- **Empaquetado comercial:** [`flutter-packaging-manager`](./features/flutter-packaging-manager.md), [`licensing-system`](./features/licensing-system.md), instaladores 3 OS (ADR-0029).
 
-**Pista transversal de UI (EPIC-1–EPIC-7):** cada fase entrega como máximo UNA pantalla utilitaria (telemetría de descarga EPIC-1, curva de equidad de backtest EPIC-2, tabla Databank EPIC-3, semáforo de guantelete EPIC-4, panel Autopilot+Kill Switch EPIC-5, panel de pesos EPIC-6, dashboard de salud EPIC-7). Pantallas funcionales, sin pulido. El pulido es EPIC-8.
+**Entrega Progresiva de Cáscara Delgada por Feature (ADR-0117, sustituye la antigua "pista transversal de UI"):** cada Feature de EPIC-1–EPIC-7 cuya spec declare superficie de usuario entrega, en la misma Story que su backend, su Cáscara Delgada bajo el Techo Fijo: control que dispara la operación real + visualización del resultado real (FFI/gRPC) + observable persistido visible tras recargar. Las Features de plomería (sin superficie propia) declaran una Ventana de Verificación en la Feature consumidora — su prueba de funcionamiento es ese observable visible ahí. No hay cuota "una pantalla por fase"; el límite es el Techo Fijo, no el calendario.
 
 ---
 

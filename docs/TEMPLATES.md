@@ -150,6 +150,9 @@ type: templates
 8. **Dependencias y Bloqueantes**
    - Qué otras features dependen de esta.
    - Qué la bloquea (ej: otra feature no implementada).
+   - **Contrato de Integración UI (OBLIGATORIO — ADR-0117):** declara una de las dos:
+     - **Superficie propia:** nombre de la pestaña/sección que esta Feature aporta al Panel Operativo Fundacional, y cuál es su Superficie de Verificación Funcional (SVF) bajo el Techo Fijo — el control que dispara la operación real + el resultado real (FFI/gRPC) + el observable persistido visible tras recargar.
+     - **Ventana de Verificación (si es Feature de plomería, sin superficie propia):** nombre de la Feature consumidora y de su pestaña/sección, y el observable concreto de ESTA feature (estado, conteo, timestamp, resultado) que debe quedar visible ahí. Esa visibilidad es la prueba de funcionamiento de la plomería — sin ella, la Cáscara Delgada de la Feature consumidora no se considera completa (Gate de Integración, ADR-0117).
 
 9. **Regla de Soberanía Técnica (§7.3)** (Solo para Módulos):
    - Los Módulos son **Orquestadores Puros** (Thin Shells).
@@ -228,6 +231,11 @@ devuelve las mejores.
 
 **Bloquea:**
 - Módulo validar (necesita candidatos para validar)
+
+## Contrato de Integración UI
+
+**Superficie propia:** pestaña "Generación" en el Panel Operativo Fundacional.
+- SVF: botón "Generar candidatos" dispara una corrida real vía `public_interface`; la pestaña muestra el contador de estrategias generadas devuelto por el Core; tras recargar, el contador y el reporte de diversidad siguen visibles (persistidos en el Databank).
 ```
 
 ---
