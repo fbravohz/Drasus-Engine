@@ -29,8 +29,8 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
    - **Benchmark SQX / Pro-State:** ¿Cómo nos posiciona esto frente a StrategyQuant X? ¿Es una mejora radical o una redundancia innecesaria?
    - **Costo de Complejidad:** ¿El Alpha generado justifica el aumento en la superficie de mantenimiento y latencia?
    - 🛑 **PAUSA OBLIGATORIA:** Informa conclusiones sobre el valor real de la feature y **detén el procesamiento**. Espera aprobación para los pasos siguientes.
-2. **Sincronización con el SAD (System Architecture Document):** Extrae el diseño de alto nivel. Revisa, actualiza el `SAD.md` existente o crea un nuevo apartado si aplica.
-3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Crea nuevos `ADR.md` o actualiza los existentes.
+2. **Sincronización con el SAD (System Architecture Document):** Extrae el diseño de alto nivel. El SAD está partido por sección: edita la sección correspondiente en `docs/sad/SAD-NN.md` (índice en `docs/SAD.md`), o si es una sección nueva, créala como `docs/sad/SAD-NN.md` y añade su fila al índice `docs/SAD.md`. PROHIBIDO volcar contenido dentro del índice.
+3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Cada ADR vive en su propio archivo: para uno nuevo, crea `docs/adr/ADR-XXXX.md` con el siguiente número correlativo y **añade su fila al índice `docs/ADR.md`**; para uno existente, edita su archivo `docs/adr/ADR-XXXX.md`. PROHIBIDO volcar el ADR completo dentro del índice `docs/ADR.md`.
 4. **Validación de la Implementación de ADRs:** Verifica que todo ADR aplicable posea su materialización en los documentos de Feature.
 5. **Extracción a Features (Componentes):** Define o actualiza los documentos de Features y sus TTRs siguiendo las plantillas. **OBLIGATORIO:** Si el cambio en el SAD/ADR afecta contractualmente una Feature existente, actualiza su especificación de inmediato.
 6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 V2 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
@@ -54,7 +54,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 
 ## 🚫 RESTRICCIONES DOCUMENTALES
 - **Gate de Creación de Documentos (CRÍTICO):**
-  - Flujo Permitido: `ADR.md`, `SAD.md`, `TEMPLATES.md`, `modules/*.md`, `features/*.md`, `moonshots/*.md` y `README.md`.
+  - Flujo Permitido: `docs/adr/ADR-XXXX.md` (+ fila en el índice `docs/ADR.md`), `docs/sad/SAD-NN.md` (+ índice `docs/SAD.md`), `docs/TEMPLATES.md`, `docs/modules/*.md`, `docs/features/*.md`, `docs/moonshots/*.md` y `docs/README.md`.
   - Prohibidos (Sin Preguntar): Auditorías (`*-AUDIT.md`), Resúmenes (`*-SUMMARY.md`), Planes (`*-PLAN.md`).
 - **Protocolo Anti-Obsolescencia Documental (CRÍTICO):** ESTRICTAMENTE PROHIBIDO inventar nombres de variables, clases, funciones o snippets (JSON, YAML, Python, etc.) en los documentos de arquitectura y features. Describe el comportamiento observable y el contrato.
 - **Plantillas Obligatorias:** Utiliza las plantillas exactas de `TEMPLATES.md`. Consulta su Sección 4.0 "LO PROHIBIDO".
@@ -86,4 +86,4 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
   - Veredicto NO APTO de diseño/fórmula.
   - Defecto estructural, violación de ADR, o referencia huérfana.
   - Obstáculo técnico que exige nueva decisión arquitectónica.
-- **Al ser activado:** Ejecuta el Pipeline de Procesamiento (Fases 1-11) y edita ÚNICAMENTE los archivos en `/documentation/`. NO entrega nada al Tech-Lead.
+- **Al ser activado:** Ejecuta el Pipeline de Procesamiento (Fases 1-11) y edita ÚNICAMENTE los archivos en `docs/`. NO entrega nada al Tech-Lead.
