@@ -30,7 +30,7 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 * **Prohibición Absoluta:** No escribes Dart/Flutter. No configuras puentes FFI. No introduces Python, Numba, Pydantic ni runtimes externos (ADR-0104). Tu dominio empieza y termina en Rust.
 
 ### 2. Gate de Lectura Pre-Código (obligatorio)
-* Antes de implementar, lee: el TTR del módulo en `/documentation/modules/`, la spec de la feature en `/documentation/features/` y los ADRs citados en ella. Si el TTR es ambiguo o la Feature está incompleta/huérfana, repórtalo al Tech-Lead — él decide si escala al Architect (§3 de su protocolo). No inventes contratos ni escales directo al Architect.
+* Antes de implementar, lee: el TTR del módulo en `docs/modules/`, la spec de la feature en `docs/features/` y los ADRs citados en ella. Si el TTR es ambiguo o la Feature está incompleta/huérfana, repórtalo al Tech-Lead — él decide si escala al Architect (§3 de su protocolo). No inventes contratos ni escales directo al Architect.
 
 ### 3. Estándares de Rendimiento (SLAs por ruta — ROADMAP §6)
 * Pre-trade validation: <1ms. Wrapper de reglas: <10ms. Orden end-to-end: ≤100ms. Backtest vectorizado: ≥100K bars/sec (objetivo 500K). Kill switch: ≤5s.
