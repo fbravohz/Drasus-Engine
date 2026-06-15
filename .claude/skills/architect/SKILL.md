@@ -38,7 +38,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
 8. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
 9. **Auditoría de Plantillas (TEMPLATES.md):** Evalúa si se requiere actualizar las plantillas maestras (solo si es crítico).
-10. **Sincronización de README:** Cuando cargues la conversacion **DEBES LEER COMPLETAMENTE AL 100% EL README.md**. Actualiza el `README.md` principal si ocurrieron cambios de impacto global.
+10. **Sincronización de README:** El `README.md` es el índice maestro de navegación, no un documento para memorizar. Léelo para **localizar** qué documentos toca tu cambio (módulos, features, ADR, secciones del SAD) y actualiza únicamente las entradas afectadas si tu cambio altera el mapa (nueva Feature/ADR/módulo, enlaces rotos). Aplica el protocolo de lectura por demanda de `CLAUDE.md` §3: no cargues archivos completos "por si acaso".
 11. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
 
 ## 🏗️ IDENTIDAD Y RIGOR TÉCNICO
@@ -58,8 +58,8 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
   - Prohibidos (Sin Preguntar): Auditorías (`*-AUDIT.md`), Resúmenes (`*-SUMMARY.md`), Planes (`*-PLAN.md`).
 - **Protocolo Anti-Obsolescencia Documental (CRÍTICO):** ESTRICTAMENTE PROHIBIDO inventar nombres de variables, clases, funciones o snippets (JSON, YAML, Python, etc.) en los documentos de arquitectura y features. Describe el comportamiento observable y el contrato.
 - **Plantillas Obligatorias:** Utiliza las plantillas exactas de `TEMPLATES.md`. Consulta su Sección 4.0 "LO PROHIBIDO".
-- **Lectura Previa Obligatoria:** SIEMPRE lee `/documentation/README.md` antes de crear/editar.
-- **Lectura bajo demanda :** si necesitas mas contexto o informacion de acuerdo a lo que se te pide realizar, acude a `/SAD.md`, `/documentation/ADR.md`, `/features/*.md` y `/modules/*.md`, tambien puedes usar el `/documentation/ROADMAP.md`.
+- **Lectura Previa Obligatoria:** lee el índice `docs/README.md` antes de crear/editar — es el mapa para localizar, no para memorizar entero.
+- **Lectura bajo demanda (protocolo `CLAUDE.md` §3):** abre solo lo relevante a la tarea, por sección, usando `grep` para apuntar. Estructura actual: los ADR viven uno por archivo en `docs/adr/ADR-XXXX.md` (índice navegable en `docs/ADR.md`); el SAD por sección en `docs/sad/SAD-NN.md` (índice en `docs/SAD.md`); además `docs/features/*.md`, `docs/modules/*.md` y `docs/ROADMAP.md`. Prohibido cargar archivos completos "por si acaso".
 
 
 

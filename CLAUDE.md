@@ -24,8 +24,10 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 | Documento | Qué contiene | Tamaño | Cómo leerlo |
 |---|---|---|---|
 | `docs/README.md` | **Índice maestro**: tabla de módulos, ~138 features con "consumido por", moonshots, índice de 117 ADRs | ~356 líneas | Es la navegación. Léelo para localizar; no lo memorices entero. |
-| `docs/ADR.md` | 117 decisiones de arquitectura | **~2.047 líneas** | NUNCA entero. Ver §3. |
-| `docs/SAD.md` | Diseño de alto nivel | ~1.348 líneas | Por sección, no entero. Ver §3. |
+| `docs/ADR.md` | Índice de los 117 ADR | ~123 líneas | Para un ADR concreto, abre `docs/adr/ADR-XXXX.md` (≈10–55 líneas). |
+| `docs/adr/ADR-XXXX.md` | Un ADR por archivo (0001–0117) | ≈10–55 líneas | Abre solo el ADR que necesitas. |
+| `docs/SAD.md` | Índice de las 20 secciones | ~26 líneas | Para una sección, abre `docs/sad/SAD-NN.md`. |
+| `docs/sad/SAD-NN.md` | Una sección del SAD por archivo (01–20) | variable | Abre solo la sección relevante. |
 | `docs/ROADMAP.md` | Épicas, sprints, spikes | ~365 líneas | Lee la sección de la fase activa. |
 | `docs/TEMPLATES.md` | Plantillas maestras + "LO PROHIBIDO" (§4.0) | ~522 líneas | Lee la plantilla concreta que vas a usar. |
 | `docs/modules/*.md` | 8 orquestadores: ingest, generate, validate, incubate, manage, execute, feedback, withdraw | 280–833 líneas c/u | Abre solo el módulo en juego. |
@@ -45,7 +47,7 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 1. **Localiza con el índice, no leyendo.** El `README.md` te dice qué módulo/feature/ADR toca. Empieza ahí.
 2. **`grep` antes de `Read`.** Para encontrar una sección concreta (una regla, un ADR, un contrato), busca el patrón y lee solo alrededor del resultado.
-   - Ejemplo ADR: `grep` del patrón `### **ADR-0117` en `docs/ADR.md` → `Read` con `offset`/`limit` ceñido a esa sección (≈30–80 líneas), nunca las 2.047.
+   - Ejemplo ADR: abre directamente `docs/adr/ADR-0117.md` (≈25 líneas). No hace falta cargar el índice ni recorrer un monolito.
 3. **Lee por sección.** SAD y ROADMAP se leen por apartado, usando el offset del resultado de búsqueda.
 4. **Delega los barridos a subagentes.** Cualquier tarea que obligue a recorrer muchos archivos (auditoría de integridad relacional sobre las ~138 features, "¿qué features consume el módulo X?", rastrear referencias huérfanas) va a un subagente de exploración: corre en su propia ventana de contexto y devuelve **solo la conclusión**, sin contaminar la principal. Este es el "RAG nativo" de este entorno.
 5. **No releas lo que no cambió.** Si ya leíste un archivo en este turno y no se ha editado, no lo vuelvas a abrir.
@@ -63,12 +65,8 @@ Existe memoria nativa de proyecto en `.claude/projects/.../memory/` (índice `ME
 
 ---
 
-## 5. Reglas de Governance (resumen — el detalle manda en sus archivos)
+## 5. Governance — Fuente Única de Verdad
 
-- **Lectura previa obligatoria:** antes de crear o editar diseño, lee `docs/README.md`.
-- **Anti-obsolescencia:** prohibido inventar nombres de variables, funciones, clases o snippets en documentos. Describe el contrato y el comportamiento observable.
-- **Gate de creación de documentos:** flujo permitido = `ADR.md`, `SAD.md`, `TEMPLATES.md`, `modules/*.md`, `features/*.md`, `moonshots/*.md`, `README.md`. Prohibido sin preguntar: `*-AUDIT.md`, `*-SUMMARY.md`, `*-PLAN.md`.
-- **Edición quirúrgica:** usa `Edit` en bloques pequeños; nunca reescribas un documento entero (riesgo de perder densidad).
-- **Idioma:** español con acentos para prosa; inglés para código.
-- **Saneamiento terminológico:** nomenclatura institucional (Ingest/Generate, Validate, Feedback, Orchestrator, Execute, Withdraw), no alias gamificados.
-- **Supremacía:** `.claude/skills/base/SKILL.md` gobierna a todos los skills; la instrucción explícita del usuario gana siempre.
+Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.claude/skills/base/SKILL.md`**, que gobierna a todos los skills. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
+
+Recordatorio mínimo siempre activo (el detalle está en `base`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa, inglés en código.
