@@ -84,7 +84,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-030 | **EPIC-3** | Auditoría forense R&D (Audit Log) |
 | TTR-035 | **EPIC-3** | Registro de intentos N para DSR |
 | TTR-040 | **EPIC-3** | Registro de dominios genómicos (ADR-0108) |
-| TTR-003 | EPIC-4 | Detección de régimen awareness (HMM) |
+| TTR-003 | **EPIC-3** | Detección de régimen awareness (HMM) |
 | TTR-004 | EPIC-4 | Test de canasta (Universal Basket) |
 | TTR-005 | EPIC-4 | Optimización bayesiana (Intelligent Fine-Tuning) |
 | TTR-010 | EPIC-9+ | Deep Learning (Model-Free Alpha) |
@@ -174,7 +174,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`alpha-harvesting-gateway`](../features/alpha-harvesting-gateway.md)** — Ingesta y refinamiento privado de estrategias anonimizadas.
 - **[`la-colmena`](../moonshots/la-colmena.md)** — Red descentralizada de minería de estrategias.
 - **[`portfolio-data-preparation`](../features/portfolio-data-preparation.md)** — Normalización de curvas y cálculo de matriz Pearson.
-- **[`glass-box-ai-translator`](../glass-box-ai-translator.md)** — Traducción de pesos DRL opacos a AST visual y lenguaje natural.
+- **[`glass-box-ai-translator`](../features/glass-box-ai-translator.md)** — Traducción de pesos DRL opacos a AST visual y lenguaje natural.
 - **[`dsr-tracking-engine`](../features/dsr-tracking-engine.md)** — Registro global de intentos ($N$) para deflación de Sharpe.
 - **[`node-preview`](../features/node-preview.md)** — Caché de vistas previas y simulación rápida para edición interactiva de nodos.
 - **[`event-driven-pipeline-triggers`](../features/event-driven-pipeline-triggers.md)** — Automatización de flujos de descubrimiento y reoptimización reactivos basados en eventos.

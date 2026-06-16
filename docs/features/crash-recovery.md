@@ -3,7 +3,7 @@
 **Carpeta:** `./features/crash-recovery/`
 **Estado:** Especificación / Crítica
 **Última actualización:** 2026-05-29
-**Decisión Arquitectónica Asociada:** ADR-0088 (State Recovery & Real-Time Auditor)
+**Decisión Arquitectónica Asociada:** ADR-0027 (Event Sourcing & Inventory Reconstruction)
 
 ---
 

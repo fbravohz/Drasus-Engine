@@ -79,10 +79,10 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-009 | **EPIC-1** | Monitoreo de progreso (Download Manager) |
 | TTR-013 | **EPIC-1** | Auditoría visual de calidad (Heatmap) |
 | TTR-003 | EPIC-3 | Contextualización (HMM Regime) |
-| TTR-014 | EPIC-3 | Remuestreo algorítmico (Algorithmic Bars) |
-| TTR-017 | EPIC-5 | Microestructura (Order Flow) |
+| TTR-014 | **EPIC-1** | Remuestreo algorítmico (Algorithmic Bars) |
+| TTR-017 | **EPIC-1** | Microestructura histórica (Order Flow — CVD) |
 | TTR-018 | **EPIC-1** | Marcado temporal (Clock) |
-| TTR-019 | EPIC-3 | Memoria estadística (Fractional Differencer) |
+| TTR-019 | **EPIC-1** | Memoria estadística (Fractional Differencer) |
 | TTR-020 | EPIC-3 | Selección de universo accionario |
 | TTR-021 | EPIC-4 | Etiquetado manual de regímenes |
 | TTR-015 | EPIC-8 | Inicialización de entorno local (Flutter FFI) |
@@ -334,15 +334,15 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** TTR-005 (DuckDB) con datos disponibles.
 *   **Postcondición:** Fluidez visual garantizada para el usuario.
 
-### **TTR-017: Orquestación de Microestructura (Order Flow)**
-*   **Descripción:** Invoca a [`order-flow-microstructure`](../features/order-flow-microstructure.md) para calcular la presión institucional en cada bloque de barras ingresado.
+### **TTR-017: Orquestación de Microestructura Histórica (Order Flow — CVD)**
+*   **Descripción:** Invoca a [`order-flow-microstructure`](../features/order-flow-microstructure.md) (parte histórica del split ADR-0118) para calcular el Cumulative Volume Delta sobre el registro de transacciones ya ingestado, en cada bloque de barras.
 *   **Reglas de Orquestación:**
-    * Los valores de CVD y OFI deben normalizarse y adjuntarse como metadatos de la barra.
-    * Inyecta el `data_snapshot_id` del DOM en la persistencia forense (ADR-0020 V2).
-*   **Entrada:** `arrow_candle_stream`, `real_time_ticks` (si aplica).
-*   **Salida:** `enriched_golden_source` (Precios + Microestructura).
-*   **Precondición:** TTR-008 (Normalización) finalizado.
-*   **Postcondición:** Datos de alta fidelidad disponibles para `generate` y `execute`.
+    * El valor de CVD se normaliza y se adjunta como metadato de la barra.
+    * La parte en vivo (OFI / DOM L2) NO se calcula aquí: es la guardia pre-trade de `execute` (su TTR-011).
+*   **Entrada:** `arrow_candle_stream`, registro de transacciones a nivel de operación (ej.: aggTrades).
+*   **Salida:** `enriched_golden_source` (Precios + CVD histórico).
+*   **Precondición:** TTR-008 (Normalización) finalizado; datos a nivel de operación ingestados.
+*   **Postcondición:** Golden source enriquecida con microestructura histórica, disponible para `generate` y `validate`.
 
 ### **TTR-018: Orquestación de Marcado Temporal (Clock)**
 *   **Descripción:** Invoca a [`clock`](../features/clock.md) para garantizar monotonía determinista.
@@ -352,12 +352,6 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** `deterministic_epoch`.
 *   **Precondición:** Dato crudo recibido.
 *   **Postcondición:** Prevención absoluta de look-ahead por desajustes horarios.
-+
-+### **TTR-019: Orquestación de Memoria Estadística (Fractional Differencer)**
-+*   **Descripción:** Invoca a [`fractional-differencer`](../features/fractional-differencer.md) para generar series temporales estacionarias con memoria preservada.
-+*   **Reglas de Orquestación:**
-+    * Debe ejecutarse como paso opcional de enriquecimiento tras la normalización.
-+    * Si se solicita `auto_d`, el orquestador coordina la búsqueda iterativa del orden óptimo.
 
 ### **TTR-019: Orquestación de Memoria Estadística (Fractional Differencer)**
 *   **Descripción:** Invoca a [`fractional-differencer`](../features/fractional-differencer.md) para generar series temporales estacionarias con memoria preservada.

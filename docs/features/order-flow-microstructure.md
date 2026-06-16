@@ -14,6 +14,15 @@ Esta feature provee las métricas de alta frecuencia necesarias para detectar la
 - **VWAP (Volume Weighted Average Price):** Precio promedio ponderado por volumen, actuando como el "valor justo" institucional.
 - **OFI (Order Flow Imbalance):** Desequilibrio entre las órdenes limitadas de compra y venta en los niveles superiores del libro de órdenes (L2).
 
+## Entrega por Fases (Split por Dependencia Dura — ADR-0118)
+
+Esta feature se construye en **dos partes**, en módulos y fases distintas, por una dependencia dura de datos: la parte en vivo necesita el libro de órdenes en tiempo real, que solo existe en ejecución.
+
+- **Parte histórica (CVD sobre datos almacenados) → `ingest` / EPIC-1.** Calcula el Cumulative Volume Delta a partir del registro de transacciones ya ingestado (clasificación Compra/Venta por la regla del tick). Requiere datos a nivel de operación (ej.: Binance aggTrades). Cubre el TTR-001. Enriquece la golden source para backtesting (`validate`) y generación de señales (`generate`).
+- **Parte en vivo (OFI / presión del DOM L2) → `execute` / EPIC-6.** El desequilibrio del libro de órdenes profundo y la guardia pre-trade necesitan el feed L2 en tiempo real vía NautilusTrader. Cubren los TTR-002 y TTR-003. Es la guardia de microestructura defensiva de la ejecución nativa.
+
+La paridad bit-a-bit del CVD entre backtest y vivo (ver Restricciones) es el contrato que une ambas partes.
+
 ## Comportamientos Observables
 
 - [ ] **Detección de Absorción:** El sistema identifica cuando el precio no se mueve a pesar de un CVD alto (indicando que una institución está absorbiendo todas las órdenes agresivas).

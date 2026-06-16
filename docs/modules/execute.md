@@ -256,7 +256,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 > **TTR-007 / TTR-008 / TTR-009 / TTR-010:** Retirados — numeración reservada, alcance consolidado en TTRs adyacentes durante el refinamiento del backlog del módulo.
 
 ### **TTR-011: Orquestación de Guardia de Microestructura (Pre-Trade Order Flow)**
-*   **Descripción:** Invoca a [`order-flow-microstructure`](../features/order-flow-microstructure.md) segundos antes del disparo táctico.
+*   **Descripción:** Invoca a [`order-flow-microstructure`](../features/order-flow-microstructure.md) (parte en vivo OFI/DOM L2 del split ADR-0118) segundos antes del disparo táctico.
 *   **Reglas de Orquestación:**
     * Veta la orden si la absorción institucional (CVD) contradice la dirección de la señal.
     * Registra el `event_sequence_id` del último tick procesado (ADR-0020 V2).

@@ -1,365 +1,190 @@
-# ROADMAP de Desarrollo — Drasus Engine (ex-QuantForge)
+# ROADMAP de Implementación — Drasus Engine
 
-**Versión:** 2.1 | **Fecha:** 2026-06-15 (v2.1: Cáscara Delgada por Feature desde el día 1 — Techo Fijo + Ventana de Verificación (ADR-0117); EPIC-8 redefinido como Unificación ZUI; SPIKE-006 → Panel Operativo Fundacional. v2.0: Unificación con EXECUTION-PLAN.md en un solo mapa de implementación. v1.2: SPIKE-002–SPIKE-006 resueltos vía ADR-0112 a 0116. v1.1: SPIKE-001 resuelto vía ADR-0107)
-**Autor:** Auditoría arquitectónica (Tech Lead)
-**Principio rector:** *Alpha-First.* Cada fase debe acortar la distancia entre el código y el dinero generado en mercados reales. Todo lo que no genere Alpha, lo proteja (defensa de capital = Alpha preservado) o lo multiplique (velocidad de descubrimiento), se pospone.
+**Versión:** 3.0 | **Fecha:** 2026-06-16
+
+> **Qué es este documento:** una **guía de orden de implementación** — qué módulo se construye, en qué orden y por qué. Nada más.
+>
+> **Qué NO es (ADR-0118):** no es una bitácora ni un registro de estado detallado. El "cómo" se hizo cada cosa y sus resultados **no viven aquí**: viven en las Órdenes de Trabajo de [`docs/execution/`](./execution/) y en los **sellos de implementación** que cada Feature/Módulo lleva en su propio documento. Aquí solo hay un estado simple por entrega: `pendiente` · `en curso` · `terminado`.
 
 ---
 
-## 1. Criterio de Priorización (Alpha vs Vanidad)
+## 1. Cómo leer este ROADMAP
 
-| Categoría | Definición | Tratamiento |
+- **Unidad de entrega = un módulo completo (ADR-0118).** Cada fase libera el 100% del **núcleo** de su módulo, no una selección de piezas. La fuente de verdad de qué TTRs componen un módulo es su tabla "TTRs Etiquetados por Fase" dentro del propio `docs/modules/<módulo>.md`.
+- **Una Feature se construye una sola vez**, en el primer módulo que la usa en el pipeline (`ingest → generate → validate → incubate → manage → execute → feedback → withdraw`). Los módulos posteriores solo la **integran** (enchufan su puerto), no la reconstruyen.
+- **La vanidad está fuera del núcleo:** la UI unificada va a EPIC-8 (ADR-0117) y el R&D no validado a `moonshots/`/EPIC-9+ (ADR-0103). Por eso "módulo completo" no obliga a construir adornos antes de llegar al dinero.
+- **Vocabulario:** los identificadores internos (`EPIC-n`, `STORY-###`, `TTR`, `ADR-XXXX`) están traducidos en `.claude/skills/base/SKILL.md` ("Habla en Cristiano"). Aquí: **EPIC = fase/gran bloque**, **STORY = trabajo con código**, **SPIKE = investigación de un riesgo técnico**, **TASK = trabajo sin código**.
+
+---
+
+## 2. Principio de orden (Alpha-First)
+
+El orden de los módulos busca acortar la distancia entre el código y el dinero real lo antes posible. Alpha-First decide **el orden de los módulos** y justifica los **splits por dependencia dura** — ya **no** se usa para escoger piezas dentro de un módulo (eso era la fragmentación que ADR-0118 elimina).
+
+| Categoría | Qué es | Cuándo se construye |
 |---|---|---|
-| **Alpha Directo** | Produce estrategias operables o ejecuta dinero real (backtest, generación, validación, ejecución) | Épicas 1–5 |
-| **Alpha Defensivo** | Protege capital ya en riesgo (pre-trade checks, SSL, watchdog, prop-firm grader) | Acoplado a la fase que pone dinero en riesgo |
-| **Multiplicador** | Acelera el ciclo de descubrimiento (incremental tests, cascada fail-fast, daemons QuantOps) | Épicas 4–7 |
-| **Vanidad/Confort** | UX avanzada, visualizadores 3D, LLM verdicts, ZUI completa | Épica 8+ |
-| **Moonshots** | R&D no validado, monetización de terceros (Colmena, Marketplace, SaaS, Copy-Trading) | Post-Épica 8, según ROI demostrado |
-
-**Regla del Tech Lead:** Una feature entra a una fase solo si su ausencia bloquea el "Entregable Alpha" de esa fase. Lo demás espera, sin excepciones, aunque ya tenga TTR escrito. Los TTRs no se modifican; solo se secuencian.
+| **Alpha Directo** | Produce u opera estrategias (datos, motor, generación, validación, ejecución) | El núcleo del pipeline, EPIC-1 a EPIC-5 |
+| **Alpha Defensivo** | Protege capital en riesgo (pre-trade, watchdog, kill switch, prop-firm) | Acoplado a la fase que pone dinero en riesgo (EPIC-5/6) |
+| **Multiplicador** | Acelera el ciclo de descubrimiento (tests incrementales, daemons, ciclo 24/7) | EPIC-4 a EPIC-7 |
+| **Vanidad / Confort** | UX avanzada, visualizadores, ZUI completa, veredictos LLM | EPIC-8 |
+| **Moonshots** | R&D no validado y monetización de terceros | EPIC-9+, según ROI demostrado |
 
 ---
 
-## 2. Spikes de Viabilidad Técnica (BLOQUEANTES — resolver en Épica 0)
-
-Estos riesgos invalidaban supuestos centrales de la documentación. **Los 6 gates ya tienen veredicto documentado como ADR (SPIKE-001: ADR-0107; SPIKE-002–SPIKE-006: ADR-0112 a 0116).** Lo que resta en EPIC-0 es el trabajo residual de validación de cada veredicto (smoke tests, spikes de medición), no la decisión arquitectónica.
-
-| # | Riesgo | Supuesto en docs | Realidad a verificar | Plan B |
-|---|---|---|---|---|
-| SPIKE-001 | **NautilusTrader como crate Rust** — ✅ **RESUELTO (ADR-0107)** | SAD §2.1: "integrado nativamente en el core Rust" | Verificado: el núcleo v2 de NT publica crates Rust puros en crates.io (backtest, modelo, trading, live) que permiten backtesting y ejecución live sin Python. El spike de EPIC-0 se reduce a un **smoke test**: compilar los crates vendorizados (versión fijada), correr un backtest mínimo y validar el enlace LGPL reenlazable. | Formalizado en ADR-0107 (en orden): (a) congelar la versión vendorizada estable; (b) fork de mantenimiento mínimo bajo LGPL; (c) motor soberano (`moonshots/sovereign-execution-engine.md`). Descartado: sidecar Python (viola ADR-0104) |
-| SPIKE-002 | **tch-rs (libtorch)** — ✅ **RESUELTO (ADR-0112)** | SAD §2.1: "Laboratorio de IA tch-rs" | tch-rs arrastra libtorch (~2GB C++), rompe la promesa de "binario único sin runtimes" (ADR-0029) y complica el empaquetado en 3 OS. | **Veredicto:** erradicar `tch-rs`. Escalera `ndarray`+Rayon (default) → `candle` si se justifica → `burn` solo en moonshot DRL. Monte Carlo es CPU-first (no es deep learning). |
-| SPIKE-003 | **PySR "en Rust"** — ✅ **RESUELTO (ADR-0113)** | SAD §2.3: "Minería Simbólica (Rust)" + múltiples menciones a PySR | PySR es Python+Julia. No existe puerto Rust. | **Veredicto:** erradicar PySR. La regresión simbólica acotada es un modo del motor NSGA-II nativo sobre el AST; la minería simbólica libre se difiere a moonshot con `egg`. Se rechazan `evalexpr`/`meval` en hot-path. |
-| SPIKE-004 | **Motor de backtest dual** — ✅ **RESUELTO (ADR-0114)** | (KPI absoluto de bars/sec eliminado por humo) | Forzar event-loop tick-a-tick a la minería masiva asfixia la exploración; vectorizar puro impide la gestión de riesgo con estado (ADR-0109). | **Veredicto:** motor dual. Ruta Express híbrida (vectorizado para lo sin-estado + mini-loop secuencial para lo con-estado) + ruta Event-Driven (NT v2) para fidelidad. Modo elegido por el usuario; contrato de consistencia conservadora (FIJO). Criterio relativo: superar a MT5/SQX/QuantConnect. |
-| SPIKE-005 | **Ollama/LLM local** — ✅ **RESUELTO (ADR-0115)** | ADR-0058 exigía LLM local | Ollama es un runtime externo — contradice "cero runtimes" (ADR-0029/0030). | **Veredicto:** Verdict Engine determinista por plantilla, sin LLM por defecto. Ollama derogado como requisito; LLM local soberano (`candle`) opcional. |
-| SPIKE-006 | **flutter_rust_bridge a escala** — ✅ **RESUELTO (ADR-0116)** | ADR-0029/0019 | Verificar streams de alta frecuencia (throttling 100ms) y paso Arrow zero-copy con arrays de 1M+ puntos. | **Veredicto:** downsampling obligatorio en backend (nunca cruzar más resolución que el viewport, ADR-0098). `ZeroCopyBuffer` solo para cargas masivas; throttling en Rust; gRPC fallback (ADR-0033). Spike EPIC-0 confirma números. **El spike deja de ser desechable: su entrega es el Panel Operativo Fundacional (ADR-0117).** |
-
-**Salida de Épica 0 = los 6 gates con veredicto + ADRs actualizados.** Sin esto, no se escribe código de producción.
-
----
-
-## 3. Mapa de Fases (Resumen Ejecutivo)
+## 3. Mapa de entregas (la guía)
 
 ```
-EPIC-0 Fundación+Spikes → EPIC-1 Datos → EPIC-2 Motor Backtest → EPIC-3 Generación → EPIC-4 Guantelete
+EPIC-0 Fundación → EPIC-1 ingest → EPIC-2 validate(núcleo) → EPIC-3 generate → EPIC-4 validate(guantelete)
                                                                           ↓
-EPIC-8 Unificación ZUI ← EPIC-7 Feedback+AutoPipeline ← EPIC-6 Manage+Live ← EPIC-5 PRIMER DINERO REAL
+EPIC-8 ZUI ← EPIC-7 feedback+withdraw ← EPIC-6 manage+execute(nativo) ← EPIC-5 PRIMER DINERO REAL
 ```
 
-| Fase | Nombre | Módulos | Duración est.* | Entregable Alpha |
+| Orden | Entrega | Módulo(s) | Qué desbloquea | Estado |
 |---|---|---|---|---|
-| EPIC-0 | Fundación y Spikes | infra transversal | 4–6 sem | Esqueleto compilable + riesgos resueltos |
-| EPIC-1 | Soberanía de Datos | `ingest` | 4–6 sem | Data lake limpio y auditado de 2+ fuentes |
-| EPIC-2 | Motor de Backtest | `validate` (núcleo) | 8–10 sem | Backtest determinista y rápido en quien confiar |
-| EPIC-3 | Generación | `generate` | 6–8 sem | Miles de candidatas/día en el Databank |
-| EPIC-4 | Guantelete de Robustez | `validate` (completo) | 6–8 sem | Estrategias con Score ≥75 listas para operar |
-| EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (mínimo) | 6–8 sem | **Estrategia viva en cuenta real/fondeo vía bridge MT5** |
-| EPIC-6 | Portafolio y Ejecución Nativa | `manage` + `execute` (completo) | 8–10 sem | Portafolio multi-estrategia con brokers nativos |
-| EPIC-7 | Ciclo Cerrado 24/7 | `feedback` + `withdraw` + QuantOps | 4–6 sem | Fábrica autónoma: genera→valida→incuba→opera→aprende |
-| EPIC-8 | Unificación ZUI y Pulido | UI (unificación + pulido) | 8–12 sem | ZUI unificada (ADR-0028), visualizadores avanzados, empaquetado |
-| EPIC-9+ | Moonshots | según ROI | — | Colmena, Marketplace, SaaS, Copy-Trading, etc. |
+| EPIC-0 | Fundación y Spikes | infra transversal | Esqueleto compilable + riesgos resueltos | 🟡 en curso |
+| EPIC-1 | Soberanía de Datos | `ingest` | Data lake limpio y auditado | pendiente |
+| EPIC-2 | Motor de Backtest | `validate` (núcleo) | Backtest determinista y confiable | pendiente |
+| EPIC-3 | Generación | `generate` | Miles de candidatas/día | pendiente |
+| EPIC-4 | Guantelete de Robustez | `validate` (guantelete) | Estrategias operables (Score ≥75) | pendiente |
+| EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (bridge) | Estrategia viva en cuenta real vía bridge MT5 | pendiente |
+| EPIC-6 | Portafolio y Ejecución Nativa | `manage` + `execute` (nativo) | Flota multi-estrategia con brokers nativos | pendiente |
+| EPIC-7 | Ciclo Cerrado 24/7 | `feedback` + `withdraw` | Fábrica autónoma que se mejora sola | pendiente |
+| EPIC-8 | Unificación ZUI y Pulido | UI | Interfaz unificada y empaquetado (ADR-0117) | pendiente |
+| EPIC-9+ | Moonshots | según ROI | Colmena, Marketplace, SaaS, Copy-Trading | pendiente |
 
-\* Estimaciones para 1 dev senior + agentes IA, jornada completa. Son relativas: lo importante es el orden y los criterios de salida, no el calendario.
+**Splits por dependencia dura (ADR-0118):** `validate` se entrega en dos fases (núcleo de backtest en EPIC-2, necesario antes de generar; guantelete completo en EPIC-4). `execute` igual (vía bridge en EPIC-5 para llegar al dinero rápido; motor nativo en EPIC-6). Son las únicas particiones de módulo permitidas, y cada una está justificada por una dependencia citable.
 
 ---
 
-## 4. Detalle por Fase
+## 4. Detalle por entrega
+
+Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) y declara el criterio de salida. El estado por TTR vive en las Órdenes de Trabajo, no aquí.
 
 ### EPIC-0 — Fundación y Spikes de Riesgo
 
-**Objetivo:** Esqueleto del monolito modular FCIS compilando, con las fundaciones que evitan retrabajo (ADR-0020 V2), y los 6 gates de viabilidad resueltos.
+**Objetivo:** esqueleto del monolito modular FCIS compilando, con las fundaciones anti-retrabajo (ADR-0020 V2) y los 6 gates de viabilidad resueltos.
 
-- Workspace Cargo con los 8 módulos como crates internos + carpeta `shared` (ADR-0003).
-- Migraciones SQLx embebidas: la migración 0001 crea la tabla ancla `foundation_master_fields` con el catálogo de 25 campos (referencia única); las tablas por feature aplican Grupo I universal + su Perfil Técnico (ADR-0006, ADR-0020 V2).
-- Features transversales P0: [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`crash-recovery`](./features/crash-recovery.md) (ADR-0027 Event Store), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md).
-- CLI con Clap como primera interfaz (la UI Flutter NO bloquea ninguna fase hasta EPIC-8; cada fase expone sus comandos por CLI primero).
-- Spike FFI → Panel Operativo Fundacional (ADR-0117): ventana Flutter real + `flutter_rust_bridge` + stream Arrow (SPIKE-006), mostrando en vivo el estado de [`clock`](./features/clock.md), la cola de [`async-job-executor`](./features/async-job-executor.md) y la bitácora de [`audit-log`](./features/audit-log.md) — la primera Cáscara Delgada, no un descartable.
-- Validar los veredictos ya documentados de los SPIKE-001–SPIKE-006 (§2). Todos tienen ADR (SPIKE-001: ADR-0107; SPIKE-002–SPIKE-006: ADR-0112 a 0116). En EPIC-0 solo queda el trabajo residual: smoke test de compilación/vendoring de los crates NT v2 y empaquetado LGPL (SPIKE-001); smoke test de cómputo CPU-first `ndarray`/Rayon (SPIKE-002); spike de medición del motor Express híbrido y el contrato de consistencia (SPIKE-004); spike FFI con downsampling y throttling (SPIKE-006).
+**Alcance:** workspace Cargo con los 8 módulos + `shared` (ADR-0003); migración 0001 con la tabla ancla `foundation_master_fields` (catálogo de 25 campos, ADR-0020 V2); features transversales de plomería [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md); CLI con Clap + binario raíz `app` (SAD §4.2); Panel Operativo Fundacional (SPIKE-006/ADR-0117).
 
-**Criterio de salida:** `cargo test` verde en esqueleto; migración 0001 aplica los 25 campos; job asíncrono sobrevive a un kill -9 y se recupera (ADR-0011); veredictos SPIKE-001–SPIKE-006 documentados y sus validaciones residuales ejecutadas; el Panel Operativo Fundacional (ADR-0117) opera mostrando en vivo clock, cola de trabajos y bitácora de auditoría — primera Cáscara Delgada entregada.
+> **Nota de secuenciación (ADR-0118):** la recuperación post-crash que EPIC-0 exige (job que sobrevive a un cierre y se recupera <10s) la cubre [`async-job-executor`](./features/async-job-executor.md). La feature [`crash-recovery`](./features/crash-recovery.md) (reconciliación de una sesión de trading en vivo contra el bróker, ADR-0027) **no** es de Fundación: pertenece a `execute`/EPIC-5, porque necesita el conector de bróker y el Event Store que no existen hasta entonces.
 
-#### Plan de Ejecución de EPIC-0 — Paso a Paso
+**Criterio de salida:** `cargo test` verde en el esqueleto; la migración 0001 aplica los 25 campos; un job asíncrono sobrevive a un `kill -9` y se recupera; los 6 veredictos SPIKE están en ADR con su validación residual ejecutada; el Panel Operativo Fundacional muestra en vivo clock, cola de trabajos y bitácora de auditoría (primera Cáscara Delgada, ADR-0117).
 
-**Dueño:** Tech-Lead (orquestación y auditoría). Este plan NO define diseño — el diseño vive en SAD/ADR/Features.
+**Estado de las entregas de EPIC-0:**
 
-**Regla vigente:** Ningún TTR de EPIC-1+ avanza a implementación mientras los SPIKE-001–SPIKE-006 no tengan su validación residual ejecutada. Los 6 gates ya tienen veredicto en ADR; solo resta confirmar con smoke tests y spikes.
-
-##### Seguimiento de ejecución (Spec-Driven) y vocabulario
-
-Cada trabajo se ejecuta desde una **Orden de Trabajo** en [`docs/execution/`](./execution/) (plantilla: [`_TEMPLATE.md`](./execution/_TEMPLATE.md)): un archivo por trabajo con la instrucción exacta dada al agente, los comandos para validar y el registro de ejecución. El ROADMAP enlaza el estado de cada trabajo a su Orden; los documentos fuente (feature/módulo/TTR) se sellan como implementados al cerrarse.
-
-**Identificadores** (estilo Jira: palabra completa + número, estables):
-
-| ID | Tipo | Qué es |
+| Entrega | Estado | Orden de Trabajo |
 |---|---|---|
-| `EPIC-0`…`EPIC-9` | Épica | una fase del producto (EPIC-0 = Fundación) |
-| `SPRINT-n` | Sprint | tanda de trabajos despachados juntos |
-| `STORY-###` | Story | trabajo con código |
-| `SPIKE-###` | Spike | investigación de un riesgo técnico bloqueante |
-| `TASK-###` | Task | trabajo sin código (investigación, admin) |
-| `BUG-###` | Bug | corrección de un defecto |
-| `TTR` · `ADR` · Feature · Módulo | — | conservan su nombre (unidades de especificación) |
-
-##### Tablero de Spikes — Spikes de Validación (máxima prioridad)
-
-Cada spike entrega veredicto binario + Plan B si aplica. Los 6 spikes corren en paralelo entre sí y en paralelo con las tareas de cimentación, porque no dependen del esqueleto.
-
-| Spike | Qué hay que confirmar | Quién lo hace | Qué se espera | Estado |
-|---|---|---|---|---|
-| SPIKE-001 | Compilar los crates de NautilusTrader v2 vendorizados, correr un backtest mínimo, verificar empaquetado LGPL | Rust-Engineer | Pasa → SPIKE-001 cerrado. Falla → activar Plan B del ADR-0107 | Pendiente |
-| SPIKE-002 | Smoke test de cómputo CPU-first con `ndarray`/Rayon y tamaño de binario sin libtorch | Quant-Engineer + Rust-Engineer | Confirmar que funciona sin GPU y sin romper el binario único | Veredicto documentado — resta validación |
-| SPIKE-003 | Prototipo del modo simbólico nativo (regresión simbólica como modo del NSGA-II sobre el AST) | Quant-Engineer | Confirmar que funciona sin PySR | Veredicto documentado — resta validación |
-| SPIKE-004 | Spike de medición del motor Express híbrido vs MT5/SQX/QuantConnect (criterio relativo, sin KPI absoluto) | Rust-Engineer + Quant-Engineer | Confirmar ventaja competitiva y contrato de consistencia | Veredicto documentado — resta validación |
-| SPIKE-005 | Implementar la plantilla determinista del Verdict Engine (sin LLM) | Rust-Engineer | Confirmar veredicto reproducible sin Ollama | Veredicto documentado — resta validación |
-| SPIKE-006 | Spike FFI → Panel Operativo Fundacional (ADR-0117): ventana Flutter + `flutter_rust_bridge` + stream Arrow con downsampling y throttling, mostrando clock/cola/auditoría en vivo | Bridge-Engineer + Flutter-Engineer | Confirmar latencia de stream con throttle 100ms y entregar la primera Cáscara Delgada operativa | Veredicto documentado — resta validación |
-
-**Nota:** SPIKE-006 es el único spike de EPIC-0 con superficie UI: su entrega es el Panel Operativo Fundacional (ADR-0117), la primera Cáscara Delgada real (no descartable) y la Ventana de Verificación conjunta de [`clock`](./features/clock.md), [`async-job-executor`](./features/async-job-executor.md) y [`audit-log`](./features/audit-log.md).
-
-##### Backlog EPIC-0 — Sprint de Trabajo por Sprints
-
-**Clasificación:** Ninguna feature de EPIC-0 es matemática/estrategia (son infraestructura transversal). Flujo estándar: Implementación Rust → QA continuo + gate final.
-
-**Sprint 0 — Sin precondición (despacho inmediato, paralelo con spikes):**
-
-| ID | Qué se construye | Quién | Cómo se sabe que está listo | Estado |
-|---|---|---|---|---|
-| STORY-001 | Workspace Cargo: 8 módulos como crates internos + carpeta `shared`. Esqueleto compilable con interfaces públicas vacías por módulo | Rust-Engineer | `cargo build` y `cargo test` verdes; estructura FCIS auditada (cero lógica en orquestadores) | ✅ **Completado** ([Orden STORY-001](./execution/STORY-001-skeleton.md), 2026-06-12, auditado: build/test 9/9 verdes, 0 warnings, FCIS verificado) |
-| STORY-002 | Migraciones SQLx embebidas: migración 0001 con los 25 campos maestros | Rust-Engineer | La migración aplica los 25 campos en SQLite WAL; verificación de idempotencia | ✅ **Completado** ([Orden STORY-002](./execution/STORY-002-migration.md), 2026-06-12, auditado. 25 campos exactos, WAL, idempotente. Veredicto Architect: contrato lógico + filtro por perfil — ADR-0020 V2 actualizado) |
-
-**Sprint 1 — Precondición: STORY-001+STORY-002 completados:**
-
-| ID | Qué se construye | Quién | Cómo se sabe que está listo | Estado |
-|---|---|---|---|---|
-| STORY-003 | [`clock`](./features/clock.md) — Timestamps deterministas en nanosegundos | Rust-Engineer | Mismo seed/datos → misma secuencia temporal bit-a-bit | ✅ **Completado** ([Orden STORY-003](./execution/STORY-003-clock.md), 2026-06-12, auditado. Fase 1: determinismo bit-a-bit + FCIS. Fase 2: rastro de auditoría del reloj (`clock_audit`, 3 eventos a la bitácora vía `details_json`, Perfil D), tras escalamiento al Architect. 28 tests verdes, clippy `-D warnings` limpio, granularidad del hot-path verificada) |
-| STORY-004 | [`audit-log`](./features/audit-log.md) — Registro inmutable con hash chain | Rust-Engineer | Intento de mutación de evento histórico es rechazado y detectado | 🟡 **Parcial** ([Orden STORY-004](./execution/STORY-004-audit-log.md), 2026-06-12, auditado: TTR-001 hecho — append-only por triggers + cadena de hash detecta mutación; 22 tests verdes. TTR-002 diferido a EPIC-2+) |
-| STORY-005 | [`async-job-executor`](./features/async-job-executor.md) — Cola de trabajos con Tokio + SQLite | Rust-Engineer | **Test de guerra:** job sobrevive `kill -9` y se recupera al arranque | ✅ **Completado** ([Orden STORY-005](./execution/STORY-005-async-job-executor.md), 2026-06-12, auditado. Gate demostrado: `jobs_survive_simulated_crash_and_are_recovered_on_restart` sobre DB en archivo. 62 tests verdes, clippy `-D warnings` limpio, cobertura 90.80%. TTR-007 secuenciado a EPIC-2+; `kill -9` real diferido a STORY-009) |
-| STORY-006 | [`crash-recovery`](./features/crash-recovery.md) — Recuperación post-crash con Event Store | Rust-Engineer | Recuperación post-crash en menos de 10 segundos | En espera |
-| STORY-007 | [`telemetry`](./features/telemetry.md) — Métricas de hardware sin bloquear el hot-path | Rust-Engineer | Telemetría local emitiendo sin bloquear la ruta crítica | En espera |
-| STORY-008 | [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md) — Aislamiento de workers | Rust-Engineer | Caída de un worker no contamina al orquestador; shutdown limpio | En espera |
-| STORY-009 | CLI con Clap como primera interfaz: comandos para STORY-003–STORY-008. **Incluye crear el crate binario raíz `app` (archivo principal de orquestación, SAD §4.2)** que STORY-001 dejó pendiente a propósito — es el punto de arranque del programa y su hogar natural es la CLI | Rust-Engineer | Comandos básicos operativos: estado de jobs, telemetría, auditoría; el binario raíz compila y arranca | En espera |
-
-**Sprint 2 — Cierre de fase (precondición: Sprints 0–1 completadas + veredictos SPIKE-001–SPIKE-006 recibidos):**
-
-| ID | Qué se construye | Quién | Estado |
-|---|---|---|---|
-| TASK-001 | Gate final QA de EPIC-0: suite completa contra el criterio de salida | QA-Engineer | En espera |
-| TASK-002 | Confirmar que los 6 veredictos SPIKE-001–SPIKE-006 están registrados como ADR | Tech-Lead → Architect | Veredictos registrados |
-| TASK-003 | Seleccionar el primer TTR de EPIC-1 (data-validator + pit-data-validator) | Tech-Lead | En espera |
-
-##### Reglas Operativas de EPIC-0
-
-1. **Paralelismo controlado:** Los spikes de gates y la Sprint 0 corren simultáneos. La Sprint 1 NO arranca hasta que STORY-001+STORY-002 estén completados — los 25 campos y el esqueleto son fundación anti-retrabajo (retrofitear cuesta 10x).
-2. **QA continuo:** Cada entregable pasa por QA apenas se produce (tests unitarios, determinismo); el gate final (TASK-001) audita el conjunto. Defecto de implementación → regresa al ingeniero; defecto de diseño → escalar al Architect.
-3. **Bloqueo EPIC-1+:** Prohibido despachar TTRs de EPIC-1 hasta que los 6 gates estén cerrados.
-4. **SLA aplicable:** En EPIC-0 solo se exige recuperación post-crash menor a 10 segundos. Prohibido exigir SLAs de fases futuras.
-5. **Cáscara Delgada desde EPIC-0 (ADR-0117):** la única superficie UI de EPIC-0 es el Panel Operativo Fundacional (SPIKE-006) — clock, cola de trabajos y bitácora de auditoría en vivo. Desde EPIC-1, cada Feature con superficie UI declarada entrega su Cáscara Delgada (Techo Fijo, ADR-0117) en la misma Story que su backend; no hay cuota "una pantalla por fase".
-6. **Cero invención:** Si algún TTR resulta ambiguo durante el despacho, se bloquea y se escala al Architect con evidencia — los ingenieros no rellenan vacíos de spec.
-
-##### Registro de Estado EPIC-0
-
-| Ítem | Estado | Última actualización |
-|---|---|---|
-| SPIKE-001 | Pendiente (smoke test); veredicto ADR-0107 | 2026-06-10 |
-| SPIKE-002–SPIKE-006 | Veredictos documentados (ADR-0112 a 0116); resta validación residual | 2026-06-11 |
-| STORY-001 | ✅ Completado y auditado (esqueleto FCIS, 9 crates, build/test verdes) | 2026-06-12 |
-| STORY-002 | ✅ Completado y auditado (migración 0001, 25 campos, WAL, idempotente) | 2026-06-12 |
-| STORY-003 | ✅ Completado y auditado (reloj determinista + FCIS + rastro de auditoría `clock_audit`, 3 eventos a la bitácora). Cerrado tras escalamiento al Architect | 2026-06-12 |
-| STORY-004 | 🟡 Parcial y auditado (audit-log TTR-001: append-only + hash chain). TTR-002 diferido a EPIC-2+ | 2026-06-12 |
-| STORY-005 | ✅ Completado y auditado (`async-job-executor`: cola durable + recuperación tras crash, gate EPIC-0 demostrado sobre DB en archivo; cobertura 90.80%). TTR-007 → EPIC-2+ | 2026-06-12 |
-| STORY-006–STORY-008 | En espera. Siguiente: STORY-006 (`crash-recovery`, recuperación post-crash <10s) | 2026-06-12 |
-| STORY-009 | En espera. Recordatorio: incluye el crate binario raíz `app` (SAD §4.2) | 2026-06-12 |
-| TASK-001–TASK-003 | En espera (cierre de fase) | 2026-06-10 |
-
-**Descubrimientos y decisiones de EPIC-0 (bitácora):**
-- **2026-06-12 — Crate binario raíz `app`:** STORY-001 creó solo los 8 crates de módulo + `shared` (criterio literal). El SAD §4.2 prevé además un "archivo principal de orquestación" (binario raíz). Decisión Tech-Lead: ese binario se crea en STORY-009 junto a la CLI, su hogar natural. No es deuda, es secuenciación.
-- **2026-06-12 — Contrato de 25 campos (ADR-0020 V2):** escalado a Architect. Veredicto: los 25 campos son un **contrato lógico/vocabulario obligatorio**, no 25 columnas calcadas en cada tabla. Grupo I (Identidad) universal; grupos II–V por **Filtro de Relevancia por Perfil** (ya en `architect/SKILL.md` y `TEMPLATES.md`). La tabla ancla `foundation_master_fields` de EPIC-0 es correcta. ADR-0020 V2 y SAD §17.9/§20 actualizados para reflejarlo. **Implicación para Sprint 1:** las tablas de STORY-003–STORY-008 NO copian 25 columnas; aplican el filtro por perfil.
-- **2026-06-12 — `transformation_id`:** es un identificador (TEXT/UUID) del paso de transformación, no un flag booleano. Glosa corregida en ADR-0020 V2 y los 8 módulos.
-- **2026-06-12 — STORY-003 `clock` completado.** Reloj en `crates/shared` (núcleo determinista + cáscara `SystemClock`). Determinismo bit-a-bit verificado. **Pendiente diferido a STORY-004:** las postcondiciones de `clock.md` (TTR-001/002) piden registrar en auditoría el `ntp_sync_offset`, el `virtual_process_id` y la delta real/virtual. No se implementó porque (a) requiere que exista `audit-log` (STORY-004), y (b) el Architect debe definir el perfil de persistencia/auditoría de la entidad `clock` (campos propios de `clock` + subconjunto del contrato por perfil, ADR-0020 V2). **Acción al llegar a STORY-004:** escalar a Architect para definir ese perfil y entonces implementar el rastro de auditoría del reloj.
-- **2026-06-12 — Perfil de auditoría del reloj resuelto (Architect, escalamiento §3).** Veredicto: los tres "campos" citados por `clock.md` (`ntp_sync_offset`, proceso virtual de simulación, delta real/virtual) NO existen en el catálogo ADR-0020 V2 y son **payload de evento** (`details_json` opaco de `AuditEventContent`), no columnas; el `virtual_process_id` huérfano se sustituye por `session_id` del catálogo (Grupo IV). El reloj NO tiene persistencia propia: emite a la bitácora existente vía `AuditEventContent`, **Perfil D (Ops/Auditoría)**. Granularidad acotada a 3 eventos (`CLOCK_NTP_SYNC` al arranque, `CLOCK_MODE_TRANSITION` en REAL↔SIMULATION, `CLOCK_SESSION_CLOSE` con la delta acumulada) — PROHIBIDO auditar el hot-path. **ADR-0020 V2 sin cambios** (campos no son transversales a 3+ features). `clock.md` corregido. **Implicación para STORY-004:** el rastro del reloj ya es implementable sin inventar campos.
-- **2026-06-15 — ADR-0117 (Architect, escalamiento por cambio de metodología de fases UI):** veredicto: Cáscara Delgada por Feature desde el día uno, bajo Techo Fijo (Superficie de Verificación Funcional) + Ventana de Verificación para features de plomería + Gate de Integración anti-deuda. SPIKE-006 se convierte en el Panel Operativo Fundacional (Ventana de Verificación conjunta de `clock`/`async-job-executor`/`audit-log`). EPIC-8 se redefine como "Unificación ZUI" (ya no construye la UI desde cero). ROADMAP (§2, §4 EPIC-0/EPIC-8), SAD §6.4/§18, TEMPLATES.md §3.8 y `tech-lead/SKILL.md` §5 actualizados.
-
----
+| STORY-001 — Esqueleto Cargo (8 módulos + `shared`) | terminado | [STORY-001](./execution/STORY-001-skeleton.md) |
+| STORY-002 — Migración 0001 (25 campos) | terminado | [STORY-002](./execution/STORY-002-migration.md) |
+| STORY-003 — `clock` (timestamps deterministas) | terminado | [STORY-003](./execution/STORY-003-clock.md) |
+| STORY-004 — `audit-log` (hash chain) | parcial (TTR-002 → EPIC-2+) | [STORY-004](./execution/STORY-004-audit-log.md) |
+| STORY-005 — `async-job-executor` (cola durable + recuperación) | terminado | [STORY-005](./execution/STORY-005-async-job-executor.md) |
+| STORY-007 — `telemetry` | pendiente | — |
+| STORY-008 — `worker-isolation-orchestrator` | pendiente | — |
+| STORY-009 — CLI Clap + binario raíz `app` | pendiente | — |
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
-**Objetivo:** Datos en los que se puede confiar. Sin esto, todo backtest es ficción.
+**Objetivo:** datos en los que se puede confiar. Sin esto, todo backtest es ficción.
 
-**P0 (bloquean el entregable):**
-- [`data-validator`](./features/data-validator.md) + [`pit-data-validator`](./features/pit-data-validator.md) (anti look-ahead, innegociable).
-- [`data-sanitizer-pipeline`](./features/data-sanitizer-pipeline.md) (ADR-0037; pipeline de 6 capas de limpieza).
-- [`hive-partition-manager`](./features/hive-partition-manager.md) (ADR-0035) + [`duckdb-sql-engine`](./features/duckdb-sql-engine.md) + [`duckdb-resampler`](./features/duckdb-resampler.md) (ADR-0036).
-- Descarga híbrida Bulk+Delta (ADR-0034) para **2 fuentes**: una cripto (Binance Vision) y una Forex/CFD (la del broker/prop firm objetivo). No más fuentes en esta fase.
-- [`hybrid-data-transformer`](./features/hybrid-data-transformer.md) (Polars, ADR-0105-datos).
+**Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), descarga híbrida Bulk+Delta (ADR-0034) de 2 fuentes, transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118).
 
-**P1 (si sobra tiempo de fase):** [`background-download-manager`](./features/background-download-manager.md), [`data-import-wizard`](./features/data-import-wizard.md) (CSV manual), [`quality-heatmap-generator`](./features/quality-heatmap-generator.md) (versión CLI/reporte, no UI).
+**Criterio de salida:** un comando CLI descarga, sanitiza y particiona 5+ años de 2 símbolos; el PIT validator rechaza un dataset con leakage inyectado a propósito; una consulta DuckDB de remuestreo responde <200ms.
 
-**Se pospone explícitamente:** [`hmm-regime-detection`](./features/hmm-regime-detection.md) (solo se inunda la columna `regime_label` con valor "desconocido" — el SAD §11 ya contempla régimen desconocido como válido), [`algorithmic-bars`](./features/algorithmic-bars.md), [`order-flow-microstructure`](./features/order-flow-microstructure.md), [`manual-regime-tagger`](./features/manual-regime-tagger.md), [`fractional-differencer`](./features/fractional-differencer.md).
+### EPIC-2 — Motor de Backtest (`validate` núcleo)
 
-**Criterio de salida:** Comando CLI descarga, sanitiza y particiona 5+ años de 2 símbolos; el PIT validator rechaza un dataset con leakage inyectado a propósito (test adversarial); consulta DuckDB de remuestreo 7m responde <200ms.
+**Objetivo:** el corazón del sistema y el generador de Alpha #1. Un backtest determinista, con fricción institucional, en el que se confía ciegamente. **Aquí se gana o se pierde el proyecto.**
 
----
+**Alcance:** la mitad "núcleo" de `validate` (ver su tabla de TTRs, fase EPIC-2 en [`docs/modules/validate.md`](./modules/validate.md#ttrs-etiquetados-por-fase)): motor de backtest dual (ADR-0114), fricción institucional (`slippage-models`, Bar-Open Alignment, ADR-0017), métricas duales (ADR-0047), `equity-curve-tracker`, `precision-sizing-models` (ADR-0044), `executable-container` (ADR-0009), `strategy-versioning` (ADR-0005). El compilador AST y el `design-manifest` se construyen aquí porque el motor los necesita, aunque pertenezcan a `generate` (primer consumidor real es el backtest).
 
-### EPIC-2 — Motor de Backtest (`validate` núcleo + features de simulación)
-
-**Objetivo:** El corazón del sistema y el generador de Alpha #1. Un backtest determinista, con fricción institucional, en el que se confía ciegamente. **Aquí se gana o se pierde el proyecto.**
-
-**P0:**
-- [`backtest-engine`](./features/backtest-engine.md): arquitectura dual (SPIKE-004) — ruta vectorizada para minería masiva (Open Prices / 1m OHLC) y ruta event-driven para fidelidad (4-ticks; Real Ticks después). Modos de ADR-0017.
-- Fricción institucional mandatoria: [`slippage-models`](./features/slippage-models.md), triple swap, penetración Pardo, Bar-Open Alignment (ADR-0017).
-- [`institutional-metrics`](./features/institutional-metrics.md) con implementación dual hot/cold (ADR-0047).
-- [`equity-curve-tracker`](./features/equity-curve-tracker.md), [`precision-sizing-models`](./features/precision-sizing-models.md) (ADR-0044 — paridad sizing desde el día uno).
-- [`executable-container`](./features/executable-container.md) (ADR-0009) y contrato AST + compilador Serde (sustituye al residuo "Pydantic AST Compiler"; el TTR se conserva, la tecnología es Serde/Rust).
-- [`strategy-versioning`](./features/strategy-versioning.md) (ADR-0005 — hash chain; barato ahora, carísimo de retrofitear).
-
-**P1:** [`perfect-profit-benchmark`](./features/perfect-profit-benchmark.md), [`universal-basket-backtester`](./features/universal-basket-backtester.md).
-
-**Se pospone:** [`nautilus-integration`](./features/nautilus-integration.md) completa (el mecanismo ya está resuelto — ADR-0107: crates Rust v2 vendorizados — pero la paridad sim/live se exige recién en EPIC-5–EPIC-6; en EPIC-2 solo se consume la ruta de backtest event-driven), [`institutional-friction-modeling`](./features/institutional-friction-modeling.md) (adverse selection — refinamiento de EPIC-4).
-
-**Criterio de salida:** (1) Reproducibilidad bit-a-bit verificada: 2 corridas, mismo hash de resultados. (2) La ruta Express híbrida es medible y demostrablemente más rápida que MT5/SQX/QuantConnect sobre el mismo dataset y hardware (benchmark `criterion` en CI; sin KPI absoluto — ADR-0114). (3) Paridad validada contra una plataforma de referencia (misma estrategia simple en MT5/SQX: diferencias explicables y documentadas).
-
----
+**Criterio de salida:** reproducibilidad bit-a-bit (2 corridas, mismo hash); la ruta Express híbrida es medible y más rápida que MT5/SQX/QuantConnect en igual hardware (ADR-0114); paridad documentada contra una plataforma de referencia.
 
 ### EPIC-3 — Generación (`generate`)
 
-**Objetivo:** La fábrica de candidatas. Con EPIC-2 confiable, el volumen de exploración ES el Alpha.
+**Objetivo:** la fábrica de candidatas. Con un motor confiable, el volumen de exploración ES el Alpha.
 
-**P0:**
-- [`design-manifest`](./features/design-manifest.md) (ADR-0053 — el contrato SMART filtra basura desde el origen).
-- [`nsga2-optimizer`](./features/nsga2-optimizer.md) nativo Rust (multi-objetivo Sharpe/DD/WR) con decimación y renovación sanguínea (SAD §2.3).
-- AST + WildCards (ADR-0043) — el humano fija el esqueleto, el motor resuelve comodines: este es el modo de generación con mejor ratio esfuerzo/alpha.
-- [`databank-lake`](./features/databank-lake.md) + [`databank-manager`](./features/databank-manager.md) (ADR-0055 — semillas Parquet, no AST masivos).
-- [`dsr-tracking-engine`](./features/dsr-tracking-engine.md): registrar $N$ intentos desde la PRIMERA corrida (ADR-0067). Si no se cuenta N desde el inicio, el DSR de EPIC-4 nace inválido. Costo trivial, valor estadístico enorme.
-- [`parameter-optimization`](./features/parameter-optimization.md) + [`zero-crossing-filter`](./features/zero-crossing-filter.md).
+**Alcance:** el 100% del núcleo de `generate` (ver [`docs/modules/generate.md`](./modules/generate.md#ttrs-etiquetados-por-fase)): `nsga2-optimizer` nativo, AST + WildCards (ADR-0043), `databank-lake`/`databank-manager` (ADR-0055), `dsr-tracking-engine` desde la primera corrida (ADR-0067), `parameter-optimization`, `zero-crossing-filter`, detección de régimen [`hmm-regime-detection`](./features/hmm-regime-detection.md) (modelo ajustado offline + etiquetado; EPIC-1 dejó la columna `regime_label='desconocido'` como placeholder válido, SAD §11).
 
-**P1:** [`bayesian-optimizer`](./features/bayesian-optimizer.md), [`fit-to-portfolio-search`](./features/fit-to-portfolio-search.md) (cobra valor real cuando ya hay portafolio vivo — puede deslizarse a EPIC-6), [`hmm-regime-detection`](./features/hmm-regime-detection.md) (entra aquí como filtro de generación, no en EPIC-1).
+**Criterio de salida:** una corrida nocturna produce ≥10K candidatas evaluadas con métricas en el Databank; una consulta DuckDB filtra el top 1% en <1s; el N global queda registrado e inmutable.
 
-**Se pospone:** DRL/Deep Learning (Hybrid Genesis), minería simbólica libre (moonshot con `egg`, ADR-0113; la regresión simbólica acotada como modo del NSGA-II sí está disponible), [`strategy-ensemble`](./features/strategy-ensemble.md), [`glass-box-ai-translator`](./features/glass-box-ai-translator.md), [`strategy-ast-copilot`](./features/strategy-ast-copilot.md), [`adaptive-volume-indicators`](./features/adaptive-volume-indicators.md) (P1 de EPIC-4 si una familia de estrategias los pide), La Colmena, node-preview (UI).
+### EPIC-4 — Guantelete de Robustez (`validate` guantelete)
 
-**Criterio de salida:** Una corrida nocturna produce ≥10K candidatas evaluadas con métricas en el Databank; consulta DuckDB filtra el top 1% en <1s; N global registrado e inmutable.
+**Objetivo:** separar suerte de Alpha. Solo sobrevive lo operable. Este filtro es donde Drasus gana a SQX.
 
----
+**Alcance:** la mitad "guantelete" de `validate` (fase EPIC-4 en su tabla de TTRs): cascada LIGHT/MEDIUM/HEAVY con fail-fast (ADR-0066), `walk-forward-analyzer`, `monte-carlo-simulator` (CPU/SIMD, ADR-0061), `cpcv-analyzer` (PBO, ADR-0063), `cross-market-validation`, `prop-firm-grader` (prioridad absoluta, ADR-0045), `robustness-score-aggregator` (ADR-0058), `statistical-inference-ebta`, `incremental-test-engine` (ADR-0060).
 
-### EPIC-4 — Guantelete de Robustez (`validate` completo)
+**Criterio de salida:** el pipeline EPIC-3→EPIC-4 corre desatendido y emite estrategias con Score ≥75 + certificación prop-firm; los resultados se heredan entre versiones (test incremental verificado).
 
-**Objetivo:** Separar suerte de Alpha. Solo sobrevive lo operable. Este filtro es lo que SQX hace a medias y donde Drasus gana.
+### EPIC-5 — PRIMER DINERO REAL (`incubate` + `execute` vía bridge)
 
-**P0 (en orden de cascada ADR-0066):**
-- Orquestación en cascada LIGHT/MEDIUM/HEAVY con fail-fast (TTR-999 de validate).
-- LIGHT: [`complexity-penalization`](./features/complexity-penalization.md) (Ockham), filtros de métricas mínimas.
-- MEDIUM: [`rule-ablation`](./features/rule-ablation.md) (ADR-0065), análisis de sensibilidad/meseta básico, [`vector-time-pruning`](./features/vector-time-pruning.md) (ADR-0046).
-- HEAVY: [`walk-forward-analyzer`](./features/walk-forward-analyzer.md) (WFA Matrix), [`monte-carlo-simulator`](./features/monte-carlo-simulator.md) (decagonal + Embudo Tóxico, CPU/SIMD primero, GPU según SPIKE-002), [`cpcv-analyzer`](./features/cpcv-analyzer.md) (PBO, ADR-0063), [`cross-market-validation`](./features/cross-market-validation.md) (ADR-0049).
-- [`prop-firm-grader`](./features/prop-firm-grader.md) (ADR-0045) — **prioridad absoluta dentro de HEAVY**: el objetivo de monetización inmediata son cuentas de fondeo.
-- [`robustness-score-aggregator`](./features/robustness-score-aggregator.md) (ADR-0058) + [`statistical-inference-ebta`](./features/statistical-inference-ebta.md) (DSR con el N de EPIC-3).
-- [`incremental-test-engine`](./features/incremental-test-engine.md) (ADR-0060) — multiplicador: ahorra 80% de revalidación.
+**Objetivo:** la fase que justifica el proyecto. Se llega al mercado vía [`multiplatform-execution-bridge`](./features/multiplatform-execution-bridge.md) (MT5) **antes** que con el motor nativo, porque las cuentas de fondeo viven en MT5 y el bridge exige mucha menos superficie (ADR-0078). El motor nativo llega en EPIC-6.
 
-**P1:** [`alpha-decoupling`](./features/alpha-decoupling.md), [`factor-decomposition`](./features/factor-decomposition.md), [`pca-toxicity-analyzer`](./features/pca-toxicity-analyzer.md), [`autoencoder-outlier-detector`](./features/autoencoder-outlier-detector.md) (según SPIKE-002), [`dtw-adaptive-window`](./features/dtw-adaptive-window.md), [`contextual-fitness-scorer`](./features/contextual-fitness-scorer.md).
+**Alcance:** `incubate` completo (cuarentena de 7 días con `paper-trader` + `incubation-manager`, Eutanasia Predictiva y Cono de Silencio, ADR-0088; `pardo-comparison`) y la mitad "bridge" de `execute` (fase EPIC-5 en [`docs/modules/execute.md`](./modules/execute.md#ttrs-etiquetados-por-fase)): defensa innegociable antes del primer trade — `pre-trade-validator` (ADR-0025 + veto ADR-0095), `order-fsm` (ADR-0004), `operational-safety-monitor` (SSL+Pardo, ADR-0070), Shadow Watchdog + Kill Switch (ADR-0026/0087), `sovereign-security` (ADR-0093), `crash-recovery` (ADR-0027), `persistent-daemons` (ADR-0084) + `data-bus-pubsub` (ADR-0085). El wrapper de reglas de portafolio en modo Challenge con asignación manual (ADR-0079) se construye aquí porque las cuentas de fondeo lo exigen.
 
-**Se pospone:** [`robustness-verdict-engine`](./features/robustness-verdict-engine.md) (LLM — confort, no Alpha; SPIKE-005), visualizadores (parallel-coordinates, cross-filtering, UMAP, interactive-stress-lab, plateau-copilot → EPIC-8), [`adversarial-noise-agent`](./features/adversarial-noise-agent.md), simulador adversarial y demás moonshots de validación.
+**Criterio de salida:** una estrategia generada por Drasus pasa cuarentena de 7 días, opera una cuenta de fondeo demo→real vía bridge, el SSL y el kill switch se prueban con simulacro de fallo, y la reconciliación diaria cuadra. **KPI de negocio: primera semana verde con dinero real gestionado 100% por el sistema.**
 
-**Criterio de salida:** Pipeline EPIC-3→EPIC-4 corre desatendido y emite estrategias con Score ≥75 + certificación prop-firm; el guantelete completo de 1 estrategia termina en tiempo acotado y configurable; los resultados se heredan entre versiones (test incremental verificado).
+### EPIC-6 — Portafolio y Ejecución Nativa (`manage` + `execute` nativo)
 
----
+**Objetivo:** pasar de 1–3 estrategias a una flota con gestión de capital seria, y del bridge a brokers nativos.
 
-### EPIC-5 — PRIMER DINERO REAL (`incubate` + `execute` mínimo viable)
+**Alcance:** `manage` completo (ver [`docs/modules/manage.md`](./modules/manage.md#ttrs-etiquetados-por-fase): `portfolio-optimizer` con HRP, ADR-0075/0089; `portfolio-backtest` con margen compartido, ADR-0091; `signal-correlation-analyzer`; Auto-Rebalancing con circuit breaker) y la mitad "nativa" de `execute` (`broker-connector` nativo + LiveNode de los crates NT v2, ADR-0107; guardia de microestructura en vivo OFI/DOM — parte viva del split de order-flow, ADR-0118; `volatility-stabilization`, ADR-0068).
 
-**Objetivo:** La fase que justifica el proyecto. Decisión arquitectónica clave: **se llega al mercado vía [`multiplatform-execution-bridge`](./features/multiplatform-execution-bridge.md) (MT5) ANTES que con el motor nativo de brokers**, porque las cuentas de fondeo viven en MT5 y el bridge exige una superficie de integración mucho menor que adaptadores nativos + LiveNode completo (ADR-0078). El motor nativo llega en EPIC-6.
+**Criterio de salida:** portafolio de ≥3 estrategias descorrelacionadas operando con pesos HRP, rebalanceo automático auditado, y ≥1 broker nativo con paridad sim/live medida.
 
-**P0 — Incubación:**
-- [`paper-trader`](./features/paper-trader.md) + [`incubation-manager`](./features/incubation-manager.md): cuarentena de 7 días con Eutanasia Predictiva y Cono de Silencio (ADR-0088). El feed en vivo reutiliza el conector de datos de EPIC-1.
-- [`pardo-comparison`](./features/pardo-comparison.md) (eficiencia forward vs histórico).
+### EPIC-7 — Ciclo Cerrado 24/7 (`feedback` + `withdraw`)
 
-**P0 — Ejecución defensiva (Alpha Defensivo, innegociable antes del primer trade real):**
-- [`pre-trade-validator`](./features/pre-trade-validator.md): los 10 checks (ADR-0025) + veto por robustez (ADR-0095).
-- [`order-fsm`](./features/order-fsm.md) (ADR-0004), [`portfolio-rules`](./features/portfolio-rules.md) en modo Challenge/Rules Wrapper (ADR-0079) con asignación de capital **manual** (el HRP llega en EPIC-6).
-- [`operational-safety-monitor`](./features/operational-safety-monitor.md) (SSL + Pardo Profile, ADR-0070), Shadow Watchdog + Kill Switch (ADR-0026/0087), [`sovereign-security`](./features/sovereign-security.md) (ADR-0093 — cifrado de llaves antes de tocar una API real).
-- [`multi-ticket-manager`](./features/multi-ticket-manager.md), [`order-priority-queue`](./features/order-priority-queue.md) (ADR-0080), [`notification`](./features/notification.md), [`autopilot-metrics-provider`](./features/autopilot-metrics-provider.md) (consumo por CLI/panel mínimo).
-- [`persistent-daemons`](./features/persistent-daemons.md) (ADR-0084) + [`data-bus-pubsub`](./features/data-bus-pubsub.md) (ADR-0085).
+**Objetivo:** convertir la herramienta en fábrica autónoma. El sistema se mejora solo mientras duermes.
 
-**P1:** [`advanced-trade-management`](./features/advanced-trade-management.md) (trailing stop primero; grid/hedging después), [`trade-reconciler`](./features/trade-reconciler.md) (versión mínima: real vs esperado diario).
+**Alcance:** `feedback` completo (ver [`docs/modules/feedback.md`](./modules/feedback.md#ttrs-etiquetados-por-fase): `trade-reconciler`, `pardo-comparison` como veredicto de continuidad, `anomaly-detector`, Learning Constraints hacia `generate`, ADR-0015) y `withdraw` completo (`performance-monitor`, retiro con pausa reversible, archivo institucional). Más los daemons de QuantOps (`quantops-daemon`, ADR-0052; `event-driven-pipeline-triggers`) y la Matriz Microrodante Nocturna (ADR-0059).
 
-**Se pospone:** [`broker-connector`](./features/broker-connector.md) nativo completo (EPIC-6), [`copy-trading-engine`](./features/copy-trading-engine.md), [`kinetic-micro-management.md`](./features/kinetic-micro-management.md), federación, RPAP.
+**Criterio de salida:** 30 días de operación desatendida — el sistema generó, validó, incubó, promovió y retiró estrategias solo, con audit trail completo y cero intervenciones de emergencia.
 
-**Criterio de salida:** Una estrategia generada por Drasus pasa cuarentena de 7 días, opera una cuenta de fondeo demo→real vía bridge, el SSL y el kill switch se prueban con simulacro de fallo (test de guerra obligatorio), y la reconciliación diaria cuadra. **KPI de negocio: primera semana verde con dinero real gestionado 100% por el sistema.**
+### EPIC-8 — Unificación ZUI y Pulido (ADR-0117)
+
+**Objetivo:** desde EPIC-0, cada Feature con superficie UI entrega su Cáscara Delgada junto a su backend. EPIC-8 ya **no** construye la interfaz desde cero: **unifica** las pestañas en la navegación fractal de 3 niveles (ADR-0028), **pule** (theming, animaciones, responsive) y construye lo que requiere datos agregados de varias fases (UMAP, parallel-coordinates, time-warp, etc.) o lo diferido por veredicto SPIKE-005 (LLM). Incluye el empaquetado comercial (ADR-0029).
+
+**Criterio de salida:** ZUI unificada operativa, visualizadores avanzados funcionando e instaladores para los 3 OS.
+
+### EPIC-9+ — Moonshots (post-rentabilidad, ADR-0103)
+
+Orden sugerido por ROI esperado, revisable con datos reales: transpilador MQL5 (ADR-0101) → Copy-Trading + SaaS gateway → Deep Learning/DRL → La Colmena (ADR-0086) + Marketplace (ADR-0099) → SaaS Cloud (ADR-0033) → resto del catálogo según evidencia.
 
 ---
 
-### EPIC-6 — Portafolio y Ejecución Nativa (`manage` + `execute` completo)
-
-**Objetivo:** Pasar de 1–3 estrategias a una flota con gestión de capital seria, y del bridge a brokers nativos.
-
-**P0:**
-- [`portfolio-data-preparation`](./features/portfolio-data-preparation.md) (ADR-0056), [`portfolio-optimizer`](./features/portfolio-optimizer.md) (HRP primero; Markowitz/Black-Litterman después) (ADR-0075/0089), [`portfolio-backtest`](./features/portfolio-backtest.md) (ADR-0091 — margen compartido real).
-- [`signal-correlation-analyzer`](./features/signal-correlation-analyzer.md), Auto-Rebalancing Daemon con circuit breaker (ADR-0089).
-- [`broker-connector`](./features/broker-connector.md) nativo (1 broker: el de mayor capital propio) + integración del motor de ejecución mediante el LiveNode de los crates NT v2 vendorizados (ADR-0107); brokers sin adaptador estable en v2 se cubren con adaptadores propios (TTR-004 de [`nautilus-integration`](./features/nautilus-integration.md)).
-- [`volatility-stabilization`](./features/volatility-stabilization.md) (ADR-0068), [`equity-curve-tracker`](./features/equity-curve-tracker.md) a nivel portafolio.
-
-**P1:** [`federated-portfolio`](./features/federated-portfolio.md) (ADR-0090), hedging cointegrativo y Router Viviente (ADR-0089 — solo si hay ≥5 estrategias vivas), [`fit-to-portfolio-search`](./features/fit-to-portfolio-search.md) (ahora sí, con flota real).
-
-**Criterio de salida:** Portafolio de ≥3 estrategias descorrelacionadas operando con pesos HRP, rebalanceo automático auditado, y al menos 1 broker nativo con paridad sim/live medida.
-
----
-
-### EPIC-7 — Ciclo Cerrado 24/7 (`feedback` + `withdraw` + QuantOps)
-
-**Objetivo:** Convertir la herramienta en fábrica autónoma. El multiplicador final: el sistema se mejora solo mientras duermes.
-
-**P0:**
-- `feedback`: [`trade-reconciler`](./features/trade-reconciler.md) completo, [`pardo-comparison`](./features/pardo-comparison.md) como veredicto de continuidad, [`anomaly-detector`](./features/anomaly-detector.md), Learning Constraints hacia `generate` (ADR-0015).
-- `withdraw`: [`performance-monitor`](./features/performance-monitor.md), retiro con pausa reversible (SAD §11), archivo institucional.
-- [`quantops-daemon`](./features/quantops-daemon.md) (ADR-0052) + [`event-driven-pipeline-triggers`](./features/event-driven-pipeline-triggers.md): pipelines generate→validate→incubate encadenados sin humano.
-- [`auto-auditoria-portafolios-vivos`](./features/auto-auditoria-portafolios-vivos.md) (costes reales vs modelados — realimenta los modelos de fricción de EPIC-2).
-- Matriz Microrodante Nocturna (ADR-0059) — re-optimización diaria 23:59h.
-
-**P1:** [`robust-reporting`](./features/robust-reporting.md), [`monthly-performance-heatmap`](./features/monthly-performance-heatmap.md) (reporte estático).
-
-**Criterio de salida:** 30 días de operación desatendida: el sistema generó, validó, incubó, promovió y retiró estrategias solo, con audit trail completo y cero intervenciones de emergencia manuales.
-
----
-
-### EPIC-8 — Unificación ZUI y Pulido (antes "Glass-Box UI")
-
-**Objetivo (redefinido por ADR-0117):** Desde EPIC-0, cada Feature con superficie UI declarada entrega su Cáscara Delgada (Techo Fijo) junto a su backend — ver "Entrega Progresiva de Cáscara Delgada" más abajo. Al llegar aquí, el Panel Operativo Fundacional ya creció con una pestaña/sección por cada Feature con UI de EPIC-1–EPIC-7. EPIC-8 ya NO construye la interfaz desde cero: **unifica** esas pestañas en la navegación fractal de 3 niveles, **pule** (theming, animaciones, responsive) y construye lo que requiere datos agregados de múltiples fases o fue diferido por veredicto SPIKE.
-
-- **Unificación ZUI 3 niveles (ADR-0028):** reorganiza las pestañas/secciones del Panel Operativo Fundacional (entregadas EPIC-0–EPIC-7) en Fleet Command → Orchestrator (DAG editor con `petgraph` + CustomPainter) → Strategy Inspector. [`visual-dag-editor`](./features/visual-dag-editor.md), [`node-preview`](./features/node-preview.md) (ADR-0096), [`zui-navigation`](./features/zui-navigation.md).
-- **Pulido visual:** theming, animaciones, layouts responsivos sobre las Cáscaras Delgadas ya funcionales — diferido por el Techo Fijo (ADR-0117).
-- **Visualizadores que requieren datos agregados multi-fase:** [`umap-scatter-visualizer`](./features/umap-scatter-visualizer.md), [`parallel-coordinates-visualizer`](./features/parallel-coordinates-visualizer.md), [`cross-filtering-visualizer`](./features/cross-filtering-visualizer.md), [`interactive-stress-lab`](./features/interactive-stress-lab.md), [`plateau-copilot`](./features/plateau-copilot.md), [`toxicity-purifier`](./features/toxicity-purifier.md) (ADR-0098), [`time-warp-debugger`](./features/time-warp-debugger.md), [`monthly-performance-heatmap`](./features/monthly-performance-heatmap.md) interactivo.
-- **Diferidos por veredicto SPIKE-005/ADR-0115:** [`robustness-verdict-engine`](./features/robustness-verdict-engine.md) (LLM local), [`glass-box-ai-translator`](./features/glass-box-ai-translator.md), AST Copilot.
-- **Empaquetado comercial:** [`flutter-packaging-manager`](./features/flutter-packaging-manager.md), [`licensing-system`](./features/licensing-system.md), instaladores 3 OS (ADR-0029).
-
-**Entrega Progresiva de Cáscara Delgada por Feature (ADR-0117, sustituye la antigua "pista transversal de UI"):** cada Feature de EPIC-1–EPIC-7 cuya spec declare superficie de usuario entrega, en la misma Story que su backend, su Cáscara Delgada bajo el Techo Fijo: control que dispara la operación real + visualización del resultado real (FFI/gRPC) + observable persistido visible tras recargar. Las Features de plomería (sin superficie propia) declaran una Ventana de Verificación en la Feature consumidora — su prueba de funcionamiento es ese observable visible ahí. No hay cuota "una pantalla por fase"; el límite es el Techo Fijo, no el calendario.
-
----
-
-### EPIC-9+ — Moonshots (estrictamente post-rentabilidad, ADR-0103 Filosofía Dual)
-
-Orden sugerido por ROI esperado, revisable con datos reales:
-1. [`universal-strategy-transpiler`](./moonshots/universal-strategy-transpiler.md) (MQL5 export — monetizable, ADR-0101)
-2. [`copy-trading-engine`](./features/copy-trading-engine.md) productizado + [`saas-gateway`](./moonshots/saas-gateway.md)/[`monetization-stripe`](./moonshots/monetization-stripe.md)
-3. [`deep-learning-suite`](./moonshots/deep-learning-suite.md) + DRL (Hybrid Genesis completo)
-4. [`la-colmena`](./moonshots/la-colmena.md) (ADR-0086), [`marketplace-cajas-negras`](./moonshots/marketplace-cajas-negras.md) (ADR-0099)
-5. [`saas-cloud-engine`](./moonshots/saas-cloud-engine.md) (ADR-0033 Trimodal modo 3) + HybridComputeCooperative (ADR-0094)
-6. Resto del catálogo de moonshots según evidencia.
-
----
-
-## 5. Dependencias Técnicas Duras (no negociables)
+## 5. Dependencias duras (no negociables)
 
 1. **EPIC-2 depende de EPIC-1:** sin PIT validator, el backtest miente.
 2. **EPIC-3 depende de EPIC-2:** generar sin motor confiable es fabricar overfitting a escala.
-3. **DSR (EPIC-4) depende de contar N desde EPIC-3:** orden inverso = estadística inválida.
-4. **EPIC-5 depende del Score de EPIC-4:** el sizing en vivo consume el robustness score (ADR-0058) y el veto pre-trade consume el veredicto MC (ADR-0095).
+3. **El DSR (EPIC-4) depende de contar N desde EPIC-3:** orden inverso = estadística inválida.
+4. **EPIC-5 depende del Score de EPIC-4:** el sizing en vivo consume el robustness score (ADR-0058) y el veto pre-trade consume el veredicto Monte Carlo (ADR-0095).
 5. **Versionado (ADR-0005) y los 25 campos (ADR-0020 V2) nacen en EPIC-0/EPIC-2:** retrofitearlos cuesta 10x.
-6. **SPIKE-001 (Nautilus) — resuelto por ADR-0107 (crates Rust v2 vendorizados):** el diseño del backtest event-driven de EPIC-2 y la ejecución nativa de EPIC-6 ya tienen mecanismo definido. En EPIC-0 solo queda su smoke test (compilación, backtest mínimo, empaquetado LGPL); si ese smoke test fallara, se activa el Plan B escalonado del ADR-0107 antes de diseñar EPIC-2.
+6. **El mecanismo NautilusTrader está resuelto (ADR-0107):** crates Rust v2 vendorizados. EPIC-0 solo confirma el smoke test; si falla, se activa el Plan B escalonado del ADR-0107 antes de diseñar EPIC-2.
 
-## 6. KPIs por Fase (jerarquía de latencias unificada)
+---
+
+## 6. Estado de los Spikes de Viabilidad
+
+Los 6 gates ya tienen veredicto documentado como ADR. En EPIC-0 solo resta la validación residual (smoke tests, mediciones). El detalle de cada veredicto vive en su ADR — aquí solo el estado.
+
+| Spike | Riesgo | Veredicto (ADR) | Estado |
+|---|---|---|---|
+| SPIKE-001 | NautilusTrader como crate Rust | ADR-0107 | pendiente (smoke test) |
+| SPIKE-002 | `tch-rs`/libtorch | ADR-0112 (erradicado; escalera `ndarray`→`candle`→`burn`) | resta validación |
+| SPIKE-003 | PySR "en Rust" | ADR-0113 (erradicado; simbólico nativo en NSGA-II) | resta validación |
+| SPIKE-004 | Motor de backtest dual | ADR-0114 (Express híbrido + Event-Driven) | resta validación |
+| SPIKE-005 | Ollama/LLM local | ADR-0115 (Verdict Engine determinista; LLM opcional) | resta validación |
+| SPIKE-006 | `flutter_rust_bridge` a escala | ADR-0116 + ADR-0117 (Panel Operativo Fundacional) | resta validación |
+
+---
+
+## 7. KPIs por Fase (jerarquía de latencias)
 
 | Ruta | SLA | Fase donde se mide |
 |---|---|---|
 | Pre-trade validation (Guardián) | <1ms | EPIC-5 |
-| Wrapper de reglas de portafolio | <10ms | EPIC-5/EPIC-6 |
-| Orden end-to-end (señal→broker) | ≤100ms | EPIC-5/EPIC-6 |
+| Wrapper de reglas de portafolio | <10ms | EPIC-5/6 |
+| Orden end-to-end (señal→broker) | ≤100ms | EPIC-5/6 |
 | Kill switch / watchdog | ≤5s | EPIC-5 |
-| Backtest Express híbrido | Más rápido que MT5/SQX/QuantConnect en igual hardware (ADR-0114; sin KPI absoluto) | EPIC-2 |
+| Backtest Express híbrido | Más rápido que MT5/SQX/QuantConnect en igual hardware (ADR-0114) | EPIC-2 |
+| Recuperación post-crash | <10s | EPIC-0 (cola de trabajos) / EPIC-5 (sesión live) |
 | Carga UI Time-Warp | <200ms | EPIC-8 |
-| Recuperación post-crash (Event Store) | <10s | EPIC-0/EPIC-5 |
-
-(Esta tabla resuelve las contradicciones de KPIs detectadas entre SAD §1.2, §9 y el pipeline §6 — ver CORRECTION-PLAN ítem C1.)
