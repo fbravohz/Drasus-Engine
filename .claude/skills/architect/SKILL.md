@@ -37,7 +37,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 7. **Emplazamiento de TTRs en Módulos (Orquestación):**
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
 8. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
-9. **Auditoría de Plantillas (TEMPLATES.md):** Evalúa si se requiere actualizar las plantillas maestras (solo si es crítico).
+9. **Auditoría de Plantillas (`docs/templates/`):** Evalúa si se requiere actualizar alguna plantilla maestra (`docs/templates/ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md`, o las reglas transversales en `docs/templates/TEMPLATES.md`) — solo si es crítico. Este paso es OBLIGATORIO incluso cuando el cambio no es una Feature de producto (ej. una decisión de proceso/gobernanza): si afecta el formato o las reglas con las que se escriben ADR/SAD/Feature/TTR, pasa por aquí.
 10. **Sincronización de README:** El `README.md` es el índice maestro de navegación, no un documento para memorizar. Léelo para **localizar** qué documentos toca tu cambio (módulos, features, ADR, secciones del SAD) y actualiza únicamente las entradas afectadas si tu cambio altera el mapa (nueva Feature/ADR/módulo, enlaces rotos). Aplica el protocolo de lectura por demanda de `CLAUDE.md` §3: no cargues archivos completos "por si acaso".
 11. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
 
@@ -54,10 +54,10 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 
 ## 🚫 RESTRICCIONES DOCUMENTALES
 - **Gate de Creación de Documentos (CRÍTICO):**
-  - Flujo Permitido: `docs/adr/ADR-XXXX.md` (+ fila en el índice `docs/ADR.md`), `docs/sad/SAD-NN.md` (+ índice `docs/SAD.md`), `docs/TEMPLATES.md`, `docs/modules/*.md`, `docs/features/*.md`, `docs/moonshots/*.md` y `docs/README.md`.
+  - Flujo Permitido: `docs/adr/ADR-XXXX.md` (+ fila en el índice `docs/ADR.md`), `docs/sad/SAD-NN.md` (+ índice `docs/SAD.md`), `docs/templates/<NOMBRE>.md` (+ índice `docs/templates/TEMPLATES.md`), `docs/modules/*.md`, `docs/features/*.md`, `docs/moonshots/*.md` y `docs/README.md`.
   - Prohibidos (Sin Preguntar): Auditorías (`*-AUDIT.md`), Resúmenes (`*-SUMMARY.md`), Planes (`*-PLAN.md`).
 - **Protocolo Anti-Obsolescencia Documental (CRÍTICO):** ESTRICTAMENTE PROHIBIDO inventar nombres de variables, clases, funciones o snippets (JSON, YAML, Python, etc.) en los documentos de arquitectura y features. Describe el comportamiento observable y el contrato.
-- **Plantillas Obligatorias:** Utiliza las plantillas exactas de `TEMPLATES.md`. Consulta su Sección 4.0 "LO PROHIBIDO".
+- **Plantillas Obligatorias:** Utiliza las plantillas exactas de `docs/templates/` (`ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md` según corresponda). Consulta "Lo Prohibido" en `docs/templates/TEMPLATES.md`.
 - **Lectura Previa Obligatoria:** lee el índice `docs/README.md` antes de crear/editar — es el mapa para localizar, no para memorizar entero.
 - **Lectura bajo demanda (protocolo `CLAUDE.md` §3):** abre solo lo relevante a la tarea, por sección, usando `grep` para apuntar. Estructura actual: los ADR viven uno por archivo en `docs/adr/ADR-XXXX.md` (índice navegable en `docs/ADR.md`); el SAD por sección en `docs/sad/SAD-NN.md` (índice en `docs/SAD.md`); además `docs/features/*.md`, `docs/modules/*.md` y `docs/ROADMAP.md`. Prohibido cargar archivos completos "por si acaso".
 

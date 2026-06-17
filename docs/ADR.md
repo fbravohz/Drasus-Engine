@@ -123,3 +123,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0117](./adr/ADR-0117.md) | Entrega Progresiva de Cáscara Delgada por Feature — Techo Fijo, Ventana de Verificación y Redefinición de EPIC-8 como Unificación ZUI |
 | [ADR-0118](./adr/ADR-0118.md) | Unidad de Entrega = Módulo Completo; Construcción en el Primer Consumidor; ROADMAP como Guía sin Bitácora |
 | [ADR-0119](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
+| [ADR-0120](./adr/ADR-0120.md) | Modos de Acompañamiento de Implementación (Autónomo / Mentor / Revisión) — Selección por el Usuario, Persistida en la Orden de Trabajo |

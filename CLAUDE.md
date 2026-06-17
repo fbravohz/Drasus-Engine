@@ -29,7 +29,8 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 | `docs/SAD.md` | Índice de las 20 secciones | ~26 líneas | Para una sección, abre `docs/sad/SAD-NN.md`. |
 | `docs/sad/SAD-NN.md` | Una sección del SAD por archivo (01–20) | variable | Abre solo la sección relevante. |
 | `docs/ROADMAP.md` | Épicas, sprints, spikes | ~365 líneas | Lee la sección de la fase activa. |
-| `docs/TEMPLATES.md` | Plantillas maestras + "LO PROHIBIDO" (§4.0) | ~522 líneas | Lee la plantilla concreta que vas a usar. |
+| `docs/templates/TEMPLATES.md` | Índice + reglas transversales (Lo Prohibido, Regla de Oro, Checklist) | ~100 líneas | Para una plantilla concreta, abre `docs/templates/<NOMBRE>.md`. |
+| `docs/templates/<NOMBRE>.md` | Una plantilla por archivo: `ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md` | ≈40–150 líneas | Abre solo la plantilla que vas a usar. |
 | `docs/modules/*.md` | 8 orquestadores: ingest, generate, validate, incubate, manage, execute, feedback, withdraw | 280–833 líneas c/u | Abre solo el módulo en juego. |
 | `docs/features/*.md` | ~138 features (lógica pura / drivers) | variable | Abre solo la(s) feature(s) relevante(s). |
 | `docs/moonshots/*.md` | ~41 proyectos experimentales | variable | Solo si el trabajo es R&D experimental. |

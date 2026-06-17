@@ -349,6 +349,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0117**](./adr/ADR-0117.md) | Entrega Progresiva de Cáscara Delgada por Feature — Techo Fijo, Ventana de Verificación y Redefinición de EPIC-8 como Unificación ZUI |
 | [**ADR-0118**](./adr/ADR-0118.md) | Unidad de Entrega = Módulo Completo; Construcción en el Primer Consumidor; ROADMAP como Guía sin Bitácora |
 | [**ADR-0119**](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
+| [**ADR-0120**](./adr/ADR-0120.md) | Modos de Acompañamiento de Implementación (Autónomo / Mentor / Revisión) — Selección por el Usuario, Persistida en la Orden de Trabajo |
 
 ---
 
@@ -356,7 +357,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 
 - [**SAD.md**](./SAD.md) — Documento de Arquitectura de Software (Visión General).
 - [**ADR.md**](./ADR.md) — Decisiones Arquitectónicas (Registro de decisiones inmutables).
-- [**TEMPLATES.md**](./TEMPLATES.md) — Plantillas para nuevas especificaciones.
+- [**templates/TEMPLATES.md**](./templates/TEMPLATES.md) — Índice de plantillas (ADR, SAD, Feature, TTR) + reglas transversales para nuevas especificaciones.
 
 ---
 
