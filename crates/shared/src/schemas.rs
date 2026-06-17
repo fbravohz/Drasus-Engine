@@ -1,4 +1,4 @@
-//! Data contracts (structures / schemas) shared across modules.
+//! Contratos de datos (estructuras / esquemas) compartidos entre módulos.
 //!
-//! Serde-validated at module boundaries (Zero-Trust, SAD §5).
-//! Empty for F0 (W1): no shared contract has been defined yet.
+//! Validados con Serde en las fronteras de módulo (Zero-Trust, SAD §5).
+//! Vacío en F0 (W1): todavía no se definió ningún contrato compartido.

@@ -1,7 +1,7 @@
-//! [SHELL] Public interface (port) of `manage`.
+//! [SHELL] Interfaz pública (puerto) de `manage`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: optimize portfolio, set rules, run portfolio
-//! backtest (HRP).
+//! La única superficie de la que otros módulos pueden depender (ADR-0003).
+//! Puertos futuros: optimizar portafolio, fijar reglas, correr backtest
+//! de portafolio (HRP).
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío para F0 (W1): todavía no se ha despachado ningún puerto.

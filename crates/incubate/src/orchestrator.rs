@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `incubate`.
+//! [SHELL] Orquestación de `incubate`.
 //!
-//! Coordinates `domain` logic, handles execution simulation and
-//! change detection. Intentionally empty for F0 (W1): no business
-//! logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja la simulación de ejecución y
+//! la detección de cambios. Vacío a propósito en F0 (W1): aquí no vive
+//! lógica de negocio (FCIS, ADR-0003).

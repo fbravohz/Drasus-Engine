@@ -1,31 +1,34 @@
-//! [SHELL] Persistence repository for the Async Job Executor
+//! [SHELL] Repositorio de persistencia para el Async Job Executor
 //! (`docs/features/async-job-executor.md` TTR-ASYNC-EXECUTOR-001/003/004/006,
 //! ADR-0011, ADR-0020 V2).
 //!
-//! Wraps the `jobs` and `job_results` tables (migration `0003_jobs.sql`).
-//! Owns the only I/O for jobs: SQLite reads/writes, UUID generation
-//! (unseeded randomness, ADR-0002/0004) and the [`Clock`] port read. The
-//! state machine itself ([`JobState`], [`validate_transition`]) is pure
-//! core logic in [`crate::domain::job`] — this module only feeds it
-//! injected inputs and persists/loads the result, mirroring
+//! Envuelve las tablas `jobs` y `job_results` (migración `0003_jobs.sql`).
+//! Dueño del único I/O para jobs: lecturas/escrituras en SQLite,
+//! generación de UUID (azar sin semilla, ADR-0002/0004) y la lectura del
+//! puerto [`Clock`]. La máquina de estados en sí ([`JobState`],
+//! [`validate_transition`]) es lógica pura de core en
+//! [`crate::domain::job`] — este módulo solo le da entradas inyectadas y
+//! persiste/carga el resultado, reflejando el patrón de
 //! [`crate::persistence::audit_log::AuditLogRepository`].
 //!
 //! ## Persist-before-ack (TTR-001)
 //!
-//! [`JobRepository::submit`] performs the `INSERT INTO jobs` and returns
-//! only after it commits. The caller (orchestrator) receives the job's UUID
-//! from this call's `Ok` value — there is no path that hands back a UUID
-//! before the row exists on disk. A `kill -9` between "submit returned" and
-//! "row visible on disk" is therefore impossible: they are the same event.
+//! [`JobRepository::submit`] ejecuta el `INSERT INTO jobs` y solo retorna
+//! después de que el commit ocurre. Quien llama (el orquestador) recibe
+//! el UUID del job desde el valor `Ok` de esta llamada — no existe ningún
+//! camino que entregue un UUID antes de que la fila exista en disco. Por
+//! eso un `kill -9` entre "submit retornó" y "fila visible en disco" es
+//! imposible: son el mismo evento.
 //!
-//! ## Append-only `job_results` (TTR-003)
+//! ## `job_results` de solo-apéndice (TTR-003)
 //!
-//! Enforced twice, exactly like `audit_events`:
-//! - **Database**: migration `0003_jobs.sql` installs `BEFORE UPDATE` /
-//!   `BEFORE DELETE` triggers on `job_results` that `RAISE(ABORT, ...)`.
-//! - **Application**: this repository exposes [`JobRepository::record_result`]
-//!   and [`JobRepository::result_for_job`] only — no update/delete method
-//!   exists.
+//! Forzado por duplicado, igual que en `audit_events`:
+//! - **Base de datos**: la migración `0003_jobs.sql` instala triggers
+//!   `BEFORE UPDATE` / `BEFORE DELETE` en `job_results` que hacen
+//!   `RAISE(ABORT, ...)`.
+//! - **Aplicación**: este repositorio solo expone
+//!   [`JobRepository::record_result`] y [`JobRepository::result_for_job`]
+//!   — no existe ningún método de update/delete.
 
 use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
@@ -33,16 +36,16 @@ use uuid::Uuid;
 use crate::domain::clock::Clock;
 use crate::domain::job::{validate_transition, JobState};
 
-/// Errors returned by [`JobRepository`] operations.
+/// Errores que devuelven las operaciones de [`JobRepository`].
 #[derive(Debug)]
 pub enum JobRepositoryError {
-    /// The underlying SQLite operation failed.
+    /// La operación subyacente de SQLite falló.
     Database(sqlx::Error),
-    /// A row in `jobs` had a `state` value outside the five canonical
-    /// strings (`JobState::from_str_value` returned `None`) — a
-    /// data-integrity error, not a transition error.
+    /// Una fila de `jobs` tenía un valor de `state` fuera de las cinco
+    /// cadenas canónicas (`JobState::from_str_value` devolvió `None`) —
+    /// un error de integridad de datos, no un error de transición.
     UnknownState(String),
-    /// A requested state transition is not allowed
+    /// Una transición de estado solicitada no está permitida
     /// ([`crate::domain::job::validate_transition`]).
     InvalidTransition(crate::domain::job::InvalidTransition),
 }
@@ -81,14 +84,14 @@ impl From<crate::domain::job::InvalidTransition> for JobRepositoryError {
     }
 }
 
-/// A new job to persist (TTR-001 "Entrada": `JobRequest(job_type,
-/// parameters, user_id)`), plus the ADR-0020 V2 metadata supplied by the
-/// orchestrator at submit time.
+/// Un job nuevo para persistir (TTR-001 "Entrada": `JobRequest(job_type,
+/// parameters, user_id)`), más los metadatos de ADR-0020 V2 que provee el
+/// orquestador al momento del submit.
 #[derive(Debug, Clone)]
 pub struct NewJob {
     pub user_id: String,
     pub job_type: String,
-    /// JSON-encoded job parameters (opaque to this repository).
+    /// Parámetros del job codificados en JSON (opacos para este repositorio).
     pub parameters: String,
     pub owner_id: Option<String>,
     pub access_token_id: Option<String>,
@@ -97,7 +100,7 @@ pub struct NewJob {
     pub logic_hash: Option<String>,
 }
 
-/// A persisted job row (`jobs` table).
+/// Una fila de job persistida (tabla `jobs`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Job {
     pub id: String,
@@ -122,19 +125,19 @@ pub struct Job {
     pub progress: u8,
 }
 
-/// A new job result to persist (TTR-003 "Entrada": `Result object(job_uuid,
-/// result_data, error_message, completed_at)`).
+/// Un resultado de job nuevo para persistir (TTR-003 "Entrada": `Result
+/// object(job_uuid, result_data, error_message, completed_at)`).
 #[derive(Debug, Clone)]
 pub struct NewJobResult {
     pub job_uuid: String,
-    /// JSON-encoded result payload, `None` on failure.
+    /// Payload del resultado codificado en JSON, `None` si falló.
     pub result_data: Option<String>,
-    /// Error description, `None` on success.
+    /// Descripción del error, `None` si tuvo éxito.
     pub error_message: Option<String>,
 }
 
-/// A persisted job result row (`job_results` table). Immutable once
-/// inserted (TTR-003).
+/// Una fila de resultado de job persistida (tabla `job_results`).
+/// Inmutable una vez insertada (TTR-003).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JobResult {
     pub id: String,
@@ -150,46 +153,48 @@ pub struct JobResult {
     pub completed_at_ns: i64,
 }
 
-/// A job recovered at startup (TTR-004): its previous (pre-recovery) state
-/// and its identity, ready to be re-queued and audited.
+/// Un job recuperado en startup (TTR-004): su estado previo (antes de la
+/// recuperación) y su identidad, listo para reencolarse y auditarse.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecoveredJob {
     pub job: Job,
     pub previous_state: JobState,
 }
 
-/// Repository for `jobs` and `job_results`.
+/// Repositorio para `jobs` y `job_results`.
 ///
-/// Construct with a migrated [`SqlitePool`] (see
+/// Constrúyelo con un [`SqlitePool`] ya migrado (ver
 /// [`crate::persistence::pool::connect`] +
-/// [`crate::persistence::pool::migrate`]) and any [`Clock`] implementation
-/// (production: [`crate::orchestrator::SystemClock`]; tests/backtests:
-/// [`crate::domain::clock::DeterministicClock`]).
+/// [`crate::persistence::pool::migrate`]) y cualquier implementación de
+/// [`Clock`] (producción: [`crate::orchestrator::SystemClock`];
+/// tests/backtests: [`crate::domain::clock::DeterministicClock`]).
 pub struct JobRepository<'a> {
     pool: &'a SqlitePool,
     clock: &'a dyn Clock,
 }
 
 impl<'a> JobRepository<'a> {
-    /// Creates a repository bound to `pool` and `clock`. Both are borrowed
-    /// for the lifetime of the repository — no ownership is taken, so the
-    /// same pool/clock can be shared with other repositories.
+    /// Crea un repositorio asociado a `pool` y `clock`. Ambos se toman
+    /// prestados por la vida del repositorio — no se toma ownership, así
+    /// que el mismo pool/clock se puede compartir con otros repositorios.
     pub fn new(pool: &'a SqlitePool, clock: &'a dyn Clock) -> Self {
         Self { pool, clock }
     }
 
-    /// Persists a new job in state `QUEUED` and returns it (TTR-001:
+    /// Persiste un job nuevo en estado `QUEUED` y lo devuelve (TTR-001:
     /// "Job se guarda ANTES de retornar UUID").
     ///
-    /// Generates a fresh UUID v4 (`id`, unseeded randomness — confined to
-    /// this shell per ADR-0002/0004) and reads the current [`Clock`]
-    /// (`created_at_ns` == `updated_at_ns` for a freshly created row).
-    /// `event_sequence_id` starts at `1` and `audit_chain_hash` is `None`
-    /// for a new job (this job's own update chain has no predecessor yet).
+    /// Genera un UUID v4 fresco (`id`, azar sin semilla — confinado a esta
+    /// cáscara según ADR-0002/0004) y lee el [`Clock`] actual
+    /// (`created_at_ns` == `updated_at_ns` para una fila recién creada).
+    /// `event_sequence_id` arranca en `1` y `audit_chain_hash` es `None`
+    /// para un job nuevo (la cadena de actualizaciones propia de este job
+    /// todavía no tiene predecesor).
     ///
-    /// This call's `INSERT` is the durability boundary: the caller receives
-    /// the job's UUID (via the returned [`Job::id`]) only after this
-    /// `INSERT` has completed, never before (persist-before-ack).
+    /// El `INSERT` de esta llamada es el límite de durabilidad: quien
+    /// llama recibe el UUID del job (vía el [`Job::id`] devuelto) solo
+    /// después de que este `INSERT` se completó, nunca antes
+    /// (persist-before-ack).
     pub async fn submit(&self, request: NewJob) -> Result<Job, JobRepositoryError> {
         let id = Uuid::new_v4().to_string();
         let now_ns = self.clock.timestamp_ns();
@@ -222,7 +227,7 @@ impl<'a> JobRepository<'a> {
         .bind(&audit_hash)
         .bind(Option::<String>::None)
         .bind(event_sequence_id)
-        .bind(Option::<String>::None) // process_id: unassigned until a worker picks it up
+        .bind(Option::<String>::None) // process_id: sin asignar hasta que un worker lo tome
         .bind(&request.session_id)
         .bind(&request.node_id)
         .bind(&request.logic_hash)
@@ -257,7 +262,7 @@ impl<'a> JobRepository<'a> {
         })
     }
 
-    /// Loads a single job by `id`, or `None` if it does not exist.
+    /// Carga un único job por `id`, o `None` si no existe.
     pub async fn find(&self, id: &str) -> Result<Option<Job>, JobRepositoryError> {
         let row = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -276,8 +281,8 @@ impl<'a> JobRepository<'a> {
         }
     }
 
-    /// Loads every job currently in `state` (TTR-004: startup recovery scans
-    /// for `QUEUED` and `RUNNING`).
+    /// Carga todos los jobs que están actualmente en `state` (TTR-004: la
+    /// recuperación en startup escanea por `QUEUED` y `RUNNING`).
     pub async fn jobs_in_state(&self, state: JobState) -> Result<Vec<Job>, JobRepositoryError> {
         let rows = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -293,17 +298,18 @@ impl<'a> JobRepository<'a> {
         rows.into_iter().map(row_to_job).collect()
     }
 
-    /// Transitions `job` to `to`, validating the transition via
-    /// [`validate_transition`] before writing anything.
+    /// Transiciona `job` a `to`, validando la transición vía
+    /// [`validate_transition`] antes de escribir nada.
     ///
-    /// Bumps `updated_at` (current [`Clock`] reading), `event_sequence_id`
-    /// (+1) and sets `audit_chain_hash` to the job's previous `audit_hash`
-    /// — the same hash-chain shape as `audit_events`, scoped to this job's
-    /// own row history. When transitioning into `RUNNING`, `process_id` is
-    /// set to `worker_id` (TTR-001/002 "Worker ID"); for any other
-    /// transition `process_id` is left unchanged.
+    /// Incrementa `updated_at` (lectura actual de [`Clock`]),
+    /// `event_sequence_id` (+1) y fija `audit_chain_hash` al `audit_hash`
+    /// previo del job — la misma forma de cadena de hashes que
+    /// `audit_events`, acotada al historial de filas propio de este job.
+    /// Al transicionar a `RUNNING`, `process_id` se fija a `worker_id`
+    /// (TTR-001/002 "Worker ID"); para cualquier otra transición
+    /// `process_id` queda sin cambios.
     ///
-    /// Returns the updated [`Job`] on success.
+    /// Devuelve el [`Job`] actualizado si tiene éxito.
     pub async fn transition(
         &self,
         job: &Job,
@@ -374,13 +380,13 @@ impl<'a> JobRepository<'a> {
         })
     }
 
-    /// Updates `progress` (0-100, clamped by [`crate::domain::job::Progress`])
-    /// for a job in `RUNNING` state, without changing its `state`
-    /// (TTR-005: "Worker actualiza progreso cada `progress_interval`
-    /// segundos").
+    /// Actualiza `progress` (0-100, clampeado por
+    /// [`crate::domain::job::Progress`]) para un job en estado `RUNNING`,
+    /// sin cambiar su `state` (TTR-005: "Worker actualiza progreso cada
+    /// `progress_interval` segundos").
     ///
-    /// Bumps `updated_at`, `event_sequence_id` and `audit_chain_hash` like
-    /// [`Self::transition`]. Returns the updated [`Job`].
+    /// Incrementa `updated_at`, `event_sequence_id` y `audit_chain_hash`
+    /// igual que [`Self::transition`]. Devuelve el [`Job`] actualizado.
     pub async fn update_progress(&self, job: &Job, progress: crate::domain::job::Progress) -> Result<Job, JobRepositoryError> {
         let now_ns = self.clock.timestamp_ns();
         let event_sequence_id = job.event_sequence_id + 1;
@@ -422,13 +428,13 @@ impl<'a> JobRepository<'a> {
         })
     }
 
-    /// Appends a [`JobResult`] for a job that just reached a terminal state
-    /// (TTR-003). Append-only: this is the only write path for
-    /// `job_results`, and the database additionally rejects `UPDATE`/
-    /// `DELETE` via triggers (migration `0003_jobs.sql`).
+    /// Agrega un [`JobResult`] para un job que recién alcanzó un estado
+    /// terminal (TTR-003). Solo-apéndice: este es el único camino de
+    /// escritura para `job_results`, y la base de datos además rechaza
+    /// `UPDATE`/`DELETE` vía triggers (migración `0003_jobs.sql`).
     ///
-    /// `event_sequence_id` is the next value in the global `job_results`
-    /// chain (read-then-write, mirroring
+    /// `event_sequence_id` es el próximo valor en la cadena global de
+    /// `job_results` (leer-y-luego-escribir, reflejando el patrón de
     /// [`crate::persistence::audit_log::AuditLogRepository::append`]).
     pub async fn record_result(&self, new_result: NewJobResult) -> Result<JobResult, JobRepositoryError> {
         let previous_hash = self.load_latest_result_hash().await?;
@@ -480,8 +486,8 @@ impl<'a> JobRepository<'a> {
         })
     }
 
-    /// Loads the (at most one) result recorded for `job_uuid`, or `None` if
-    /// the job has not completed/failed yet.
+    /// Carga el (a lo sumo uno) resultado registrado para `job_uuid`, o
+    /// `None` si el job todavía no completó/falló.
     pub async fn result_for_job(&self, job_uuid: &str) -> Result<Option<JobResult>, JobRepositoryError> {
         let row = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -495,10 +501,10 @@ impl<'a> JobRepository<'a> {
         Ok(row.map(row_to_result))
     }
 
-    /// Reads the `audit_hash` of the most recently inserted `job_results`
-    /// row (highest `event_sequence_id`), or `None` if the table is empty
-    /// (next [`record_result`](Self::record_result) call creates the
-    /// genesis row).
+    /// Lee el `audit_hash` de la fila de `job_results` insertada más
+    /// recientemente (mayor `event_sequence_id`), o `None` si la tabla
+    /// está vacía (la próxima llamada a
+    /// [`record_result`](Self::record_result) crea la fila génesis).
     async fn load_latest_result_hash(&self) -> Result<Option<String>, JobRepositoryError> {
         let row = sqlx::query("SELECT audit_hash FROM job_results ORDER BY event_sequence_id DESC LIMIT 1")
             .fetch_optional(self.pool)
@@ -507,8 +513,8 @@ impl<'a> JobRepository<'a> {
         Ok(row.map(|row| row.get::<String, _>(0)))
     }
 
-    /// Computes the next `event_sequence_id` for `job_results` (1 for the
-    /// first row, then monotonically increasing).
+    /// Calcula el próximo `event_sequence_id` para `job_results` (1 para
+    /// la primera fila, luego monótonamente creciente).
     async fn next_result_sequence_id(&self) -> Result<i64, JobRepositoryError> {
         let row = sqlx::query("SELECT COALESCE(MAX(event_sequence_id), 0) FROM job_results")
             .fetch_one(self.pool)
@@ -519,7 +525,7 @@ impl<'a> JobRepository<'a> {
     }
 }
 
-/// Converts a `jobs` row into the [`Job`] type.
+/// Convierte una fila de `jobs` al tipo [`Job`].
 fn row_to_job(row: sqlx::sqlite::SqliteRow) -> Result<Job, JobRepositoryError> {
     let state_value: String = row.get("state");
     let state = JobState::from_str_value(&state_value)
@@ -547,7 +553,7 @@ fn row_to_job(row: sqlx::sqlite::SqliteRow) -> Result<Job, JobRepositoryError> {
     })
 }
 
-/// Converts a `job_results` row into the [`JobResult`] type.
+/// Convierte una fila de `job_results` al tipo [`JobResult`].
 fn row_to_result(row: sqlx::sqlite::SqliteRow) -> JobResult {
     JobResult {
         id: row.get("id"),
@@ -563,9 +569,9 @@ fn row_to_result(row: sqlx::sqlite::SqliteRow) -> JobResult {
     }
 }
 
-/// Computes a deterministic SHA-256 snapshot hash for a `jobs` row, chained
-/// to the row's previous `audit_hash` (or `None` for a freshly submitted
-/// job — same "GENESIS" convention as
+/// Calcula un hash de snapshot SHA-256 determinista para una fila de
+/// `jobs`, encadenado al `audit_hash` previo de la fila (o `None` para un
+/// job recién enviado — misma convención "GENESIS" que
 /// [`crate::domain::audit_log::GENESIS_PREVIOUS_HASH`]).
 #[allow(clippy::too_many_arguments)]
 fn compute_job_audit_hash(
@@ -605,9 +611,9 @@ fn compute_job_audit_hash(
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-/// Computes a deterministic SHA-256 snapshot hash for a `job_results` row,
-/// chained to the previous result row's `audit_hash` (or `None` for the
-/// first result ever recorded).
+/// Calcula un hash de snapshot SHA-256 determinista para una fila de
+/// `job_results`, encadenado al `audit_hash` de la fila de resultado
+/// previa (o `None` para el primer resultado registrado).
 fn compute_result_audit_hash(
     id: &str,
     created_at_ns: i64,
@@ -666,9 +672,9 @@ mod tests {
         }
     }
 
-    /// TTR-001: submitting a job persists it in `QUEUED` state with
-    /// progress 0, and the returned UUID corresponds to a row that already
-    /// exists in `jobs` (persist-before-ack).
+    /// TTR-001: enviar un job lo persiste en estado `QUEUED` con progreso
+    /// 0, y el UUID devuelto corresponde a una fila que ya existe en
+    /// `jobs` (persist-before-ack).
     #[tokio::test]
     async fn submit_persists_job_in_queued_state() {
         let pool = migrated_pool().await;
@@ -686,8 +692,8 @@ mod tests {
         assert_eq!(found, job);
     }
 
-    /// TTR-002: a queued job transitions to RUNNING, gets process_id set to
-    /// the worker id, and progress resets to 0.
+    /// TTR-002: un job en cola transiciona a RUNNING, su process_id se
+    /// fija al id del worker, y el progreso se reinicia a 0.
     #[tokio::test]
     async fn transition_to_running_sets_worker_and_resets_progress() {
         let pool = migrated_pool().await;
@@ -709,7 +715,7 @@ mod tests {
         assert_ne!(running.audit_hash, job.audit_hash);
     }
 
-    /// TTR-002/003: RUNNING -> COMPLETED sets progress to 100.
+    /// TTR-002/003: RUNNING -> COMPLETED fija el progreso a 100.
     #[tokio::test]
     async fn transition_to_completed_sets_progress_100() {
         let pool = migrated_pool().await;
@@ -732,8 +738,8 @@ mod tests {
         assert_eq!(completed.progress, 100);
     }
 
-    /// An invalid transition (e.g. QUEUED -> COMPLETED) is rejected before
-    /// any write happens, and the stored row is untouched.
+    /// Una transición inválida (ej. QUEUED -> COMPLETED) se rechaza antes
+    /// de cualquier escritura, y la fila almacenada queda intacta.
     #[tokio::test]
     async fn transition_rejects_invalid_state_change() {
         let pool = migrated_pool().await;
@@ -750,8 +756,8 @@ mod tests {
         assert_eq!(found.event_sequence_id, 1);
     }
 
-    /// TTR-005: `update_progress` updates progress without changing state,
-    /// and bumps the chain.
+    /// TTR-005: `update_progress` actualiza el progreso sin cambiar el
+    /// estado, e incrementa la cadena.
     #[tokio::test]
     async fn update_progress_changes_progress_without_changing_state() {
         let pool = migrated_pool().await;
@@ -775,8 +781,8 @@ mod tests {
         assert_eq!(progressed.event_sequence_id, 3);
     }
 
-    /// TTR-004: `jobs_in_state` returns only jobs matching the requested
-    /// state.
+    /// TTR-004: `jobs_in_state` devuelve solo los jobs que coinciden con
+    /// el estado solicitado.
     #[tokio::test]
     async fn jobs_in_state_filters_correctly() {
         let pool = migrated_pool().await;
@@ -799,8 +805,8 @@ mod tests {
         assert_eq!(running[0].id, job_b.id);
     }
 
-    /// TTR-003: recording a result for a completed job persists it and it
-    /// is retrievable via `result_for_job`.
+    /// TTR-003: registrar un resultado para un job completado lo persiste
+    /// y se puede recuperar vía `result_for_job`.
     #[tokio::test]
     async fn record_result_persists_and_is_retrievable() {
         let pool = migrated_pool().await;
@@ -840,9 +846,9 @@ mod tests {
         assert_eq!(fetched, result);
     }
 
-    /// TTR-003 CLOSING CRITERION: `job_results` is append-only — UPDATE and
-    /// DELETE are rejected by the database trigger (migration
-    /// 0003_jobs.sql), mirroring `audit_events`.
+    /// CRITERIO DE CIERRE de TTR-003: `job_results` es de solo-apéndice —
+    /// UPDATE y DELETE los rechaza el trigger de la base de datos
+    /// (migración 0003_jobs.sql), reflejando `audit_events`.
     #[tokio::test]
     async fn job_results_update_and_delete_are_rejected_by_triggers() {
         let pool = migrated_pool().await;
@@ -884,7 +890,7 @@ mod tests {
         assert!(delete_result.is_err(), "DELETE on job_results must be rejected");
     }
 
-    /// A second result chains to the first via `audit_chain_hash`.
+    /// Un segundo resultado se encadena al primero vía `audit_chain_hash`.
     #[tokio::test]
     async fn record_result_chains_sequential_results() {
         let pool = migrated_pool().await;

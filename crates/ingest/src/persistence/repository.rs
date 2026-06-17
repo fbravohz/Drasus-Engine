@@ -1,3 +1,3 @@
-//! [SHELL] Queries and Core <-> DB conversion for `ingest`.
+//! [SHELL] Consultas y conversión Core <-> DB de `ingest`.
 //!
-//! Empty for F0 (W1): no database connection wired yet (W2).
+//! Vacío en F0 (W1): todavía sin conexión a base de datos cableada (W2).

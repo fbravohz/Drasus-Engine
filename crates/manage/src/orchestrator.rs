@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `manage`.
+//! [SHELL] Orquestación para `manage`.
 //!
-//! Coordinates `domain` logic, handles rebalancing and correlation
-//! computation. Intentionally empty for F0 (W1): no business logic
-//! lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja el rebalanceo y el cálculo
+//! de correlaciones. Vacío a propósito para F0 (W1): aquí no vive
+//! lógica de negocio (FCIS, ADR-0003).

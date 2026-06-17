@@ -150,7 +150,7 @@ Al cerrar cualquier trabajo, entrega al usuario los **comandos exactos** (copy/p
 ## Contexto Lingüístico y Terminológico
 
 - **Idioma:** Español (ortografía completa, acentos y diacríticos obligatorios).
-- **Código:** Siempre inglés (estándar internacional).
+- **Código (ADR-0121):** los identificadores (nombres de función, variable, tipo, módulo) siempre en inglés — estándar internacional de Rust/Cargo. Los comentarios y doc-comments (`//`, `///`, `//!`) van en **español**, claros y en una sola pasada — el código es de autoría única y la prosa en inglés solo añadía una traducción mental sin contrapartida.
 
 ### Política Anti-Anglicismos
 

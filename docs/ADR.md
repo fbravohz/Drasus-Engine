@@ -124,3 +124,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0118](./adr/ADR-0118.md) | Unidad de Entrega = Módulo Completo; Construcción en el Primer Consumidor; ROADMAP como Guía sin Bitácora |
 | [ADR-0119](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
 | [ADR-0120](./adr/ADR-0120.md) | Modos de Acompañamiento de Implementación (Autónomo / Mentor / Revisión) — Selección por el Usuario, Persistida en la Orden de Trabajo |
+| [ADR-0121](./adr/ADR-0121.md) | Comentarios de Código en Español — Identificadores en Inglés se Mantienen |

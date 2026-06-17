@@ -1,17 +1,17 @@
-//! `manage`: Portfolio management module (ADR-0003, FCIS).
+//! `manage`: módulo de gestión de portafolio (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Manage** — optimize portfolio, set rules, run
-//! HRP portfolio backtests.
+//! Etapa del pipeline: **Manage** — optimizar portafolio, fijar reglas,
+//! correr backtests de portafolio HRP.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (HRP portfolio optimization, correlations,
-//!   walk-forward rebalancing). No I/O.
-//! - `orchestrator`: thin shell (rebalancing, correlation computation).
-//! - `persistence`: thin shell (portfolio and strategy persistence).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Estructura fija del módulo:
+//! - `domain`: lógica pura (optimización de portafolio HRP, correlaciones,
+//!   rebalanceo walk-forward). Sin I/O.
+//! - `orchestrator`: cáscara delgada (rebalanceo, cálculo de correlaciones).
+//! - `persistence`: cáscara delgada (persistencia de portafolio y estrategia).
+//! - `public_interface`: el único puerto que otros módulos pueden llamar.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía sin lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

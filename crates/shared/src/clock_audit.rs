@@ -1,57 +1,59 @@
-//! [SHELL] Audit trail emitter for the Clock (`docs/features/clock.md`
-//! "Gobernanza y Estándares", TTR-001/TTR-002 postconditions).
+//! [SHELL] Emisor del rastro de auditoría del Clock (`docs/features/clock.md`
+//! "Gobernanza y Estándares", postcondiciones de TTR-001/TTR-002).
 //!
-//! The Clock has no persistence of its own. Its three auditable events are
-//! emitted through the existing Audit Log port
+//! El Clock no tiene persistencia propia. Sus tres eventos auditables se
+//! emiten a través del puerto existente del Audit Log
 //! ([`crate::domain::audit_log::AuditEventContent`] +
-//! [`crate::persistence::audit_log::AuditLogRepository::append`]) — no new
-//! table is created (ADR-0020 V2 Profile D, "Ops / Auditoría").
+//! [`crate::persistence::audit_log::AuditLogRepository::append`]) — no se
+//! crea ninguna tabla nueva (ADR-0020 V2 Perfil D, "Ops / Auditoría").
 //!
-//! This module performs I/O (it writes to SQLite through
-//! [`AuditLogRepository`]), so it lives in the shell, not in
-//! `domain::clock` — `domain::clock`'s bit-for-bit determinism must stay
-//! untouched (ADR-0002/0004, FCIS).
+//! Este módulo hace I/O (escribe en SQLite a través de
+//! [`AuditLogRepository`]), por eso vive en la cáscara y no en
+//! `domain::clock` — el determinismo bit a bit de `domain::clock` debe
+//! quedar intacto (ADR-0002/0004, FCIS).
 //!
-//! ## Granularity (critical, clock.md "Granularidad de Auditoría")
+//! ## Granularidad (crítico, clock.md "Granularidad de Auditoría")
 //!
-//! `timestamp_ns()`, `advance(ns)` and `tick()` are hot-path calls (millions
-//! of invocations) and MUST NEVER call [`AuditLogRepository::append`]. This
-//! module exposes exactly three emission functions, one per allowed event,
-//! called only at the three specific lifecycle points clock.md defines:
+//! `timestamp_ns()`, `advance(ns)` y `tick()` son llamadas de camino
+//! caliente (millones de invocaciones) y NUNCA deben llamar a
+//! [`AuditLogRepository::append`]. Este módulo expone exactamente tres
+//! funciones de emisión, una por evento permitido, llamadas solo en los
+//! tres puntos específicos del ciclo de vida que define clock.md:
 //!
-//! | Function | `action_type` | When |
+//! | Función | `action_type` | Cuándo |
 //! |---|---|---|
-//! | [`emit_ntp_sync`] | `CLOCK_NTP_SYNC` | Once, at startup, after verifying NTP sync (TTR-001) |
-//! | [`emit_mode_transition`] | `CLOCK_MODE_TRANSITION` | On `REAL` <-> `SIMULATION` mode transitions |
-//! | [`emit_session_close`] | `CLOCK_SESSION_CLOSE` | Once, when a simulation session closes (TTR-002) |
+//! | [`emit_ntp_sync`] | `CLOCK_NTP_SYNC` | Una vez, al iniciar, tras verificar la sincronización NTP (TTR-001) |
+//! | [`emit_mode_transition`] | `CLOCK_MODE_TRANSITION` | En transiciones de modo `REAL` <-> `SIMULATION` |
+//! | [`emit_session_close`] | `CLOCK_SESSION_CLOSE` | Una vez, cuando cierra una sesión de simulación (TTR-002) |
 //!
-//! ## Catalog vs. payload (clock.md "Persistencia y Perfil de Auditoría")
+//! ## Catálogo vs. payload (clock.md "Persistencia y Perfil de Auditoría")
 //!
-//! - `entity_type` is always `"CLOCK"`; `entity_id` is the active session's
-//!   `session_id` (also carried in the ADR-0020 V2 Group IV `session_id`
-//!   catalog field).
-//! - `institutional_tag` (Group II) and `process_id` (Group IV) are
-//!   mandatory catalog fields per the "Ops / Auditoría" profile — both are
-//!   supplied by the caller (the runtime that owns the active session).
-//! - The three previously orphaned fields (`ntp_sync_offset`, the
-//!   simulation's virtual process identifier, and the accumulated
-//!   real/virtual delta) are NOT ADR-0020 V2 catalog columns: they travel as
-//!   the event's opaque `details_json` payload, serialized with
-//!   `serde_json` using a stable (alphabetical) key order.
-//! - Group I (`id`, `created_at`, `updated_at`, `audit_hash`,
-//!   `audit_chain_hash`, `event_sequence_id`) is assigned by the audit log
-//!   itself on [`AuditLogRepository::append`].
+//! - `entity_type` siempre es `"CLOCK"`; `entity_id` es el `session_id` de
+//!   la sesión activa (también viaja en el campo de catálogo
+//!   `session_id` del Grupo IV de ADR-0020 V2).
+//! - `institutional_tag` (Grupo II) y `process_id` (Grupo IV) son campos
+//!   de catálogo obligatorios según el perfil "Ops / Auditoría" — ambos
+//!   los provee quien llama (el runtime dueño de la sesión activa).
+//! - Los tres campos antes huérfanos (`ntp_sync_offset`, el identificador
+//!   de proceso virtual de la simulación, y el delta acumulado
+//!   real/virtual) NO son columnas de catálogo de ADR-0020 V2: viajan
+//!   como payload opaco `details_json` del evento, serializados con
+//!   `serde_json` usando un orden de claves estable (alfabético).
+//! - El Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`,
+//!   `audit_chain_hash`, `event_sequence_id`) lo asigna el propio audit
+//!   log al llamar [`AuditLogRepository::append`].
 
 use serde_json::json;
 
 use crate::domain::audit_log::{AuditEvent, AuditEventContent};
 use crate::persistence::audit_log::{AuditLogError, AuditLogRepository};
 
-/// The Clock's two execution modes (clock.md TTR-002, `CLOCK_MODE_TRANSITION`).
+/// Los dos modos de ejecución del Clock (clock.md TTR-002, `CLOCK_MODE_TRANSITION`).
 ///
-/// Serialized as the literal strings `"REAL"` / `"SIMULATION"` in
-/// `details_json`, matching clock.md's vocabulary (TTR-001 `request_type`:
-/// `REAL | FAKE`; TTR-002 precondición: modo `SIMULATION`).
+/// Se serializan como las cadenas literales `"REAL"` / `"SIMULATION"` en
+/// `details_json`, en línea con el vocabulario de clock.md (TTR-001
+/// `request_type`: `REAL | FAKE`; TTR-002 precondición: modo
+/// `SIMULATION`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClockMode {
     Real,
@@ -67,15 +69,17 @@ impl ClockMode {
     }
 }
 
-/// Caller-supplied identity shared by every Clock audit event
-/// (clock.md "Gobernanza y Estándares").
+/// Identidad provista por quien llama, compartida por todos los eventos
+/// de auditoría del Clock (clock.md "Gobernanza y Estándares").
 ///
-/// - `session_id` becomes both the event's `entity_id` (`entity_type =
-///   "CLOCK"`) and its ADR-0020 V2 Group IV `session_id` catalog field —
-///   "el campo canónico para agrupar un runtime" (TTR-002).
-/// - `institutional_tag` (Group II) and `process_id` (Group IV) are
-///   mandatory per the "Ops / Auditoría" profile (audit-log.md TTR-001:
-///   "Toda entrada DEBE incluir `process_id` y `institutional_tag`").
+/// - `session_id` se convierte tanto en el `entity_id` del evento
+///   (`entity_type = "CLOCK"`) como en su campo de catálogo `session_id`
+///   del Grupo IV de ADR-0020 V2 — "el campo canónico para agrupar un
+///   runtime" (TTR-002).
+/// - `institutional_tag` (Grupo II) y `process_id` (Grupo IV) son
+///   obligatorios según el perfil "Ops / Auditoría" (audit-log.md
+///   TTR-001: "Toda entrada DEBE incluir `process_id` y
+///   `institutional_tag`").
 #[derive(Debug, Clone)]
 pub struct ClockAuditContext<'a> {
     pub session_id: &'a str,
@@ -84,9 +88,9 @@ pub struct ClockAuditContext<'a> {
 }
 
 impl ClockAuditContext<'_> {
-    /// Builds the ADR-0020 V2 "Ops / Auditoría" catalog fields shared by all
-    /// three Clock events, leaving `action_type` and `details_json` to be
-    /// filled in by each `emit_*` function.
+    /// Construye los campos de catálogo "Ops / Auditoría" de ADR-0020 V2
+    /// compartidos por los tres eventos del Clock, dejando que cada
+    /// función `emit_*` complete `action_type` y `details_json`.
     fn base_content(&self, action_type: &str, details_json: String) -> AuditEventContent {
         AuditEventContent {
             action_type: action_type.to_string(),
@@ -104,14 +108,15 @@ impl ClockAuditContext<'_> {
     }
 }
 
-/// Emits the `CLOCK_NTP_SYNC` event (clock.md TTR-001 postcondición).
+/// Emite el evento `CLOCK_NTP_SYNC` (clock.md TTR-001 postcondición).
 ///
-/// Called exactly once, at startup, after the NTP sync check — NEVER on
-/// every `timestamp_ns()` read (clock.md "Granularidad de Auditoría").
+/// Se llama exactamente una vez, al iniciar, tras la verificación de
+/// sincronización NTP — NUNCA en cada lectura de `timestamp_ns()`
+/// (clock.md "Granularidad de Auditoría").
 ///
-/// `ntp_sync_offset_ns` is the measured NTP delta (ADR-0013), carried as
-/// opaque payload in `details_json`: `{"ntp_sync_offset_ns": <i64>}`. It is
-/// NOT an ADR-0020 V2 catalog field.
+/// `ntp_sync_offset_ns` es el delta NTP medido (ADR-0013), que viaja como
+/// payload opaco en `details_json`: `{"ntp_sync_offset_ns": <i64>}`. NO es
+/// un campo de catálogo de ADR-0020 V2.
 pub async fn emit_ntp_sync(
     repo: &AuditLogRepository<'_>,
     ctx: &ClockAuditContext<'_>,
@@ -122,11 +127,11 @@ pub async fn emit_ntp_sync(
     repo.append(content).await
 }
 
-/// Emits the `CLOCK_MODE_TRANSITION` event (clock.md "Granularidad de
+/// Emite el evento `CLOCK_MODE_TRANSITION` (clock.md "Granularidad de
 /// Auditoría").
 ///
-/// Called on every `REAL` <-> `SIMULATION` transition — NEVER on every
-/// `advance(ns)`/`tick()` call.
+/// Se llama en cada transición `REAL` <-> `SIMULATION` — NUNCA en cada
+/// llamada a `advance(ns)`/`tick()`.
 ///
 /// Payload: `{"from": "REAL|SIMULATION", "to": "REAL|SIMULATION"}`.
 pub async fn emit_mode_transition(
@@ -140,16 +145,16 @@ pub async fn emit_mode_transition(
     repo.append(content).await
 }
 
-/// Emits the `CLOCK_SESSION_CLOSE` event (clock.md TTR-002 postcondición).
+/// Emite el evento `CLOCK_SESSION_CLOSE` (clock.md TTR-002 postcondición).
 ///
-/// Called exactly once, when a simulation session closes — NEVER on every
-/// `advance(ns)`.
+/// Se llama exactamente una vez, cuando cierra una sesión de simulación —
+/// NUNCA en cada `advance(ns)`.
 ///
-/// `virtual_process_id` is the simulation's virtual process identifier
-/// (TTR-002: "El identificador del proceso virtual de la simulación viaja
-/// como payload"). `real_virtual_delta_ns` is the accumulated delta between
-/// real and virtual time. Neither is an ADR-0020 V2 catalog field; both
-/// travel in `details_json`:
+/// `virtual_process_id` es el identificador de proceso virtual de la
+/// simulación (TTR-002: "El identificador del proceso virtual de la
+/// simulación viaja como payload"). `real_virtual_delta_ns` es el delta
+/// acumulado entre tiempo real y virtual. Ninguno de los dos es un campo
+/// de catálogo de ADR-0020 V2; ambos viajan en `details_json`:
 /// `{"real_virtual_delta_ns": <i64>, "virtual_process_id": <string>}`.
 pub async fn emit_session_close(
     repo: &AuditLogRepository<'_>,
@@ -187,8 +192,9 @@ mod tests {
         }
     }
 
-    /// `CLOCK_NTP_SYNC` persists with the right catalog fields and a
-    /// `details_json` payload of exactly `{"ntp_sync_offset_ns": <i64>}`.
+    /// `CLOCK_NTP_SYNC` se persiste con los campos de catálogo correctos
+    /// y un payload `details_json` de exactamente
+    /// `{"ntp_sync_offset_ns": <i64>}`.
     #[tokio::test]
     async fn ntp_sync_event_persists_with_offset_payload() {
         let pool = migrated_pool().await;
@@ -209,8 +215,8 @@ mod tests {
         assert_eq!(event.content.details_json, "{\"ntp_sync_offset_ns\":42500}");
     }
 
-    /// `CLOCK_MODE_TRANSITION` persists with `from`/`to` mode strings in
-    /// `details_json`.
+    /// `CLOCK_MODE_TRANSITION` se persiste con las cadenas de modo
+    /// `from`/`to` en `details_json`.
     #[tokio::test]
     async fn mode_transition_event_persists_with_from_to_payload() {
         let pool = migrated_pool().await;
@@ -231,8 +237,8 @@ mod tests {
         );
     }
 
-    /// `CLOCK_SESSION_CLOSE` persists with the virtual process id and the
-    /// accumulated real/virtual delta in `details_json`.
+    /// `CLOCK_SESSION_CLOSE` se persiste con el id de proceso virtual y el
+    /// delta acumulado real/virtual en `details_json`.
     #[tokio::test]
     async fn session_close_event_persists_with_delta_and_virtual_process_payload() {
         let pool = migrated_pool().await;
@@ -253,10 +259,10 @@ mod tests {
         );
     }
 
-    /// CLOSING CRITERION (a)+(b): emitting all three Clock events back to
-    /// back produces a chain that [`verify_chain`] reports as
-    /// [`ChainVerificationResult::Valid`] — the Clock's audit trail does not
-    /// break the existing hash chain.
+    /// CRITERIO DE CIERRE (a)+(b): emitir los tres eventos del Clock uno
+    /// tras otro produce una cadena que [`verify_chain`] reporta como
+    /// [`ChainVerificationResult::Valid`] — el rastro de auditoría del
+    /// Clock no rompe la cadena de hashes existente.
     #[tokio::test]
     async fn emitting_all_three_events_keeps_chain_valid() {
         let pool = migrated_pool().await;
@@ -281,9 +287,9 @@ mod tests {
         assert_eq!(verify_chain(&chain), ChainVerificationResult::Valid);
     }
 
-    /// CLOSING CRITERION (c): all three Clock events are retrievable via
-    /// `events_for_entity("CLOCK", session_id)`, ordered by
-    /// `event_sequence_id`, with their respective `action_type`s.
+    /// CRITERIO DE CIERRE (c): los tres eventos del Clock se pueden
+    /// recuperar vía `events_for_entity("CLOCK", session_id)`, ordenados
+    /// por `event_sequence_id`, con su `action_type` respectivo.
     #[tokio::test]
     async fn events_for_entity_returns_all_clock_events_for_session() {
         let pool = migrated_pool().await;
@@ -316,8 +322,8 @@ mod tests {
         assert!(events[1].event_sequence_id < events[2].event_sequence_id);
     }
 
-    /// `events_for_entity` scoped to a different `session_id` returns
-    /// nothing — `entity_id` correctly tracks the active session.
+    /// `events_for_entity` acotado a un `session_id` distinto no devuelve
+    /// nada — `entity_id` rastrea correctamente la sesión activa.
     #[tokio::test]
     async fn events_for_entity_is_scoped_to_session_id() {
         let pool = migrated_pool().await;

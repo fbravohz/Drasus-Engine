@@ -1,16 +1,16 @@
-//! `validate`: Strategy validation module (ADR-0003, FCIS).
+//! `validate`: módulo de validación de estrategias (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Validate** — validate strategy, run test suites.
+//! Etapa del pipeline: **Validate** — validar estrategia, correr suites de prueba.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (walk-forward analysis, Monte Carlo, coherence
-//!   tests). No I/O.
-//! - `orchestrator`: thin shell (backtest orchestration, metric computation).
-//! - `persistence`: thin shell (test engine results, validation metrics).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Layout fijo del módulo:
+//! - `domain`: lógica pura (análisis walk-forward, Monte Carlo, pruebas
+//!   de coherencia). Sin I/O.
+//! - `orchestrator`: cáscara delgada (orquestación de backtests, cálculo de métricas).
+//! - `persistence`: cáscara delgada (resultados del motor de pruebas, métricas de validación).
+//! - `public_interface`: el único puerto que pueden llamar otros módulos.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía sin lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

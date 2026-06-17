@@ -1,5 +1,5 @@
-//! [CORE] Pure logic placeholder for `manage`.
+//! [CORE] Marcador de lógica pura para `manage`.
 //!
-//! Intentionally empty for F0 (W1). HRP portfolio optimization,
-//! correlations and walk-forward rebalancing land here once their
-//! owning TTR is dispatched.
+//! Vacío a propósito para F0 (W1). La optimización de portafolio HRP,
+//! las correlaciones y el rebalanceo walk-forward llegan aquí cuando
+//! se despache el TTR dueño de cada una.

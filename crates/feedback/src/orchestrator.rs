@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `feedback`.
+//! [SHELL] Orquestación de `feedback`.
 //!
-//! Coordinates `domain` logic, handles lifecycle closure and the
-//! withdrawal verdict. Intentionally empty for F0 (W1): no business
-//! logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja el cierre de ciclo de vida y el
+//! veredicto de retiro. Vacío a propósito en F0 (W1): aquí no vive
+//! lógica de negocio (FCIS, ADR-0003).

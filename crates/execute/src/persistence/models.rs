@@ -1,4 +1,5 @@
-//! [SHELL] Database models (tables) owned by `execute`.
+//! [SHELL] Modelos de base de datos (tablas) propiedad de `execute`.
 //!
-//! Empty for F0 (W1): table definitions and the master 25-field set
-//! (ADR-0020 V2) land with migration 0001, a separate task (W2).
+//! Vacío en F0 (W1): las definiciones de tabla y el conjunto maestro
+//! de 25 campos (ADR-0020 V2) llegan con la migración 0001, una tarea
+//! separada (W2).

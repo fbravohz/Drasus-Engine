@@ -1,7 +1,7 @@
-//! [SHELL] Persistence for `generate`.
+//! [SHELL] Persistencia de `generate`.
 //!
-//! Owns this module's tables exclusively (ADR-0003): strategy
-//! blueprints and candidates. Other modules must go through
+//! Dueño exclusivo de las tablas de este módulo (ADR-0003): planos de
+//! estrategias y candidatos. Otros módulos deben pasar por
 //! `public_interface`.
 
 pub mod models;

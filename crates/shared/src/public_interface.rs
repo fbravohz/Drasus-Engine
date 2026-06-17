@@ -1,79 +1,88 @@
-//! [SHELL] Public interface (port) of `shared`.
+//! [SHELL] Interfaz pública (puerto) de `shared`.
 //!
-//! This is the only surface pipeline modules (`ingest`, `generate`,
-//! `validate`, `incubate`, `manage`, `execute`, `feedback`, `withdraw`)
-//! may depend on when reusing common components (ADR-0003).
+//! Esta es la única superficie de la que pueden depender los módulos del
+//! pipeline (`ingest`, `generate`, `validate`, `incubate`, `manage`,
+//! `execute`, `feedback`, `withdraw`) al reusar componentes comunes
+//! (ADR-0003).
 //!
 //! ## Clock (W3, `docs/features/clock.md`)
 //!
-//! Every module that needs the current time depends on the [`Clock`] port
-//! instead of calling the system clock directly:
+//! Cada módulo que necesita la hora actual depende del puerto [`Clock`]
+//! en vez de llamar directo al reloj del sistema:
 //!
-//! - [`SystemClock`]: production implementation (TTR-001, `request_type =
-//!   REAL`), nanosecond-precision and monotonically non-decreasing.
-//! - [`DeterministicClock`]: backtest/test implementation (TTR-002,
-//!   `request_type = FAKE`), advances only via explicit `advance(ns)` /
-//!   `tick()` calls — same seed (`initial_timestamp_ns`, `step_ns`) and
-//!   same call sequence produce an identical timestamp sequence, bit for
-//!   bit.
+//! - [`SystemClock`]: implementación de producción (TTR-001,
+//!   `request_type = REAL`), con precisión de nanosegundos y monótona no
+//!   decreciente.
+//! - [`DeterministicClock`]: implementación de backtest/test (TTR-002,
+//!   `request_type = FAKE`), que solo avanza vía llamadas explícitas a
+//!   `advance(ns)` / `tick()` — la misma semilla
+//!   (`initial_timestamp_ns`, `step_ns`) y la misma secuencia de llamadas
+//!   producen una secuencia de timestamps idéntica, bit a bit.
 //!
 //! ## Audit Log (`docs/features/audit-log.md` TTR-001)
 //!
-//! Every module fires audit events through [`AuditLogRepository::append`]
-//! instead of writing logs directly (audit-log.md: "El Core nunca escribe
-//! logs. En su lugar, dispara eventos al puerto de auditoría injected.").
+//! Cada módulo dispara eventos de auditoría a través de
+//! [`AuditLogRepository::append`] en vez de escribir logs directamente
+//! (audit-log.md: "El Core nunca escribe logs. En su lugar, dispara
+//! eventos al puerto de auditoría injected.").
 //!
-//! - [`AuditEventContent`]: the event payload (`action_type`,
-//!   `entity_type`, `entity_id`, `details_json`, plus the ADR-0020 V2
-//!   "Ops / Auditoría" profile fields — `process_id` and
-//!   `institutional_tag` are mandatory).
-//! - [`AuditEvent`]: a persisted, hash-chained event (`audit_hash`,
-//!   `audit_chain_hash`, `event_sequence_id`).
-//! - [`AuditLogRepository`]: append-only repository (`append`,
-//!   `load_chain`, `events_for_entity`) — no update/delete surface exists.
-//! - [`verify_chain`] / [`ChainVerificationResult`]: pure hash-chain
-//!   verification, detects tampering with historical events.
-//! - [`AuditLogError`]: error type for repository operations.
+//! - [`AuditEventContent`]: el payload del evento (`action_type`,
+//!   `entity_type`, `entity_id`, `details_json`, más los campos del
+//!   perfil "Ops / Auditoría" de ADR-0020 V2 — `process_id` e
+//!   `institutional_tag` son obligatorios).
+//! - [`AuditEvent`]: un evento persistido y encadenado por hash
+//!   (`audit_hash`, `audit_chain_hash`, `event_sequence_id`).
+//! - [`AuditLogRepository`]: repositorio de solo-apéndice (`append`,
+//!   `load_chain`, `events_for_entity`) — no existe superficie de
+//!   update/delete.
+//! - [`verify_chain`] / [`ChainVerificationResult`]: verificación pura de
+//!   la cadena de hashes, detecta manipulación de eventos históricos.
+//! - [`AuditLogError`]: tipo de error para operaciones del repositorio.
 //!
-//! ## Clock Audit Trail (`docs/features/clock.md` "Gobernanza y Estándares")
+//! ## Rastro de Auditoría del Clock (`docs/features/clock.md` "Gobernanza y Estándares")
 //!
-//! The Clock has no persistence of its own — its three auditable events are
-//! emitted through [`AuditLogRepository::append`] via
-//! [`ClockAuditContext`] and the three `emit_*` functions below. Granularity
-//! is fixed at exactly these three events; `timestamp_ns()`, `advance(ns)`
-//! and `tick()` never emit audit events.
+//! El Clock no tiene persistencia propia — sus tres eventos auditables se
+//! emiten vía [`AuditLogRepository::append`] a través de
+//! [`ClockAuditContext`] y las tres funciones `emit_*` de abajo. La
+//! granularidad está fija en exactamente estos tres eventos;
+//! `timestamp_ns()`, `advance(ns)` y `tick()` nunca emiten eventos de
+//! auditoría.
 //!
-//! - [`ClockAuditContext`]: caller-supplied identity (`session_id`,
-//!   `institutional_tag`, `process_id`) shared by all three events.
-//! - [`ClockMode`]: `REAL` / `SIMULATION`, used by [`emit_mode_transition`].
-//! - [`emit_ntp_sync`]: `CLOCK_NTP_SYNC` (TTR-001, once at startup).
-//! - [`emit_mode_transition`]: `CLOCK_MODE_TRANSITION` (on `REAL` <->
-//!   `SIMULATION` transitions).
-//! - [`emit_session_close`]: `CLOCK_SESSION_CLOSE` (TTR-002, once when a
-//!   simulation session closes).
+//! - [`ClockAuditContext`]: identidad provista por quien llama
+//!   (`session_id`, `institutional_tag`, `process_id`) compartida por
+//!   los tres eventos.
+//! - [`ClockMode`]: `REAL` / `SIMULATION`, usado por
+//!   [`emit_mode_transition`].
+//! - [`emit_ntp_sync`]: `CLOCK_NTP_SYNC` (TTR-001, una vez al iniciar).
+//! - [`emit_mode_transition`]: `CLOCK_MODE_TRANSITION` (en transiciones
+//!   `REAL` <-> `SIMULATION`).
+//! - [`emit_session_close`]: `CLOCK_SESSION_CLOSE` (TTR-002, una vez
+//!   cuando cierra una sesión de simulación).
 //!
 //! ## Async Job Executor (`docs/features/async-job-executor.md`)
 //!
-//! Three-phase async job pattern (ADR-0011): submit a job, poll its status
-//! and progress, fetch its immutable result once terminal.
+//! Patrón de job asíncrono de tres fases (ADR-0011): enviar un job,
+//! sondear su estado y progreso, recuperar su resultado inmutable una
+//! vez terminal.
 //!
-//! - [`JobState`]: the job state machine's five states + pure
-//!   [`validate_transition`] (TTR-002/004/006).
-//! - [`Progress`] / [`estimate_remaining_seconds`]: 0-100 progress and
-//!   time-remaining estimation (TTR-005).
+//! - [`JobState`]: los cinco estados de la máquina de estados del job +
+//!   [`validate_transition`] puro (TTR-002/004/006).
+//! - [`Progress`] / [`estimate_remaining_seconds`]: progreso 0-100 y
+//!   estimación de tiempo restante (TTR-005).
 //! - [`Job`] / [`JobResult`] / [`NewJob`] / [`NewJobResult`] /
-//!   [`RecoveredJob`]: persistence-layer types (`jobs`/`job_results`,
-//!   migration `0003_jobs.sql`).
-//! - [`JobRepository`] / [`JobRepositoryError`]: the `jobs`/`job_results`
-//!   repository (TTR-001/003/004).
+//!   [`RecoveredJob`]: tipos de la capa de persistencia
+//!   (`jobs`/`job_results`, migración `0003_jobs.sql`).
+//! - [`JobRepository`] / [`JobRepositoryError`]: el repositorio de
+//!   `jobs`/`job_results` (TTR-001/003/004).
 //! - [`JobExecutor`] / [`JobExecutorConfig`] / [`ExecutorIdentity`] /
-//!   [`JobExecutorError`]: the executor shell — submit, recover at startup,
-//!   spawn the worker pool, poll status/result, cancel (TTR-001/002/004/006).
+//!   [`JobExecutorError`]: la cáscara del executor — enviar, recuperar
+//!   en startup, levantar el pool de workers, sondear estado/resultado,
+//!   cancelar (TTR-001/002/004/006).
 //! - [`JobHandler`] / [`JobOutcome`] / [`ProgressReporter`] /
-//!   [`CancellationToken`]: the pluggable per-`job_type` callback contract
-//!   (TTR-002/005/006). TTR-ASYNC-EXECUTOR-007 (wiring real handlers from
-//!   `generate`/`validate`/`manage`/`incubate`/`feedback`) is out of scope
-//!   for this story.
+//!   [`CancellationToken`]: el contrato de callback enchufable por
+//!   `job_type` (TTR-002/005/006). TTR-ASYNC-EXECUTOR-007 (conectar
+//!   handlers reales desde `generate`/`validate`/`manage`/`incubate`/
+//!   `feedback`) está fuera de alcance para esta historia.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,

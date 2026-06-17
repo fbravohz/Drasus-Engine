@@ -1,4 +1,4 @@
-//! Input/output contracts (data models / structures) for `incubate`.
+//! Contratos de entrada/salida (modelos de datos / estructuras) de `incubate`.
 //!
-//! Serde-validated at module boundaries (Zero-Trust, SAD §5).
-//! Empty for F0 (W1): no contract has been defined yet.
+//! Validados con Serde en los límites del módulo (Zero-Trust, SAD §5).
+//! Vacío en F0 (W1): todavía no se ha definido ningún contrato.

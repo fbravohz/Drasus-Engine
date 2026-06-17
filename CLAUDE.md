@@ -70,4 +70,4 @@ Existe memoria nativa de proyecto en `.claude/projects/.../memory/` (índice `ME
 
 Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.claude/skills/base/SKILL.md`**, que gobierna a todos los skills. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
 
-Recordatorio mínimo siempre activo (el detalle está en `base`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa, inglés en código.
+Recordatorio mínimo siempre activo (el detalle está en `base`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa; en código, identificadores en inglés y comentarios en español (ADR-0121).

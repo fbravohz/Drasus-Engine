@@ -1,4 +1,4 @@
-//! [CORE] Pure logic placeholder for `execute`.
+//! [CORE] Placeholder de lógica pura para `execute`.
 //!
-//! Intentionally empty for F0 (W1). The order/position state
-//! machine (ADR-0004) lands here once its owning TTR is dispatched.
+//! Vacío a propósito en F0 (W1). La máquina de estados de
+//! órdenes/posiciones (ADR-0004) llega aquí cuando se despache su TTR.

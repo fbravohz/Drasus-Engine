@@ -1,6 +1,6 @@
-//! [SHELL] Public interface (port) of `ingest`.
+//! [SHELL] Interfaz pública (puerto) de `ingest`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: ingest bars, get market regime.
+//! La única superficie de la que pueden depender otros módulos (ADR-0003).
+//! Puertos futuros: ingerir barras, obtener régimen de mercado.
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío en F0 (W1): todavía no se ha despachado ningún puerto.

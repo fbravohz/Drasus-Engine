@@ -1,19 +1,22 @@
-//! [SHELL] Append-only repository for the Audit Log
+//! [SHELL] Repositorio de solo-apéndice (append-only) para el Audit Log
 //! (`docs/features/audit-log.md` TTR-001, ADR-0006, ADR-0020 V2).
 //!
-//! Wraps the `audit_events` table (migration `0002_audit_log.sql`). Owns
-//! the only I/O for the audit log: SQLite reads/writes, UUID generation
-//! (unseeded randomness, ADR-0002/0004) and the [`Clock`] port read. The
-//! actual hash-chain construction and verification are pure core logic in
-//! [`crate::domain::audit_log`] — this module only feeds it injected
-//! inputs (`id`, `created_at_ns`) and persists/loads the result.
+//! Envuelve la tabla `audit_events` (migración `0002_audit_log.sql`). Es el
+//! único punto de I/O del audit log: lecturas/escrituras en SQLite,
+//! generación de UUID (azar sin semilla, ADR-0002/0004) y lectura del
+//! puerto [`Clock`]. La construcción y verificación real de la cadena de
+//! hashes es lógica pura del núcleo, en [`crate::domain::audit_log`] —
+//! este módulo solo le entrega las entradas inyectadas (`id`,
+//! `created_at_ns`) y persiste/carga el resultado.
 //!
-//! Append-only is enforced twice:
-//! - **Database**: migration `0002_audit_log.sql` installs `BEFORE UPDATE`
-//!   / `BEFORE DELETE` triggers on `audit_events` that `RAISE(ABORT, ...)`.
-//! - **Application**: this repository exposes [`AuditLogRepository::append`]
-//!   and [`AuditLogRepository::load_chain`]/[`AuditLogRepository::events_for_entity`]
-//!   only — no `update`/`delete` method exists.
+//! El "solo-apéndice" se garantiza por dos vías:
+//! - **Base de datos**: la migración `0002_audit_log.sql` instala
+//!   triggers `BEFORE UPDATE` / `BEFORE DELETE` sobre `audit_events` que
+//!   hacen `RAISE(ABORT, ...)`.
+//! - **Aplicación**: este repositorio solo expone
+//!   [`AuditLogRepository::append`] y
+//!   [`AuditLogRepository::load_chain`]/[`AuditLogRepository::events_for_entity`]
+//!   — no existe ningún método `update`/`delete`.
 
 use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
@@ -21,10 +24,10 @@ use uuid::Uuid;
 use crate::domain::audit_log::{chain_event, AuditEvent, AuditEventContent};
 use crate::domain::clock::Clock;
 
-/// Errors returned by [`AuditLogRepository`] operations.
+/// Errores que pueden devolver las operaciones de [`AuditLogRepository`].
 #[derive(Debug)]
 pub enum AuditLogError {
-    /// The underlying SQLite operation failed.
+    /// La operación de SQLite subyacente falló.
     Database(sqlx::Error),
 }
 
@@ -50,37 +53,38 @@ impl From<sqlx::Error> for AuditLogError {
     }
 }
 
-/// Append-only repository for `audit_events`.
+/// Repositorio de solo-apéndice para `audit_events`.
 ///
-/// Construct with a migrated [`SqlitePool`] (see
+/// Constrúyelo con un [`SqlitePool`] ya migrado (ver
 /// [`crate::persistence::pool::connect`] +
-/// [`crate::persistence::pool::migrate`]) and any [`Clock`] implementation
-/// (production: [`crate::orchestrator::SystemClock`]; tests/backtests:
-/// [`crate::domain::clock::DeterministicClock`]).
+/// [`crate::persistence::pool::migrate`]) y cualquier implementación de
+/// [`Clock`] (producción: [`crate::orchestrator::SystemClock`];
+/// tests/backtests: [`crate::domain::clock::DeterministicClock`]).
 pub struct AuditLogRepository<'a> {
     pool: &'a SqlitePool,
     clock: &'a dyn Clock,
 }
 
 impl<'a> AuditLogRepository<'a> {
-    /// Creates a repository bound to `pool` and `clock`. Both are borrowed
-    /// for the lifetime of the repository — no ownership is taken, so the
-    /// same pool/clock can be shared with other repositories.
+    /// Crea un repositorio enlazado a `pool` y `clock`. Ambos se piden en
+    /// préstamo por la vida del repositorio — no toma posesión de ellos,
+    /// así que el mismo pool/clock se puede compartir con otros
+    /// repositorios.
     pub fn new(pool: &'a SqlitePool, clock: &'a dyn Clock) -> Self {
         Self { pool, clock }
     }
 
-    /// Appends a new event to the chain and persists it.
+    /// Agrega un nuevo evento a la cadena y lo persiste.
     ///
-    /// Reads the current chain tail (highest `event_sequence_id`), builds
-    /// the next [`AuditEvent`] via [`chain_event`] (pure core logic) using
-    /// a freshly generated UUID v4 (`id`, unseeded randomness — confined to
-    /// this shell per ADR-0002/0004) and the current [`Clock`] reading
-    /// (`created_at_ns`), then inserts it.
+    /// Lee la cola actual de la cadena (el `event_sequence_id` más alto),
+    /// construye el siguiente [`AuditEvent`] vía [`chain_event`] (lógica
+    /// pura del núcleo) usando un UUID v4 recién generado (`id`, azar sin
+    /// semilla — confinado a esta cáscara según ADR-0002/0004) y la
+    /// lectura actual del [`Clock`] (`created_at_ns`), y luego lo inserta.
     ///
-    /// Returns the persisted [`AuditEvent`], including its computed
-    /// `audit_hash` and `audit_chain_hash` (TTR-001 "Salida": `log_id`,
-    /// `audit_hash`).
+    /// Devuelve el [`AuditEvent`] ya persistido, incluyendo su
+    /// `audit_hash` y `audit_chain_hash` calculados (TTR-001 "Salida":
+    /// `log_id`, `audit_hash`).
     pub async fn append(&self, content: AuditEventContent) -> Result<AuditEvent, AuditLogError> {
         let previous = self.load_tail().await?;
 
@@ -120,9 +124,9 @@ impl<'a> AuditLogRepository<'a> {
         Ok(event)
     }
 
-    /// Loads the most recently appended event (highest `event_sequence_id`),
-    /// or `None` if the chain is empty (next [`append`](Self::append) call
-    /// will create the genesis event).
+    /// Carga el evento agregado más recientemente (el `event_sequence_id`
+    /// más alto), o `None` si la cadena está vacía (la siguiente llamada a
+    /// [`append`](Self::append) creará el evento génesis).
     pub async fn load_tail(&self) -> Result<Option<AuditEvent>, AuditLogError> {
         let row = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -139,8 +143,9 @@ impl<'a> AuditLogRepository<'a> {
         Ok(row.map(row_to_event))
     }
 
-    /// Loads the entire chain, ordered by ascending `event_sequence_id`
-    /// (genesis first). Intended for [`crate::domain::audit_log::verify_chain`].
+    /// Carga la cadena completa, ordenada por `event_sequence_id`
+    /// ascendente (el génesis primero). Pensado para alimentar
+    /// [`crate::domain::audit_log::verify_chain`].
     pub async fn load_chain(&self) -> Result<Vec<AuditEvent>, AuditLogError> {
         let rows = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -156,9 +161,9 @@ impl<'a> AuditLogRepository<'a> {
         Ok(rows.into_iter().map(row_to_event).collect())
     }
 
-    /// Loads every event for a given `(entity_type, entity_id)`, ordered by
-    /// ascending `event_sequence_id` (audit-log.md: "¿qué pasó con la
-    /// estrategia XYZ el 2026-04-07?").
+    /// Carga todos los eventos de un `(entity_type, entity_id)` dado,
+    /// ordenados por `event_sequence_id` ascendente (audit-log.md: "¿qué
+    /// pasó con la estrategia XYZ el 2026-04-07?").
     pub async fn events_for_entity(
         &self,
         entity_type: &str,
@@ -182,7 +187,7 @@ impl<'a> AuditLogRepository<'a> {
     }
 }
 
-/// Converts a `audit_events` row into the core [`AuditEvent`] type.
+/// Convierte una fila de `audit_events` en el tipo [`AuditEvent`] del núcleo.
 fn row_to_event(row: sqlx::sqlite::SqliteRow) -> AuditEvent {
     AuditEvent {
         id: row.get("id"),
@@ -236,9 +241,9 @@ mod tests {
         pool
     }
 
-    /// Appending events assigns increasing `event_sequence_id`s starting at
-    /// 1, links each event's `audit_chain_hash` to the previous event's
-    /// `audit_hash`, and the persisted chain verifies as
+    /// Agregar eventos asigna `event_sequence_id` crecientes empezando en
+    /// 1, enlaza el `audit_chain_hash` de cada evento con el `audit_hash`
+    /// del anterior, y la cadena persistida verifica como
     /// [`ChainVerificationResult::Valid`].
     #[tokio::test]
     async fn append_builds_a_valid_chain() {
@@ -266,10 +271,10 @@ mod tests {
         assert_eq!(verify_chain(&chain), ChainVerificationResult::Valid);
     }
 
-    /// CLOSING CRITERION: an attempt to mutate a historical event is
-    /// rejected at the database level (append-only trigger, migration
-    /// 0002) AND, if a row were altered out-of-band, [`verify_chain`]
-    /// would detect the break (covered in
+    /// CRITERIO DE CIERRE: un intento de modificar un evento histórico se
+    /// rechaza a nivel de base de datos (trigger de solo-apéndice,
+    /// migración 0002) Y, si una fila se alterara por fuera de este
+    /// camino, [`verify_chain`] detectaría la ruptura (cubierto en
     /// `crate::domain::audit_log::tests::verify_chain_detects_mutation_of_historical_event`).
     #[tokio::test]
     async fn update_on_audit_events_is_rejected_by_append_only_trigger() {
@@ -282,8 +287,9 @@ mod tests {
             .await
             .expect("append event");
 
-        // Attempt to mutate the historical event's details directly via
-        // SQL (bypassing the repository, which exposes no update method).
+        // Intenta modificar los detalles del evento histórico directamente
+        // vía SQL (sin pasar por el repositorio, que no expone ningún
+        // método de update).
         let result = sqlx::query("UPDATE audit_events SET details_json = ? WHERE id = ?")
             .bind("{\"tampered\":true}")
             .bind(&event.id)
@@ -295,15 +301,15 @@ mod tests {
             "UPDATE on audit_events must be rejected by the append-only trigger"
         );
 
-        // The stored row is unchanged.
+        // La fila guardada queda sin cambios.
         let chain = repo.load_chain().await.expect("load chain");
         assert_eq!(chain.len(), 1);
         assert_eq!(chain[0].content.details_json, "{\"from\":\"NEW\",\"to\":\"FILLED\"}");
     }
 
-    /// CLOSING CRITERION: an attempt to delete a historical event is
-    /// rejected at the database level (append-only trigger, migration
-    /// 0002).
+    /// CRITERIO DE CIERRE: un intento de borrar un evento histórico se
+    /// rechaza a nivel de base de datos (trigger de solo-apéndice,
+    /// migración 0002).
     #[tokio::test]
     async fn delete_on_audit_events_is_rejected_by_append_only_trigger() {
         let pool = migrated_pool().await;
@@ -329,9 +335,10 @@ mod tests {
         assert_eq!(chain.len(), 1);
     }
 
-    /// `events_for_entity` returns only events for the requested
-    /// `(entity_type, entity_id)`, ordered by `event_sequence_id`
-    /// (audit-log.md: "¿qué pasó con la estrategia XYZ ...?").
+    /// `events_for_entity` devuelve solo los eventos del
+    /// `(entity_type, entity_id)` solicitado, ordenados por
+    /// `event_sequence_id` (audit-log.md: "¿qué pasó con la estrategia
+    /// XYZ ...?").
     #[tokio::test]
     async fn events_for_entity_filters_and_orders() {
         let pool = migrated_pool().await;

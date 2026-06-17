@@ -1,7 +1,7 @@
-//! [SHELL] Persistence for `withdraw`.
+//! [SHELL] Persistencia de `withdraw`.
 //!
-//! Owns this module's tables exclusively (ADR-0003): withdrawal
-//! log and archived strategies. Other modules must go through
+//! Dueño exclusivo de las tablas de este módulo (ADR-0003): log de
+//! retiros y estrategias archivadas. Otros módulos deben pasar por
 //! `public_interface`.
 
 pub mod models;

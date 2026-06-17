@@ -1,4 +1,4 @@
-//! [CORE] Pure logic placeholder for `withdraw`.
+//! [CORE] Marcador de lógica pura para `withdraw`.
 //!
-//! Intentionally empty for F0 (W1). Performance profile comparison
-//! lands here once its owning TTR is dispatched.
+//! Vacío a propósito en F0 (W1). La comparación de perfiles de
+//! rendimiento llega aquí cuando se despache su TTR correspondiente.

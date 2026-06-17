@@ -1,69 +1,74 @@
 //! [SHELL] Async Job Executor (`docs/features/async-job-executor.md`
 //! TTR-ASYNC-EXECUTOR-001/002/004/005/006, ADR-0011, ADR-0016).
 //!
-//! Coordinates the pure state machine in [`crate::domain::job`] with:
-//! - [`crate::persistence::job::JobRepository`] (durability — SQLite,
+//! Coordina la máquina de estados pura de [`crate::domain::job`] con:
+//! - [`crate::persistence::job::JobRepository`] (durabilidad — SQLite,
 //!   `jobs`/`job_results`).
-//! - [`crate::persistence::audit_log::AuditLogRepository`] (the
-//!   `JOB_RECOVERED_AT_STARTUP` audit event, TTR-004).
-//! - A Tokio in-memory queue + a bounded worker pool (TTR-002,
+//! - [`crate::persistence::audit_log::AuditLogRepository`] (el evento de
+//!   auditoría `JOB_RECOVERED_AT_STARTUP`, TTR-004).
+//! - Una cola en memoria de Tokio + un pool de workers acotado (TTR-002,
 //!   `max_concurrent_jobs`).
 //!
-//! ## Three-phase pattern (ADR-0011)
+//! ## Patrón de tres fases (ADR-0011)
 //!
-//! 1. **Disparo (submit)**: [`JobExecutor::submit`] persists the job via
-//!    [`JobRepository::submit`] — durable on disk — and only then enqueues
-//!    its id in memory and returns the UUID (persist-before-ack, TTR-001).
+//! 1. **Disparo (submit)**: [`JobExecutor::submit`] persiste el job vía
+//!    [`JobRepository::submit`] — durable en disco — y solo entonces
+//!    encola su id en memoria y devuelve el UUID (persist-before-ack,
+//!    TTR-001).
 //! 2. **Monitoreo (poll)**: [`JobExecutor::status`] /
-//!    [`JobExecutor::cancel`] let the caller inspect or cancel a job.
-//! 3. **Recuperación (fetch)**: [`JobExecutor::result`] returns the
-//!    immutable [`JobResult`] once a job reaches a terminal state.
+//!    [`JobExecutor::cancel`] dejan que quien llama inspeccione o cancele
+//!    un job.
+//! 3. **Recuperación (fetch)**: [`JobExecutor::result`] devuelve el
+//!    [`JobResult`] inmutable una vez que un job alcanza un estado
+//!    terminal.
 //!
-//! ## Startup recovery (TTR-004)
+//! ## Recuperación en startup (TTR-004)
 //!
-//! [`JobExecutor::recover_at_startup`] MUST be called once, after
-//! construction and before [`JobExecutor::spawn_workers`]. It scans `jobs`
-//! for rows in `QUEUED` or `RUNNING`:
-//! - `QUEUED` rows are re-enqueued as-is.
-//! - `RUNNING` rows are transitioned to `QUEUED` (completion is unknown —
-//!   ADR-0011 "Auto-Recovery") and re-enqueued.
+//! [`JobExecutor::recover_at_startup`] DEBE llamarse una vez, después de
+//! construir y antes de [`JobExecutor::spawn_workers`]. Escanea `jobs`
+//! buscando filas en `QUEUED` o `RUNNING`:
+//! - Las filas `QUEUED` se reencolan tal cual.
+//! - Las filas `RUNNING` transicionan a `QUEUED` (no se sabe si
+//!   terminaron — ADR-0011 "Auto-Recovery") y se reencolan.
 //!
-//! For every recovered job, a `JOB_RECOVERED_AT_STARTUP` audit event is
-//! appended via [`AuditLogRepository::append`] (the existing audit log —
-//! `docs/features/async-job-executor.md` TTR-004: "Registrar en audit:
-//! ... NO inventes otra forma de auditar"), with `job_uuid` and
-//! `previous_state` in `details_json`.
+//! Para cada job recuperado, se agrega un evento de auditoría
+//! `JOB_RECOVERED_AT_STARTUP` vía [`AuditLogRepository::append`] (el
+//! audit log existente — `docs/features/async-job-executor.md` TTR-004:
+//! "Registrar en audit: ... NO inventes otra forma de auditar"), con
+//! `job_uuid` y `previous_state` en `details_json`.
 //!
-//! ## Worker pool (TTR-002)
+//! ## Pool de workers (TTR-002)
 //!
-//! [`JobExecutor::spawn_workers`] starts a dispatcher task that pulls job
-//! ids from the in-memory queue and, for each, acquires one of
-//! `max_concurrent_jobs` [`tokio::sync::Semaphore`] permits before spawning
-//! the job's execution task — enforcing the hard concurrency limit
-//! (`docs/features/async-job-executor.md` "Restricciones": "NUNCA se
-//! ejecutan más de `max_concurrent_jobs` jobs simultáneamente").
+//! [`JobExecutor::spawn_workers`] arranca una tarea dispatcher que extrae
+//! ids de job de la cola en memoria y, por cada uno, adquiere uno de los
+//! permisos de [`tokio::sync::Semaphore`] de `max_concurrent_jobs` antes
+//! de lanzar la tarea de ejecución del job — forzando el límite duro de
+//! concurrencia (`docs/features/async-job-executor.md` "Restricciones":
+//! "NUNCA se ejecutan más de `max_concurrent_jobs` jobs simultáneamente").
 //!
 //! ## Handlers (TTR-002 "Entrada": "Funciones callback que ejecutar")
 //!
-//! [`JobHandler`] is the pluggable callback a worker invokes to do the
-//! actual (costly) work. TTR-ASYNC-EXECUTOR-007 — wiring real handlers from
-//! `generate`/`validate`/`manage`/`incubate`/`feedback` — is explicitly OUT
-//! OF SCOPE for this story; those modules do not exist yet. A job whose
-//! `job_type` has no registered handler fails immediately with a
-//! descriptive [`JobOutcome::Failure`] — this is generic executor behavior,
-//! not business logic.
+//! [`JobHandler`] es el callback enchufable que invoca un worker para
+//! hacer el trabajo real (costoso). TTR-ASYNC-EXECUTOR-007 — conectar
+//! handlers reales desde `generate`/`validate`/`manage`/`incubate`/
+//! `feedback` — está explícitamente FUERA DE ALCANCE para esta historia;
+//! esos módulos todavía no existen. Un job cuyo `job_type` no tiene
+//! handler registrado falla de inmediato con un [`JobOutcome::Failure`]
+//! descriptivo — esto es comportamiento genérico del executor, no lógica
+//! de negocio.
 //!
-//! ## Cancellation (TTR-006)
+//! ## Cancelación (TTR-006)
 //!
-//! - A `QUEUED` job is cancelled immediately:
-//!   [`JobExecutor::cancel`] transitions it straight to `CANCELLED` in
-//!   SQLite. The dispatcher skips ids whose stored state is no longer
-//!   `QUEUED` when it is their turn to run.
-//! - A `RUNNING` job is cancelled cooperatively: [`JobExecutor::cancel`]
-//!   flips a per-job [`CancellationToken`] that the running
-//!   [`JobHandler::execute`] is expected to poll
-//!   ([`CancellationToken::is_cancelled`]). Once the handler returns, the
-//!   worker transitions the job to `CANCELLED` and records no result.
+//! - Un job `QUEUED` se cancela de inmediato:
+//!   [`JobExecutor::cancel`] lo transiciona directo a `CANCELLED` en
+//!   SQLite. El dispatcher se saltea ids cuyo estado almacenado ya no es
+//!   `QUEUED` cuando les toca correr.
+//! - Un job `RUNNING` se cancela cooperativamente:
+//!   [`JobExecutor::cancel`] activa un [`CancellationToken`] por job, que
+//!   se espera que el [`JobHandler::execute`] en ejecución consulte
+//!   ([`CancellationToken::is_cancelled`]). Una vez que el handler
+//!   retorna, el worker transiciona el job a `CANCELLED` y no registra
+//!   ningún resultado.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -79,22 +84,24 @@ use crate::domain::job::{JobState, Progress};
 use crate::persistence::audit_log::{AuditLogError, AuditLogRepository};
 use crate::persistence::job::{Job, JobRepository, JobRepositoryError, NewJob, NewJobResult, RecoveredJob};
 
-/// `action_type` for the startup-recovery audit event (TTR-004: "Registrar
-/// en audit: 'JOB_RECOVERED_AT_STARTUP: job_uuid=..., previous_state=...'").
+/// `action_type` para el evento de auditoría de recuperación en startup
+/// (TTR-004: "Registrar en audit: 'JOB_RECOVERED_AT_STARTUP:
+/// job_uuid=..., previous_state=...'").
 pub const JOB_RECOVERED_AT_STARTUP: &str = "JOB_RECOVERED_AT_STARTUP";
 
-/// Configuration for a [`JobExecutor`] (`docs/features/async-job-executor.md`
-/// "Parámetros Configurables"). Only the parameters this story implements
-/// are included; `job_timeout`, `job_queue_size`, `result_retention_days`
-/// are deferred to later stories.
+/// Configuración para un [`JobExecutor`]
+/// (`docs/features/async-job-executor.md` "Parámetros Configurables").
+/// Solo se incluyen los parámetros que implementa esta historia;
+/// `job_timeout`, `job_queue_size`, `result_retention_days` quedan
+/// diferidos a historias posteriores.
 #[derive(Debug, Clone)]
 pub struct JobExecutorConfig {
-    /// Hard limit on simultaneously running jobs (default 3, range 1-16).
+    /// Límite duro de jobs corriendo simultáneamente (default 3, rango 1-16).
     pub max_concurrent_jobs: usize,
-    /// Seconds between progress updates a worker is expected to emit
-    /// (TTR-005 `progress_interval`, default 5). This is a contract for
-    /// handler implementations; the executor itself does not enforce a
-    /// timer.
+    /// Segundos entre actualizaciones de progreso que se espera que emita
+    /// un worker (TTR-005 `progress_interval`, default 5). Esto es un
+    /// contrato para las implementaciones de handler; el executor en sí
+    /// no fuerza ningún temporizador.
     pub progress_interval_seconds: u64,
 }
 
@@ -107,32 +114,33 @@ impl Default for JobExecutorConfig {
     }
 }
 
-/// ADR-0020 V2 metadata identifying the executor instance/process
-/// (`docs/features/async-job-executor.md` "Gobernanza y Estándares":
-/// `process_id`, `session_id`, `node_id`, `logic_hash`, plus the audit log's
-/// mandatory `institutional_tag`). Injected by the caller — never invented
-/// inside this shell.
+/// Metadatos de ADR-0020 V2 que identifican la instancia/proceso del
+/// executor (`docs/features/async-job-executor.md` "Gobernanza y
+/// Estándares": `process_id`, `session_id`, `node_id`, `logic_hash`, más
+/// el `institutional_tag` obligatorio del audit log). Inyectado por
+/// quien llama — nunca se inventa dentro de esta cáscara.
 #[derive(Debug, Clone)]
 pub struct ExecutorIdentity {
-    /// Worker ID / Job Anchor for jobs this executor instance picks up, and
-    /// `process_id` on the `JOB_RECOVERED_AT_STARTUP` audit event.
+    /// Worker ID / Job Anchor para los jobs que toma esta instancia del
+    /// executor, y `process_id` en el evento de auditoría
+    /// `JOB_RECOVERED_AT_STARTUP`.
     pub process_id: String,
-    /// Runtime Grouping, stamped on every job this executor submits.
+    /// Agrupación de runtime, estampada en cada job que envía este executor.
     pub session_id: Option<String>,
-    /// Hardware Fingerprint, stamped on every job this executor submits.
+    /// Huella de hardware, estampada en cada job que envía este executor.
     pub node_id: Option<String>,
-    /// Executor version (commit/build hash), stamped on every job this
-    /// executor submits.
+    /// Versión del executor (hash de commit/build), estampada en cada
+    /// job que envía este executor.
     pub logic_hash: Option<String>,
-    /// Mandatory on every audit event (audit-log.md TTR-001).
+    /// Obligatorio en todo evento de auditoría (audit-log.md TTR-001).
     pub institutional_tag: String,
 }
 
-/// Cooperative cancellation signal for a running job (TTR-006).
+/// Señal de cancelación cooperativa para un job en ejecución (TTR-006).
 ///
-/// Cloning shares the same underlying flag — the executor holds one clone,
-/// the spawned job task holds another, and (if the handler propagates it)
-/// the handler holds a third.
+/// Clonar comparte la misma bandera subyacente — el executor tiene un
+/// clon, la tarea del job lanzada tiene otro, y (si el handler la
+/// propaga) el handler tiene un tercero.
 #[derive(Debug, Clone)]
 pub struct CancellationToken {
     cancelled: Arc<AtomicBool>,
@@ -145,12 +153,12 @@ impl CancellationToken {
         }
     }
 
-    /// Signals cancellation. Idempotent.
+    /// Señaliza la cancelación. Idempotente.
     pub fn cancel(&self) {
         self.cancelled.store(true, Ordering::SeqCst);
     }
 
-    /// Returns `true` once [`Self::cancel`] has been called.
+    /// Devuelve `true` una vez que se llamó a [`Self::cancel`].
     pub fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::SeqCst)
     }
@@ -162,66 +170,71 @@ impl Default for CancellationToken {
     }
 }
 
-/// Reports progress for a running job (TTR-005).
+/// Reporta progreso para un job en ejecución (TTR-005).
 ///
-/// Wraps [`JobRepository::update_progress`] plus the [`Clock`] reading
-/// needed for [`crate::domain::job::estimate_remaining_seconds`]. Handed to
-/// [`JobHandler::execute`] so handlers never touch the pool/clock directly.
+/// Envuelve [`JobRepository::update_progress`] más la lectura de [`Clock`]
+/// que necesita [`crate::domain::job::estimate_remaining_seconds`]. Se
+/// entrega a [`JobHandler::execute`] para que los handlers nunca toquen
+/// el pool/clock directamente.
 pub struct ProgressReporter<'a> {
     repo: &'a JobRepository<'a>,
     job: Job,
 }
 
 impl<'a> ProgressReporter<'a> {
-    /// Persists `progress` (0-100, clamped) for the wrapped job and updates
-    /// the reporter's internal snapshot so subsequent calls chain correctly
-    /// (`event_sequence_id`/`audit_chain_hash`).
+    /// Persiste `progress` (0-100, clampeado) para el job envuelto y
+    /// actualiza el snapshot interno del reporter para que las llamadas
+    /// subsecuentes encadenen correctamente (`event_sequence_id`/
+    /// `audit_chain_hash`).
     pub async fn report(&mut self, progress: u8) -> Result<(), JobRepositoryError> {
         let updated = self.repo.update_progress(&self.job, Progress::new(progress)).await?;
         self.job = updated;
         Ok(())
     }
 
-    /// The job's current `created_at`, in nanoseconds since the Unix epoch
-    /// — handlers use this with the executor's [`Clock`] to compute elapsed
-    /// time for [`crate::domain::job::estimate_remaining_seconds`].
+    /// El `created_at` actual del job, en nanosegundos desde el Unix
+    /// epoch — los handlers usan esto junto con el [`Clock`] del
+    /// executor para calcular el tiempo transcurrido para
+    /// [`crate::domain::job::estimate_remaining_seconds`].
     pub fn started_at_ns(&self) -> i64 {
         self.job.created_at_ns
     }
 }
 
-/// Outcome of [`JobHandler::execute`] (TTR-002/003).
+/// Resultado de [`JobHandler::execute`] (TTR-002/003).
 #[derive(Debug, Clone)]
 pub enum JobOutcome {
-    /// The job finished successfully. `result_data` is the JSON-encoded
-    /// payload persisted to `job_results.result_data`.
+    /// El job terminó con éxito. `result_data` es el payload codificado
+    /// en JSON que se persiste en `job_results.result_data`.
     Success { result_data: String },
-    /// The job failed. `error_message` is persisted to
+    /// El job falló. `error_message` se persiste en
     /// `job_results.error_message` (TTR-002 "Si job tira excepción, se
     /// captura y guarda como FAILED").
     Failure { error_message: String },
 }
 
-/// The pluggable callback a worker invokes to perform a job's actual work
-/// (TTR-002 "Entrada": "Funciones callback que ejecutar").
+/// El callback enchufable que invoca un worker para realizar el trabajo
+/// real de un job (TTR-002 "Entrada": "Funciones callback que ejecutar").
 ///
-/// TTR-ASYNC-EXECUTOR-007 (wiring `generate`/`validate`/`manage`/`incubate`/
-/// `feedback` as real handlers) is explicitly out of scope for this story.
+/// TTR-ASYNC-EXECUTOR-007 (conectar `generate`/`validate`/`manage`/
+/// `incubate`/`feedback` como handlers reales) está explícitamente fuera
+/// de alcance para esta historia.
 #[async_trait::async_trait]
 pub trait JobHandler: Send + Sync {
-    /// Executes `job`. Implementations should periodically call
-    /// `progress.report(...)` (TTR-005) and check `cancel.is_cancelled()`
-    /// (TTR-006), returning as soon as cancellation is observed.
+    /// Ejecuta `job`. Las implementaciones deberían llamar
+    /// periódicamente a `progress.report(...)` (TTR-005) y revisar
+    /// `cancel.is_cancelled()` (TTR-006), retornando en cuanto se observe
+    /// la cancelación.
     async fn execute(&self, job: &Job, progress: &mut ProgressReporter<'_>, cancel: &CancellationToken) -> JobOutcome;
 }
 
-/// Errors returned by [`JobExecutor`] operations.
+/// Errores que devuelven las operaciones de [`JobExecutor`].
 #[derive(Debug)]
 pub enum JobExecutorError {
     Repository(JobRepositoryError),
     Audit(AuditLogError),
-    /// [`JobExecutor::cancel`] was called for a job id that does not exist,
-    /// or that is already in a terminal state.
+    /// Se llamó a [`JobExecutor::cancel`] para un id de job que no
+    /// existe, o que ya está en estado terminal.
     JobNotCancellable(String),
 }
 
@@ -251,7 +264,7 @@ impl From<AuditLogError> for JobExecutorError {
     }
 }
 
-/// Shared state behind [`JobExecutor`]'s cheap-to-clone handle.
+/// Estado compartido detrás del handle barato-de-clonar de [`JobExecutor`].
 struct Shared {
     pool: SqlitePool,
     clock: Arc<dyn Clock>,
@@ -262,10 +275,11 @@ struct Shared {
     cancel_tokens: Mutex<HashMap<String, CancellationToken>>,
 }
 
-/// The Async Job Executor (`docs/features/async-job-executor.md`).
+/// El Async Job Executor (`docs/features/async-job-executor.md`).
 ///
-/// Cheap to clone (an `Arc` handle): clones share the same in-memory queue,
-/// semaphore and cancellation tokens, all backed by the same SQLite pool.
+/// Barato de clonar (un handle `Arc`): los clones comparten la misma
+/// cola en memoria, el mismo semáforo y los mismos tokens de
+/// cancelación, todos respaldados por el mismo pool de SQLite.
 #[derive(Clone)]
 pub struct JobExecutor {
     shared: Arc<Shared>,
@@ -274,16 +288,17 @@ pub struct JobExecutor {
 }
 
 impl JobExecutor {
-    /// Creates a new executor bound to `pool` (already migrated — see
+    /// Crea un executor nuevo asociado a `pool` (ya migrado — ver
     /// [`crate::persistence::pool::connect`] +
-    /// [`crate::persistence::pool::migrate`]) and `clock`.
+    /// [`crate::persistence::pool::migrate`]) y `clock`.
     ///
-    /// `handlers` maps `job_type` -> [`JobHandler`]. A job whose `job_type`
-    /// has no entry fails immediately when picked up (see module docs).
+    /// `handlers` mapea `job_type` -> [`JobHandler`]. Un job cuyo
+    /// `job_type` no tiene entrada falla de inmediato al ser tomado (ver
+    /// la documentación del módulo).
     ///
-    /// Does NOT start workers and does NOT recover jobs from a previous run
-    /// — call [`Self::recover_at_startup`] then [`Self::spawn_workers`]
-    /// explicitly, in that order.
+    /// NO arranca workers y NO recupera jobs de una corrida anterior —
+    /// llama a [`Self::recover_at_startup`] y luego a
+    /// [`Self::spawn_workers`] explícitamente, en ese orden.
     pub fn new(
         pool: SqlitePool,
         clock: Arc<dyn Clock>,
@@ -316,12 +331,12 @@ impl JobExecutor {
         AuditLogRepository::new(&self.shared.pool, self.shared.clock.as_ref())
     }
 
-    /// **Disparo (TTR-001)**: persists `request` (durable, SQLite —
-    /// persist-before-ack) and enqueues its id for a worker to pick up.
-    /// Returns the new job's UUID.
+    /// **Disparo (TTR-001)**: persiste `request` (durable, SQLite —
+    /// persist-before-ack) y encola su id para que un worker lo tome.
+    /// Devuelve el UUID del job nuevo.
     pub async fn submit(&self, request: NewJob) -> Result<String, JobExecutorError> {
-        // Stamp the executor's identity metadata when the caller did not
-        // supply its own (ADR-0020 V2 "Gobernanza y Estándares").
+        // Estampa los metadatos de identidad del executor cuando quien
+        // llama no provee los suyos (ADR-0020 V2 "Gobernanza y Estándares").
         let request = NewJob {
             session_id: request.session_id.or_else(|| self.shared.identity.session_id.clone()),
             node_id: request.node_id.or_else(|| self.shared.identity.node_id.clone()),
@@ -335,36 +350,37 @@ impl JobExecutor {
         Ok(job.id)
     }
 
-    /// Pushes `job_id` onto the in-memory queue. Internal helper shared by
-    /// [`Self::submit`] and [`Self::recover_at_startup`].
+    /// Empuja `job_id` a la cola en memoria. Helper interno compartido
+    /// por [`Self::submit`] y [`Self::recover_at_startup`].
     fn enqueue(&self, job_id: &str) {
-        // An unbounded channel send only fails if the receiver was dropped,
-        // which only happens if this `JobExecutor` (and all its clones) are
-        // gone — at that point there is nothing useful to do with the
-        // error, and the job remains durably QUEUED in SQLite for the next
-        // startup's recovery pass.
+        // Un envío en un canal sin límite solo falla si el receptor se
+        // descartó, lo cual solo pasa si este `JobExecutor` (y todos sus
+        // clones) ya no existen — en ese punto no hay nada útil que
+        // hacer con el error, y el job sigue durablemente QUEUED en
+        // SQLite para la siguiente pasada de recuperación en startup.
         let _ = self.queue_tx.send(job_id.to_string());
     }
 
     /// **Recuperación en startup (TTR-004)**.
     ///
-    /// MUST be called once, after [`Self::new`] and before
+    /// DEBE llamarse una vez, después de [`Self::new`] y antes de
     /// [`Self::spawn_workers`].
     ///
-    /// Scans `jobs` for rows in `QUEUED` or `RUNNING`:
-    /// - `QUEUED` rows are re-enqueued as-is.
-    /// - `RUNNING` rows are transitioned to `QUEUED` (ADR-0011
-    ///   "Auto-Recovery": completion is unknown after a crash) and then
-    ///   re-enqueued.
+    /// Escanea `jobs` buscando filas en `QUEUED` o `RUNNING`:
+    /// - Las filas `QUEUED` se reencolan tal cual.
+    /// - Las filas `RUNNING` transicionan a `QUEUED` (ADR-0011
+    ///   "Auto-Recovery": no se sabe si terminaron tras un crash) y
+    ///   luego se reencolan.
     ///
-    /// For every recovered job (both `QUEUED` and former-`RUNNING`), appends
-    /// a `JOB_RECOVERED_AT_STARTUP` audit event via
-    /// [`AuditLogRepository::append`] with `job_uuid` and `previous_state`
-    /// in `details_json`.
+    /// Para cada job recuperado (tanto `QUEUED` como ex-`RUNNING`), agrega
+    /// un evento de auditoría `JOB_RECOVERED_AT_STARTUP` vía
+    /// [`AuditLogRepository::append`] con `job_uuid` y `previous_state`
+    /// en `details_json`.
     ///
-    /// Returns the list of [`RecoveredJob`]s (job after recovery +
-    /// `previous_state`), ordered by `created_at` — useful for tests and
-    /// startup logging. An empty result means there was nothing to recover.
+    /// Devuelve la lista de [`RecoveredJob`]s (job después de la
+    /// recuperación + `previous_state`), ordenada por `created_at` — útil
+    /// para tests y logging de startup. Un resultado vacío significa que
+    /// no había nada que recuperar.
     pub async fn recover_at_startup(&self) -> Result<Vec<RecoveredJob>, JobExecutorError> {
         let repo = self.repo();
         let audit = self.audit_repo();
@@ -374,8 +390,8 @@ impl JobExecutor {
 
         let mut recovered = Vec::with_capacity(queued.len() + running.len());
 
-        // RUNNING -> QUEUED first, so the merged list below reflects the
-        // post-recovery state for every job.
+        // Primero RUNNING -> QUEUED, para que la lista combinada de abajo
+        // refleje el estado post-recuperación de cada job.
         for job in running {
             let previous_state = job.state;
             let requeued = repo.transition(&job, JobState::Queued, None).await?;
@@ -395,8 +411,8 @@ impl JobExecutor {
             recovered.push(RecoveredJob { job, previous_state });
         }
 
-        // Stable order across both groups (chronological by created_at),
-        // matching jobs_in_state's own ordering.
+        // Orden estable entre ambos grupos (cronológico por created_at),
+        // igual al orden propio de jobs_in_state.
         recovered.sort_by_key(|r| r.job.created_at_ns);
 
         for recovered_job in &recovered {
@@ -437,28 +453,29 @@ impl JobExecutor {
         Ok(())
     }
 
-    /// **Monitoreo (poll, TTR-002/005)**: returns the current [`Job`] row,
-    /// or `None` if `job_id` does not exist.
+    /// **Monitoreo (poll, TTR-002/005)**: devuelve la fila [`Job`] actual,
+    /// o `None` si `job_id` no existe.
     pub async fn status(&self, job_id: &str) -> Result<Option<Job>, JobExecutorError> {
         Ok(self.repo().find(job_id).await?)
     }
 
-    /// **Recuperación (fetch, TTR-003)**: returns the job's
-    /// [`crate::persistence::job::JobResult`], or `None` if the job has not
-    /// reached a terminal state with a recorded result yet.
+    /// **Recuperación (fetch, TTR-003)**: devuelve el
+    /// [`crate::persistence::job::JobResult`] del job, o `None` si el job
+    /// todavía no alcanzó un estado terminal con resultado registrado.
     pub async fn result(&self, job_id: &str) -> Result<Option<crate::persistence::job::JobResult>, JobExecutorError> {
         Ok(self.repo().result_for_job(job_id).await?)
     }
 
     /// **Cancelación (TTR-006)**.
     ///
-    /// - If `job_id` is `QUEUED`, transitions it directly to `CANCELLED`.
-    ///   The dispatcher skips it when it reaches the front of the queue
-    ///   (its persisted state is checked before execution starts).
-    /// - If `job_id` is `RUNNING`, flips its [`CancellationToken`]; the
-    ///   running [`JobHandler`] is expected to observe it and return. The
-    ///   worker then transitions the job to `CANCELLED`.
-    /// - Any other state (already terminal, or unknown id) returns
+    /// - Si `job_id` está `QUEUED`, lo transiciona directo a
+    ///   `CANCELLED`. El dispatcher lo saltea cuando llega al frente de
+    ///   la cola (su estado persistido se revisa antes de que arranque
+    ///   la ejecución).
+    /// - Si `job_id` está `RUNNING`, activa su [`CancellationToken`]; se
+    ///   espera que el [`JobHandler`] en ejecución lo observe y retorne.
+    ///   El worker entonces transiciona el job a `CANCELLED`.
+    /// - Cualquier otro estado (ya terminal, o id desconocido) devuelve
     ///   [`JobExecutorError::JobNotCancellable`].
     pub async fn cancel(&self, job_id: &str) -> Result<(), JobExecutorError> {
         let repo = self.repo();
@@ -479,13 +496,14 @@ impl JobExecutor {
                         token.cancel();
                         Ok(())
                     }
-                    // RUNNING in the database but no token registered means
-                    // no live worker owns it in this process (e.g. it was
-                    // RUNNING before a crash and hasn't been picked up by
-                    // the dispatcher yet after recovery). Recovery already
-                    // demoted it to QUEUED before re-enqueueing, so by the
-                    // time a worker would run it, `find` above would have
-                    // returned QUEUED -- this branch is defensive.
+                    // RUNNING en la base de datos pero sin token
+                    // registrado significa que ningún worker vivo lo
+                    // posee en este proceso (ej. estaba RUNNING antes de
+                    // un crash y la recuperación todavía no lo tomó con
+                    // el dispatcher). La recuperación ya lo degradó a
+                    // QUEUED antes de reencolarlo, así que para cuando un
+                    // worker lo corriera, el `find` de arriba habría
+                    // devuelto QUEUED -- esta rama es defensiva.
                     None => Err(JobExecutorError::JobNotCancellable(job_id.to_string())),
                 }
             }
@@ -495,13 +513,14 @@ impl JobExecutor {
         }
     }
 
-    /// **Worker pool (TTR-002)**: spawns a dispatcher task that pulls job
-    /// ids from the in-memory queue and, for each, acquires one of
-    /// `max_concurrent_jobs` semaphore permits before spawning the job's
-    /// execution task. Returns immediately; the dispatcher runs until every
-    /// clone of this [`JobExecutor`] (and thus the queue sender) is dropped.
+    /// **Pool de workers (TTR-002)**: lanza una tarea dispatcher que
+    /// extrae ids de job de la cola en memoria y, por cada uno, adquiere
+    /// uno de los permisos de semáforo de `max_concurrent_jobs` antes de
+    /// lanzar la tarea de ejecución del job. Retorna de inmediato; el
+    /// dispatcher corre hasta que cada clon de este [`JobExecutor`] (y
+    /// por lo tanto el sender de la cola) se descarta.
     ///
-    /// Must be called on a Tokio runtime (`#[tokio::main]` /
+    /// Debe llamarse sobre un runtime de Tokio (`#[tokio::main]` /
     /// `#[tokio::test]`).
     pub fn spawn_workers(&self) -> tokio::task::JoinHandle<()> {
         let executor = self.clone();
@@ -512,13 +531,13 @@ impl JobExecutor {
                     let mut rx = executor.queue_rx.lock().await;
                     match rx.recv().await {
                         Some(id) => id,
-                        None => break, // all senders dropped -> shut down
+                        None => break, // todos los senders se descartaron -> apagar
                     }
                 };
 
                 let permit = match executor.shared.semaphore.clone().acquire_owned().await {
                     Ok(permit) => permit,
-                    Err(_) => break, // semaphore closed -> shutting down
+                    Err(_) => break, // semáforo cerrado -> apagando
                 };
 
                 let worker = executor.clone();
@@ -530,18 +549,19 @@ impl JobExecutor {
         })
     }
 
-    /// Executes a single job end to end: QUEUED -> RUNNING -> terminal,
-    /// invoking the registered [`JobHandler`] (if any) and recording the
-    /// result. Skips jobs that were cancelled while queued (TTR-006).
+    /// Ejecuta un único job de punta a punta: QUEUED -> RUNNING ->
+    /// terminal, invocando el [`JobHandler`] registrado (si hay) y
+    /// registrando el resultado. Saltea jobs que se cancelaron mientras
+    /// estaban en cola (TTR-006).
     async fn run_job(&self, job_id: String) {
         let repo = self.repo();
 
         let job = match repo.find(&job_id).await {
             Ok(Some(job)) => job,
-            Ok(None) | Err(_) => return, // job vanished or DB error: nothing to run
+            Ok(None) | Err(_) => return, // el job desapareció o hubo error de DB: nada que correr
         };
 
-        // Skip jobs cancelled while still QUEUED (TTR-006).
+        // Saltea jobs cancelados mientras todavía estaban QUEUED (TTR-006).
         if job.state != JobState::Queued {
             return;
         }
@@ -577,8 +597,9 @@ impl JobExecutor {
             tokens.remove(&job_id);
         }
 
-        // Re-read current state: the handler may have observed cancellation
-        // (TTR-006), or another path may have already moved the job.
+        // Relee el estado actual: el handler puede haber observado la
+        // cancelación (TTR-006), o algún otro camino puede haber movido
+        // el job ya.
         let current = match repo.find(&job_id).await {
             Ok(Some(job)) => job,
             _ => return,
@@ -590,8 +611,9 @@ impl JobExecutor {
         }
 
         if current.state != JobState::Running {
-            // Already moved out of RUNNING by another path (e.g. cancel
-            // raced with completion) -- do not double-record a result.
+            // Ya se movió fuera de RUNNING por otro camino (ej. la
+            // cancelación corrió en carrera con la finalización) -- no
+            // registrar el resultado dos veces.
             return;
         }
 
@@ -621,7 +643,7 @@ impl JobExecutor {
         }
     }
 
-    /// Configuration this executor was constructed with.
+    /// La configuración con la que se construyó este executor.
     pub fn config(&self) -> &JobExecutorConfig {
         &self.shared.config
     }
@@ -633,9 +655,9 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::persistence::pool::{connect, migrate};
 
-    /// ADR-0020 V2 "Gobernanza y Estándares": minimal identity for tests —
-    /// no business meaning, just stable strings to stamp on jobs/audit
-    /// events.
+    /// ADR-0020 V2 "Gobernanza y Estándares": identidad mínima para
+    /// tests — sin significado de negocio, solo strings estables para
+    /// estampar en jobs/eventos de auditoría.
     fn test_identity() -> ExecutorIdentity {
         ExecutorIdentity {
             process_id: "test-process".to_string(),
@@ -659,28 +681,31 @@ mod tests {
         }
     }
 
-    /// **EPIC-0 closing gate** (`docs/execution/STORY-005-async-job-executor.md`
-    /// §4, TTR-ASYNC-EXECUTOR-004): jobs survive a simulated `kill -9` and
-    /// are recovered on restart.
+    /// **Gate de cierre de EPIC-0**
+    /// (`docs/execution/STORY-005-async-job-executor.md` §4,
+    /// TTR-ASYNC-EXECUTOR-004): los jobs sobreviven a un `kill -9`
+    /// simulado y se recuperan al reiniciar.
     ///
-    /// Uses a SQLite database in a **temporary file** (not `sqlite::memory:`)
-    /// because an in-memory database does not survive closing and reopening
-    /// the pool — it cannot demonstrate durability or crash recovery.
+    /// Usa una base de datos SQLite en un **archivo temporal** (no
+    /// `sqlite::memory:`) porque una base de datos en memoria no
+    /// sobrevive cerrar y reabrir el pool — no puede demostrar
+    /// durabilidad ni recuperación de crash.
     ///
-    /// Steps:
-    /// 1. Open a file-backed pool, migrate, submit three jobs and drive one
-    ///    to `RUNNING` without ever completing it (simulates the moment a
-    ///    crash interrupts an in-flight job).
-    /// 2. Close that pool entirely — the on-disk state is now the only
-    ///    source of truth, exactly as after `kill -9`.
-    /// 3. Open a brand-new pool over the SAME database file, build a new
-    ///    [`JobExecutor`] on top of it, and call
+    /// Pasos:
+    /// 1. Abre un pool respaldado por archivo, migra, envía tres jobs y
+    ///    lleva uno a `RUNNING` sin nunca completarlo (simula el momento
+    ///    en que un crash interrumpe un job en vuelo).
+    /// 2. Cierra ese pool por completo — el estado en disco es ahora la
+    ///    única fuente de verdad, exactamente como tras un `kill -9`.
+    /// 3. Abre un pool completamente nuevo sobre el MISMO archivo de base
+    ///    de datos, construye un [`JobExecutor`] nuevo encima, y llama a
     ///    [`JobExecutor::recover_at_startup`].
-    /// 4. Assert the gate: (a) the QUEUED job is recovered and re-enqueued;
-    ///    (b) the RUNNING job is now QUEUED (not lost, not stuck RUNNING);
-    ///    (c) no job is lost (total count unchanged); (d) a
-    ///    `JOB_RECOVERED_AT_STARTUP` audit event with `previous_state` was
-    ///    recorded for each recovered job.
+    /// 4. Verifica el gate: (a) el job QUEUED se recupera y se reencola;
+    ///    (b) el job RUNNING ahora está QUEUED (no se perdió, no quedó
+    ///    atascado en RUNNING); (c) ningún job se pierde (el conteo total
+    ///    no cambia); (d) se registró un evento de auditoría
+    ///    `JOB_RECOVERED_AT_STARTUP` con `previous_state` para cada job
+    ///    recuperado.
     #[tokio::test]
     async fn jobs_survive_simulated_crash_and_are_recovered_on_restart() {
         let temp_dir = tempfile::tempdir().expect("create temp dir");
@@ -688,7 +713,7 @@ mod tests {
         let database_url = format!("sqlite://{}", db_path.display());
 
         let (queued_job_id, running_job_id, completed_job_id) = {
-            // --- Pre-crash process -------------------------------------------------
+            // --- Proceso antes del crash ---------------------------------------------
             let pool = connect(&database_url).await.expect("connect (pre-crash)");
             migrate(&pool).await.expect("migrate (pre-crash)");
 
@@ -701,18 +726,19 @@ mod tests {
                 HashMap::new(),
             );
 
-            // No prior run to recover from -- the gate test focuses on the
-            // restart pass below, but calling this here exercises the
-            // documented "no-op on empty jobs table" path too.
+            // No hay corrida previa que recuperar -- el test del gate se
+            // enfoca en la pasada de reinicio de abajo, pero llamar esto
+            // aquí también ejercita el camino documentado "no-op con
+            // tabla jobs vacía".
             let pre_recovery = executor.recover_at_startup().await.expect("pre-crash recover (no-op)");
             assert!(pre_recovery.is_empty(), "fresh database has nothing to recover");
 
-            // Job A stays QUEUED (never picked up before the "crash").
+            // El job A queda QUEUED (nunca se toma antes del "crash").
             let queued_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit queued job");
 
-            // Job B is driven to RUNNING and left there -- this is the job
-            // an in-flight worker would have been executing at the moment
-            // of the crash.
+            // El job B se lleva a RUNNING y se deja ahí -- este es el
+            // job que un worker en vuelo habría estado ejecutando en el
+            // momento del crash.
             let running_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit running job");
             {
                 let repo = executor.repo();
@@ -722,8 +748,8 @@ mod tests {
                     .expect("transition to running");
             }
 
-            // Job C completes normally before the crash -- recovery must
-            // leave it untouched (it is not QUEUED or RUNNING).
+            // El job C completa normalmente antes del crash -- la
+            // recuperación debe dejarlo intacto (no está QUEUED ni RUNNING).
             let completed_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit completed job");
             {
                 let repo = executor.repo();
@@ -741,16 +767,16 @@ mod tests {
                     .expect("transition completed job to completed");
             }
 
-            // Simulate `kill -9`: drop the executor and close the pool
-            // without ever finishing job B. The on-disk state (QUEUED,
-            // RUNNING, COMPLETED) is the only surviving truth.
+            // Simula `kill -9`: descarta el executor y cierra el pool
+            // sin nunca terminar el job B. El estado en disco (QUEUED,
+            // RUNNING, COMPLETED) es la única verdad que sobrevive.
             drop(executor);
             pool.close().await;
 
             (queued_job_id, running_job_id, completed_job_id)
         };
 
-        // --- Restart: brand-new pool over the SAME file -----------------------
+        // --- Reinicio: pool completamente nuevo sobre el MISMO archivo ----------
         let pool = connect(&database_url).await.expect("connect (restart)");
         migrate(&pool).await.expect("migrate (restart) must be idempotent");
 
@@ -759,29 +785,29 @@ mod tests {
 
         let recovered = executor.recover_at_startup().await.expect("recover at startup after crash");
 
-        // (c) No job is lost: exactly the two non-terminal jobs (A and B)
-        // are recovered. The completed job C is untouched.
+        // (c) Ningún job se pierde: se recuperan exactamente los dos
+        // jobs no-terminales (A y B). El job completado C queda intacto.
         assert_eq!(recovered.len(), 2, "exactly the QUEUED and RUNNING jobs must be recovered");
 
         let recovered_ids: HashMap<&str, &RecoveredJob> = recovered.iter().map(|r| (r.job.id.as_str(), r)).collect();
 
-        // (a) The QUEUED job is recovered with its state unchanged.
+        // (a) El job QUEUED se recupera con su estado sin cambios.
         let recovered_queued = recovered_ids
             .get(queued_job_id.as_str())
             .expect("queued job is in the recovered list");
         assert_eq!(recovered_queued.previous_state, JobState::Queued);
         assert_eq!(recovered_queued.job.state, JobState::Queued);
 
-        // (b) The RUNNING job is demoted to QUEUED -- not lost, not stuck
-        // RUNNING.
+        // (b) El job RUNNING se degrada a QUEUED -- no se perdió, no
+        // quedó atascado en RUNNING.
         let recovered_running = recovered_ids
             .get(running_job_id.as_str())
             .expect("running job is in the recovered list");
         assert_eq!(recovered_running.previous_state, JobState::Running);
         assert_eq!(recovered_running.job.state, JobState::Queued);
 
-        // (c) Total job count is unchanged -- nothing was lost or
-        // duplicated -- and the completed job is untouched.
+        // (c) El conteo total de jobs no cambia -- nada se perdió ni se
+        // duplicó -- y el job completado queda intacto.
         let repo = executor.repo();
         let all_queued = repo.jobs_in_state(JobState::Queued).await.expect("query queued after recovery");
         let all_running = repo.jobs_in_state(JobState::Running).await.expect("query running after recovery");
@@ -796,10 +822,10 @@ mod tests {
         assert!(queued_ids.contains(queued_job_id.as_str()));
         assert!(queued_ids.contains(running_job_id.as_str()));
 
-        // (d) A JOB_RECOVERED_AT_STARTUP audit event with `previous_state`
-        // was recorded for each recovered job (reusing the existing audit
-        // log -- TTR-004: "Registrar en audit ... NO inventes otra forma de
-        // auditar").
+        // (d) Se registró un evento de auditoría JOB_RECOVERED_AT_STARTUP
+        // con `previous_state` para cada job recuperado (reusando el
+        // audit log existente -- TTR-004: "Registrar en audit ... NO
+        // inventes otra forma de auditar").
         let audit = executor.audit_repo();
 
         let queued_audit_events = audit
@@ -824,8 +850,9 @@ mod tests {
         assert_eq!(running_details["job_uuid"], running_job_id);
         assert_eq!(running_details["previous_state"], "RUNNING");
 
-        // The completed job must NOT have a recovery audit event -- it was
-        // never QUEUED or RUNNING at restart time.
+        // El job completado NO debe tener un evento de auditoría de
+        // recuperación -- nunca estuvo QUEUED ni RUNNING al momento del
+        // reinicio.
         let completed_audit_events = audit
             .events_for_entity("JOB", &completed_job_id)
             .await
@@ -838,10 +865,11 @@ mod tests {
         pool.close().await;
     }
 
-    /// Calling [`JobExecutor::recover_at_startup`] on a freshly migrated,
-    /// empty database is a documented no-op: nothing to recover, no audit
-    /// events written. Complements the crash-recovery gate test above by
-    /// covering the "nothing to do" branch explicitly.
+    /// Llamar a [`JobExecutor::recover_at_startup`] sobre una base de
+    /// datos recién migrada y vacía es un no-op documentado: nada que
+    /// recuperar, ningún evento de auditoría escrito. Complementa el
+    /// test del gate de recuperación de crash de arriba cubriendo
+    /// explícitamente la rama de "nada que hacer".
     #[tokio::test]
     async fn recover_at_startup_on_empty_database_is_a_noop() {
         let temp_dir = tempfile::tempdir().expect("create temp dir");

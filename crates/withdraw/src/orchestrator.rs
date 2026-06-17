@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `withdraw`.
+//! [SHELL] Orquestación de `withdraw`.
 //!
-//! Coordinates `domain` logic, handles the controlled withdrawal
-//! flow and veto management. Intentionally empty for F0 (W1): no
-//! business logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja el flujo de retiro
+//! controlado y la gestión de vetos. Vacío a propósito en F0 (W1):
+//! aquí no vive lógica de negocio (FCIS, ADR-0003).

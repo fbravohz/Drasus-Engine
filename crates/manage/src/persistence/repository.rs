@@ -1,3 +1,3 @@
-//! [SHELL] Queries and Core <-> DB conversion for `manage`.
+//! [SHELL] Consultas y conversión Core <-> DB para `manage`.
 //!
-//! Empty for F0 (W1): no database connection wired yet (W2).
+//! Vacío para F0 (W1): todavía sin conexión a base de datos cableada (W2).

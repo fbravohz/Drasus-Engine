@@ -1,8 +1,8 @@
-//! [SHELL] Persistence for `execute`.
+//! [SHELL] Persistencia para `execute`.
 //!
-//! Owns this module's tables exclusively (ADR-0003): orders,
-//! executions and supervision events. Other modules must go
-//! through `public_interface`.
+//! Es dueño exclusivo de las tablas de este módulo (ADR-0003): orders,
+//! executions y supervision events. Otros módulos deben pasar por
+//! `public_interface`.
 
 pub mod models;
 pub mod repository;

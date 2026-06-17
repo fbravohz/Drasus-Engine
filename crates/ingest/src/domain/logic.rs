@@ -1,4 +1,4 @@
-//! [CORE] Pure logic placeholder for `ingest`.
+//! [CORE] Marcador de lógica pura para `ingest`.
 //!
-//! Intentionally empty for F0 (W1). Price parsing and anomaly
-//! detection land here once their owning TTR is dispatched (F1).
+//! Vacío a propósito en F0 (W1). El parseo de precios y la detección
+//! de anomalías llegan aquí cuando se despache su TTR (F1).

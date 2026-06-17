@@ -1,6 +1,6 @@
-//! [CORE] Pure business logic for `incubate`.
+//! [CORE] Lógica de negocio pura de `incubate`.
 //!
-//! No I/O, no system clock, no unseeded randomness (ADR-0002/0004).
-//! Empty by design for F0 (W1): structure only, no logic yet.
+//! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004).
+//! Vacío a propósito en F0 (W1): solo estructura, todavía sin lógica.
 
 pub mod logic;

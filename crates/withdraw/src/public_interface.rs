@@ -1,6 +1,6 @@
-//! [SHELL] Public interface (port) of `withdraw`.
+//! [SHELL] Interfaz pública (puerto) de `withdraw`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: detect degradation, withdraw strategy.
+//! La única superficie de la que otros módulos pueden depender (ADR-0003).
+//! Puertos futuros: detectar degradación, retirar estrategia.
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío en F0 (W1): todavía no se ha despachado ningún puerto.

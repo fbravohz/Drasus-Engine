@@ -1,16 +1,16 @@
-//! `feedback`: Statistical feedback loop module (ADR-0003, FCIS).
+//! `feedback`: módulo de ciclo de retroalimentación estadística (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Feedback** — statistical quality control (Pardo),
-//! health verdict.
+//! Etapa del pipeline: **Feedback** — control de calidad estadístico (Pardo),
+//! veredicto de salud.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (drift detection, real vs. expected). No I/O.
-//! - `orchestrator`: thin shell (lifecycle closure, withdrawal verdict).
-//! - `persistence`: thin shell (verdict history, learning constraints).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Layout fijo del módulo:
+//! - `domain`: lógica pura (detección de drift, real vs. esperado). Sin I/O.
+//! - `orchestrator`: cáscara delgada (cierre de ciclo de vida, veredicto de retiro).
+//! - `persistence`: cáscara delgada (historial de veredictos, restricciones de aprendizaje).
+//! - `public_interface`: el único puerto que otros módulos pueden llamar.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía no hay lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

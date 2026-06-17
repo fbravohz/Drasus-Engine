@@ -1,39 +1,42 @@
-//! [CORE] Pure state machine for async jobs (`docs/features/async-job-executor.md`
-//! TTR-ASYNC-EXECUTOR-001..006, ADR-0004, ADR-0011).
+//! [CORE] Máquina de estados pura para jobs asíncronos
+//! (`docs/features/async-job-executor.md` TTR-ASYNC-EXECUTOR-001..006,
+//! ADR-0004, ADR-0011).
 //!
-//! No I/O, no system clock, no unseeded randomness (ADR-0002/0004). `id`
-//! (UUID) and timestamps are injected by the shell (persistence layer /
-//! orchestrator) — the same pattern as [`super::audit_log::chain_event`] —
-//! so that, given the same inputs, every function here always produces the
-//! same output, bit for bit.
+//! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004).
+//! El `id` (UUID) y los timestamps los inyecta la cáscara (capa de
+//! persistencia / orquestador) — el mismo patrón que
+//! [`super::audit_log::chain_event`] — para que, dadas las mismas
+//! entradas, cada función de este módulo siempre produzca la misma
+//! salida, bit a bit.
 //!
-//! ## States (ADR-0004 FSM)
+//! ## Estados (FSM de ADR-0004)
 //!
-//! - [`JobState::Queued`]: waiting for a worker.
-//! - [`JobState::Running`]: a worker has picked it up.
-//! - [`JobState::Completed`]: finished successfully (terminal).
-//! - [`JobState::Failed`]: finished with an error (terminal).
-//! - [`JobState::Cancelled`]: cancelled by the user (terminal).
+//! - [`JobState::Queued`]: esperando a un worker.
+//! - [`JobState::Running`]: un worker lo tomó.
+//! - [`JobState::Completed`]: terminó con éxito (terminal).
+//! - [`JobState::Failed`]: terminó con error (terminal).
+//! - [`JobState::Cancelled`]: cancelado por el usuario (terminal).
 //!
-//! ## Valid transitions (async-job-executor.md TTRs 002/004/006)
+//! ## Transiciones válidas (async-job-executor.md TTRs 002/004/006)
 //!
-//! | From | To | When |
+//! | De | A | Cuándo |
 //! |---|---|---|
-//! | `QUEUED` | `RUNNING` | A worker picks up the job (TTR-002) |
-//! | `RUNNING` | `COMPLETED` | The job finishes successfully (TTR-002/003) |
-//! | `RUNNING` | `FAILED` | The job's callback returns/throws an error (TTR-002) |
-//! | `QUEUED` | `CANCELLED` | User cancels a not-yet-started job (TTR-006) |
-//! | `RUNNING` | `CANCELLED` | User cancels a running job; worker observes the cancel token (TTR-006) |
-//! | `RUNNING` | `QUEUED` | Startup recovery: a job that was `RUNNING` when the process died is re-queued, because completion is unknown (TTR-004) |
+//! | `QUEUED` | `RUNNING` | Un worker toma el job (TTR-002) |
+//! | `RUNNING` | `COMPLETED` | El job termina con éxito (TTR-002/003) |
+//! | `RUNNING` | `FAILED` | El callback del job devuelve o lanza un error (TTR-002) |
+//! | `QUEUED` | `CANCELLED` | El usuario cancela un job que no había arrancado (TTR-006) |
+//! | `RUNNING` | `CANCELLED` | El usuario cancela un job en ejecución; el worker observa el token de cancelación (TTR-006) |
+//! | `RUNNING` | `QUEUED` | Recuperación en startup: un job que estaba `RUNNING` cuando el proceso murió se reencola, porque no se sabe si terminó (TTR-004) |
 //!
-//! Every other `(from, to)` pair — including any transition out of a
-//! terminal state — is rejected by [`validate_transition`].
+//! Cualquier otro par `(de, a)` — incluida cualquier transición que salga
+//! de un estado terminal — es rechazado por [`validate_transition`].
 
 use std::fmt;
 
-/// The five states a job can be in (ADR-0004: states represented as a fixed,
-/// finite set; here as a Rust enum rather than raw integers, since this
-/// table is not on the hot trading path).
+/// Los cinco estados posibles de un job (ADR-0004: estados representados
+/// como un conjunto fijo y finito; aquí como un enum de Rust en vez de
+/// enteros crudos, porque esta tabla no está en el camino caliente de
+/// trading).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JobState {
     Queued,
@@ -44,8 +47,8 @@ pub enum JobState {
 }
 
 impl JobState {
-    /// The exact string persisted in the `jobs.state` column
-    /// (migration `0003_jobs.sql`).
+    /// La cadena exacta que se persiste en la columna `jobs.state`
+    /// (migración `0003_jobs.sql`).
     pub fn as_str(&self) -> &'static str {
         match self {
             JobState::Queued => "QUEUED",
@@ -56,11 +59,12 @@ impl JobState {
         }
     }
 
-    /// Parses a `jobs.state` column value back into a [`JobState`].
+    /// Parsea un valor de la columna `jobs.state` de vuelta a [`JobState`].
     ///
-    /// Returns `None` for any value other than the five canonical strings —
-    /// the persistence layer treats that as a data-integrity error (a row
-    /// written outside this state machine), not a silent default.
+    /// Devuelve `None` para cualquier valor que no sea una de las cinco
+    /// cadenas canónicas — la capa de persistencia trata eso como un
+    /// error de integridad de datos (una fila escrita fuera de esta
+    /// máquina de estados), no como un valor por defecto silencioso.
     pub fn from_str_value(value: &str) -> Option<Self> {
         match value {
             "QUEUED" => Some(JobState::Queued),
@@ -72,9 +76,9 @@ impl JobState {
         }
     }
 
-    /// A terminal state is never the source of a valid transition
+    /// Un estado terminal nunca es el origen de una transición válida
     /// (async-job-executor.md "Restricciones": "Una vez CANCELLED, no se
-    /// puede reanudar"; the same applies to COMPLETED/FAILED).
+    /// puede reanudar"; lo mismo aplica a COMPLETED/FAILED).
     pub fn is_terminal(&self) -> bool {
         matches!(self, JobState::Completed | JobState::Failed | JobState::Cancelled)
     }
@@ -86,7 +90,7 @@ impl fmt::Display for JobState {
     }
 }
 
-/// A transition `(from, to)` that [`validate_transition`] rejected.
+/// Una transición `(from, to)` que [`validate_transition`] rechazó.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InvalidTransition {
     pub from: JobState,
@@ -101,11 +105,11 @@ impl fmt::Display for InvalidTransition {
 
 impl std::error::Error for InvalidTransition {}
 
-/// Validates a proposed `(from, to)` state transition against the table in
-/// this module's doc comment.
+/// Valida una transición de estado propuesta `(from, to)` contra la tabla
+/// del doc comment de este módulo.
 ///
-/// Returns `Ok(to)` if the transition is allowed, or
-/// [`InvalidTransition`] otherwise. Pure: no I/O, deterministic.
+/// Devuelve `Ok(to)` si la transición está permitida, o
+/// [`InvalidTransition`] en caso contrario. Pura: sin I/O, determinista.
 pub fn validate_transition(from: JobState, to: JobState) -> Result<JobState, InvalidTransition> {
     let allowed = matches!(
         (from, to),
@@ -124,17 +128,18 @@ pub fn validate_transition(from: JobState, to: JobState) -> Result<JobState, Inv
     }
 }
 
-/// Progress percentage, clamped to the `0..=100` range mandated by
+/// Porcentaje de progreso, clampeado al rango `0..=100` que exige
 /// async-job-executor.md TTR-005 ("Progreso es 0-100%").
 ///
-/// Construction always succeeds: out-of-range inputs are clamped rather than
-/// rejected, since a worker reporting `progress = 104` due to a rounding
-/// quirk should not abort the job — it should be recorded as `100`.
+/// La construcción siempre tiene éxito: los valores fuera de rango se
+/// clampean en vez de rechazarse, porque un worker que reporta
+/// `progress = 104` por una rareza de redondeo no debería abortar el
+/// job — debería quedar registrado como `100`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Progress(u8);
 
 impl Progress {
-    /// Clamps `percent` into `0..=100`.
+    /// Clampea `percent` al rango `0..=100`.
     pub fn new(percent: u8) -> Self {
         Progress(percent.min(100))
     }
@@ -143,13 +148,15 @@ impl Progress {
         self.0
     }
 
-    /// `0%` — the value a job starts at when it transitions to `RUNNING`
-    /// (TTR-002 "Worker cambia estado a RUNNING, inicializa progreso=0").
+    /// `0%` — el valor con el que arranca un job cuando transiciona a
+    /// `RUNNING` (TTR-002 "Worker cambia estado a RUNNING, inicializa
+    /// progreso=0").
     pub fn zero() -> Self {
         Progress(0)
     }
 
-    /// `100%` — the value a job reaches when it transitions to `COMPLETED`.
+    /// `100%` — el valor que alcanza un job cuando transiciona a
+    /// `COMPLETED`.
     pub fn complete() -> Self {
         Progress(100)
     }
@@ -161,19 +168,20 @@ impl fmt::Display for Progress {
     }
 }
 
-/// Estimates the remaining time for a running job (TTR-005 "Reglas de
+/// Estima el tiempo restante de un job en ejecución (TTR-005 "Reglas de
 /// Negocio": `estimación = (elapsed_time / progress) * (100 - progress)`).
 ///
-/// Returns `None` when the estimate cannot be computed:
-/// - `progress == 0`: no work has been observed yet, so the elapsed/progress
-///   ratio is undefined (division by zero).
+/// Devuelve `None` cuando la estimación no se puede calcular:
+/// - `progress == 0`: todavía no se observó trabajo, así que el ratio
+///   elapsed/progress no está definido (división por cero).
 ///
-/// Returns `Some(0)` when `progress >= 100` (nothing left to do — TTR-005's
-/// formula gives `(elapsed/100) * 0 = 0`, returned directly to sidestep any
-/// floating-point rounding at the boundary).
+/// Devuelve `Some(0)` cuando `progress >= 100` (no queda nada por hacer —
+/// la fórmula de TTR-005 da `(elapsed/100) * 0 = 0`, devuelto
+/// directamente para evitar cualquier redondeo de punto flotante en el
+/// límite).
 ///
-/// `elapsed_seconds` and the result are both expressed in whole seconds
-/// (TTR-005 example: `"estimated_time_remaining": "2 minutes"`).
+/// `elapsed_seconds` y el resultado se expresan ambos en segundos enteros
+/// (ejemplo de TTR-005: `"estimated_time_remaining": "2 minutes"`).
 pub fn estimate_remaining_seconds(progress: Progress, elapsed_seconds: u64) -> Option<u64> {
     let percent = progress.value();
 
@@ -196,7 +204,7 @@ pub fn estimate_remaining_seconds(progress: Progress, elapsed_seconds: u64) -> O
 mod tests {
     use super::*;
 
-    // --- validate_transition: allowed transitions ---------------------
+    // --- validate_transition: transiciones permitidas ---------------------
 
     #[test]
     fn queued_to_running_is_allowed() {
@@ -238,8 +246,8 @@ mod tests {
         );
     }
 
-    /// TTR-004: startup recovery re-queues a job that was `RUNNING` when the
-    /// process died, because completion is unknown.
+    /// TTR-004: la recuperación en startup reencola un job que estaba
+    /// `RUNNING` cuando el proceso murió, porque no se sabe si terminó.
     #[test]
     fn running_to_queued_is_allowed_for_recovery() {
         assert_eq!(
@@ -248,9 +256,9 @@ mod tests {
         );
     }
 
-    // --- validate_transition: rejected transitions ---------------------
+    // --- validate_transition: transiciones rechazadas ---------------------
 
-    /// Terminal states never transition anywhere
+    /// Los estados terminales nunca transicionan a ningún lado
     /// (async-job-executor.md: "Una vez CANCELLED, no se puede reanudar").
     #[test]
     fn terminal_states_reject_every_transition() {
@@ -307,7 +315,7 @@ mod tests {
         assert_eq!(err.to_string(), "invalid job state transition: QUEUED -> COMPLETED");
     }
 
-    // --- JobState string round-trip -------------------------------------
+    // --- JobState: ida y vuelta por su representación en string ----------
 
     #[test]
     fn job_state_round_trips_through_its_string_representation() {
@@ -327,7 +335,7 @@ mod tests {
     fn from_str_value_rejects_unknown_strings() {
         assert_eq!(JobState::from_str_value("BOGUS"), None);
         assert_eq!(JobState::from_str_value(""), None);
-        assert_eq!(JobState::from_str_value("queued"), None); // case-sensitive
+        assert_eq!(JobState::from_str_value("queued"), None); // sensible a mayúsculas
     }
 
     #[test]
@@ -339,7 +347,7 @@ mod tests {
         assert!(JobState::Cancelled.is_terminal());
     }
 
-    // --- Progress ---------------------------------------------------------
+    // --- Progress -----------------------------------------------------------
 
     #[test]
     fn progress_clamps_values_above_100() {
@@ -360,13 +368,13 @@ mod tests {
         assert_eq!(Progress::complete().value(), 100);
     }
 
-    // --- estimate_remaining_seconds (TTR-005) ----------------------------
+    // --- estimate_remaining_seconds (TTR-005) --------------------------------
 
-    /// TTR-005 worked example: 45% done after some elapsed time should
-    /// yield a remaining estimate proportional to `(100 - 45) / 45`.
+    /// Ejemplo resuelto de TTR-005: 45% hecho tras cierto tiempo transcurrido
+    /// debe dar una estimación restante proporcional a `(100 - 45) / 45`.
     #[test]
     fn estimate_matches_ttr_005_formula() {
-        // elapsed=90s at 45% => remaining = 90 * (100-45)/45 = 90 * 55/45 = 110
+        // elapsed=90s al 45% => remaining = 90 * (100-45)/45 = 90 * 55/45 = 110
         let remaining = estimate_remaining_seconds(Progress::new(45), 90);
         assert_eq!(remaining, Some(110));
     }
@@ -383,7 +391,7 @@ mod tests {
 
     #[test]
     fn estimate_at_50_percent_is_equal_to_elapsed() {
-        // 50% done => remaining == elapsed (symmetric midpoint).
+        // 50% hecho => remaining == elapsed (punto medio simétrico).
         let remaining = estimate_remaining_seconds(Progress::new(50), 60);
         assert_eq!(remaining, Some(60));
     }

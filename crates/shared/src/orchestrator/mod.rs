@@ -1,14 +1,16 @@
-//! [SHELL] Orchestration for `shared`.
+//! [SHELL] Orquestación para `shared`.
 //!
-//! Coordinates `domain` logic for reusable components (FCIS, ADR-0003).
+//! Coordina la lógica de `domain` para los componentes reutilizables
+//! (FCIS, ADR-0003).
 //!
-//! `SystemClock` is the only piece of `shared` that touches real I/O (the
-//! operating system clock). It implements the `Clock` port (TTR-001,
-//! `docs/features/clock.md`) for production use (`request_type = REAL`).
+//! `SystemClock` es la única pieza de `shared` que toca I/O real (el reloj
+//! del sistema operativo). Implementa el puerto `Clock` (TTR-001,
+//! `docs/features/clock.md`) para uso en producción (`request_type =
+//! REAL`).
 //!
-//! - `job_executor`: the Async Job Executor's shell -- Tokio worker pool,
-//!   in-memory queue, UUID generation, [`Clock`] reads, and startup
-//!   recovery (`docs/features/async-job-executor.md`
+//! - `job_executor`: la cáscara del Async Job Executor -- pool de workers
+//!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
+//!   y recuperación en startup (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/002/004/005/006, ADR-0011).
 
 pub mod job_executor;
@@ -18,33 +20,34 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::domain::clock::Clock;
 
-/// Production implementation of the [`Clock`] port (TTR-001).
+/// Implementación de producción del puerto [`Clock`] (TTR-001).
 ///
-/// Wraps `SystemTime::now()` and converts it to nanoseconds since the Unix
-/// epoch (TTR-001: "En producción, utiliza `time.time_ns()` para evitar
-/// errores de precisión de punto flotante.").
+/// Envuelve `SystemTime::now()` y lo convierte a nanosegundos desde el
+/// Unix epoch (TTR-001: "En producción, utiliza `time.time_ns()` para
+/// evitar errores de precisión de punto flotante.").
 ///
-/// `SystemTime` itself is NOT guaranteed monotonic across calls (an NTP
-/// step can move the wall clock backwards). To uphold the Clock port's
-/// invariant — "NUNCA Clock devuelve un valor menor al anterior" — this
-/// implementation remembers the last timestamp it returned and clamps any
-/// new reading to be strictly greater than it.
+/// `SystemTime` en sí NO garantiza ser monótono entre llamadas (un ajuste
+/// NTP puede mover el reloj de pared hacia atrás). Para sostener el
+/// invariante del puerto Clock — "NUNCA Clock devuelve un valor menor al
+/// anterior" — esta implementación recuerda el último timestamp que
+/// devolvió y clampea cualquier lectura nueva para que sea estrictamente
+/// mayor que esa.
 pub struct SystemClock {
     last_timestamp_ns: AtomicI64,
 }
 
 impl SystemClock {
-    /// Creates a new `SystemClock`. The first call to
-    /// [`Clock::timestamp_ns`] returns the current wall-clock time.
+    /// Crea un nuevo `SystemClock`. La primera llamada a
+    /// [`Clock::timestamp_ns`] devuelve la hora de pared actual.
     pub fn new() -> Self {
         Self {
             last_timestamp_ns: AtomicI64::new(i64::MIN),
         }
     }
 
-    /// Reads the current wall-clock time as nanoseconds since the Unix
-    /// epoch. Panics only if the system clock is set before the Unix
-    /// epoch (1970-01-01), which is not a supported deployment.
+    /// Lee la hora de pared actual como nanosegundos desde el Unix epoch.
+    /// Solo entra en panic si el reloj del sistema está fijado antes del
+    /// Unix epoch (1970-01-01), un despliegue que no se soporta.
     fn read_system_time_ns() -> i64 {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -66,14 +69,14 @@ impl Clock for SystemClock {
     fn timestamp_ns(&self) -> i64 {
         let observed_ns = Self::read_system_time_ns();
 
-        // Enforce monotonic non-decreasing time even if the OS clock steps
-        // backwards (e.g. NTP correction): never return less than (or
-        // equal to, across consecutive calls) the previous value.
+        // Fuerza tiempo monótono no decreciente incluso si el reloj del SO
+        // salta hacia atrás (ej. corrección NTP): nunca devuelve un valor
+        // menor (o igual, entre llamadas consecutivas) al anterior.
         let mut previous = self.last_timestamp_ns.load(Ordering::SeqCst);
         loop {
-            // Strictly greater than the previous value, but otherwise the
-            // real observed time (no artificial drift when the OS clock
-            // is already ahead).
+            // Estrictamente mayor que el valor anterior, pero por lo
+            // demás la hora real observada (sin drift artificial cuando
+            // el reloj del SO ya va adelante).
             let next = observed_ns.max(previous + 1);
 
             match self.last_timestamp_ns.compare_exchange(
@@ -110,7 +113,7 @@ mod tests {
         let clock = SystemClock::new();
         let ts = clock.timestamp_ns();
 
-        // Sanity bound: any timestamp after 2020-01-01 (in nanoseconds).
+        // Cota de cordura: cualquier timestamp posterior a 2020-01-01 (en nanosegundos).
         assert!(ts > 1_577_836_800_000_000_000);
     }
 }

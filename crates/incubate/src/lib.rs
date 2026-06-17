@@ -1,15 +1,15 @@
-//! `incubate`: Paper-trading incubation module (ADR-0003, FCIS).
+//! `incubate`: módulo de incubación con paper-trading (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Incubate** — run paper trading and compare with backtest.
+//! Etapa del pipeline: **Incubate** — corre paper trading y compara contra el backtest.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (Pardo validation). No I/O.
-//! - `orchestrator`: thin shell (execution simulation, change detection).
-//! - `persistence`: thin shell (paper trading persistence).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Estructura fija del módulo:
+//! - `domain`: lógica pura (validación de Pardo). Sin I/O.
+//! - `orchestrator`: cáscara delgada (simulación de ejecución, detección de cambios).
+//! - `persistence`: cáscara delgada (persistencia del paper trading).
+//! - `public_interface`: el único puerto que otros módulos pueden invocar.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío en F0 (W1): todavía sin lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

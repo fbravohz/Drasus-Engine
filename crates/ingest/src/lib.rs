@@ -1,15 +1,15 @@
-//! `ingest`: Market data acquisition module (ADR-0003, FCIS).
+//! `ingest`: módulo de adquisición de datos de mercado (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Ingest** — fetch market bars and detect regime.
+//! Etapa del pipeline: **Ingest** — obtiene barras de mercado y detecta el régimen.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (price parsing, anomaly detection). No I/O.
-//! - `orchestrator`: thin shell (gRPC/WebSocket handling, normalization).
-//! - `persistence`: thin shell (bar storage, regime history).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Estructura fija del módulo:
+//! - `domain`: lógica pura (parseo de precios, detección de anomalías). Sin I/O.
+//! - `orchestrator`: cáscara delgada (manejo de gRPC/WebSocket, normalización).
+//! - `persistence`: cáscara delgada (almacenamiento de barras, historial de régimen).
+//! - `public_interface`: el único puerto que pueden llamar otros módulos.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía sin lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

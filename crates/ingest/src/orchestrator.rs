@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `ingest`.
+//! [SHELL] Orquestación de `ingest`.
 //!
-//! Coordinates `domain` logic, handles I/O (gRPC/WebSocket) and
-//! normalization. Intentionally empty for F0 (W1): no business
-//! logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja I/O (gRPC/WebSocket) y
+//! normalización. Vacío a propósito en F0 (W1): aquí no vive
+//! lógica de negocio (FCIS, ADR-0003).

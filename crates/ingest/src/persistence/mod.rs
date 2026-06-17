@@ -1,7 +1,7 @@
-//! [SHELL] Persistence for `ingest`.
+//! [SHELL] Persistencia de `ingest`.
 //!
-//! Owns this module's tables exclusively (ADR-0003): bars and
-//! regime history. Other modules must go through `public_interface`.
+//! Es dueño exclusivo de las tablas de este módulo (ADR-0003): barras e
+//! historial de régimen. Otros módulos deben pasar por `public_interface`.
 
 pub mod models;
 pub mod repository;

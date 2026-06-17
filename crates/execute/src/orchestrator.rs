@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `execute`.
+//! [SHELL] Orquestación para `execute`.
 //!
-//! Coordinates `domain` logic, handles broker connection and the
-//! 10 pre-trade validations (ADR-0025). Intentionally empty for F0
-//! (W1): no business logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja la conexión al broker y las
+//! 10 validaciones pre-trade (ADR-0025). Vacío a propósito en F0
+//! (W1): aquí no vive lógica de negocio (FCIS, ADR-0003).

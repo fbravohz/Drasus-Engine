@@ -1,5 +1,5 @@
-//! [SHELL] Orchestration for `validate`.
+//! [SHELL] Orquestación para `validate`.
 //!
-//! Coordinates `domain` logic, handles backtest orchestration and
-//! metric computation. Intentionally empty for F0 (W1): no business
-//! logic lives here (FCIS, ADR-0003).
+//! Coordina la lógica de `domain`, maneja la orquestación de backtests
+//! y el cálculo de métricas. Vacío a propósito para F0 (W1): aquí no
+//! vive lógica de negocio (FCIS, ADR-0003).

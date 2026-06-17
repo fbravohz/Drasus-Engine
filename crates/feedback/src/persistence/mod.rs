@@ -1,7 +1,7 @@
-//! [SHELL] Persistence for `feedback`.
+//! [SHELL] Persistencia de `feedback`.
 //!
-//! Owns this module's tables exclusively (ADR-0003): anomalies,
-//! suggestions and verdicts. Other modules must go through
+//! Posee en exclusiva las tablas de este módulo (ADR-0003): anomalías,
+//! sugerencias y veredictos. Otros módulos deben pasar por
 //! `public_interface`.
 
 pub mod models;

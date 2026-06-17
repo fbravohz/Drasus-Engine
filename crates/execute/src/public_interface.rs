@@ -1,6 +1,6 @@
-//! [SHELL] Public interface (port) of `execute`.
+//! [SHELL] Interfaz pública (puerto) de `execute`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: place order, cancel order, veto.
+//! La única superficie de la que otros módulos pueden depender (ADR-0003).
+//! Puertos futuros: colocar orden, cancelar orden, veto.
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío en F0 (W1): todavía no se ha despachado ningún puerto.

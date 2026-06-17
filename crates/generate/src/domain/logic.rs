@@ -1,4 +1,4 @@
-//! [CORE] Pure logic placeholder for `generate`.
+//! [CORE] Marcador de lógica pura para `generate`.
 //!
-//! Intentionally empty for F0 (W1). Genetic evolution and symbolic
-//! regression land here once their owning TTR is dispatched.
+//! Vacío a propósito en F0 (W1). La evolución genética y la regresión
+//! simbólica llegan aquí cuando se despache su TTR correspondiente.

@@ -1,16 +1,16 @@
-//! `execute`: Order execution module (ADR-0003, FCIS).
+//! `execute`: módulo de ejecución de órdenes (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Execute** — place order, cancel order, veto.
+//! Etapa del pipeline: **Execute** — colocar orden, cancelar orden, veto.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (order state machine, 64-bit FSM). No I/O.
-//! - `orchestrator`: thin shell (broker connection, 10 pre-trade
-//!   validations per ADR-0025).
-//! - `persistence`: thin shell (orders, positions persistence).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Estructura fija del módulo:
+//! - `domain`: lógica pura (máquina de estados de órdenes, FSM de 64 bits). Sin I/O.
+//! - `orchestrator`: cáscara delgada (conexión al broker, las 10
+//!   validaciones pre-trade de ADR-0025).
+//! - `persistence`: cáscara delgada (persistencia de órdenes y posiciones).
+//! - `public_interface`: el único puerto que otros módulos pueden llamar.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía sin lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

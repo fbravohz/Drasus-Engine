@@ -1,6 +1,6 @@
-//! [SHELL] Public interface (port) of `incubate`.
+//! [SHELL] Interfaz pública (puerto) de `incubate`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: run paper trading, compare against backtest.
+//! La única superficie de la que otros módulos pueden depender (ADR-0003).
+//! Puertos futuros: correr paper trading, comparar contra el backtest.
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío en F0 (W1): todavía no se ha despachado ningún puerto.

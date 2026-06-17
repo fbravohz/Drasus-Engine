@@ -1,15 +1,15 @@
-//! `generate`: Strategy/candidate generation module (ADR-0003, FCIS).
+//! `generate`: módulo de generación de estrategias/candidatos (ADR-0003, FCIS).
 //!
-//! Pipeline stage: **Generate** — generate candidates and evaluate fitness.
+//! Etapa del pipeline: **Generate** — generar candidatos y evaluar su fitness.
 //!
-//! Fixed module layout:
-//! - `domain`: pure logic (genetic evolution, symbolic regression). No I/O.
-//! - `orchestrator`: thin shell (evolutionary loop, signal combination).
-//! - `persistence`: thin shell (strategy persistence, factor analysis).
-//! - `public_interface`: the only port other modules may call.
-//! - `schemas`: input/output contracts for this module.
+//! Estructura fija del módulo:
+//! - `domain`: lógica pura (evolución genética, regresión simbólica). Sin I/O.
+//! - `orchestrator`: cáscara delgada (bucle evolutivo, combinación de señales).
+//! - `persistence`: cáscara delgada (persistencia de estrategias, análisis de factores).
+//! - `public_interface`: el único puerto que otros módulos pueden llamar.
+//! - `schemas`: contratos de entrada/salida de este módulo.
 //!
-//! Empty skeleton for F0 (W1): no business logic implemented yet.
+//! Esqueleto vacío para F0 (W1): todavía no hay lógica de negocio implementada.
 
 pub mod domain;
 pub mod orchestrator;

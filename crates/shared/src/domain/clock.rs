@@ -1,64 +1,68 @@
-//! [CORE] Pure clock primitives — the `Clock` port and the deterministic
-//! (backtest-ready) clock implementation.
+//! [CORE] Primitivas puras de reloj — el puerto `Clock` y la implementación
+//! de reloj determinista (lista para backtest).
 //!
-//! No I/O, no system clock access, no unseeded randomness (ADR-0002/0004).
-//! `docs/features/clock.md`:
-//! - TTR-001: nanosecond-precision timestamp port (`Clock::timestamp_ns`).
-//! - TTR-002: deterministic clock for reproducible simulations
-//!   (`DeterministicClock`), advanced only via explicit `advance(ns)` calls.
+//! Sin I/O, sin acceso al reloj de sistema, sin azar sin semilla
+//! (ADR-0002/0004). `docs/features/clock.md`:
+//! - TTR-001: puerto de timestamp con precisión de nanosegundos
+//!   (`Clock::timestamp_ns`).
+//! - TTR-002: reloj determinista para simulaciones reproducibles
+//!   (`DeterministicClock`), que solo avanza mediante llamadas explícitas
+//!   a `advance(ns)`.
 
 use std::sync::atomic::{AtomicI64, Ordering};
 
-/// The Clock port (TTR-001).
+/// El puerto Clock (TTR-001).
 ///
-/// Any module needing the current time calls this port instead of the
-/// system clock directly (`docs/features/clock.md`: "NUNCA un módulo llama
-/// a `datetime.now()` o equivalente directo. Siempre a través de Clock.").
+/// Cualquier módulo que necesite la hora actual llama a este puerto en vez
+/// de ir directo al reloj de sistema (`docs/features/clock.md`: "NUNCA un
+/// módulo llama a `datetime.now()` o equivalente directo. Siempre a través
+/// de Clock.").
 ///
-/// Implementations:
-/// - [`super::super::orchestrator::SystemClock`] (shell): wraps the real
-///   system clock for production (`request_type = REAL`).
-/// - [`DeterministicClock`] (core, this module): a fully controlled,
-///   reproducible clock for backtests and tests (`request_type = FAKE`).
+/// Implementaciones:
+/// - [`super::super::orchestrator::SystemClock`] (cáscara): envuelve el
+///   reloj real del sistema para producción (`request_type = REAL`).
+/// - [`DeterministicClock`] (core, este módulo): reloj totalmente
+///   controlado y reproducible para backtests y tests (`request_type =
+///   FAKE`).
 ///
-/// Invariant (clock.md "Restricciones"): a `Clock` implementation NEVER
-/// returns a `timestamp_ns` smaller than a previously returned value
-/// within the same instance — time is monotonically non-decreasing.
+/// Invariante (clock.md "Restricciones"): una implementación de `Clock`
+/// NUNCA devuelve un `timestamp_ns` menor a uno ya devuelto antes en la
+/// misma instancia — el tiempo es monótono no decreciente.
 pub trait Clock: Send + Sync {
-    /// Returns the current timestamp in nanoseconds since the Unix epoch
+    /// Devuelve el timestamp actual en nanosegundos desde el Unix epoch
     /// (TTR-001: "Expone el Unix timestamp actual con precisión de
     /// nanosegundos").
     fn timestamp_ns(&self) -> i64;
 }
 
-/// Deterministic, backtest-ready clock (TTR-002).
+/// Reloj determinista, listo para backtest (TTR-002).
 ///
-/// The clock starts at `initial_timestamp_ns` and only moves forward via
-/// explicit calls to [`DeterministicClock::advance`]. Repeated calls to
-/// [`Clock::timestamp_ns`] between `advance` calls return the exact same
-/// value — this is what makes a backtest reproducible bit-for-bit
-/// (clock.md: "Todas las llamadas a Clock dentro de la barra devuelven el
-/// mismo timestamp").
+/// El reloj arranca en `initial_timestamp_ns` y solo avanza mediante
+/// llamadas explícitas a [`DeterministicClock::advance`]. Llamadas
+/// repetidas a [`Clock::timestamp_ns`] entre dos `advance` devuelven
+/// exactamente el mismo valor — esto es lo que hace que un backtest sea
+/// reproducible bit a bit (clock.md: "Todas las llamadas a Clock dentro
+/// de la barra devuelven el mismo timestamp").
 ///
-/// `step_ns` is the configured default step (clock.md `ADVANCE_PER_STEP`,
-/// in nanoseconds) used by [`DeterministicClock::tick`] to advance by one
-/// simulation step (e.g. one bar) without the caller having to repeat the
-/// step size on every call.
+/// `step_ns` es el paso por defecto configurado (clock.md
+/// `ADVANCE_PER_STEP`, en nanosegundos) que usa [`DeterministicClock::tick`]
+/// para avanzar un paso de simulación (ej. una barra) sin que quien llama
+/// tenga que repetir el tamaño del paso en cada llamada.
 pub struct DeterministicClock {
-    /// Current virtual timestamp, in nanoseconds since the Unix epoch.
+    /// Timestamp virtual actual, en nanosegundos desde el Unix epoch.
     virtual_timestamp_ns: AtomicI64,
-    /// Default per-step advance, in nanoseconds (clock.md `ADVANCE_PER_STEP`).
+    /// Avance por defecto por paso, en nanosegundos (clock.md `ADVANCE_PER_STEP`).
     step_ns: i64,
 }
 
 impl DeterministicClock {
-    /// Creates a deterministic clock starting at `initial_timestamp_ns`
-    /// (clock.md `INITIAL_TIMESTAMP` / TTR-002 entrada) with a default
-    /// per-step advance of `step_ns` (clock.md `ADVANCE_PER_STEP`).
+    /// Crea un reloj determinista que arranca en `initial_timestamp_ns`
+    /// (clock.md `INITIAL_TIMESTAMP` / TTR-002 entrada) con un avance por
+    /// defecto de `step_ns` por paso (clock.md `ADVANCE_PER_STEP`).
     ///
-    /// `step_ns` must be `>= 0` (clock.md: "NUNCA Clock devuelve un valor
-    /// menor al anterior" — a negative default step would make `tick`
-    /// move time backwards).
+    /// `step_ns` debe ser `>= 0` (clock.md: "NUNCA Clock devuelve un valor
+    /// menor al anterior" — un paso por defecto negativo haría que `tick`
+    /// mueva el tiempo hacia atrás).
     pub fn new(initial_timestamp_ns: i64, step_ns: i64) -> Self {
         assert!(
             step_ns >= 0,
@@ -72,11 +76,11 @@ impl DeterministicClock {
         }
     }
 
-    /// Advances the virtual clock by exactly `delta_ns` nanoseconds
+    /// Avanza el reloj virtual exactamente `delta_ns` nanosegundos
     /// (TTR-002: "El reloj solo avanza mediante llamadas explícitas
-    /// `advance(ns)`."). Returns the new `virtual_timestamp_ns`.
+    /// `advance(ns)`."). Devuelve el nuevo `virtual_timestamp_ns`.
     ///
-    /// `delta_ns` must be `>= 0` (clock.md: "NUNCA Clock devuelve un valor
+    /// `delta_ns` debe ser `>= 0` (clock.md: "NUNCA Clock devuelve un valor
     /// menor al anterior. El tiempo es monótono creciente dentro de una
     /// sesión.").
     pub fn advance(&self, delta_ns: i64) -> i64 {
@@ -91,14 +95,14 @@ impl DeterministicClock {
             + delta_ns
     }
 
-    /// Advances the virtual clock by the configured `step_ns` (clock.md
-    /// `ADVANCE_PER_STEP`), e.g. once per simulated bar. Returns the new
-    /// `virtual_timestamp_ns`.
+    /// Avanza el reloj virtual el `step_ns` configurado (clock.md
+    /// `ADVANCE_PER_STEP`), ej. una vez por barra simulada. Devuelve el
+    /// nuevo `virtual_timestamp_ns`.
     pub fn tick(&self) -> i64 {
         self.advance(self.step_ns)
     }
 
-    /// The configured per-step advance, in nanoseconds (clock.md
+    /// El avance por paso configurado, en nanosegundos (clock.md
     /// `ADVANCE_PER_STEP`).
     pub fn step_ns(&self) -> i64 {
         self.step_ns
@@ -115,11 +119,12 @@ impl Clock for DeterministicClock {
 mod tests {
     use super::*;
 
-    /// TTR-002 closing criterion: bit-for-bit determinism. Two independent
-    /// `DeterministicClock` instances, built with the same seed
-    /// (`initial_timestamp_ns`, `step_ns`) and driven through the same
-    /// sequence of `advance`/`tick` calls, must produce the EXACT same
-    /// sequence of `timestamp_ns()` values, every run.
+    /// Criterio de cierre de TTR-002: determinismo bit a bit. Dos
+    /// instancias independientes de `DeterministicClock`, construidas con
+    /// la misma semilla (`initial_timestamp_ns`, `step_ns`) y conducidas
+    /// por la misma secuencia de llamadas `advance`/`tick`, deben producir
+    /// la EXACTA misma secuencia de valores `timestamp_ns()`, en cada
+    /// ejecución.
     #[test]
     fn deterministic_clock_same_seed_produces_identical_sequence() {
         const INITIAL_TIMESTAMP_NS: i64 = 1_577_869_800_000_000_000; // 2020-01-01 09:30:00 UTC
@@ -129,19 +134,20 @@ mod tests {
             let clock = DeterministicClock::new(INITIAL_TIMESTAMP_NS, STEP_NS);
             let mut sequence = Vec::new();
 
-            // Initial read, before any advance.
+            // Lectura inicial, antes de cualquier advance.
             sequence.push(clock.timestamp_ns());
 
-            // Simulate 5 bars: each `tick()` advances by exactly `step_ns`,
-            // and repeated reads within a "bar" return the same value.
+            // Simula 5 barras: cada `tick()` avanza exactamente `step_ns`,
+            // y lecturas repetidas dentro de una "barra" devuelven el
+            // mismo valor.
             for _ in 0..5 {
                 clock.tick();
                 sequence.push(clock.timestamp_ns());
-                sequence.push(clock.timestamp_ns()); // same bar, same timestamp
+                sequence.push(clock.timestamp_ns()); // misma barra, mismo timestamp
             }
 
-            // An explicit, non-uniform advance (e.g. a custom gap).
-            clock.advance(3_600_000_000_000); // +1 hour
+            // Un advance explícito y no uniforme (ej. un salto manual).
+            clock.advance(3_600_000_000_000); // +1 hora
             sequence.push(clock.timestamp_ns());
 
             sequence
@@ -157,8 +163,9 @@ mod tests {
              for bit"
         );
 
-        // Sanity check on the expected values to guard against a
-        // vacuously-true comparison (e.g. both sequences being empty).
+        // Verificación de cordura sobre los valores esperados, para evitar
+        // una comparación vacuamente verdadera (ej. ambas secuencias
+        // vacías).
         assert_eq!(sequence_a.len(), 1 + 5 * 2 + 1);
         assert_eq!(sequence_a[0], INITIAL_TIMESTAMP_NS);
         assert_eq!(

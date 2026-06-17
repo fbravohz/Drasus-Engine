@@ -1,29 +1,30 @@
-//! [SHELL] SQLite connection pool factory + embedded migration runner.
+//! [SHELL] Fábrica del pool de conexiones SQLite + runner de migraciones embebidas.
 //!
-//! ADR-0006 mandates a single centralized migration path: migration files
-//! live in `/migrations` at the workspace root and are embedded into the
-//! binary at compile time via `sqlx::migrate!`. ADR-0107/SAD mandates
-//! SQLite 3 in WAL mode for all OLTP persistence.
+//! ADR-0006 exige un único camino centralizado de migración: los archivos
+//! de migración viven en `/migrations` en la raíz del workspace y se
+//! embeben en el binario en tiempo de compilación vía `sqlx::migrate!`.
+//! ADR-0107/SAD exige SQLite 3 en modo WAL para toda persistencia OLTP.
 //!
-//! This module provides the only two primitives pipeline modules need:
-//! - [`connect`]: open a WAL-mode SQLite pool at the given path (or
-//!   `:memory:` for tests).
-//! - [`migrate`]: apply all embedded migrations. Idempotent — running it
-//!   against an already-migrated database is a no-op (ADR-0006).
+//! Este módulo provee las únicas dos primitivas que necesitan los módulos
+//! del pipeline:
+//! - [`connect`]: abre un pool de SQLite en modo WAL en la ruta dada (o
+//!   `:memory:` para tests).
+//! - [`migrate`]: aplica todas las migraciones embebidas. Idempotente —
+//!   correrlo contra una base de datos ya migrada es un no-op (ADR-0006).
 
 use std::str::FromStr;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use sqlx::SqlitePool;
 
-/// Opens a SQLite connection pool with WAL (Write-Ahead Log) journal mode
-/// enabled, as mandated by the project stack decision (SAD: "SQLite 3 con
-/// WAL").
+/// Abre un pool de conexiones SQLite con el modo de journal WAL
+/// (Write-Ahead Log) habilitado, según exige la decisión de stack del
+/// proyecto (SAD: "SQLite 3 con WAL").
 ///
-/// `database_url` accepts any connection string SQLx's SQLite driver
-/// understands (e.g. `sqlite://path/to/db.sqlite`, `sqlite::memory:`).
-/// The database file (and parent directories, if any) is created if it
-/// does not already exist.
+/// `database_url` acepta cualquier cadena de conexión que entienda el
+/// driver SQLite de SQLx (ej. `sqlite://path/to/db.sqlite`,
+/// `sqlite::memory:`). El archivo de base de datos (y los directorios
+/// padre, si hace falta) se crea si todavía no existe.
 pub async fn connect(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(database_url)?
         .journal_mode(SqliteJournalMode::Wal)
@@ -32,13 +33,13 @@ pub async fn connect(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     SqlitePoolOptions::new().connect_with(options).await
 }
 
-/// Applies all embedded migrations from `/migrations` (workspace root) to
-/// the given pool.
+/// Aplica todas las migraciones embebidas desde `/migrations` (raíz del
+/// workspace) sobre el pool dado.
 ///
-/// Determinism & idempotency (ADR-0006): SQLx records applied migrations
-/// in the `_sqlx_migrations` table. Calling this twice against the same
-/// database is a no-op on the second call — no error, no duplicate
-/// schema objects.
+/// Determinismo e idempotencia (ADR-0006): SQLx registra las migraciones
+/// aplicadas en la tabla `_sqlx_migrations`. Llamar esto dos veces contra
+/// la misma base de datos es un no-op en la segunda llamada — sin error,
+/// sin objetos de esquema duplicados.
 pub async fn migrate(pool: &SqlitePool) -> Result<(), sqlx::migrate::MigrateError> {
     sqlx::migrate!("../../migrations").run(pool).await
 }
@@ -48,19 +49,19 @@ mod tests {
     use super::*;
     use sqlx::Row;
 
-    /// W2 closing criterion: migration 0001 applies the 25 master fields
-    /// (ADR-0020 V2) to a WAL-mode SQLite database, and re-running it is
-    /// idempotent.
+    /// Criterio de cierre de W2: la migración 0001 aplica los 25 campos
+    /// maestros (ADR-0020 V2) sobre una base de datos SQLite en modo WAL,
+    /// y volver a correrla es idempotente.
     #[tokio::test]
     async fn migration_0001_applies_in_wal_mode_and_is_idempotent() {
         let temp_dir = tempfile::tempdir().expect("create temp dir");
         let db_path = temp_dir.path().join("foundation.sqlite");
         let database_url = format!("sqlite://{}", db_path.display());
 
-        // --- First application -------------------------------------------------
+        // --- Primera aplicación -------------------------------------------------
         let pool = connect(&database_url).await.expect("connect (1st)");
 
-        // Confirm WAL mode is active.
+        // Confirma que el modo WAL está activo.
         let journal_mode: String = sqlx::query("PRAGMA journal_mode")
             .fetch_one(&pool)
             .await
@@ -70,10 +71,10 @@ mod tests {
 
         migrate(&pool).await.expect("migrate (1st run)");
 
-        // Confirm the foundation table exists with all 25 master fields
-        // (ADR-0020 V2) plus the implicit rowid -> verify column count and
-        // a representative sample of column names from each of the 5
-        // ADR-0020 V2 groups.
+        // Confirma que la tabla de fundación existe con los 25 campos
+        // maestros (ADR-0020 V2) más el rowid implícito -> verifica el
+        // conteo de columnas y una muestra representativa de nombres de
+        // columna de cada uno de los 5 grupos de ADR-0020 V2.
         let columns = sqlx::query(
             "SELECT name FROM pragma_table_info('foundation_master_fields')",
         )
@@ -124,7 +125,7 @@ mod tests {
 
         pool.close().await;
 
-        // --- Second application (idempotency check) ----------------------------
+        // --- Segunda aplicación (verificación de idempotencia) ------------------
         let pool = connect(&database_url).await.expect("connect (2nd)");
         migrate(&pool).await.expect("migrate (2nd run) must be a no-op, not an error");
 

@@ -1,6 +1,6 @@
-//! [SHELL] Public interface (port) of `validate`.
+//! [SHELL] Interfaz pública (puerto) de `validate`.
 //!
-//! The only surface other modules may depend on (ADR-0003).
-//! Future ports: validate strategy, run test suite.
+//! La única superficie de la que pueden depender otros módulos (ADR-0003).
+//! Puertos futuros: validar estrategia, correr suite de pruebas.
 //!
-//! Empty for F0 (W1): no port has been dispatched yet.
+//! Vacío para F0 (W1): todavía no se ha despachado ningún puerto.
