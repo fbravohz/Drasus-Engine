@@ -351,8 +351,62 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0119**](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
 
 ---
+
 ## 📖 Arquitectura y Gobernanza
 
 - [**SAD.md**](./SAD.md) — Documento de Arquitectura de Software (Visión General).
 - [**ADR.md**](./ADR.md) — Decisiones Arquitectónicas (Registro de decisiones inmutables).
 - [**TEMPLATES.md**](./TEMPLATES.md) — Plantillas para nuevas especificaciones.
+
+---
+
+## 🔧 Estructura de Configuración Claude Code (`.claude/`)
+
+La carpeta `.claude/` alberga la configuración, estado, skills especializados y planes para el entorno Claude Code.
+
+### Carpetas Principales
+
+| Carpeta | Descripción |
+|---------|-------------|
+| [**skills/**](./../.claude/skills/) | Agentes especializados para roles arquitectónicos y técnicos |
+| [**documents/**](./../.claude/documents/) | Workspace de documentación temporal y sesiones activas |
+| [**state/**](./../.claude/state/) | Estado persistente entre sesiones (Progress, Memory) |
+| [**plans/**](./../.claude/plans/) | Planes de ejecución y arquitectura guardados |
+| [**worktrees/**](./../.claude/worktrees/) | Worktrees aislados de Git para trabajo concurrente |
+
+### Skills Disponibles
+
+| Skill | Rol | Descripción |
+|-------|-----|-------------|
+| [**architect**](./../.claude/skills/architect/SKILL.md) | Arquitecto Senior | Procesa, filtra y distribuye información técnica y de negocio. No desarrollador. |
+| [**base**](./../.claude/skills/base/SKILL.md) | Fundación Operativa | Instrucciones base y de rigor para todos los agentes (Governa a todos) |
+| [**bridge-engineer**](./../.claude/skills/bridge-engineer/SKILL.md) | Ingeniero de Puentes | Diseña contratos de comunicación FFI y gRPC entre Rust y Flutter |
+| [**flutter-engineer**](./../.claude/skills/flutter-engineer/SKILL.md) | Ingeniero Flutter | Crea interfaces estéticas (Thin Shell) sin lógica de negocio |
+| [**partner**](./../.claude/skills/partner/SKILL.md) | Co-Founder & Socio | Análisis estratégico, visión CEO & Quant, sinergias operativas |
+| [**qa-engineer**](./../.claude/skills/qa-engineer/SKILL.md) | QA Engineer | Valida código para garantizar calidad, estabilidad y especificaciones |
+| [**quant-engineer**](./../.claude/skills/quant-engineer/SKILL.md) | Quant Engineer | Dueño de corrección estadística y financiera. Audita matemática y sesgos |
+| [**refactoring-engineer**](./../.claude/skills/refactoring-engineer/SKILL.md) | Refactoring Engineer | Optimiza estructura de código y resuelve deuda técnica |
+| [**rust-engineer**](./../.claude/skills/rust-engineer/SKILL.md) | Rust Engineer | Lógica pesada, algoritmos cuantitativos, bases de datos (100% Rust puro) |
+| [**social-strategist**](./../.claude/skills/social-strategist/SKILL.md) | Social Strategist | Estrategia digital y orquestación de contenido para Drasus Engine |
+| [**summarizer**](./../.claude/skills/summarizer/SKILL.md) | Summarizer | [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA] |
+| [**tech-lead**](./../.claude/skills/tech-lead/SKILL.md) | Tech Lead | Lee docs/ y toma iniciativa autónoma de desarrollo, despachando a Ingenieros |
+
+### Estado Persistente
+
+| Carpeta | Descripción |
+|---------|-------------|
+| [**state/tech-lead/**](./../.claude/state/tech-lead/) | Progreso y estado del Tech Lead (PROGRESS.md) |
+
+### Documentos Temporales
+
+| Carpeta | Descripción |
+|---------|-------------|
+| [**documents/tmp/**](./../.claude/documents/tmp/) | Workspace temporal de sesiones |
+| [**documents/social-strategist/**](./../.claude/documents/social-strategist/) | Documentos de estrategia social |
+
+### Configuración
+
+| Archivo | Descripción |
+|---------|-------------|
+| [**settings.json**](./../.claude/settings.json) | Configuración global de Claude Code (proyecto) |
+| [**settings.local.json**](./../.claude/settings.local.json) | Configuración local del usuario (no commitear) |
