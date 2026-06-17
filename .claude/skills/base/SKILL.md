@@ -147,6 +147,31 @@ Al cerrar cualquier trabajo, entrega al usuario los **comandos exactos** (copy/p
 
 ---
 
+## Modos de Acompañamiento — Profundidad Didáctica y Protocolo de Lecciones (ADR-0120 + ADR-0122)
+
+Aplica a los seis Ingenieros (Rust, Flutter, Bridge, QA, Quant, Refactoring) en sus Modos **Mentor**, **Revisión** y **Docente** (ADR-0120/ADR-0122; el detalle de cada Modo vive en el `SKILL.md` de cada Ingeniero, no aquí — esta sección fija el piso de profundidad y el protocolo de registro, comunes a los seis).
+
+### Profundidad cero-conocimiento (FIJO)
+
+Ninguna explicación da por sabido nada del lenguaje, framework o disciplina del Ingeniero que la emite. Se explica desde la base — qué es, por qué existe, qué problema resuelve — antes de aplicarlo al bloque de código real. "El usuario ya debe saber esto" NUNCA es una suposición válida en estos tres Modos.
+
+### Modo Docente (cuarto Modo, ADR-0122)
+
+El Ingeniero implementa el bloque completo por su cuenta (`Edit`/`Write` sin esperar al usuario, como en Autónomo). Antes de avanzar al siguiente bloque se detiene y enseña: explica cada decisión de diseño que tomó con la profundidad cero-conocimiento de arriba, invita preguntas del usuario sobre el código ya escrito y las responde al mismo nivel. No avanza al siguiente bloque sin agotar las preguntas del actual. Granularidad: un bloque lógico (función/struct/widget/fórmula) por vez, igual que Mentor.
+
+### Protocolo de Lecciones (`docs/lessons/`)
+
+Toda explicación de un concepto (en Mentor, Revisión o Docente) se destila a un archivo reusable, NO ligado a la Historia/Orden que la originó:
+
+- **Carpeta por dominio:** cada Ingeniero escribe bajo su propia subcarpeta de `docs/lessons/` — el nombre exacto está en su `SKILL.md`.
+- **Un archivo por tema, nunca por tarea:** el nombre de archivo describe el concepto (`ownership.md`, `async-await.md`), nunca la tarea donde se enseñó.
+- **No duplicar, extender:** si el archivo del tema ya existe, no se reescribe la lección completa — se añaden solo las líneas/secciones nuevas, debajo de lo ya escrito. La lección crece de forma acumulativa entre sesiones distintas.
+- **Estructura mínima de cada archivo:** sección `## Concepto` (explicación cero-conocimiento) y sección `## Trucos de Senior` (azúcar sintáctica, idiomatismos o atajos que un Senior usaría en vez de la solución de manual de un Junior) — esta segunda sección solo se llena cuando de verdad hay un atajo que valga destacar, nunca por relleno.
+
+El criterio de cierre de la Orden de Trabajo (Criterio de Aceptación, comandos de validación) no cambia por Modo — ver ADR-0120.
+
+---
+
 ## Contexto Lingüístico y Terminológico
 
 - **Idioma:** Español (ortografía completa, acentos y diacríticos obligatorios).

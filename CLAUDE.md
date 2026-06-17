@@ -35,6 +35,7 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 | `docs/features/*.md` | ~138 features (lógica pura / drivers) | variable | Abre solo la(s) feature(s) relevante(s). |
 | `docs/moonshots/*.md` | ~41 proyectos experimentales | variable | Solo si el trabajo es R&D experimental. |
 | `docs/execution/*.md` | Órdenes de trabajo (ejecución) | variable | La orden concreta que se está ejecutando. |
+| `docs/lessons/<dominio>/*.md` | Lecciones de aprendizaje acumuladas por tema (Modos Mentor/Revisión/Docente, ADR-0122) — no por tarea | variable | Abre solo el tema relevante; índice de carpetas en `docs/lessons/README.md`. |
 
 **Pipeline de módulos:** `ingest → generate → validate → incubate → manage → execute → feedback → withdraw`.
 
