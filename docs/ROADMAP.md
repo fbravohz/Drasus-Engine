@@ -79,7 +79,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-003 — `clock` (timestamps deterministas) | terminado | [STORY-003](./execution/STORY-003-clock.md) |
 | STORY-004 — `audit-log` (hash chain) | parcial (TTR-002 → EPIC-2+) | [STORY-004](./execution/STORY-004-audit-log.md) |
 | STORY-005 — `async-job-executor` (cola durable + recuperación) | terminado | [STORY-005](./execution/STORY-005-async-job-executor.md) |
-| STORY-007 — `telemetry` | pendiente | — |
+| STORY-007 — `telemetry` | en curso (Modo Mentor, Orden lista, pendiente invocación) | [STORY-007](./execution/STORY-007-telemetry.md) |
 | STORY-008 — `worker-isolation-orchestrator` | pendiente | — |
 | STORY-009 — CLI Clap + binario raíz `app` | pendiente | — |
 
