@@ -83,6 +83,25 @@
 //!   `job_type` (TTR-002/005/006). TTR-ASYNC-EXECUTOR-007 (conectar
 //!   handlers reales desde `generate`/`validate`/`manage`/`incubate`/
 //!   `feedback`) está fuera de alcance para esta historia.
+//!
+//! ## Telemetría (`docs/features/telemetry.md` TTR-001)
+//!
+//! Buffer de alta velocidad: cualquier módulo registra una muestra de
+//! latencia o un heartbeat sin esperar al disco; una tarea de fondo vacía
+//! la cola a SQLite por lotes.
+//!
+//! - [`TelemetrySample`] / [`TelemetrySampleContent`] / [`build_sample`] /
+//!   [`expired_sample_ids`]: núcleo puro — construcción de una muestra
+//!   encadenada y la decisión de poda por ventana de retención.
+//! - [`TelemetryRepository`] / [`TelemetryError`]: repositorio de
+//!   `telemetry_samples` (insertar por lote, purgar, consultar por
+//!   `metric_name` + rango, migración `0004_telemetry.sql`).
+//! - [`TelemetryBuffer`] / [`TelemetryBufferConfig`]: la cáscara — cola en
+//!   memoria no bloqueante (`record_latency`/`record_heartbeat`), siembra
+//!   de la cadena al iniciar (`bootstrap`), vaciado por lotes en segundo
+//!   plano (`spawn_flush_task`) y poda (`purge`). Reusa [`ExecutorIdentity`]
+//!   del Async Job Executor — mismo perfil de campos ADR-0020 V2, no se
+//!   duplica el tipo.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -96,6 +115,9 @@ pub use crate::orchestrator::job_executor::{
     CancellationToken, ExecutorIdentity, JobExecutor, JobExecutorConfig, JobExecutorError, JobHandler, JobOutcome,
     ProgressReporter, JOB_RECOVERED_AT_STARTUP,
 };
+pub use crate::orchestrator::telemetry::{TelemetryBuffer, TelemetryBufferConfig};
 pub use crate::orchestrator::SystemClock;
 pub use crate::persistence::audit_log::{AuditLogError, AuditLogRepository};
 pub use crate::persistence::job::{Job, JobRepository, JobRepositoryError, JobResult, NewJob, NewJobResult, RecoveredJob};
+pub use crate::persistence::telemetry::{TelemetryError, TelemetryRepository};
+pub use crate::domain::telemetry::{build_sample, expired_sample_ids, TelemetrySample, TelemetrySampleContent};

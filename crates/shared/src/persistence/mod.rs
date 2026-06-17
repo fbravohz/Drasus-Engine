@@ -19,7 +19,11 @@
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
 //! - `pool`: fábrica del pool de conexiones + runner de migraciones embebidas.
+//! - `telemetry`: repositorio para `telemetry_samples` (insertar por lote,
+//!   purgar por corte, consultar por `metric_name` + rango) —
+//!   `docs/features/telemetry.md` TTR-001, migración `0004_telemetry.sql`.
 
 pub mod audit_log;
 pub mod job;
 pub mod pool;
+pub mod telemetry;
