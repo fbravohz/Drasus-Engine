@@ -189,6 +189,7 @@ Proyectos de investigación avanzada y alta complejidad.
 | [**compliance-dashboard**](./moonshots/compliance-dashboard.md) | Es el panel de cumplimiento regulatorio que monitorea en vivo todas las posiciones y operaciones contra restricciones de cumplimiento (CME, FSA, S... |
 | [**conviction-scoring-engine**](./moonshots/conviction-scoring-engine.md) | Conviction Score 0-100 multi-factor para sizing Kelly dinámico |
 | [**deep-learning-suite**](./moonshots/deep-learning-suite.md) | Es la suite de aprendizaje profundo que integra redes neuronales LSTM, Transformer, GRU para predicción de series de tiempo y clasificación de reg... |
+| [**distributed-edge-execution**](./moonshots/distributed-edge-execution.md) | Topología de ejecución distribuida: un nodo satélite por bróker (geo-localizable) con control central Local-First, DR por S3 y split control/ejecución (ADR-0119). |
 | [**drl-parameter-tuning**](./moonshots/drl-parameter-tuning.md) | Ajuste de parámetros mediante Reinforcement Learning |
 | [**drl-portfolio-optimization**](./moonshots/drl-portfolio-optimization.md) | Es la optimización de portafolios usando DRL (Deep Reinforcement Learning). Entrena un agente que toma decisiones de asignación de capital dinámicas... |
 | [**figma-style-canvas**](./moonshots/figma-style-canvas.md) | Es el lienzo de diseño visual tipo Figma que permite construir estrategias arrastrando nodos, conectando, scalando, anidando. Implementa un edito... |
@@ -347,6 +348,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0116**](./adr/ADR-0116.md) | Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas |
 | [**ADR-0117**](./adr/ADR-0117.md) | Entrega Progresiva de Cáscara Delgada por Feature — Techo Fijo, Ventana de Verificación y Redefinición de EPIC-8 como Unificación ZUI |
 | [**ADR-0118**](./adr/ADR-0118.md) | Unidad de Entrega = Módulo Completo; Construcción en el Primer Consumidor; ROADMAP como Guía sin Bitácora |
+| [**ADR-0119**](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
 
 ---
 ## 📖 Arquitectura y Gobernanza

@@ -40,7 +40,7 @@ Al mover una Feature de estado `Especificación` a `Implementación`:
 
 ### 17.7 Protocolo de Auto-Evolución del Skill (Meta-Governance)
 El conocimiento arquitectónico generado en sesiones de alta densidad debe ser "decriptado" en instrucciones técnicas para el agente:
-1.  **Sync-Trigger:** Todo nuevo patrón aprobado en SAD/ADR debe evaluarse para su inclusión en el `.agent/workflows/quant-architect.md`.
+1.  **Sync-Trigger:** Todo nuevo patrón aprobado en SAD/ADR debe evaluarse para su inclusión en el SKILL del rol correspondiente (`.claude/skills/<rol>/SKILL.md`, ej. `.claude/skills/architect/SKILL.md`).
 2.  **Cierre de Brecha Cognitiva:** Si el agente requiere aclaración sobre un estándar >2 veces, se debe formalizar una sección en el workflow para evitar la recurrencia.
 3.  **Refactorización de Skill:** Las instrucciones del agente se consideran "Código Vivo" y deben ser refactorizadas para eliminar ambigüedad tras cada hito arquitectónico.
 

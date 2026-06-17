@@ -46,13 +46,13 @@ EPIC-8 ZUI ← EPIC-7 feedback+withdraw ← EPIC-6 manage+execute(nativo) ← EP
 | EPIC-2 | Motor de Backtest | `validate` (núcleo) | Backtest determinista y confiable | pendiente |
 | EPIC-3 | Generación | `generate` | Miles de candidatas/día | pendiente |
 | EPIC-4 | Guantelete de Robustez | `validate` (guantelete) | Estrategias operables (Score ≥75) | pendiente |
-| EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (bridge) | Estrategia viva en cuenta real vía bridge MT5 | pendiente |
-| EPIC-6 | Portafolio y Ejecución Nativa | `manage` + `execute` (nativo) | Flota multi-estrategia con brokers nativos | pendiente |
+| EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (bridge + REST/FIX nativo) | Estrategia viva en cuenta real vía bridge (MT5/cTrader) y conectores nativos REST/FIX (forex/CFD/futuros) | pendiente |
+| EPIC-6 | Portafolio y Ejecución Nativa Profunda | `manage` + `execute` (LiveNode) | Flota multi-estrategia + stack nativo profundo (LiveNode, todos los brókeres) | pendiente |
 | EPIC-7 | Ciclo Cerrado 24/7 | `feedback` + `withdraw` | Fábrica autónoma que se mejora sola | pendiente |
 | EPIC-8 | Unificación ZUI y Pulido | UI | Interfaz unificada y empaquetado (ADR-0117) | pendiente |
 | EPIC-9+ | Moonshots | según ROI | Colmena, Marketplace, SaaS, Copy-Trading | pendiente |
 
-**Splits por dependencia dura (ADR-0118):** `validate` se entrega en dos fases (núcleo de backtest en EPIC-2, necesario antes de generar; guantelete completo en EPIC-4). `execute` igual (vía bridge en EPIC-5 para llegar al dinero rápido; motor nativo en EPIC-6). Son las únicas particiones de módulo permitidas, y cada una está justificada por una dependencia citable.
+**Splits por dependencia dura (ADR-0118):** `validate` se entrega en dos fases (núcleo de backtest en EPIC-2, necesario antes de generar; guantelete completo en EPIC-4). `execute` igual: el bridge (MT5/cTrader) y los conectores nativos REST/FIX (forex/CFD/futuros) son **co-prioritarios en EPIC-5** para llegar al dinero rápido; el stack nativo profundo (LiveNode de todos los brókeres, incl. cripto, + ejecución a nivel portafolio) llega en EPIC-6. Son las únicas particiones de módulo permitidas, y cada una está justificada por una dependencia citable.
 
 ---
 
@@ -87,7 +87,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 **Objetivo:** datos en los que se puede confiar. Sin esto, todo backtest es ficción.
 
-**Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), descarga híbrida Bulk+Delta (ADR-0034) de 2 fuentes, transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118).
+**Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), descarga híbrida Bulk+Delta (ADR-0034) de 2 fuentes (prioridad de clase de activo: una Forex/CFD primero; una cripto como segunda fuente), transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118).
 
 **Criterio de salida:** un comando CLI descarga, sanitiza y particiona 5+ años de 2 símbolos; el PIT validator rechaza un dataset con leakage inyectado a propósito; una consulta DuckDB de remuestreo responde <200ms.
 
@@ -115,19 +115,19 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 **Criterio de salida:** el pipeline EPIC-3→EPIC-4 corre desatendido y emite estrategias con Score ≥75 + certificación prop-firm; los resultados se heredan entre versiones (test incremental verificado).
 
-### EPIC-5 — PRIMER DINERO REAL (`incubate` + `execute` vía bridge)
+### EPIC-5 — PRIMER DINERO REAL (`incubate` + `execute`: bridge + conectores nativos REST/FIX prioritarios)
 
-**Objetivo:** la fase que justifica el proyecto. Se llega al mercado vía [`multiplatform-execution-bridge`](./features/multiplatform-execution-bridge.md) (MT5) **antes** que con el motor nativo, porque las cuentas de fondeo viven en MT5 y el bridge exige mucha menos superficie (ADR-0078). El motor nativo llega en EPIC-6.
+**Objetivo:** la fase que justifica el proyecto. Se llega al mercado por **dos vías co-prioritarias**: el [`multiplatform-execution-bridge`](./features/multiplatform-execution-bridge.md) para plataformas que lo exigen (MT5 — cuentas de fondeo — y cTrader, ADR-0078) y los **conectores nativos REST/FIX** ([`broker-connector`](./features/broker-connector.md)) para brókeres de forex/CFD/futuros que los ofrecen. Las cuentas de fondeo (MT5) siguen siendo el camino más corto al primer dólar. El stack nativo profundo (LiveNode de todos los brókeres + ejecución a nivel portafolio) y los conectores de cripto se difieren a EPIC-6.
 
-**Alcance:** `incubate` completo (cuarentena de 7 días con `paper-trader` + `incubation-manager`, Eutanasia Predictiva y Cono de Silencio, ADR-0088; `pardo-comparison`) y la mitad "bridge" de `execute` (fase EPIC-5 en [`docs/modules/execute.md`](./modules/execute.md#ttrs-etiquetados-por-fase)): defensa innegociable antes del primer trade — `pre-trade-validator` (ADR-0025 + veto ADR-0095), `order-fsm` (ADR-0004), `operational-safety-monitor` (SSL+Pardo, ADR-0070), Shadow Watchdog + Kill Switch (ADR-0026/0087), `sovereign-security` (ADR-0093), `crash-recovery` (ADR-0027), `persistent-daemons` (ADR-0084) + `data-bus-pubsub` (ADR-0085). El wrapper de reglas de portafolio en modo Challenge con asignación manual (ADR-0079) se construye aquí porque las cuentas de fondeo lo exigen.
+**Alcance:** `incubate` completo (cuarentena de 7 días con `paper-trader` + `incubation-manager`, Eutanasia Predictiva y Cono de Silencio, ADR-0088; `pardo-comparison`) y la mitad "bridge" de `execute` (fase EPIC-5 en [`docs/modules/execute.md`](./modules/execute.md#ttrs-etiquetados-por-fase)): defensa innegociable antes del primer trade — `pre-trade-validator` (ADR-0025 + veto ADR-0095), `order-fsm` (ADR-0004), `operational-safety-monitor` (SSL+Pardo, ADR-0070), Shadow Watchdog + Kill Switch (ADR-0026/0087), `sovereign-security` (ADR-0093), `crash-recovery` (ADR-0027), `persistent-daemons` (ADR-0084) + `data-bus-pubsub` (ADR-0085). **Conectores de mercado co-prioritarios:** el bridge ([`multiplatform-execution-bridge`](./features/multiplatform-execution-bridge.md), MT5 + cTrader) y los conectores nativos REST/FIX para forex/CFD/futuros ([`broker-connector`](./features/broker-connector.md), su TTR-002 ya está en EPIC-5). El wrapper de reglas de portafolio en modo Challenge con asignación manual (ADR-0079) se construye aquí porque las cuentas de fondeo lo exigen. *Dependencia a vigilar (ADR-0107):* el `broker-connector` se apalanca en los adaptadores de NautilusTrader; EPIC-5 entrega el camino REST/FIX para los brókeres prioritarios, el kernel LiveNode completo (multi-bróker + portafolio) es EPIC-6.
 
-**Criterio de salida:** una estrategia generada por Drasus pasa cuarentena de 7 días, opera una cuenta de fondeo demo→real vía bridge, el SSL y el kill switch se prueban con simulacro de fallo, y la reconciliación diaria cuadra. **KPI de negocio: primera semana verde con dinero real gestionado 100% por el sistema.**
+**Criterio de salida:** una estrategia generada por Drasus pasa cuarentena de 7 días, opera una cuenta de fondeo demo→real vía bridge (o un bróker de forex/CFD vía conector nativo REST/FIX), el SSL y el kill switch se prueban con simulacro de fallo, y la reconciliación diaria cuadra. **KPI de negocio: primera semana verde con dinero real gestionado 100% por el sistema.**
 
 ### EPIC-6 — Portafolio y Ejecución Nativa (`manage` + `execute` nativo)
 
-**Objetivo:** pasar de 1–3 estrategias a una flota con gestión de capital seria, y del bridge a brokers nativos.
+**Objetivo:** pasar de 1–3 estrategias a una flota con gestión de capital seria, y completar el **stack nativo profundo** (LiveNode) para todos los brókeres (incl. cripto).
 
-**Alcance:** `manage` completo (ver [`docs/modules/manage.md`](./modules/manage.md#ttrs-etiquetados-por-fase): `portfolio-optimizer` con HRP, ADR-0075/0089; `portfolio-backtest` con margen compartido, ADR-0091; `signal-correlation-analyzer`; Auto-Rebalancing con circuit breaker) y la mitad "nativa" de `execute` (`broker-connector` nativo + LiveNode de los crates NT v2, ADR-0107; guardia de microestructura en vivo OFI/DOM — parte viva del split de order-flow, ADR-0118; `volatility-stabilization`, ADR-0068).
+**Alcance:** `manage` completo (ver [`docs/modules/manage.md`](./modules/manage.md#ttrs-etiquetados-por-fase): `portfolio-optimizer` con HRP, ADR-0075/0089; `portfolio-backtest` con margen compartido, ADR-0091; `signal-correlation-analyzer`; Auto-Rebalancing con circuit breaker) y la mitad **nativa profunda** de `execute`: integración del **LiveNode de los crates NT v2 (ADR-0107)** para todos los brókeres restantes (incl. cripto) y la ejecución a nivel portafolio — los conectores nativos REST/FIX de forex/CFD/futuros ya se entregaron en EPIC-5; guardia de microestructura en vivo OFI/DOM (parte viva del split de order-flow, ADR-0118); `volatility-stabilization` (ADR-0068).
 
 **Criterio de salida:** portafolio de ≥3 estrategias descorrelacionadas operando con pesos HRP, rebalanceo automático auditado, y ≥1 broker nativo con paridad sim/live medida.
 

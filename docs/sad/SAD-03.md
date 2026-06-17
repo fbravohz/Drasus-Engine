@@ -1,6 +1,6 @@
 ## 3. Decisiones Técnicas Clave (ADRs)
 
-> **Nota:** Esta tabla es un resumen curado de los ADRs más representativos para la comprensión arquitectónica general; no es exhaustiva. El registro completo y vigente de todas las Decisiones de Arquitectura (incluyendo ADR-0014 a ADR-0106) es [`ADR.md`](../ADR.md).
+> **Nota:** Esta tabla es un resumen curado de los ADRs más representativos para la comprensión arquitectónica general; no es exhaustiva. El registro completo y vigente de todas las Decisiones de Arquitectura (incluyendo ADR-0014 a ADR-0119 y subsiguientes) es [`ADR.md`](../ADR.md).
 
 | ID | Decisión | Propósito |
 |---|---|---|

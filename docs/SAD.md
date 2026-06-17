@@ -21,6 +21,6 @@ El SAD se partió por sección bajo [`sad/`](./sad/). El contenido es **idéntic
 | [15. Riesgos y Mitigaciones](./sad/SAD-15.md) |
 | [16. Grafo de Dependencias Técnicas Entre Módulos](./sad/SAD-16.md) |
 | [17. Gobernanza Operacional (Protocolos de Salud)](./sad/SAD-17.md) |
-| [18. Plan de Lanzamiento (Rollout Strategy v2.0)](./sad/SAD-18.md) |
+| [18. Plan de Lanzamiento (Rollout Strategy v3.0)](./sad/SAD-18.md) |
 | [19. Glosario y Apéndices](./sad/SAD-19.md) |
 | [20. Gobernanza y Soberanía de Datos](./sad/SAD-20.md) |

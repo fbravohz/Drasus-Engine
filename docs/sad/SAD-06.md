@@ -62,7 +62,7 @@ Cliente (FFI/gRPC)
 En R&D se usan Workers efímeros que nacen, calculan y mueren. En Producción se necesitan **Procesos Persistentes (Daemons)**. El Core en Rust orquesta un hilo en segundo plano (Tokio task) dedicado exclusivamente a la ejecución en vivo y paper trading, inicializando el componente **LiveNode** de NautilusTrader.
 
 - **Aislamiento de Entorno:** El proceso en vivo corre en su propio núcleo lógico mediante afinidad de CPU (*Core Pinning*), totalmente aislado de los Workers de R&D. Si se lanza una optimización genética masiva que consume el 99% del hardware, el sistema operativo garantiza que el núcleo reservado para el LiveNode mantenga latencia de microsegundos para ejecutar órdenes reales.
-- **Componentes del LiveNode:** Conectividad nativa con brokers (Binance, IBKR, Oanda), loop de eventos determinista (Local-First) y gestión de órdenes mediante el FSM operativo descrito en la sección 12.
+- **Componentes del LiveNode:** Conectividad nativa con brokers (Binance, IBKR, Oanda), loop de eventos determinista (Local-First) y gestión de órdenes mediante el FSM operativo descrito en [la sección 12](./SAD-12.md).
 - **Reconstrucción de Inventario:** El Event Store (persistencia local en modo WAL) registra cada evento de ejecución, permitiendo reconstruir el estado del inventario tras un reinicio o caída del proceso.
 
 #### 6.3.2 Multiplexación de Datos (El Bus Pub/Sub)

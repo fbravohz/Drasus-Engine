@@ -93,10 +93,10 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 | generate → validate | Candidatas generadas | Suite de validación (WFA, Monte Carlo, coherencia) |
 | validate → incubate | Validación aprobada + robustez mínima configurable | Forward testing en vivo |
 | incubate → manage | Pardo test pasado + drift aceptable (configurable) | Promoción a portafolio candidato |
+| manage → execute | Portafolio optimizado + reglas de riesgo listas | Activación de ejecución viva (configurable por usuario — ver ADR-0008: Configurabilidad Universal) |
 | execute → feedback | Orden ejecutada / anomalía detectada | Delta real vs esperado disponible |
 | feedback → withdraw | Veredicto de retiro (Drift > umbral) | Estrategia enviada a Retiro Emérito (Archivo Institucional) |
 | withdraw → generate | Archivo completado + Insights | Nuevo ciclo con restricciones del fallo |
-por usuario (ver ADR-0008: Configurabilidad Universal)*
 
 ---
 
