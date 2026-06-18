@@ -208,6 +208,14 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Todos los procesos finalizados.
 *   **Postcondición:** Registro auditable permanentemente.
 
+### **TTR-010: Orquestación de Acceso Agéntico vía MCP (Cabina Dual — Bloqueado por Defecto)**
+*   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
+*   **Reglas de Orquestación:**
+    * `withdraw` opera exclusivamente sobre el cierre de posiciones con capital real: ninguna llamada del canal MCP nace con permiso, sin excepción (ADR-0123).
+    * Toda llamada se rechaza salvo que `PRODUCTION_OVERRIDE` esté activo en ese momento; el rechazo y la concesión quedan ambos auditados con su procedencia agente (`agent_session_id`).
+*   **Entrada:** Llamada MCP entrante con pipeline `withdraw`, estado de `PRODUCTION_OVERRIDE`.
+*   **Salida:** Resultado de la operación enrutado al agente, o rechazo, + registro de auditoría de procedencia.
+
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.
 *   **Reglas de Orquestación:**

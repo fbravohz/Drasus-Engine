@@ -34,6 +34,7 @@ Las features son las piezas de **Lógica Pura** (Functional Core) o drivers de i
 | [**adaptive-volume-indicators**](./features/adaptive-volume-indicators.md) | Esta suite de indicadores avanzados se aleja de los promedios estáticos para adaptarse a la volatilidad y liquidez del mercado. Incluye indicadores... | ingest, generate |
 | [**advanced-trade-management**](./features/advanced-trade-management.md) | Es el **gestor operativo base de transacciones**. Implementa reglas tradicionales de control de órdenes que permiten estructurar operaciones... | execute, manage |
 | [**adversarial-noise-agent**](./features/adversarial-noise-agent.md) | El "Adversarial Noise Agent" o Red Team AI es el gran villano del auditor de robustez. Es un componente que ejecuta **Data Perturbation**... | validate |
+| [**agentic-mcp-gateway**](./features/agentic-mcp-gateway.md) | Expone la `public_interface` de los 8 módulos a un agente LLM externo vía MCP (Cabina Dual, ADR-0123), con permisos graduados: abierto en descubrimiento/simulación, condicionado por `institutional_tag` en gestión, bloqueado por defecto en producción real. | Todos |
 | [**algorithmic-bars**](./features/algorithmic-bars.md) | Es un procesador de datos de mercado que transforma el flujo de ticks en barras basadas en eventos de precio o volumen, en lugar de intervalos de... | ingest |
 | [**alpha-decoupling**](./features/alpha-decoupling.md) | Aisla el rendimiento puro de la estrategia (Alpha) eliminando el efecto inercial del mercado general (Beta). Resuelve el problema de falsos... | manage, validate |
 | [**alpha-harvesting-gateway**](./features/alpha-harvesting-gateway.md) | Es un portal de ingesta (Gateway) que permite recibir, desencriptar y refinar estrategias anonimizadas provenientes de la mente colectiva (o peers)... | generate |
@@ -350,6 +351,9 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0118**](./adr/ADR-0118.md) | Unidad de Entrega = Módulo Completo; Construcción en el Primer Consumidor; ROADMAP como Guía sin Bitácora |
 | [**ADR-0119**](./adr/ADR-0119.md) | Separación Plano de Control / Plano de Ejecución para Operación Distribuida (Edge Execution / Central Control) |
 | [**ADR-0120**](./adr/ADR-0120.md) | Modos de Acompañamiento de Implementación (Autónomo / Mentor / Revisión) — Selección por el Usuario, Persistida en la Orden de Trabajo |
+| [**ADR-0121**](./adr/ADR-0121.md) | Comentarios de Código en Español — Identificadores en Inglés se Mantienen |
+| [**ADR-0122**](./adr/ADR-0122.md) | Cuarto Modo de Acompañamiento "Docente" + Protocolo de Lecciones Compartido (`docs/lessons/`) |
+| [**ADR-0123**](./adr/ADR-0123.md) | Cabina Dual — Acceso Agéntico vía MCP con Permisos Graduados por Riesgo de Pipeline |
 
 ---
 

@@ -37,6 +37,8 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 | `docs/execution/*.md` | Órdenes de trabajo (ejecución) | variable | La orden concreta que se está ejecutando. |
 | `docs/lessons/<dominio>/*.md` | Lecciones de aprendizaje acumuladas por tema (Modos Mentor/Revisión/Docente, ADR-0122) — no por tarea | variable | Abre solo el tema relevante; índice de carpetas en `docs/lessons/README.md`. |
 
+**Este archivo y el ROADMAP son editables por el Architect.** `CLAUDE.md` (este mapa) y `docs/ROADMAP.md` (la guía de orden de entregas) no son de solo lectura: el Architect los actualiza cuando el mapa documental cambia (nueva sección, ADR, feature o módulo que altera la navegación) o cuando una decisión arquitectónica nueva reordena o añade una fase/entrega al ROADMAP. Edición quirúrgica igual que el resto (`Edit` en bloques pequeños, nunca reescritura completa).
+
 **Pipeline de módulos:** `ingest → generate → validate → incubate → manage → execute → feedback → withdraw`.
 
 **Skills (agentes):** `.claude/skills/<rol>/SKILL.md`. `base/SKILL.md` tiene supremacía sobre todos.

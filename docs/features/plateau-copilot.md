@@ -57,7 +57,7 @@ Asistente visual de **auditoría topológica manual** de parámetros. El motor d
 
 ## Restricciones
 
-- NUNCA la IA fija el parámetro de producción por sí sola: la selección de producción siempre requiere el clic humano.
+- NUNCA la IA fija el parámetro de producción por sí sola: la selección de producción siempre requiere el clic humano. Única excepción formal: el interruptor de producción de Cabina Dual (ADR-0123) activo, donde el clic lo ejecuta un agente al que el propietario delegó explícitamente esa autoridad — sin esa activación, la regla rige sin excepción.
 - NUNCA se permite seleccionar un pico aislado sin advertir visualmente que carece de meseta (riesgo de overfitting).
 - El mapa de calor debe mantenerse legible aunque la rejilla sea densa (downsampling visual configurable).
 

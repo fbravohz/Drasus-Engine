@@ -64,9 +64,11 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 **Objetivo:** esqueleto del monolito modular FCIS compilando, con las fundaciones anti-retrabajo (ADR-0020 V2) y los 6 gates de viabilidad resueltos.
 
-**Alcance:** workspace Cargo con los 8 módulos + `shared` (ADR-0003); migración 0001 con la tabla ancla `foundation_master_fields` (catálogo de 25 campos, ADR-0020 V2); features transversales de plomería [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md); CLI con Clap + binario raíz `app` (SAD §4.2); Panel Operativo Fundacional (SPIKE-006/ADR-0117).
+**Alcance:** workspace Cargo con los 8 módulos + `shared` (ADR-0003); migración 0001 con la tabla ancla `foundation_master_fields` (catálogo de 25 campos, ADR-0020 V2); features transversales de plomería [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md), [`agentic-mcp-gateway`](./features/agentic-mcp-gateway.md) (núcleo del servidor MCP + evaluador de permisos, ADR-0123); CLI con Clap + binario raíz `app` (SAD §4.2); Panel Operativo Fundacional (SPIKE-006/ADR-0117).
 
 > **Nota de secuenciación (ADR-0118):** la recuperación post-crash que EPIC-0 exige (job que sobrevive a un cierre y se recupera <10s) la cubre [`async-job-executor`](./features/async-job-executor.md). La feature [`crash-recovery`](./features/crash-recovery.md) (reconciliación de una sesión de trading en vivo contra el bróker, ADR-0027) **no** es de Fundación: pertenece a `execute`/EPIC-5, porque necesita el conector de bróker y el Event Store que no existen hasta entonces.
+>
+> **Nota de secuenciación (ADR-0123):** el núcleo de [`agentic-mcp-gateway`](./features/agentic-mcp-gateway.md) (servidor MCP + evaluador de permisos para `ingest`/`generate`/`validate`/`incubate`/`feedback`, abiertos por defecto) se construye en EPIC-0 como el resto de la plomería transversal. El permiso condicionado por `institutional_tag` sobre `manage` y el bloqueo de `execute`/`withdraw` se activan naturalmente cuando esos módulos existen (EPIC-5/6) — no requieren trabajo adicional, son la misma evaluación de permisos aplicada a fronteras que aún no existían. El flujo de aceptación de términos de riesgo en modo SaaS depende de `saas-gateway` y llega con EPIC-9+.
 
 **Criterio de salida:** `cargo test` verde en el esqueleto; la migración 0001 aplica los 25 campos; un job asíncrono sobrevive a un `kill -9` y se recupera; los 6 veredictos SPIKE están en ADR con su validación residual ejecutada; el Panel Operativo Fundacional muestra en vivo clock, cola de trabajos y bitácora de auditoría (primera Cáscara Delgada, ADR-0117).
 
@@ -82,6 +84,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-007 — `telemetry` | en curso (Modo Mentor, Orden lista, pendiente invocación) | [STORY-007](./execution/STORY-007-telemetry.md) |
 | STORY-008 — `worker-isolation-orchestrator` | pendiente | — |
 | STORY-009 — CLI Clap + binario raíz `app` | pendiente | — |
+| STORY-010 — `agentic-mcp-gateway` (núcleo MCP + evaluador de permisos) | pendiente | — |
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
@@ -147,7 +150,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 ### EPIC-9+ — Moonshots (post-rentabilidad, ADR-0103)
 
-Orden sugerido por ROI esperado, revisable con datos reales: transpilador MQL5 (ADR-0101) → Copy-Trading + SaaS gateway → Deep Learning/DRL → La Colmena (ADR-0086) + Marketplace (ADR-0099) → SaaS Cloud (ADR-0033) → resto del catálogo según evidencia.
+Orden sugerido por ROI esperado, revisable con datos reales: transpilador MQL5 (ADR-0101) → Copy-Trading + SaaS gateway → Deep Learning/DRL → La Colmena (ADR-0086) + Marketplace (ADR-0099) → SaaS Cloud (ADR-0033) → Operación Distribuida Edge/Control ([`distributed-edge-execution`](./moonshots/distributed-edge-execution.md), ADR-0119 — compuerta Client Zero, requiere SaaS Cloud previo) → resto del catálogo según evidencia.
 
 ---
 

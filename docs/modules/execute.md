@@ -549,6 +549,14 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Señal de entrada validada (TTR-001) y Genoma de Riesgo y Gestión de Posición resuelto por `generate` (TTR-040 de `generate`).
 *   **Postcondición:** Posición abierta y gestionada bajo los Genes de Acción del genoma activo, con `audit_hash` por fase/mutación.
 
+### **TTR-042: Orquestación de Acceso Agéntico vía MCP (Cabina Dual — Bloqueado por Defecto)**
+*   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
+*   **Reglas de Orquestación:**
+    * `execute` opera exclusivamente con capital y broker reales: ninguna llamada del canal MCP nace con permiso, sin excepción (ADR-0123).
+    * Toda llamada se rechaza salvo que `PRODUCTION_OVERRIDE` esté activo en ese momento; el rechazo y la concesión quedan ambos auditados con su procedencia agente (`agent_session_id`).
+*   **Entrada:** Llamada MCP entrante con pipeline `execute`, estado de `PRODUCTION_OVERRIDE`.
+*   **Salida:** Resultado de la operación enrutado al agente, o rechazo, + registro de auditoría de procedencia.
+
 ---
 
 ## Gobernanza y Estándares (Fijos)

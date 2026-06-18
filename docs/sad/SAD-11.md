@@ -56,5 +56,11 @@
 * **Implementación:** El tiempo es un parámetro que se pasa (inyección de dependencia).
 * **Beneficio:** Simulaciones históricas reproducibles; debugging sin sorpresas.
 
+### Permisos del Agente Graduados por Riesgo de Pipeline (Transversal — ADR-0123)
+* **Regla:** Un agente LLM conectado vía MCP nace con permiso total sobre ingestar/generar/validar/incubar/retroalimentar; sobre gestionar queda condicionado al `institutional_tag` (Demo concede, Live exige el interruptor de producción); sobre ejecutar/retirar nace sin permiso alguno.
+* **Por qué:** Permite delegar el trabajo tedioso de descubrimiento sin abrir por defecto una puerta sin control hacia el capital real.
+* **Implementación:** El interruptor de producción está apagado y oculto por defecto; el propietario lo activa de forma explícita y reversible. En modo SaaS, antes no existe la opción de activarlo sin que el usuario acepte expresamente los términos de riesgo.
+* **Consecuencia:** Toda llamada del agente queda auditada con su procedencia; cerrar el canal MCP no degrada la operación manual desde la interfaz.
+
 ---
 

@@ -2,12 +2,14 @@
 
 ### 4.1 Nivel 1: Contexto
 ```
-    ┌───────────────────────────┐
-    │       Flutter UI          │
-    │ (Dart + Impeller Engine)  │
-    └────────┬──────────────────┘
-             │ (Local: FFI / Remoto: gRPC)
-    ┌────────▼──────────────────┐      ┌─────────────────────────┐
+    ┌───────────────────────────┐   ┌───────────────────────────┐
+    │       Flutter UI          │   │  Agente LLM (Claude, etc.) │
+    │ (Dart + Impeller Engine)  │   │  Cliente MCP — Cabina Dual │
+    └────────┬──────────────────┘   └────────┬──────────────────┘
+             │ (Local: FFI / Remoto: gRPC)    │ (MCP, vía Agentic
+             │                                │  Gateway — ADR-0123)
+             └───────────────┬────────────────┘
+    ┌────────────────────────▼──────────┐      ┌─────────────────────────┐
     │   Drasus Engine Backend   │◄────►│       Brokers           │
     │        (Rust Core)        │ API/ │  (Binance, Interactive  │
     │   [broker-connector]      │  WS  │   Brokers, etc.)        │
@@ -18,6 +20,8 @@
     │   (Historial, States)     │
     └───────────────────────────┘
 ```
+
+**Tercer cliente — Agente LLM vía MCP (Cabina Dual, ADR-0123):** igual que Flutter, es un Shell-cliente más sobre la misma `public_interface`. No reemplaza al cliente humano: el usuario decide en cada momento si opera la interfaz o delega en el agente. Sus permisos por defecto se gradúan por riesgo de pipeline (abiertos en descubrimiento/simulación, bloqueados en producción real salvo activación explícita) — el detalle vive en [`agentic-mcp-gateway.md`](../features/agentic-mcp-gateway.md).
 
 ### 4.2 Nivel 2: Contenedores (8 Módulos de Pipeline + Features Reutilizables)
 

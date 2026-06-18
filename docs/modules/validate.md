@@ -800,6 +800,14 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** TTR-004 finalizado; `ACTIVE_GENOME_DOMAINS` contiene al menos un dominio distinto de Señal.
 *   **Postcondición:** un `domain_gate_verdict = FAIL` en **cualquiera** de las compuertas activas produce veredicto `RECHAZADA` sin excepción, independientemente del score ponderado de los 5 tests del Guantelete y del resultado de las demás compuertas de dominio.
 
+### **TTR-060: Orquestación de Acceso Agéntico vía MCP (Cabina Dual)**
+*   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
+*   **Reglas de Orquestación:**
+    * `validate` pertenece al grupo de pipelines abiertos por defecto (ADR-0123): un agente conectado vía MCP tiene permiso total sin gate adicional.
+    * Toda llamada concedida queda auditada con su procedencia agente (`agent_session_id`).
+*   **Entrada:** Llamada MCP entrante con pipeline `validate`.
+*   **Salida:** Resultado de la operación enrutado al agente + registro de auditoría de procedencia.
+
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.
 *   **Reglas de Orquestación:**

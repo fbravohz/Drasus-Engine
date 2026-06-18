@@ -563,6 +563,14 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** TTR-008 (Compilación AST) ha etiquetado los nodos `wildcard_group` por dominio de origen.
 *   **Postcondición:** Candidatos listos para `validate`, con las Compuertas de Robustez correspondientes a TODOS los dominios en `ACTIVE_GENOME_DOMAINS` (ADR-0109/ADR-0110/ADR-0111, las que apliquen) pendientes.
 
+### **TTR-041: Orquestación de Acceso Agéntico vía MCP (Cabina Dual)**
+*   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
+*   **Reglas de Orquestación:**
+    * `generate` pertenece al grupo de pipelines abiertos por defecto (ADR-0123): un agente conectado vía MCP tiene permiso total sin gate adicional.
+    * Toda llamada concedida queda auditada con su procedencia agente (`agent_session_id`).
+*   **Entrada:** Llamada MCP entrante con pipeline `generate`.
+*   **Salida:** Resultado de la operación enrutado al agente + registro de auditoría de procedencia.
+
 ---
 
 ## Gobernanza y Estándares (Fijos)

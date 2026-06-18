@@ -451,6 +451,16 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** TTR-001 (pesos óptimos) y TTR-002 (veredicto de reglas) finalizados.
 *   **Postcondición:** Órdenes de activación/desactivación, rotación de pesos y/o cobertura sintética encoladas para `execute`.
 
+### **TTR-035: Orquestación de Acceso Agéntico vía MCP (Cabina Dual — Permiso Condicionado)**
+*   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
+*   **Reglas de Orquestación:**
+    * `manage` no separa una porción de producción en su lógica (los mismos TTR de pesos/reglas operan igual para cualquier portafolio); el permiso se condiciona al `institutional_tag` del portafolio objetivo de la llamada (ADR-0020 V2, ADR-0123).
+    * Si el objetivo tiene `institutional_tag = Demo`, la llamada se concede sin gate adicional.
+    * Si el objetivo tiene `institutional_tag = Live`, la llamada se rechaza salvo que `PRODUCTION_OVERRIDE` esté activo en ese momento.
+    * Toda llamada (concedida o rechazada) queda auditada con su procedencia agente (`agent_session_id`) y el `institutional_tag` evaluado.
+*   **Entrada:** Llamada MCP entrante con pipeline `manage`, `institutional_tag` del portafolio objetivo, estado de `PRODUCTION_OVERRIDE`.
+*   **Salida:** Resultado de la operación enrutado al agente, o rechazo con motivo, + registro de auditoría de procedencia.
+
 ---
 
 

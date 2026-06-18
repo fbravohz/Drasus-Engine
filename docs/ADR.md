@@ -126,3 +126,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0120](./adr/ADR-0120.md) | Modos de Acompañamiento de Implementación (Autónomo / Mentor / Revisión) — Selección por el Usuario, Persistida en la Orden de Trabajo |
 | [ADR-0121](./adr/ADR-0121.md) | Comentarios de Código en Español — Identificadores en Inglés se Mantienen |
 | [ADR-0122](./adr/ADR-0122.md) | Cuarto Modo de Acompañamiento "Docente" + Protocolo de Lecciones Compartido (`docs/lessons/`) |
+| [ADR-0123](./adr/ADR-0123.md) | Cabina Dual — Acceso Agéntico vía MCP con Permisos Graduados por Riesgo de Pipeline |
