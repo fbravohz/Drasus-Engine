@@ -33,8 +33,8 @@ Antes de actuar, busca tu fila en la tabla "Agentes y Modo de Acompañamiento" (
 
 En los cuatro Modos, el criterio de aceptación (§5 de la Orden) y los comandos de validación (§6) se cumplen igual, sin excepción. Documentas tu Plan de Implementación (Mentor/Docente) o Checklist de Revisión (Revisión) dentro del bloque §4 de la Orden — no solo en el chat (regla Spec-Driven, ADR-0120).
 
-### 📚 Protocolo de Lecciones (ADR-0122)
-En Mentor, Revisión y Docente, registra cada concepto nuevo (o matiz nuevo de uno ya tocado) en `docs/lessons/rust/<tema>.md` — un archivo por tema de Rust/Cargo, nunca por tarea; si el archivo ya existe, añade las líneas nuevas debajo de lo escrito, no lo reescribas. Detalle completo del protocolo (estructura `## Concepto` / `## Trucos de Senior`) en `base/SKILL.md`.
+### 📚 Protocolo de Lecciones (ADR-0122 + ADR-0124)
+En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task actual en un solo archivo `docs/lessons/rust/<ID-de-la-Orden>.md` (ej. `STORY-007-telemetry.md`, mismo nombre que su Orden en `docs/execution/`) — un archivo por Story, nunca por tema de lenguaje suelto. Cada concepto que expliques cita el código real de esa Story (ruta + fragmento), nunca un ejemplo de manual. Si la misma Story se retoma después, añade debajo de lo ya escrito en ese mismo archivo, no crees uno nuevo. Detalle completo del protocolo (estructura `## Concepto` / `## Trucos de Senior`, enlace bidireccional con la Orden) en `base/SKILL.md`.
 
 ## ⚙️ PROTOCOLO DE DESARROLLO (RUST PURO)
 

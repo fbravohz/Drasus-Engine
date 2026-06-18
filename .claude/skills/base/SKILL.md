@@ -147,7 +147,7 @@ Al cerrar cualquier trabajo, entrega al usuario los **comandos exactos** (copy/p
 
 ---
 
-## Modos de Acompañamiento — Profundidad Didáctica y Protocolo de Lecciones (ADR-0120 + ADR-0122)
+## Modos de Acompañamiento — Profundidad Didáctica y Protocolo de Lecciones (ADR-0120 + ADR-0122 + ADR-0124)
 
 Aplica a los seis Ingenieros (Rust, Flutter, Bridge, QA, Quant, Refactoring) en sus Modos **Mentor**, **Revisión** y **Docente** (ADR-0120/ADR-0122; el detalle de cada Modo vive en el `SKILL.md` de cada Ingeniero, no aquí — esta sección fija el piso de profundidad y el protocolo de registro, comunes a los seis).
 
@@ -159,14 +159,16 @@ Ninguna explicación da por sabido nada del lenguaje, framework o disciplina del
 
 El Ingeniero implementa el bloque completo por su cuenta (`Edit`/`Write` sin esperar al usuario, como en Autónomo). Antes de avanzar al siguiente bloque se detiene y enseña: explica cada decisión de diseño que tomó con la profundidad cero-conocimiento de arriba, invita preguntas del usuario sobre el código ya escrito y las responde al mismo nivel. No avanza al siguiente bloque sin agotar las preguntas del actual. Granularidad: un bloque lógico (función/struct/widget/fórmula) por vez, igual que Mentor.
 
-### Protocolo de Lecciones (`docs/lessons/`)
+### Protocolo de Lecciones (`docs/lessons/`) — un archivo por Story/Task (ADR-0124)
 
-Toda explicación de un concepto (en Mentor, Revisión o Docente) se destila a un archivo reusable, NO ligado a la Historia/Orden que la originó:
+Toda explicación de un concepto (en Mentor, Revisión o Docente) se destila a un archivo reusable que consolida TODO lo enseñado durante una Story/Task concreta — NO por tema de lenguaje suelto (regla corregida por ADR-0124; ADR-0122 decía lo contrario, ya no aplica):
 
 - **Carpeta por dominio:** cada Ingeniero escribe bajo su propia subcarpeta de `docs/lessons/` — el nombre exacto está en su `SKILL.md`.
-- **Un archivo por tema, nunca por tarea:** el nombre de archivo describe el concepto (`ownership.md`, `async-await.md`), nunca la tarea donde se enseñó.
-- **No duplicar, extender:** si el archivo del tema ya existe, no se reescribe la lección completa — se añaden solo las líneas/secciones nuevas, debajo de lo ya escrito. La lección crece de forma acumulativa entre sesiones distintas.
-- **Estructura mínima de cada archivo:** sección `## Concepto` (explicación cero-conocimiento) y sección `## Trucos de Senior` (azúcar sintáctica, idiomatismos o atajos que un Senior usaría en vez de la solución de manual de un Junior) — esta segunda sección solo se llena cuando de verdad hay un atajo que valga destacar, nunca por relleno.
+- **Un archivo por Story/Task, nunca por tema:** el nombre de archivo es el mismo ID que su Orden de Trabajo en `docs/execution/` (ej. `STORY-007-telemetry.md`), no el nombre de un concepto de lenguaje. Un archivo consolida TODOS los conceptos enseñados en esa Story, no uno por archivo.
+- **Ejemplos concretos de la Story, no genéricos:** cada concepto explicado cita el código real que esa Story produjo (ruta de archivo y fragmento), nunca un ejemplo de manual inventado para la ocasión.
+- **Enlace bidireccional con la Orden:** el archivo de lección enlaza a `docs/execution/<ID>.md` al inicio (`> Story: [...]`); el Registro de Ejecución (§7) de la Orden puede enlazar de vuelta al archivo de lección.
+- **No duplicar, extender — a nivel de Story:** si la misma Story se retoma en una sesión posterior, no se crea un segundo archivo — se añade al archivo de esa Story lo nuevo que se enseñó, debajo de lo ya escrito.
+- **Estructura mínima de cada archivo:** sección `## Concepto` (con una subsección por cada concepto enseñado en esa Story, cada una anclada a código real — explicación cero-conocimiento) y sección `## Trucos de Senior` (azúcar sintáctica, idiomatismos o atajos reales que aparecieron en esa Story — solo se llena cuando de verdad hay un atajo que valga destacar, nunca por relleno).
 
 El criterio de cierre de la Orden de Trabajo (Criterio de Aceptación, comandos de validación) no cambia por Modo — ver ADR-0120.
 

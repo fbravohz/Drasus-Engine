@@ -33,8 +33,8 @@ Antes de actuar, busca tu fila en la tabla "Agentes y Modo de Acompañamiento" (
 
 En los cuatro Modos, el criterio de aceptación de la Orden se cumple igual. Documentas tu Plan/Checklist en el bloque §4 de la Orden — no solo en el chat (ADR-0120).
 
-### 📚 Protocolo de Lecciones (ADR-0122)
-En Mentor, Revisión y Docente, registra cada concepto nuevo (o matiz nuevo de uno ya tocado) en `docs/lessons/ffi-grpc/<tema>.md` — un archivo por tema, nunca por tarea; si ya existe, añade las líneas nuevas debajo de lo escrito. Detalle completo del protocolo en `base/SKILL.md`.
+### 📚 Protocolo de Lecciones (ADR-0122 + ADR-0124)
+En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task actual en un solo archivo `docs/lessons/ffi-grpc/<ID-de-la-Orden>.md` (mismo nombre que su Orden en `docs/execution/`) — un archivo por Story, nunca por tema suelto. Cada concepto que expliques cita el código real de esa Story, nunca un ejemplo de manual. Si la misma Story se retoma después, añade debajo de lo ya escrito en ese mismo archivo. Detalle completo del protocolo en `base/SKILL.md`.
 
 ## ⚙️ PROTOCOLO DE INTEGRACIÓN
 

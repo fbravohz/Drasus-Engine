@@ -202,7 +202,7 @@ cargo llvm-cov --workspace --summary-only
   - **Dependencia tocada:** se agregó el feature `time` a `tokio` en `[dependencies]` de `crates/shared/Cargo.toml` (ya estaba en `[dev-dependencies]`) — lo necesita `tokio::time::interval` en `spawn_flush_task`. No es un crate nuevo.
   - `public_interface.rs`: exportados `TelemetryBuffer`, `TelemetryBufferConfig`, `TelemetryError`, `TelemetryRepository`, `TelemetrySample`, `TelemetrySampleContent`, `build_sample`, `expired_sample_ids`.
 - **Verde final:** `cargo build --workspace`, `cargo clippy --workspace --all-targets -- -D warnings` (0 warnings tras corregir 2 hallazgos `clippy::cloned_ref_to_slice_refs`), `cargo test -p shared` (76 tests, 0 fallos), `cargo llvm-cov --workspace --summary-only` (ver §5 para cobertura de los archivos nuevos).
-- **Lecciones formales:** registradas en `docs/lessons/rust/` (índice de temas enseñados en esta sesión, ver esa carpeta).
+- **Lecciones formales:** consolidadas en [`docs/lessons/rust/STORY-007-telemetry.md`](../lessons/rust/STORY-007-telemetry.md) — un solo archivo por Story (ADR-0124, corrige la regla "un archivo por tema" de ADR-0122), con los conceptos de Rust de esta sesión anclados al código real de arriba.
 - **Pendiente para el Tech-Lead:** auditar este registro contra §5 (mapeo 1-a-1), reproducir los comandos de §6, y sellar `docs/features/telemetry.md` TTR-001 + el ROADMAP si corresponde.
 
 ## 8. Pendientes derivados / decisiones

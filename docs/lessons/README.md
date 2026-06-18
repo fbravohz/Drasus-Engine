@@ -1,12 +1,14 @@
-# Lecciones — Aprendizaje Acumulado por Tema
+# Lecciones — Aprendizaje Acumulado por Story/Task
 
-Esta carpeta no documenta el proyecto: documenta lo que el usuario aprende mientras lo construye (Protocolo de Lecciones, ADR-0122). Cada archivo es un tema del lenguaje, framework o disciplina — nunca una tarea, Historia u Orden de Trabajo. Cualquier skill puede leer y escribir aquí bajo Modo Mentor, Revisión o Docente (ADR-0120/ADR-0122).
+Esta carpeta no documenta el proyecto: documenta lo que el usuario aprende mientras lo construye (Protocolo de Lecciones, ADR-0122, corregido por [ADR-0124](../adr/ADR-0124.md)). Cada archivo es una Story/Task concreta — el mismo ID que su Orden en `docs/execution/` — y consolida TODO lo enseñado durante esa Story, anclado a su código real. Cualquier skill puede leer y escribir aquí bajo Modo Mentor, Revisión o Docente (ADR-0120/ADR-0122).
 
 ## Reglas (detalle completo en `.claude/skills/base/SKILL.md`)
 
-- Un archivo por tema, nombrado por el concepto (`ownership.md`, `async-await.md`), nunca por la tarea donde se enseñó.
-- Si el archivo ya existe, no se reescribe: se añaden las líneas/secciones nuevas debajo de lo ya escrito.
-- Cada archivo tiene como mínimo `## Concepto` (explicación cero-conocimiento) y `## Trucos de Senior` (atajos/azúcar sintáctica — solo si hay algo real que destacar).
+- Un archivo por Story/Task, nombrado igual que su Orden (`STORY-007-telemetry.md`), nunca por tema de lenguaje suelto.
+- Cada concepto explicado dentro del archivo cita el código real de esa Story (ruta + fragmento), no un ejemplo de manual.
+- El archivo enlaza a su Orden en `docs/execution/<ID>.md` al inicio — trazabilidad en ambos sentidos.
+- Si la misma Story se retoma en una sesión posterior, no se crea un segundo archivo: se añade al ya existente, debajo de lo escrito.
+- Cada archivo tiene como mínimo `## Concepto` (una subsección por cada concepto enseñado, cero-conocimiento, anclada a código real) y `## Trucos de Senior` (atajos/azúcar sintáctica reales de esa Story — solo si hay algo real que destacar).
 
 ## Carpetas por dominio
 
