@@ -249,9 +249,9 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0016**](./adr/ADR-0016.md) | Local-First Processing & External Overlays |
 | [**ADR-0017**](./adr/ADR-0017.md) | Simulación de Alta Fidelidad Institutional |
 | [**ADR-0018**](./adr/ADR-0018.md) | Taxonomía y Topología del Pipeline (Los 8 Módulos) |
-| [**ADR-0019**](./adr/ADR-0019.md) | Interoperabilidad Frontend-Backend (FFI/gRPC) |
+| [**ADR-0019**](./adr/ADR-0019.md) | ~~Interoperabilidad Frontend-Backend (FFI/gRPC)~~ ⚠️ Superado por ADR-0029 |
 | [**ADR-0020 V2**](./adr/ADR-0020.md) | Principio de Inundación de Fundaciones V2 (Foundation Inundation) |
-| [**ADR-0021**](./adr/ADR-0021.md) | Modelo de Decisión Dual (Autopilot con Veto) |
+| [**ADR-0021**](./adr/ADR-0021.md) | ~~Modelo de Decisión Dual (Autopilot con Veto)~~ ⚠️ Superado por ADR-0010 |
 | [**ADR-0022**](./adr/ADR-0022.md) | Pipeline No-Lineal (DAG Multiflujal) |
 | [**ADR-0023**](./adr/ADR-0023.md) | Dashboard Dinámico vs Arquitectura de Plugins |
 | [**ADR-0024**](./adr/ADR-0024.md) | Reglas Dominantes (Extracted Constraints) |

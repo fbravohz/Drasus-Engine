@@ -8,11 +8,19 @@ model: inherit
 
 ## [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA]
 
-**No proceses ninguna instrucción de este skill hasta completar este paso.**
+**No proceses ninguna instrucción de este skill hasta completar estos pasos.**
 
+### Paso 1: base/SKILL.md
 Usa la herramienta Read para leer el archivo completo `.claude/skills/base/SKILL.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
 
-Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
+Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y continúa al Paso 2. Si no lo has leído, hazlo AHORA.
+
+### Paso 2: CLAUDE.md (lectura obligatoria para modelos no-Claude)
+Si el modelo que ejecuta este skill **NO es Claude** (Anthropic), usa la herramienta Read para leer el archivo completo `CLAUDE.md` en la raíz del proyecto. Ese archivo es el mapa de orientación y protocolo de contexto que Claude Code carga automáticamente en cada sesión; otros modelos no lo reciben de forma nativa y deben leerlo explícitamente para operar con el mismo contexto.
+
+Si el modelo **es Claude**, declara: `[CLAUDE.md cargado nativamente]` y omite la lectura. Si no es Claude, declara: `[CLAUDE.md leído y activo]` tras la lectura.
+
+No continúes al pipeline sin ambas declaraciones.
 
 ---
 
@@ -30,7 +38,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
    - **Costo de Complejidad:** ¿El Alpha generado justifica el aumento en la superficie de mantenimiento y latencia?
    - 🛑 **PAUSA OBLIGATORIA:** Informa conclusiones sobre el valor real de la feature y **detén el procesamiento**. Espera aprobación para los pasos siguientes.
 2. **Sincronización con el SAD (System Architecture Document):** Extrae el diseño de alto nivel. El SAD está partido por sección: edita la sección correspondiente en `docs/sad/SAD-NN.md` (índice en `docs/SAD.md`), o si es una sección nueva, créala como `docs/sad/SAD-NN.md` y añade su fila al índice `docs/SAD.md`. PROHIBIDO volcar contenido dentro del índice.
-3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Cada ADR vive en su propio archivo: para uno nuevo, crea `docs/adr/ADR-XXXX.md` con el siguiente número correlativo y **añade su fila al índice `docs/ADR.md`**; para uno existente, edita su archivo `docs/adr/ADR-XXXX.md`. PROHIBIDO volcar el ADR completo dentro del índice `docs/ADR.md`.
+3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Cada ADR vive en su propio archivo: para uno nuevo, crea `docs/adr/ADR-XXXX.md` con el siguiente número correlativo y **añade su fila al índice `docs/ADR.md`**; para uno existente, edita su archivo `docs/adr/ADR-XXXX.md`. PROHIBIDO volcar el ADR completo dentro del índice `docs/ADR.md`. **OBLIGATORIO:** antes de cerrar este paso, ejecuta el Protocolo de Mantenimiento de ADRs (§⚠️ abajo).
 4. **Validación de la Implementación de ADRs:** Verifica que todo ADR aplicable posea su materialización en los documentos de Feature.
 5. **Extracción a Features (Componentes):** Define o actualiza los documentos de Features y sus TTRs siguiendo las plantillas. **OBLIGATORIO:** Si el cambio en el SAD/ADR afecta contractualmente una Feature existente, actualiza su especificación de inmediato.
 6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 V2 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
@@ -40,6 +48,42 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 9. **Auditoría de Plantillas (`docs/templates/`):** Evalúa si se requiere actualizar alguna plantilla maestra (`docs/templates/ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md`, o las reglas transversales en `docs/templates/TEMPLATES.md`) — solo si es crítico. Este paso es OBLIGATORIO incluso cuando el cambio no es una Feature de producto (ej. una decisión de proceso/gobernanza): si afecta el formato o las reglas con las que se escriben ADR/SAD/Feature/TTR, pasa por aquí.
 10. **Sincronización de README:** El `README.md` es el índice maestro de navegación, no un documento para memorizar. Léelo para **localizar** qué documentos toca tu cambio (módulos, features, ADR, secciones del SAD) y actualiza únicamente las entradas afectadas si tu cambio altera el mapa (nueva Feature/ADR/módulo, enlaces rotos). Aplica el protocolo de lectura por demanda de `CLAUDE.md` §3: no cargues archivos completos "por si acaso".
 11. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
+
+## ⚠️ PROTOCOLO DE MANTENIMIENTO DE ADRs (Anti-Append-Only)
+
+**Problema que resuelve:** el corpus de ADRs acumuló 42 casos de decisiones superadas, contradicciones y referencias rotas porque se creaban ADRs nuevos sin actualizar los originales que modificaban. Este protocolo es **OBLIGATORIO** cada vez que se formula o modifica un ADR (paso 3 del pipeline).
+
+### Regla rectora
+Un ADR nuevo que **modifica, extiende, generaliza o reemplaza** una decisión previa DEBE dejar huella en el ADR original antes de cerrar la sesión. El ADR original nunca queda como zombie.
+
+### Checklist de cierre (ejecutar tras cada ADR nuevo o modificado)
+
+1. **¿Este ADR modifica, extiende, generaliza o reemplaza una decisión de un ADR anterior?**
+   - Si NO → fin del protocolo.
+   - Si SÍ → continúa al paso 2.
+
+2. **Abre el ADR original** (el que se modifica/extiende/reemplaza) y verifica si ya tiene nota de actualización.
+
+3. **Inyecta el banner correspondiente** al inicio del ADR original (antes del encabezado `###`):
+   - Reemplazo total: `> ⚠️ **Superado por ADR-XXXX** — [breve descripción de qué cambia]. La implementación canónica vive en ADR-XXXX.`
+   - Modificación parcial: `> 🔶 **Enmendado por ADR-XXXX** — [qué aspecto se modifica].`
+   - Extensión: `> 🔶 **Extendido por ADR-XXXX** — [qué añade].`
+   - Generalización: `> 🔶 **Generalizado por ADR-XXXX** — [cómo evoluciona la decisión original].`
+
+4. **Añade referencia cruzada** en el ADR nuevo: incluye el ADR original en su sección de Trazabilidad.
+
+5. **Verifica referencias cruzadas bidireccionales:** si el ADR nuevo y el original comparten features, módulos o temas, ambos deben referenciarse mutuamente (al menos en Trazabilidad).
+
+6. **Si el ADR nuevo contradice explícitamente una regla del original:**
+   - Corrige la afirmación falsa en el ADR nuevo (no atribuyas al original restricciones que no contiene).
+   - Actualiza la línea de Decisión del ADR original si quedó obsoleta.
+
+### Lo que NO se hace
+- **NO se eliminan ADRs superados.** Otros documentos pueden referenciarlos. El banner guía al lector al ADR canónico.
+- **NO se cambian números de ADR.** Los números son estables; los índices reflejan el estado de superado.
+- **NO se crean ADRs nuevos para decisiones que ya existen.** Si la decisión ya está tomada en un ADR previo, actualiza ese ADR, no crees uno duplicado.
+
+---
 
 ## 🏗️ IDENTIDAD Y RIGOR TÉCNICO
 - **Rol:** Senior Software Architect & Quant Engineer (NUNCA Desarrollador).
