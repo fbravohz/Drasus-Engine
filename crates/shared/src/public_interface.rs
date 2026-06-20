@@ -124,3 +124,9 @@ pub use crate::persistence::telemetry::{TelemetryError, TelemetryRepository};
 pub use crate::domain::telemetry::{build_sample, expired_sample_ids, TelemetrySample, TelemetrySampleContent};
 pub use crate::domain::worker_orchestrator::{WorkerBackend, WorkerBackendError, WorkerConfig, WorkerOrchestrator};
 pub use crate::orchestrator::worker_runner::{graceful_shutdown, is_process_alive, open_readonly, OsWorkerBackend, SharedMemorySegment, ShmError};
+pub use crate::domain::mcp_gateway::{
+    evaluate_permission, compute_audit_hash, outcome_to_string, institutional_tag_to_string,
+    InstitutionalTag, PermissionDecision, PermissionOutcome, PermissionRequest, Pipeline,
+};
+pub use crate::orchestrator::mcp_server::run_mcp_server;
+pub use crate::persistence::mcp_gateway::{McpGatewayError, McpGatewayRepository};

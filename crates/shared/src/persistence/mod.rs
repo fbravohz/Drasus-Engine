@@ -25,5 +25,6 @@
 
 pub mod audit_log;
 pub mod job;
+pub mod mcp_gateway;
 pub mod pool;
 pub mod telemetry;

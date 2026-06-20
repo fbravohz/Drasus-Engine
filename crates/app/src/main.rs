@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
-    create_pool, run_migrations,
+    create_pool, run_migrations, run_mcp_server,
     ExecutorIdentity, JobExecutor, JobExecutorConfig, SystemClock,
 };
 
@@ -144,6 +144,19 @@ async fn run_start(db_path: &str) {
             recovered.len()
         );
     }
+
+    // Lanza el servidor MCP en background (stdio).
+    // SqlitePool es un Arc interno: clonar es barato (incrementa el contador de referencia).
+    // tokio::spawn devuelve un JoinHandle; lo ignoramos porque el ciclo de vida
+    // del servidor MCP está atado al del proceso principal: cuando el proceso termina,
+    // el handle de stdin/stdout se cierra y el loop del servidor finaliza limpiamente.
+    let mcp_pool = pool.clone();
+    tokio::spawn(async move {
+        if let Err(e) = run_mcp_server(mcp_pool).await {
+            eprintln!("MCP server error: {e}");
+        }
+    });
+    println!("Servidor MCP activo (stdio).");
 
     println!("Motor Drasus arrancado. Presiona Ctrl+C para detener.");
 

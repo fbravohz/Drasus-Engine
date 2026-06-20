@@ -12,6 +12,9 @@
 //!   (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-002/004/005/006, ADR-0004, ADR-0011).
 //! - `logic`: placeholder vacío, solo estructura (F0/W1).
+//! - `mcp_gateway`: evaluador de permisos puro del Gateway MCP (ADR-0123) —
+//!   tipos `Pipeline`, `PermissionRequest`, `PermissionDecision` y la función
+//!   `evaluate_permission` (sin I/O). STORY-010.
 //! - `telemetry`: construcción pura de muestras de latencia/heartbeat y la
 //!   decisión de poda por ventana de retención (`docs/features/telemetry.md`
 //!   TTR-001, ADR-0015, ADR-0020 V2).
@@ -20,5 +23,6 @@ pub mod audit_log;
 pub mod clock;
 pub mod job;
 pub mod logic;
+pub mod mcp_gateway;
 pub mod telemetry;
 pub mod worker_orchestrator;

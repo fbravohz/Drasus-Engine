@@ -12,11 +12,15 @@
 //!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
 //!   y recuperación en startup (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/002/004/005/006, ADR-0011).
+//! - `mcp_server`: servidor MCP sobre stdio (ADR-0123, STORY-010) — expone
+//!   las operaciones de `shared` como herramientas MCP y registra cada
+//!   decisión de permiso en `permission_decisions`.
 //! - `telemetry`: el buffer de alta velocidad -- cola en memoria no
 //!   bloqueante + tarea de fondo que vacía a SQLite por lotes
 //!   (`docs/features/telemetry.md` TTR-001, ADR-0015).
 
 pub mod job_executor;
+pub mod mcp_server;
 pub mod telemetry;
 pub mod worker_runner;
 
