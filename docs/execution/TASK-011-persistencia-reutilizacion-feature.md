@@ -7,10 +7,10 @@
 | **Tipo** | Task (escalamiento al Architect — sin código) |
 | **Épica (Fase)** | EPIC-0 — Fundación |
 | **Sprint** | 1 |
-| **Estado** | Pendiente |
+| **Estado** | Completado |
 | **Responsable** | Architect (Opus) |
 | **Creada** | 2026-06-20 |
-| **Completada** | — |
+| **Completada** | 2026-06-20 |
 
 ## 1. Origen del escalamiento
 
@@ -67,7 +67,20 @@ grep -i "tabla única\|integration TTR\|consumido por\|puerto" docs/adr/ADR-0003
 
 ## 7. Registro de ejecución
 
-*(pendiente — Architect)*
+**2026-06-20 — Architect (Opus):**
+- **`docs/adr/ADR-0003.md`:** añadida sección "Persistencia en Features Multi-Consumidor (Regla de Tabla Única — enmienda 2026-06-20, escalamiento TASK-011)" con 4 reglas FIJO: una Feature → una tabla → un módulo dueño; TTR de Integración ≠ TTR de Construcción; "Consumido por" = accede al puerto; datos propios del consumidor van en sus propias tablas.
+- **`docs/adr/ADR-0118.md`:** referencia cruzada bidireccional añadida (cita ADR-0003 Regla de Tabla Única como "cara de persistencia" de Construcción vs Integración).
+- **`docs/templates/FEATURE.md`:** nota en sección "Dependencias y Bloqueantes" aclarando que "Consumido por" = accede al puerto, con cita a ADR-0003 y ADR-0118.
+- **Decisión del Architect:** enmienda a ADR-0003 (no ADR nuevo) porque la regla es la explicitación de una consecuencia ya implícita en el ADR de propiedad de tablas. ADR-0006 (Migraciones Centralizadas) refuerza la regla estructuralmente.
+
+**Evidencia de verificación (Tech-Lead):**
+```
+grep -in "tabla única\|integración\|consumido por\|puerto" docs/adr/ADR-0003.md
+→ 4 líneas con las reglas canónicas confirmadas.
+
+grep -n "Consumido por\|puerto\|ADR-0003" docs/templates/FEATURE.md
+→ Nota en línea 83 confirmada.
+```
 
 ## 8. Pendientes derivados
 
