@@ -121,3 +121,5 @@ pub use crate::persistence::audit_log::{AuditLogError, AuditLogRepository};
 pub use crate::persistence::job::{Job, JobRepository, JobRepositoryError, JobResult, NewJob, NewJobResult, RecoveredJob};
 pub use crate::persistence::telemetry::{TelemetryError, TelemetryRepository};
 pub use crate::domain::telemetry::{build_sample, expired_sample_ids, TelemetrySample, TelemetrySampleContent};
+pub use crate::domain::worker_orchestrator::{WorkerBackend, WorkerBackendError, WorkerConfig, WorkerOrchestrator};
+pub use crate::orchestrator::worker_runner::{graceful_shutdown, is_process_alive, open_readonly, OsWorkerBackend, SharedMemorySegment, ShmError};

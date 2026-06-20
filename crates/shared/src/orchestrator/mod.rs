@@ -18,6 +18,7 @@
 
 pub mod job_executor;
 pub mod telemetry;
+pub mod worker_runner;
 
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};

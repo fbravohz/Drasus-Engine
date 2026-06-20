@@ -21,3 +21,4 @@ pub mod clock;
 pub mod job;
 pub mod logic;
 pub mod telemetry;
+pub mod worker_orchestrator;
