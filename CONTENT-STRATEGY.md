@@ -51,8 +51,8 @@
 | **STORY-003** | Reloj real/determinista — mismo input → mismo resultado, siempre | ✅ | "Le construimos un reloj propio a nuestro motor. Sin esto, ningún backtest es confiable." |
 | **STORY-004** | Audit-log inmutable, encadenado por hash (append-only) | ✅ | "Cada evento queda encadenado por hash — alterar el pasado se detecta al instante. Sí, como un blockchain, pero para auditar tus propias decisiones." |
 | **STORY-005** | Cola de trabajos async con recuperación tras `kill -9` | ✅ | "¿Qué pasa si el motor se cae a mitad de un cálculo costoso? Construimos esto para que la respuesta sea: nada." |
-| **TASK-004** | Auditoría asistida por IA de 137 features del diseño (cerrada) | ✅ | "Antes de construir, auditamos 137 piezas de nuestro propio plano — con IA, y con un proceso que cualquier auditor podría revisar." |
-| **STORY-006** | — | ⏳ Próxima | (backlog para próxima sesión) |
+| **TASK-006** | Auditoría asistida por IA de 137 features del diseño (cerrada) | ✅ | "Antes de construir, auditamos 137 piezas de nuestro propio plano — con IA, y con un proceso que cualquier auditor podría revisar." |
+| **STORY-007** | `telemetry` — buffer de alta velocidad + heartbeat | ver `docs/ROADMAP.md` | (estado vivo, no copiar aquí — consultar antes de publicar) |
 
 **Estado de EPIC-0:** Los 6 SPIKEs de viabilidad bloqueantes (SPIKE-001 a SPIKE-006) **ya tienen veredicto documentado como ADR** (ADR-0107, ADR-0112 a ADR-0116). Resta validación residual (smoke tests), pero **las decisiones — y sus razones — ya existen y son publicables hoy**:
 
@@ -120,7 +120,7 @@ El público objetivo es cualquiera que hable español O inglés — no solo hisp
 - Un laboratorio de ingeniería cuantitativa que documenta su propio proceso de construcción — **desde el día 1, no desde el día del lanzamiento**.
 - La fuente hispana que explica *el cómo* (matemática, arquitectura, validación), no solo *el qué* (resultados, screenshots de ganancias).
 - Honestos sobre incertidumbre, fallos de diseño y decisiones revertidas. Los ADRs de "erradicación" (ADR-0112, ADR-0113, ADR-0115) son oro narrativo: *"consideramos X, lo descartamos, así fue por qué"*.
-- Constructores que usan IA para acelerar el desarrollo **sin sacrificar rigor** — y lo demuestran mostrando el proceso de auditoría (ADRs, Órdenes de Trabajo con criterios de aceptación, revisión Tech-Lead/QA — ver TASK-004).
+- Constructores que usan IA para acelerar el desarrollo **sin sacrificar rigor** — y lo demuestran mostrando el proceso de auditoría (ADRs, Órdenes de Trabajo con criterios de aceptación, revisión Tech-Lead/QA — ver TASK-006).
 
 **Lo que NO somos (líneas rojas):**
 - No vendemos estrategias, señales, "robots" ni resultados de cuentas en vivo como gancho.
@@ -205,7 +205,7 @@ Cada pilar mapea a material que **ya existe** en `docs/SAD.md` / `docs/ADR.md` /
 - **Ejemplos:**
   - *"Construimos un motor de trading. Cero líneas de estrategia. Esto es lo que SÍ hicimos (y por qué)"* — **Caso de Estudio #0, §7**.
   - *"Le dimos a nuestro motor de trading un libro de contabilidad que ni nosotros podemos alterar"* (STORY-004).
-  - *"Auditamos 137 piezas de nuestro propio diseño con IA, antes de escribir código. Así fue el proceso"* (TASK-004).
+  - *"Auditamos 137 piezas de nuestro propio diseño con IA, antes de escribir código. Así fue el proceso"* (TASK-006).
 
 > **Distribución de esfuerzo (fase EPIC-0/1):** Pilar **G** = contenido insignia actual (Tier 2, cadencia ~cada 2-4 semanas según ritmo de STORYs). Pilar **E** = puente (se funde con G en esta fase). Pilar **D** = arranca en paralelo apenas haya material de EPIC-1. Pilar **F** = combustible diario para shorts, independiente del calendario de desarrollo. Pilares **A/B/C** = en backlog, se activan según §1.4.
 
@@ -257,7 +257,7 @@ Priorizamos herramientas **code-first** que Claude Code puede generar/automatiza
 | 2:00–5:30 | Voz + Manim (conceptual) | 3 de las 6 apuestas (SPIKEs) más narrables: **"dijimos no a PyTorch"** (ADR-0112), **"dijimos no a Ollama"** (ADR-0115), **"dijimos no a Docker/microservicios"** (Zero-Docker). Cada una: problema → decisión → por qué, con animación simple del "árbol de opciones descartadas". |
 | 5:30–8:00 | Pantalla real + Voz | `cargo test` en verde sobre el workspace de 8 crates (STORY-001). Zoom a dos piezas concretas: el **reloj determinista** (STORY-003) y el **audit-log encadenado por hash** (STORY-004) — animación tipo "cadena de bloques" (Manim) explicando por qué un motor de trading necesita su propio libro contable inmutable. |
 | 8:00–9:00 | Voz + Diagrama | Cierre: "Esto es el Episodio 0. Cada decisión que el motor tome de aquí en adelante será tan auditable como las que acabamos de tomar para construirlo." |
-| 9:00–9:30 | PiP cara (opcional, Nivel 2) + Voz | CTA a Discord: ahí se publica el "detrás de cámaras" de TASK-004 (auditoría de 137 features con IA). |
+| 9:00–9:30 | PiP cara (opcional, Nivel 2) + Voz | CTA a Discord: ahí se publica el "detrás de cámaras" de TASK-006 (auditoría de 137 features con IA). |
 
 ### 7.2 Assets a generar
 
@@ -417,7 +417,7 @@ El skill (`.claude/skills/social-strategist/SKILL.md`) es el **punto de entrada 
 
 - **No** simplificar al punto de decir algo técnicamente falso "por claridad" — si se simplifica, se declara.
 - **No** usar B-roll generativo para simular funcionalidad de Drasus que no existe aún.
-- **No** prometer timelines de producto en redes que no estén confirmados internamente (ver `docs/ROADMAP.md` / memoria de auditoría TASK-004).
+- **No** prometer timelines de producto en redes que no estén confirmados internamente (ver `docs/ROADMAP.md` / memoria de auditoría TASK-006).
 - **No** depender de herramientas/MCPs no verificados para el camino crítico de producción (§6.3).
 - **🆕 No** presentar contenido de Pilares A/B/C (datos/resultados) antes de que el EPIC correspondiente los haya producido realmente (§1.4) — el "Episodio 0" promete auditabilidad; incumplirla rompe la marca.
 
@@ -425,7 +425,7 @@ El skill (`.claude/skills/social-strategist/SKILL.md`) es el **punto de entrada 
 
 ## 15. Próximos Pasos Inmediatos
 
-1. Activar Tier 1: correr `/social-strategist` sobre las 5 STORYs cerradas + TASK-004 para empezar la bitácora pública de inmediato (bajo costo, alto valor de "track record").
+1. Activar Tier 1: correr `/social-strategist` sobre las 5 STORYs cerradas + TASK-006 para empezar la bitácora pública de inmediato (bajo costo, alto valor de "track record").
 2. Decidir nombre/identidad mínima del canal.
 3. Producir **Caso de Estudio #0 (§7)** como video de lanzamiento — Nivel 0, sin cara, sin pre-requisitos técnicos de exportación de datos.
 4. En paralelo (no bloqueante), diseñar el script de exportación Parquet→JSON para cuando EPIC-2/3 entreguen datos reales (Tier 3) — a decidir con el Arquitecto si vive en `crates/shared` o en un repo de contenido separado.
