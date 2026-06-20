@@ -7,10 +7,10 @@
 | **Tipo** | Story |
 | **Épica (Fase)** | EPIC-0 — Fundación |
 | **Sprint** | 1 |
-| **Estado** | Pendiente |
+| **Estado** | Completada |
 | **Responsable** | Rust-Engineer (Sonnet) — Modo Docente · auditó Tech-Lead (pendiente) |
 | **Creada** | 2026-06-19 |
-| **Completada** | — |
+| **Completada** | 2026-06-20 |
 
 ## 1. Especificación de origen
 
@@ -137,7 +137,16 @@ Implementa en este orden (ajusta si el diseño lo pide):
 Por cada bloque: implementa → enseña → preguntas → siguiente.
 ```
 
-**Plan de Implementación / Revisión** *(lo llena el Rust-Engineer al ser invocado)*
+**Plan de Implementación — Rust-Engineer (2026-06-20)**
+
+| Bloque | Archivo | Descripción |
+|---|---|---|
+| 1 | `domain/worker_orchestrator.rs` | Tipos puros: `WorkerConfig`, `WorkerOrchestrator`, trait `WorkerBackend`. Sin I/O. |
+| 2 | `orchestrator/worker_runner.rs` | Cáscara: `SharedMemorySegment` (mmap + keepalive), `OsWorkerBackend`, `graceful_shutdown`, `is_process_alive`. |
+| 3 | `domain/mod.rs` + `orchestrator/mod.rs` | Registrar módulos nuevos. |
+| 4 | `public_interface.rs` | Re-exportar tipos públicos. |
+
+**Decisión sobre migración `worker_pid`:** la columna `process_id` (STRING) ya existe en la tabla `jobs` (migración `0003_jobs.sql`). Se almacena el PID OS como string en ese campo al transicionar a `RUNNING`. No se añade `0005_worker_pid.sql`.
 
 ---
 
@@ -166,7 +175,21 @@ cargo llvm-cov --workspace --summary-only     # cobertura de líneas
 
 ## 7. Registro de ejecución
 
-*(pendiente)*
+**Fecha:** 2026-06-20 · **Agente:** Rust-Engineer (Sonnet) · **Modo:** Docente
+
+| Criterio | Prueba | Estado |
+|---|---|---|
+| 1 · acceso < 1ms | `shared_memory_access_latency_under_1ms` | ✅ |
+| 2 · RAM constante con N workers | `shared_memory_ram_constant_with_n_workers` | ✅ |
+| 3 · escritura del worker rechazada | `shared_memory_worker_write_is_rejected` | ✅ |
+| 4 · shutdown < 2s | `worker_graceful_shutdown_under_2s` | ✅ |
+| 5 · workers terminan al morir el padre | `worker_terminates_when_parent_drops` | ✅ |
+| 6 · RUNNING → QUEUED al reiniciar | `worker_jobs_recovered_to_queued_on_restart` | ✅ |
+| 7 · máx. workers concurrentes respetado | `worker_respects_max_concurrent_workers` | ✅ |
+| 8 · dominio sin imports de sistema | inspección + grep (cero coincidencias) | ✅ |
+
+**Gate:** `cargo test -p shared` → **91 passed, 0 failed**.
+**Lección:** `docs/lessons/rust/STORY-008-worker-isolation-orchestrator.md`
 
 ## 8. Pendientes derivados / decisiones
 

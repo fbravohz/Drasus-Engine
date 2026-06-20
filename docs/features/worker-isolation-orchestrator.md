@@ -1,8 +1,10 @@
+> ✅ **Implementado** 2026-06-20 · Orden de trabajo [STORY-008](../execution/STORY-008-worker-isolation-orchestrator.md)
+
 # Worker Isolation Orchestrator
 
 **Carpeta:** `./features/worker-isolation-orchestrator.md`
-**Estado:** En Diseño
-**Última actualización:** 2026-06-19
+**Estado:** Implementado
+**Última actualización:** 2026-06-20
 **Decisión Arquitectónica Asociada:** ADR-0013 (Stack Tecnológico — Rust puro; Python rechazado permanentemente)
 
 ## ¿Qué es esta feature?
