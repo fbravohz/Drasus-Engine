@@ -1,3 +1,5 @@
+> 🟡 **Parcial** 2026-06-20 · TTR-001 (parcial), TTR-002, TTR-003 (storage), TTR-005 implementados · TTR-001 UI herramientas reales (EPIC-1+) y TTR-004 (SaaS terms) pendientes · Orden [STORY-010](../execution/STORY-010-agentic-mcp-gateway.md)
+
 # Agentic MCP Gateway (Cabina Dual)
 
 **Carpeta:** `./features/agentic-mcp-gateway/`
