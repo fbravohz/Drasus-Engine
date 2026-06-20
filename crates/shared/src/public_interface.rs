@@ -118,6 +118,7 @@ pub use crate::orchestrator::job_executor::{
 pub use crate::orchestrator::telemetry::{TelemetryBuffer, TelemetryBufferConfig};
 pub use crate::orchestrator::SystemClock;
 pub use crate::persistence::audit_log::{AuditLogError, AuditLogRepository};
+pub use crate::persistence::pool::{connect as create_pool, migrate as run_migrations};
 pub use crate::persistence::job::{Job, JobRepository, JobRepositoryError, JobResult, NewJob, NewJobResult, RecoveredJob};
 pub use crate::persistence::telemetry::{TelemetryError, TelemetryRepository};
 pub use crate::domain::telemetry::{build_sample, expired_sample_ids, TelemetrySample, TelemetrySampleContent};

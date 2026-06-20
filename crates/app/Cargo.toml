@@ -1,0 +1,39 @@
+[package]
+name = "app"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "drasus"
+path = "src/main.rs"
+
+[dependencies]
+# CLI declarativa: el macro derive genera el parser sin código manual.
+clap = { version = "4", features = ["derive"] }
+
+# Runtime asíncrono + señales del OS (SIGINT/SIGTERM).
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+
+# Crates del dominio: acceso solo a través de public_interface (ADR-0003).
+shared = { path = "../shared" }
+
+# Los 8 módulos del pipeline se declaran como dependencias del binario raíz
+# aunque en EPIC-0 no se usen directamente. Esto garantiza que el workspace
+# los compile como bloque monolítico desde el punto de entrada.
+ingest   = { path = "../ingest"   }
+generate = { path = "../generate" }
+validate = { path = "../validate" }
+incubate = { path = "../incubate" }
+manage   = { path = "../manage"   }
+execute  = { path = "../execute"  }
+feedback = { path = "../feedback" }
+withdraw = { path = "../withdraw" }
+
+[dev-dependencies]
+# Para el test de integración kill -9: inserción directa en SQLite
+# sin levantar el motor completo.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio", "macros"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+nix = { version = "0.29", features = ["signal", "process"] }
+tempfile = "3"
