@@ -19,6 +19,17 @@
 
 > Para tickets con un solo Agente, basta con **Responsable** arriba. Para tickets multi-agente (ej. Quant + Rust + Flutter), la tabla de §3 es la fuente de verdad: un Agente, una fila, su propio Modo.
 
+## 0. Resumen ejecutivo
+
+> Escrito por el Tech-Lead al crear la Orden. Responde tres preguntas en lenguaje llano, sin códigos internos:
+> - **Qué problema resuelve** este ticket (una frase).
+> - **Qué se va a construir** (lista de 2-4 puntos concretos y verificables).
+> - **Por qué ahora** (qué desbloquea o qué gate cierra).
+
+<Resumen aquí — sin límite de líneas, pero sin verbosidad: si necesitas más de 10 líneas, la descripción es demasiado detallada para un resumen.>
+
+---
+
 ## 1. Especificación de origen (qué specs implementa)
 Enlaces a las unidades de especificación que gobiernan este trabajo:
 - **Feature(s):** [`nombre`](../features/nombre.md)
@@ -35,6 +46,9 @@ Enlaces a las unidades de especificación que gobiernan este trabajo:
 | Agente | Etapa del pipeline | Depende de | Modo |
 |---|---|---|---|
 | <Rust-Engineer / Flutter-Engineer / Bridge-Engineer / QA-Engineer / Quant-Engineer / Refactoring-Engineer> | Etapa <n> | <agente del que depende, o "ninguno"> | Autónomo \| Mentor \| Revisión |
+| **QA-Engineer** | **Etapa 5 — gate obligatorio** | **Rust/Flutter/Bridge-Engineer** | **Autónomo** |
+
+> **Nota:** el QA-Engineer es fila obligatoria en toda Story de código desde EPIC-0. No puede omitirse. Su Modo por defecto es Autónomo (revisa el código y los tests sin que el usuario intervenga). El Tech-Lead despacha el QA después de que el ingeniero implementador entregue, y NO cierra el ticket hasta recibir veredicto APTO del QA.
 
 **Significado de cada Modo** (contrato completo en `<agente>/SKILL.md` §"Modos de Acompañamiento"):
 - **Autónomo:** el Agente implementa y entrega código + pruebas terminadas. El usuario solo audita el resultado.

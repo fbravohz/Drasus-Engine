@@ -59,7 +59,32 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 ### 5. Diseño Local-First
 * Zero-Docker, sin servicios de red obligatorios (ADR-0030). Usa estrictamente la nomenclatura técnica y formal del proyecto (ADR-0038).
 
-### 6. Pruebas como Entregable (tu propio verde antes de entregar)
+### 6. Política de Comentarios (obligatoria — para auditoría del propietario)
+
+El propietario del proyecto necesita poder leer el código y entender qué hace cada sección sin ser experto en Rust. Esta política es deliberada y tiene prioridad sobre las convenciones de "clean code" que prescriben pocos comentarios: el contexto del proyecto la justifica.
+
+**Regla:** cada función, método y bloque lógico no trivial lleva un comentario en español que describe **qué hace** y **qué resultado produce**. El lector que solo lee los comentarios debe poder describir el comportamiento del archivo sin ver el código.
+
+**Formato:**
+- Comentario de bloque (`//`) antes de cada `fn`, `struct`, `impl` y bloque lógico significativo dentro de una función.
+- Comentario de línea (`//`) en las líneas donde la lógica no es obvia: guardas de error, cálculos, condiciones de borde, `match` con múltiples brazos.
+- Los comentarios en `///` (doc-comments) se reservan para la `public_interface.rs` — son la documentación pública de la API.
+
+**Qué escribir:**
+- ✅ `// Calcula el hash de auditoría sobre los campos de dominio (scope + outcome + override); excluye el Grupo I para evitar circularidad`
+- ✅ `// Si el interruptor de producción está apagado y el portafolio es Live, rechaza la llamada`
+- ✅ `// Inserta la decisión de permiso en la tabla; no permite UPDATE ni DELETE — el historial es permanente`
+
+**Qué NO escribir en comentarios:**
+- ❌ Referencias a tickets o ADRs: `// ADR-0003`, `// STORY-009`, `// ver TTR-002` → esos son documentos externos, no ayudan a entender la línea.
+- ❌ Frases técnicas sin explicar: `// Append-only` → escribe en cambio `// Solo permite insertar; borrar o modificar lanzará un error de la base de datos`.
+- ❌ Comentarios que repiten el nombre de la función: `// evaluar_permiso` encima de `fn evaluate_permission` no aporta nada.
+
+**Sobre `unwrap()` y `expect()`:**
+- En código de producción (fuera de tests), cada `unwrap()` o `expect()` debe tener un comentario que justifique por qué es imposible que falle: `// El pool ya fue inicializado antes de llamar a esta función; no puede ser None`.
+- Si no puedes justificarlo con certeza, usa `?` o maneja el error explícitamente.
+
+### 7. Pruebas como Entregable (tu propio verde antes de entregar)
 * **Cada criterio de aceptación de la Orden de Trabajo DEBE tener al menos una prueba nombrada que lo ejerza.** Sin esa prueba, el criterio NO está cumplido — da igual que el resto compile en verde. "Todo verde" ≠ "el criterio crítico está probado".
 * **Cobertura por capa FCIS (pirámide ADR-0133):**
   - **Capa 1 — Unitarios** (`#[cfg(test)]`): lógica pura del `domain/` — casos válidos, inválidos y de borde.
