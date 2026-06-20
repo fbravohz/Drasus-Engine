@@ -85,27 +85,32 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-035 | **EPIC-3** | Registro de intentos N para DSR |
 | TTR-040 | **EPIC-3** | Registro de dominios genómicos (ADR-0108) |
 | TTR-003 | **EPIC-3** | Detección de régimen awareness (HMM) |
-| TTR-004 | EPIC-4 | Test de canasta (Universal Basket) |
-| TTR-005 | EPIC-4 | Optimización bayesiana (Intelligent Fine-Tuning) |
-| TTR-010 | EPIC-9+ | Deep Learning (Model-Free Alpha) |
 | TTR-011 | **EPIC-3** | Enrutador de señales (Feature Router) |
 | TTR-012 | **EPIC-3** | Hemisferios de asimetría (Strategy Ensemble) |
-| TTR-014 | EPIC-9+ | Dimensionalidad AI |
 | TTR-015 | **EPIC-3** | Fitness metamórfico (NSGA-II Tuning) |
-| TTR-017 | EPIC-6 | Presión de descorrelación (Fit-to-Portfolio) |
-| TTR-018 | EPIC-8 | Diseño guiado (AST Copilot) |
-| TTR-020 | EPIC-9+ | Simbolismo (Symbolic Discovery nativo) |
 | TTR-021 | **EPIC-3** | Ortogonalidad (Zero-Crossing Filter) |
 | TTR-029 | **EPIC-3** | Aislamiento genético (Worker Isolation) |
 | TTR-031 | **EPIC-3** | Builder Telemetry (Monitoreo Operativo) |
+| TTR-041 | **EPIC-3** | Acceso agéntico MCP (Cabina Dual) |
+| TTR-042 | **EPIC-3** | Scoring de impacto fundamental (Event Impact Scorer) |
+| TTR-043 | **EPIC-3** | Mapa de exposición evento→activo (Asset Exposure Map) |
+| TTR-044 | **EPIC-3** | Proyección a indicador fundamental (Fundamental Indicator Projector) |
+| TTR-045 | **EPIC-3** | Objetivo de frecuencia/horizonte de operación (ADR-0130) |
+| TTR-999 | **EPIC-3** | Protocolo Fail-Fast Safe (ADR-0066) |
+| TTR-004 | EPIC-4 | Test de canasta (Universal Basket) |
+| TTR-005 | EPIC-4 | Optimización bayesiana (Intelligent Fine-Tuning) |
+| TTR-017 | EPIC-6 | Presión de descorrelación (Fit-to-Portfolio) |
+| TTR-034 | EPIC-6 | Fundaciones de portafolio (Portfolio Data Preparation) |
+| TTR-038 | EPIC-7 | Disparadores reactivos (Event-Driven Pipeline Triggers) |
+| TTR-018 | EPIC-8 | Diseño guiado (AST Copilot) |
+| TTR-037 | EPIC-8 | Vistas previas rápidas (Node Preview) |
+| TTR-039 | EPIC-8 | Inspección de superficie de parámetros (Plateau Co-Pilot) |
+| TTR-010 | EPIC-9+ | Deep Learning (Model-Free Alpha) |
+| TTR-014 | EPIC-9+ | Dimensionalidad AI |
+| TTR-020 | EPIC-9+ | Simbolismo (Symbolic Discovery nativo) |
 | TTR-032 | EPIC-9+ | Recolección de Alpha (Alpha Harvesting Gateway) |
 | TTR-033 | EPIC-9+ | Traducción AI (Glass-Box AI Translator) |
-| TTR-034 | EPIC-6 | Fundaciones de portafolio (Portfolio Data Preparation) |
 | TTR-036 | EPIC-9+ | Minería descentralizada (La Colmena) |
-| TTR-037 | EPIC-8 | Vistas previas rápidas (Node Preview) |
-| TTR-038 | EPIC-7 | Disparadores reactivos (Event-Driven Pipeline Triggers) |
-| TTR-039 | EPIC-8 | Inspección de superficie de parámetros (Plateau Co-Pilot) |
-| TTR-999 | **EPIC-3** | Protocolo Fail-Fast Safe (ADR-0066) |
 
 ---
 
@@ -178,6 +183,9 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`dsr-tracking-engine`](../features/dsr-tracking-engine.md)** — Registro global de intentos ($N$) para deflación de Sharpe.
 - **[`node-preview`](../features/node-preview.md)** — Caché de vistas previas y simulación rápida para edición interactiva de nodos.
 - **[`event-driven-pipeline-triggers`](../features/event-driven-pipeline-triggers.md)** — Automatización de flujos de descubrimiento y reoptimización reactivos basados en eventos.
+- **[`event-impact-scorer`](../features/event-impact-scorer.md)** — Coeficiente de impacto determinista de eventos (Event Study + Surprise, ADR-0125).
+- **[`asset-exposure-map`](../features/asset-exposure-map.md)** — Relevancia determinista evento→activo por mapa de exposición (ADR-0128).
+- **[`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md)** — Proyección del evento puntuado a indicador estándar normalizado por activo (ADR-0128).
 
 ---
 
@@ -570,6 +578,49 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * Toda llamada concedida queda auditada con su procedencia agente (`agent_session_id`).
 *   **Entrada:** Llamada MCP entrante con pipeline `generate`.
 *   **Salida:** Resultado de la operación enrutado al agente + registro de auditoría de procedencia.
+
+### **TTR-042: Orquestación del Scoring de Impacto Fundamental (Event Impact Scorer)**
+*   **Descripción:** Invoca a [`event-impact-scorer`](../features/event-impact-scorer.md) para convertir cada evento versionado en un coeficiente de impacto determinista (Event Study sobre la reacción de precio, o Surprise sobre el consenso previo).
+*   **Reglas de Orquestación:**
+    * El método (Event Study / Surprise) se selecciona por tipo de evento de forma determinista (ADR-0125).
+    * Consume el first-print y el consenso previo del [`fundamental-event-store`](../features/fundamental-event-store.md); prohibido usar cifras revisadas (ADR-0127).
+    * El `indicator_state_hash` del coeficiente se persiste para reproducibilidad (ADR-0020 V2).
+*   **Entrada:** `versioned_fundamental_event`, serie de precio del activo.
+*   **Salida:** `impact_coefficient` (auditable y reproducible).
+*   **Precondición:** Eventos disponibles en el almacén PIT (TTR-023 de `ingest`).
+*   **Postcondición:** Coeficiente listo para combinarse con la relevancia por activo.
+
+### **TTR-043: Orquestación del Mapa de Exposición Evento→Activo (Asset Exposure Map)**
+*   **Descripción:** Invoca a [`asset-exposure-map`](../features/asset-exposure-map.md) para resolver qué eventos son relevantes para cada activo y con qué peso, según el vector de exposición del instrumento.
+*   **Reglas de Orquestación:**
+    * La relevancia se calcula por fórmula determinista sobre el solape de etiquetas, modulada por el alcance del evento (ADR-0128).
+    * Usa el vector de exposición vigente en la fecha del evento (sin look-ahead de exposición).
+*   **Entrada:** `versioned_fundamental_event`, vector de exposición del activo.
+*   **Salida:** `event_asset_relevance` (coeficiente acotado por par evento-activo).
+*   **Precondición:** Eventos etiquetados disponibles.
+*   **Postcondición:** Relevancia lista para la proyección del indicador.
+
+### **TTR-044: Orquestación de la Proyección a Indicador Fundamental (Fundamental Indicator Projector)**
+*   **Descripción:** Invoca a [`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md) para combinar impacto × relevancia y emitir una serie de indicador estándar, normalizada por instrumento, consumible por la lógica de estrategias igual que un indicador técnico.
+*   **Reglas de Orquestación:**
+    * El indicador es relativo al activo (normalizado por instrumento); nunca un valor global idéntico (ADR-0128).
+    * En la barra `t` solo refleja eventos publicados hasta `t` (PIT-correcto, ADR-0127).
+    * Respeta el contrato estándar de indicador del motor; cero lógica fundamental en el hot-path.
+*   **Entrada:** `impact_coefficient`, `event_asset_relevance`, rejilla temporal del activo.
+*   **Salida:** `fundamental_indicator_series` (contrato estándar de indicador).
+*   **Precondición:** TTR-042 y TTR-043 finalizados.
+*   **Postcondición:** Indicador fundamental disponible como entrada de descubrimiento de estrategias.
+
+### **TTR-045: Orquestación del Objetivo de Frecuencia/Horizonte de Operación (ADR-0130)**
+*   **Descripción:** Invoca a [`nsga2-optimizer`](../features/nsga2-optimizer.md) para descubrir bajo el perfil de operación declarado (`OPERATION_HORIZON`), con la frecuencia como objetivo opcional del Pareto y el mínimo de operaciones (`MIN_TRADES`) como restricción, combinando el backtest multiactivo ([`universal-basket-backtester`](../features/universal-basket-backtester.md)) para alcanzar validez estadística.
+*   **Reglas de Orquestación:**
+    * `OPERATION_HORIZON` ajusta el fitness; `OPERATION_HORIZON = any` no impone sesgo (agnosticismo, ADR-0130).
+    * Las estrategias bajo `MIN_TRADES` se penalizan/rechazan; el N se alcanza operando la misma estrategia en varios activos.
+    * La frecuencia real solo es alcanzable con entradas concurrentes no bloqueantes (ADR-0129); ambas decisiones operan juntas.
+*   **Entrada:** Perfil de operación, objetivos del Pareto, canasta de activos, datos históricos.
+*   **Salida:** Frontera Pareto con estrategias del horizonte pedido y validez estadística (scalping ↔ swing ↔ posición ↔ ticks).
+*   **Precondición:** Datos multiactivo disponibles desde `ingest`.
+*   **Postcondición:** Candidatos coherentes con la frecuencia/horizonte declarados, listos para `validate`.
 
 ---
 

@@ -66,28 +66,30 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 | TTR | Fase | Descripción corta |
 |---|---|---|
-| TTR-004 | **EPIC-1** | Limpieza química (Data Sanitizer) |
 | TTR-006 | **EPIC-1** | Descarga híbrida (Sovereign Fetcher) |
+| TTR-009 | **EPIC-1** | Monitoreo de progreso (Download Manager) |
 | TTR-007 | **EPIC-1** | Transformación de alto rendimiento (Hybrid Transformer) |
 | TTR-008 | **EPIC-1** | Normalización multi-broker |
+| TTR-004 | **EPIC-1** | Limpieza química (Data Sanitizer) |
 | TTR-001 | **EPIC-1** | Validación estructural (Data Validator) |
 | TTR-002 | **EPIC-1** | Causalidad temporal (PIT Validator) |
+| TTR-018 | **EPIC-1** | Marcado temporal (Clock) |
 | TTR-010 | **EPIC-1** | Almacenamiento Hive-Style (Partition Manager) |
 | TTR-005 | **EPIC-1** | Persistencia soberana (DuckDB/Parquet) |
-| TTR-011 | **EPIC-1** | Remuestreo dinámico (DuckDB Resampler) |
-| TTR-012 | **EPIC-1** | Importación manual (Import Wizard) |
-| TTR-009 | **EPIC-1** | Monitoreo de progreso (Download Manager) |
-| TTR-013 | **EPIC-1** | Auditoría visual de calidad (Heatmap) |
-| TTR-003 | EPIC-3 | Contextualización (HMM Regime) |
 | TTR-014 | **EPIC-1** | Remuestreo algorítmico (Algorithmic Bars) |
 | TTR-017 | **EPIC-1** | Microestructura histórica (Order Flow — CVD) |
-| TTR-018 | **EPIC-1** | Marcado temporal (Clock) |
 | TTR-019 | **EPIC-1** | Memoria estadística (Fractional Differencer) |
+| TTR-011 | **EPIC-1** | Remuestreo dinámico (DuckDB Resampler) |
+| TTR-012 | **EPIC-1** | Importación manual (Import Wizard) |
+| TTR-013 | **EPIC-1** | Auditoría visual de calidad (Heatmap) |
+| TTR-023 | **EPIC-1** | Ingesta de eventos fundamentales (Fundamental Event Store) |
+| TTR-022 | **EPIC-1** | Acceso agéntico MCP (Cabina Dual) |
+| TTR-999 | **EPIC-1** | Protocolo Fail-Fast Safe (ADR-0066) |
+| TTR-003 | EPIC-3 | Contextualización (HMM Regime) |
 | TTR-020 | EPIC-3 | Selección de universo accionario |
 | TTR-021 | EPIC-4 | Etiquetado manual de regímenes |
 | TTR-015 | EPIC-8 | Inicialización de entorno local (Flutter FFI) |
 | TTR-016 | EPIC-8 | Navegación infinita (ZUI Navigation) |
-| TTR-999 | **EPIC-1** | Protocolo Fail-Fast Safe (ADR-0066) |
 
 ---
 
@@ -167,6 +169,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`order-flow-microstructure`](../features/order-flow-microstructure.md)** — Enriquecimiento de barras con CVD, OFI y VWAP.
 - **[`fractional-differencer`](../features/fractional-differencer.md)** — Preservación de memoria estadística via diferenciación fraccional (ADR-0064).
 - **[`manual-regime-tagger`](../features/manual-regime-tagger.md)** — Etiquetado visual manual de zonas de crisis sobre el activo de referencia.
+- **[`fundamental-event-store`](../features/fundamental-event-store.md)** — Almacén PIT de eventos fundamentales (first-print + revisiones) con linaje del proveedor (ADR-0126/0127).
 
 ---
 
@@ -391,6 +394,18 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * Toda llamada concedida queda auditada con su procedencia agente (`agent_session_id`).
 *   **Entrada:** Llamada MCP entrante con pipeline `ingest`.
 *   **Salida:** Resultado de la operación enrutado al agente + registro de auditoría de procedencia.
+
+### **TTR-023: Orquestación de Ingesta de Eventos Fundamentales (Fundamental Event Store)**
+*   **Descripción:** Invoca a [`fundamental-event-store`](../features/fundamental-event-store.md) para ingestar el hecho crudo de eventos fundamentales (calendario macro, resultados corporativos, política monetaria) desde un proveedor estructurado externo, persistirlo local con linaje y versionarlo PIT (first-print + revisiones).
+*   **Reglas de Orquestación:**
+    * El acceso al proveedor externo se encapsula en el driver de la feature; ningún otro módulo golpea al proveedor directamente (Soberanía, ADR-0126).
+    * Cada evento se sella con su instante de publicación vía [`clock`](../features/clock.md) y se valida anti-look-ahead con [`pit-data-validator`](../features/pit-data-validator.md) (ADR-0127).
+    * Una revisión nunca sobrescribe el first-print: se persiste como versión nueva vinculada por `parent_id` (ADR-0020 V2).
+    * Prohibido persistir un score o sentimiento interpretado por el tercero (ADR-0125/0126).
+*   **Entrada:** `raw_fundamental_event` (hecho crudo + linaje del proveedor).
+*   **Salida:** `versioned_fundamental_event` (evento PIT, consultable as-of).
+*   **Precondición:** Fuente estructurada configurada y espacio en disco validado.
+*   **Postcondición:** Evento disponible para [`event-impact-scorer`](../features/event-impact-scorer.md) sin look-ahead.
 
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.

@@ -90,6 +90,9 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-034 | **EPIC-5** | Protocolo de recuperación (Crash Recovery) |
 | TTR-038 | **EPIC-5** | Seguridad soberana (Sovereign Security) |
 | TTR-040 | **EPIC-5** | Auto-auditoría de portafolios vivos |
+| TTR-042 | **EPIC-5** | Acceso agéntico MCP (Cabina Dual — bloqueado por defecto) |
+| TTR-043 | **EPIC-5** | Integración indicador fundamental en ejecución (Fundamental Indicator Projector) |
+| TTR-044 | **EPIC-5** | Entradas concurrentes no bloqueantes (ADR-0129) |
 | TTR-006 | **EPIC-6** | Bridge de ejecución (Nautilus Integration) |
 | TTR-011 | **EPIC-6** | Guardia de microestructura (Pre-Trade Order Flow) |
 | TTR-013 | **EPIC-6** | Dimensionamiento táctico (Live Sizing con Robustness Score) |
@@ -556,6 +559,29 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * Toda llamada se rechaza salvo que `PRODUCTION_OVERRIDE` esté activo en ese momento; el rechazo y la concesión quedan ambos auditados con su procedencia agente (`agent_session_id`).
 *   **Entrada:** Llamada MCP entrante con pipeline `execute`, estado de `PRODUCTION_OVERRIDE`.
 *   **Salida:** Resultado de la operación enrutado al agente, o rechazo, + registro de auditoría de procedencia.
+
+### **TTR-043: Integración del Indicador Fundamental en Tiempo Real (Fundamental Indicator Projector)**
+*   **Descripción:** TTR de Integración (ADR-0118): lee en vivo el indicador fundamental ya construido ([`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md)) vía su `public_interface`, para confirmar o ponderar la decisión de ejecución, sin ejecutar lógica fundamental en el hot-path.
+*   **Reglas de Orquestación:**
+    * El hot-path solo lee una serie numérica precalculada; cero lógica fundamental en la ruta de validación ≤1ms (ADR-0125/0128).
+    * El valor leído respeta el contrato estándar de indicador; se usa la serie normalizada del activo operado (ADR-0128).
+    * La lectura no puede bloquear la cascada de validación pre-trade.
+*   **Entrada:** `fundamental_indicator_series` del activo operado.
+*   **Salida:** Confirmación/ponderación fundamental aplicada a la decisión viva.
+*   **Precondición:** Indicador disponible vía `public_interface` de `generate` (TTR-044).
+*   **Postcondición:** Decisión de ejecución enriquecida con el aporte fundamental, sin penalizar latencia.
+
+### **TTR-044: Orquestación de Entradas Concurrentes No Bloqueantes (ADR-0129)**
+*   **Descripción:** Invoca a [`order-fsm`](../features/order-fsm.md) y [`advanced-trade-management`](../features/advanced-trade-management.md) para abrir una posición concurrente independiente cuando llega una señal de entrada válida y ya existe una posición abierta de la misma estrategia, aplicando la de-duplicación de señal y el gate de riesgo.
+*   **Reglas de Orquestación:**
+    * Default no bloqueante (`MAX_CONCURRENT_POSITIONS`); `=1` reproduce el bloqueo clásico (ADR-0129).
+    * `SIGNAL_DEDUP_BARS` descarta una entrada en la misma vela de disparo.
+    * Cada apertura concurrente pasa completa por el Pre-Trade Risk Gate de 10 pasos (ADR-0025), validando margen/exposición sobre el **agregado** de posiciones (HARD, ADR-0010).
+    * Toda apertura o descarte queda auditado con su `source_signal_id`.
+*   **Entrada:** Nueva señal de entrada, conjunto de posiciones abiertas de la estrategia.
+*   **Salida:** Orden de apertura concurrente enviada al broker, o descarte con motivo.
+*   **Precondición:** Gate de riesgo pre-trade disponible.
+*   **Postcondición:** Posición concurrente registrada en el FSM con margen agregado y P&L por ticket.
 
 ---
 

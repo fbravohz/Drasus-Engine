@@ -83,6 +83,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-015 | **EPIC-7** | Reporte de auto-auditoría (Cost Reconciler) |
 | TTR-016 | **EPIC-7** | Reconstrucción táctil de fricción (Interactive Stress Lab) |
 | TTR-017 | **EPIC-7** | Diagnóstico de pureza de Alpha (Alpha Purity Analyzer) |
+| TTR-018 | **EPIC-7** | Acceso agéntico MCP (Cabina Dual) |
 
 ---
 

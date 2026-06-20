@@ -66,37 +66,39 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 | TTR | Fase | Descripción corta |
 |---|---|---|
-| TTR-001 | **EPIC-6** | Optimización de pesos (Portfolio Optimizer) |
 | TTR-002 | **EPIC-5** | Vigilancia de riesgo y reglas (Rules Wrapper & Challenge Mode) |
+| TTR-019 | **EPIC-5** | Promoción directa (Bypass MOD-04) |
+| TTR-024 | **EPIC-5** | Advanced Trade Management (ATM) |
+| TTR-001 | **EPIC-6** | Optimización de pesos (Portfolio Optimizer) |
 | TTR-003 | **EPIC-6** | Adaptación de régimen (HMM Detection) |
 | TTR-004 | **EPIC-6** | Persistencia de portafolio (Databank Manager) |
 | TTR-005 | **EPIC-6** | Daemon de rebalanceo automático |
 | TTR-006 | **EPIC-6** | Backtesting multiestratégico |
 | TTR-010 | **EPIC-6** | Reparto de capital (Portfolio Sizing) |
+| TTR-012 | **EPIC-6** | Vigilancia sistémica de Beta (Alpha Decoupling) |
 | TTR-013 | **EPIC-6** | Diversificación (Signal Correlation Analyzer) |
+| TTR-014 | **EPIC-6** | Atribución (Factor Decomposition) |
 | TTR-015 | **EPIC-6** | Equidad global (Equity Curve Tracker) |
 | TTR-016 | **EPIC-6** | KPIs macro (Institutional Metrics) |
 | TTR-017 | **EPIC-6** | Versionado (Strategy Versioning) |
 | TTR-018 | **EPIC-6** | Auditoría de gestión (Audit Log) |
-| TTR-023 | **EPIC-6** | Versionado de portafolio Git-Like |
-| TTR-030 | **EPIC-6** | Portafolios federados (Federated Portfolio) |
-| TTR-031 | **EPIC-6** | Simulación de portafolio real (Portfolio Backtest) |
-| TTR-034 | **EPIC-6** | Genoma de portafolio y correlación (ADR-0108/ADR-0111) |
-| TTR-011 | EPIC-8 | Auditoría narrativa (Self-Explanation) |
-| TTR-012 | **EPIC-6** | Vigilancia sistémica de Beta (Alpha Decoupling) |
-| TTR-014 | **EPIC-6** | Atribución (Factor Decomposition) |
-| TTR-019 | **EPIC-5** | Promoción directa (Bypass MOD-04) |
-| TTR-020 | EPIC-8 | Validación visual (Dendrogram / Heatmap) |
 | TTR-021 | **EPIC-6** | Métricas de riesgo avanzadas |
 | TTR-022 | **EPIC-6** | Clustering K-Means y hrp_rank |
-| TTR-024 | **EPIC-5** | Advanced Trade Management (ATM) |
+| TTR-023 | **EPIC-6** | Versionado de portafolio Git-Like |
 | TTR-025 | **EPIC-6** | Hedging cointegrativo |
 | TTR-026 | **EPIC-6** | Router de liquidez |
 | TTR-027 | **EPIC-6** | Búsqueda genética de portafolios |
 | TTR-028 | **EPIC-6** | Análisis de solapamiento temporal real |
 | TTR-029 | **EPIC-6** | Rescalado de pesos y ledger de simulación |
-| TTR-032 | EPIC-9+ | Protocolo de acceso remoto (RPAP) |
+| TTR-030 | **EPIC-6** | Portafolios federados (Federated Portfolio) |
+| TTR-031 | **EPIC-6** | Simulación de portafolio real (Portfolio Backtest) |
 | TTR-033 | **EPIC-6** | Fitness contextual de portafolio (Contextual Fitness Scorer) |
+| TTR-034 | **EPIC-6** | Genoma de portafolio y correlación (ADR-0108/ADR-0111) |
+| TTR-035 | **EPIC-6** | Acceso agéntico MCP (Cabina Dual — permiso condicionado) |
+| TTR-036 | **EPIC-6** | Aporte fundamental en ponderación de portafolio (Exposure Map + Indicator Projector) |
+| TTR-011 | EPIC-8 | Auditoría narrativa (Self-Explanation) |
+| TTR-020 | EPIC-8 | Validación visual (Dendrogram / Heatmap) |
+| TTR-032 | EPIC-9+ | Protocolo de acceso remoto (RPAP) |
 
 ---
 
@@ -460,6 +462,17 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * Toda llamada (concedida o rechazada) queda auditada con su procedencia agente (`agent_session_id`) y el `institutional_tag` evaluado.
 *   **Entrada:** Llamada MCP entrante con pipeline `manage`, `institutional_tag` del portafolio objetivo, estado de `PRODUCTION_OVERRIDE`.
 *   **Salida:** Resultado de la operación enrutado al agente, o rechazo con motivo, + registro de auditoría de procedencia.
+
+### **TTR-036: Integración del Aporte Fundamental en Ponderación de Portafolio (Exposure Map + Indicator Projector)**
+*   **Descripción:** TTR de Integración (ADR-0118): consume el [`asset-exposure-map`](../features/asset-exposure-map.md) y el [`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md) vía sus `public_interface` para ponderar riesgo/exposición del portafolio según la concentración de eventos fundamentales relevantes sobre sus activos.
+*   **Reglas de Orquestación:**
+    * No reconstruye las features: las consume por sus puertos (Soberanía de Datos).
+    * La relevancia evento→activo se usa para detectar concentración de exposición fundamental simultánea entre estrategias del portafolio (ADR-0128).
+    * El ajuste de pesos respeta los límites duros/blandos del portafolio (ADR-0010).
+*   **Entrada:** `event_asset_relevance` y `fundamental_indicator_series` de los activos del portafolio.
+*   **Salida:** Pesos/exposición ajustados por concentración de aporte fundamental.
+*   **Precondición:** Indicador y relevancia disponibles vía `public_interface` de `generate`.
+*   **Postcondición:** Portafolio con riesgo sensible a eventos fundamentales concentrados, auditable.
 
 ---
 

@@ -81,8 +81,9 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-012 | **EPIC-5** | Auditoría virtual (Audit Log) |
 | TTR-013 | **EPIC-5** | Temporal (Clock) |
 | TTR-014 | **EPIC-5** | Monitoreo de cuarentena (Efficiency Dashboard) |
-| TTR-006 | EPIC-8 | Retroactiva (Time Warp Debugger) |
+| TTR-015 | **EPIC-5** | Acceso agéntico MCP (Cabina Dual) |
 | TTR-999 | **EPIC-5** | Protocolo Fail-Fast Safe (ADR-0066) |
+| TTR-006 | EPIC-8 | Retroactiva (Time Warp Debugger) |
 
 ---
 

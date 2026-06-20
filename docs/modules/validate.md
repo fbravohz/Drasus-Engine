@@ -79,6 +79,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-020 | **EPIC-2** | Certificación (Strategy Versioning) |
 | TTR-021 | **EPIC-2** | Auditoría forense (Audit Log) |
 | TTR-024 | **EPIC-2** | Eficiencia del modelo (Perfect Profit Benchmark) |
+| TTR-062 | **EPIC-2** | Acceso agéntico MCP (Cabina Dual) |
 | TTR-004 | **EPIC-4** | Guantelete de robustez decagonal (HPC Hybrid MC) |
 | TTR-005 | **EPIC-4** | Reporte visual (Downsampling & Arrow) |
 | TTR-006 | **EPIC-4** | Auditoría de generalización (Basket Stress Test) |
@@ -114,6 +115,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-057 | **EPIC-4** | Design Manifest Quality Gate (ADR-0053) |
 | TTR-058 | **EPIC-4** | Simulación de portafolio real (Portfolio Backtest) |
 | TTR-059 | **EPIC-4** | Compuertas de robustez por dominio genómico (ADR-0108) |
+| TTR-060 | **EPIC-4** | Pureza de Alpha (Alpha Purity Analyzer) |
+| TTR-061 | **EPIC-4** | Integración indicador fundamental en backtest (Fundamental Indicator Projector) |
 | TTR-034 | EPIC-7 | Matriz microrodante nocturna (Continuous Rolling WFM) |
 | TTR-041 | EPIC-8 | Filtrado dimensional (Parallel Coordinates) |
 | TTR-042 | EPIC-8 | Filtrado cruzado (Cross-Filtering) |
@@ -800,13 +803,24 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** TTR-004 finalizado; `ACTIVE_GENOME_DOMAINS` contiene al menos un dominio distinto de Señal.
 *   **Postcondición:** un `domain_gate_verdict = FAIL` en **cualquiera** de las compuertas activas produce veredicto `RECHAZADA` sin excepción, independientemente del score ponderado de los 5 tests del Guantelete y del resultado de las demás compuertas de dominio.
 
-### **TTR-060: Orquestación de Acceso Agéntico vía MCP (Cabina Dual)**
+### **TTR-062: Orquestación de Acceso Agéntico vía MCP (Cabina Dual)**
 *   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
 *   **Reglas de Orquestación:**
     * `validate` pertenece al grupo de pipelines abiertos por defecto (ADR-0123): un agente conectado vía MCP tiene permiso total sin gate adicional.
     * Toda llamada concedida queda auditada con su procedencia agente (`agent_session_id`).
 *   **Entrada:** Llamada MCP entrante con pipeline `validate`.
 *   **Salida:** Resultado de la operación enrutado al agente + registro de auditoría de procedencia.
+
+### **TTR-061: Integración del Indicador Fundamental en Backtest (Fundamental Indicator Projector)**
+*   **Descripción:** TTR de Integración (ADR-0118): enchufa el indicador fundamental ya construido en `generate` ([`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md)) vía su `public_interface`, para que el backtest lo consuma como una serie de indicador más, PIT-correcta sobre el histórico de eventos.
+*   **Reglas de Orquestación:**
+    * No reconstruye la feature: la consume por el puerto expuesto en `generate` (Soberanía de Datos).
+    * El indicador en la barra `t` solo refleja eventos publicados hasta `t`; el [`pit-data-validator`](../features/pit-data-validator.md) certifica la ausencia de look-ahead (ADR-0127).
+    * El indicador es el normalizado por instrumento; cada activo del backtest usa su propia serie (ADR-0128).
+*   **Entrada:** `fundamental_indicator_series` por activo, dataset histórico certificado.
+*   **Salida:** Resultado de backtest que incorpora el indicador fundamental sin sesgo de mirar al futuro.
+*   **Precondición:** Indicador disponible vía `public_interface` de `generate` (TTR-044).
+*   **Postcondición:** Veredicto de robustez sensible al aporte fundamental, auditable.
 
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.

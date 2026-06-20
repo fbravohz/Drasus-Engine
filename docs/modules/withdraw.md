@@ -75,6 +75,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-007 | **EPIC-7** | Límites soberanos (Portfolio Rules) |
 | TTR-008 | **EPIC-7** | Alerta terminal (Notification) |
 | TTR-009 | **EPIC-7** | Archivo inmutable (Audit Log) |
+| TTR-010 | **EPIC-7** | Acceso agéntico MCP (Cabina Dual — bloqueado por defecto) |
 | TTR-999 | **EPIC-7** | Protocolo Fail-Fast Safe (ADR-0066) |
 
 ---
