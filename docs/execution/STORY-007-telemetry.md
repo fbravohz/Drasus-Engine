@@ -11,10 +11,10 @@
 | **Tipo** | Story |
 | **Épica (Fase)** | EPIC-0 — Fundación |
 | **Sprint** | 1 |
-| **Estado** | En curso |
-| **Responsable** | Rust-Engineer (Sonnet) — Modo Mentor · auditó Tech-Lead (pendiente) |
+| **Estado** | 🟡 Parcial (TTR-001 ✅ implementado y auditado; TTR-002 → EPIC-7) |
+| **Responsable** | Rust-Engineer (Sonnet, Modo Mentor→Docente) · auditó Tech-Lead |
 | **Creada** | 2026-06-16 |
-| **Completada** | — |
+| **Completada** | 2026-06-18 |
 
 ## 1. Especificación de origen
 
@@ -203,7 +203,8 @@ cargo llvm-cov --workspace --summary-only
   - `public_interface.rs`: exportados `TelemetryBuffer`, `TelemetryBufferConfig`, `TelemetryError`, `TelemetryRepository`, `TelemetrySample`, `TelemetrySampleContent`, `build_sample`, `expired_sample_ids`.
 - **Verde final:** `cargo build --workspace`, `cargo clippy --workspace --all-targets -- -D warnings` (0 warnings tras corregir 2 hallazgos `clippy::cloned_ref_to_slice_refs`), `cargo test -p shared` (76 tests, 0 fallos), `cargo llvm-cov --workspace --summary-only` (ver §5 para cobertura de los archivos nuevos).
 - **Lecciones formales:** consolidadas en [`docs/lessons/rust/STORY-007-telemetry.md`](../lessons/rust/STORY-007-telemetry.md) — un solo archivo por Story (ADR-0124, corrige la regla "un archivo por tema" de ADR-0122), con los conceptos de Rust de esta sesión anclados al código real de arriba.
-- **Pendiente para el Tech-Lead:** auditar este registro contra §5 (mapeo 1-a-1), reproducir los comandos de §6, y sellar `docs/features/telemetry.md` TTR-001 + el ROADMAP si corresponde.
+- **2026-06-18, auditoría independiente (Tech-Lead):** reproduje los 3 comandos de §6 yo mismo (no me basé en el reporte del ingeniero): `cargo build --workspace` limpio; `cargo clippy --workspace --all-targets -- -D warnings` 0 warnings; `cargo test -p shared` → 76/76 verdes, confirmé por nombre los 8 tests citados en §5 (mapeo 1-a-1 contra cada criterio, incluidos los compuestos de los criterios #2 y #6); `cargo llvm-cov --workspace --summary-only` → `domain/telemetry.rs` 100.00% líneas (coincide con lo reportado), `orchestrator/telemetry.rs` 93.19% líneas (coincide exacto), `persistence/telemetry.rs` 94.29% líneas (reportado 93.55%, variación menor sin impacto). Inspeccioné `domain/telemetry.rs`: sin `SystemTime` ni `sqlx` importados (criterio #8, FCIS limpio). Inspeccioné `migrations/0004_telemetry.sql`: columnas exactas del perfil declarado, idempotente, dos índices justificados (serie temporal + poda), sin triggers append-only (correcto, esta tabla sí borra). Confirmé los 8 exports en `public_interface.rs`. **Veredicto: APROBADO.** Sellado `docs/features/telemetry.md` (banner 🟡 Parcial) y `docs/ROADMAP.md` (fila STORY-007).
+- **Pendiente para el Tech-Lead:** ~~auditar este registro contra §5 (mapeo 1-a-1), reproducir los comandos de §6, y sellar `docs/features/telemetry.md` TTR-001 + el ROADMAP si corresponde.~~ Hecho (ver entrada de arriba).
 
 ## 8. Pendientes derivados / decisiones
 

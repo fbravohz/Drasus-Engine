@@ -1,8 +1,8 @@
-# TASK-004 · Auditoría de la Inundación de Fundaciones (ADR-0020 V2)
+# TASK-006 · Auditoría de la Inundación de Fundaciones (ADR-0020 V2)
 
 | Campo | Valor |
 |---|---|
-| **ID** | TASK-004 |
+| **ID** | TASK-006 (renumerada desde TASK-004 el 2026-06-18 — colisionaba con STORY-004; corrección de integridad de numeración, ver `PROGRESS.md`) |
 | **Tipo** | Task (auditoría documental, sin código) |
 | **Estado** | ✅ COMPLETA — Fases 1 (diagnóstico), 2 (decisiones), 3 (aplicación) y 4 (plantilla) cerradas y auditadas. Pendiente solo: moonshots (TASK futura) |
 | **Responsable** | Tech-Lead + Usuario (línea de defensa final). Diagnóstico: 13 agentes Sonnet en paralelo |
@@ -142,7 +142,7 @@ Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido docu
 - **P1 Grupo I:** completado en todo el corpus. **P4:** `source_id`→`data_snapshot_id`, etiquetas/typos corregidos.
 - **Auditoría Tech-Lead:** verificado ADR/TEMPLATES/databank-lake→B/order-fsm; campos fuera de catálogo=0; typos=0. **Defecto corregido por el Tech-Lead:** el Architect sobre-afirmó "0 Grupo I incompletas"; quedaban 5 (monthly-performance-heatmap, node-preview, remote-portfolio-access-protocol, sovereign-security, umap-scatter-visualizer) → completadas a mano. async-job-executor referencia el Grupo I por texto + su código ya lo tiene (aceptable).
 
-**TASK-004 CERRADA.** Único pendiente: auditoría de los 41 moonshots (TASK futura).
+**TASK-006 CERRADA.** Único pendiente: auditoría de los 41 moonshots (TASK futura).
 
 ---
 

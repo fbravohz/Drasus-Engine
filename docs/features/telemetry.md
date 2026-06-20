@@ -1,9 +1,11 @@
 # Telemetría — Trazabilidad Técnica y Diagnóstico
 
 **Carpeta:** `./features/telemetry/`
-**Estado:** En Diseño
-**Última actualización:** 2026-04-11
+**Estado:** 🟡 Parcial — TTR-001 (buffer de alta velocidad + heartbeat + persistencia + poda) implementado. TTR-002 (vistas de correlación para `feedback`) diferido a EPIC-7.
+**Última actualización:** 2026-06-18
 **Decisión Arquitectónica Asociada:** ADR-0015 (Causalidad)
+
+> 🟡 **Parcial** 2026-06-18 · TTR-001 en código (`crates/shared`: `domain/telemetry.rs`, `persistence/telemetry.rs`, `orchestrator/telemetry.rs`, migración `0004_telemetry.sql`) · Orden de trabajo [STORY-007](../execution/STORY-007-telemetry.md) · Pendiente: TTR-002 (EPIC-7) y los comportamientos avanzados (Builder ETA/gRPC/WebSocket, Heap Memory Monitor, Best Strategy Tracker, CPU/memoria) diferidos según §8 de la Orden.
 
 ## ¿Qué es?
 
