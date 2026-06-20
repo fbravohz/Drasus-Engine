@@ -122,7 +122,7 @@
   - EPIC-3: añadidas 3 features fundamentales + objetivo de frecuencia/horizonte (ADR-0130).
   - EPIC-5: `order-fsm` y `advanced-trade-management` referenciados con ADR-0129.
 
-**Próximo paso:** **STORY-008 (`worker-isolation-orchestrator`)** — preguntar al usuario el Modo de Acompañamiento (ADR-0120) antes de redactar la Orden. Secuencia EPIC-0 restante: STORY-008 → STORY-009 (CLI + binario `app`) → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
+**Próximo paso:** el usuario invoca `/rust-engineer` pasándole la ruta `docs/execution/STORY-008-worker-isolation-orchestrator.md`. El Rust-Engineer operará en **Modo Docente** (ADR-0122). Secuencia EPIC-0 restante: STORY-008 → STORY-009 (CLI + binario `app`) → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
 
 ## Pendientes / vigilancia
 

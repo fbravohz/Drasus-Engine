@@ -2,8 +2,8 @@
 
 **Carpeta:** `./features/worker-isolation-orchestrator.md`
 **Estado:** En Diseño
-**Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0013 (Stack Tecnológico - Ray/ProcessPool)
+**Última actualización:** 2026-06-19
+**Decisión Arquitectónica Asociada:** ADR-0013 (Stack Tecnológico — Rust puro; Python rechazado permanentemente)
 
 ## ¿Qué es esta feature?
 
@@ -21,7 +21,7 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
 
 - **NUNCA** ejecutar tareas pesadas en el proceso principal de Orquestador Rust.
 - **OBLIGATORIO:** Limitar el número de workers según los recursos del sistema para evitar el colapso de la UI (reservar al menos 2 hilos para el OS/Flutter FFI/Watchdog).
-- La comunicación entre el orquestador y los workers locales debe usar FFI/gRPC eficiente (Shared Memory o ZeroMQ).
+- La comunicación entre el orquestador y los workers locales usa memoria compartida (`memmap2`, buffer Arrow Read-Only) para datos de mercado y señales OS (`SIGTERM`/`SIGKILL` vía `nix`) para control de ciclo de vida. Sin ZeroMQ ni sockets TCP locales.
 - **Extensión Híbrida Remota (HybridComputeCooperative):** En esta modalidad, el orquestador local extiende su pool de trabajadores enviando tareas serializadas a través de gRPC/WebSockets a daemons ejecutores remotos (VPS/bare-metal), recopilando los resultados de forma asíncrona en la persistencia local.
 
 
@@ -35,8 +35,8 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
 
 ## Estructura Interna (FCIS)
 
-- **Core (Lógica Pura):** Algoritmo de despacho de tareas (Round Robin o Prioridad).
-- **Shell (Infraestructura):** Implementación de `multiprocessing.shared_memory` y `Ray` o `concurrent.futures.ProcessPoolExecutor`.
+- **Core (Lógica Pura):** Algoritmo de despacho de tareas (Round Robin o Prioridad). Tipos propios + traits de abstracción. Cero imports de OS, `tokio`, `memmap2` o `nix`.
+- **Shell (Infraestructura):** Spawn de procesos con `std::process::Command`/`Child`; buffer Arrow compartido con `memmap2` (PROT\_READ en el worker); supervisión async con `tokio::time`; señales OS con `nix` (`SIGTERM` → espera 2s → `SIGKILL`). Integra con `JobRepository` (STORY-005) para persistir estado y recuperar jobs RUNNING→QUEUED al reiniciar.
 
 ## Ciclo de Vida de la Feature — Worker Orchestrator
 
@@ -63,14 +63,14 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
 * **¿Cómo sé que está hecho?**
     - [ ] Tiempo de acceso a datos en el worker < 1ms tras el disparo inicial.
     - [ ] El consumo de RAM no aumenta linealmente con el número de workers activos.
-* **¿Qué no puede pasar?** NUNCA permitir la escritura en el segmento de memoria compartidadesde los workers (debe ser Read-Only).
+* **¿Qué no puede pasar?** NUNCA permitir la escritura en el segmento de memoria compartida desde los workers (mapping abierto con `PROT_READ` únicamente; un intento de escritura resulta en error del OS).
 
 ### **TTR-002: Watchdog de Procesos y Graceful Shutdown**
 * **¿Cuál es el problema?** Los procesos worker pueden quedar huérfanos (zombis) si el proceso principal falla, consumiendo recursos infinitamente.
 * **¿Qué tiene que pasar?** Implementar un monitor supervisor que termine inmediatamente todos los workers si se detecta que el proceso padre (Orquestador Rust) ha desaparecido o si el job es cancelado.
 * **¿Cómo sé que está hecho?**
     - [ ] Limpieza total de procesos en el sistema operativo en < 2s tras una cancelación manual.
-    - [ ] El `Shadow Watchdog` reporta el cierre de workers en el puerto 8002.
+    - [ ] El watchdog registra el cierre de cada worker en el log de auditoría (`AuditLogRepository`) con evento `WORKER_TERMINATED`.
 * **¿Qué no puede pasar?** PROHIBIDO dejar procesos de NautilusTrader activos tras el cierre del orquestador.
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría de infraestructura)
