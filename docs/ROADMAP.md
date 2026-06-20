@@ -84,7 +84,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-007 — `telemetry` (buffer + heartbeat) | parcial (TTR-002 → EPIC-7) | [STORY-007](./execution/STORY-007-telemetry.md) |
 | STORY-008 — `worker-isolation-orchestrator` | terminado | [STORY-008](./execution/STORY-008-worker-isolation-orchestrator.md) |
 | TASK-011 — Enmienda ADR-0003: tabla única por feature + TTRs de integración vs construcción | pendiente | [TASK-011](./execution/TASK-011-persistencia-reutilizacion-feature.md) |
-| STORY-009 — CLI Clap + binario raíz `app` | pendiente | — |
+| STORY-009 — CLI Clap + binario raíz `app` | ✅ terminado | [Orden](./execution/STORY-009-cli-app.md) |
 | STORY-010 — `agentic-mcp-gateway` (núcleo MCP + evaluador de permisos) | pendiente | — |
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
