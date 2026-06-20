@@ -122,7 +122,29 @@
   - EPIC-3: añadidas 3 features fundamentales + objetivo de frecuencia/horizonte (ADR-0130).
   - EPIC-5: `order-fsm` y `advanced-trade-management` referenciados con ADR-0129.
 
-**Próximo paso:** el usuario invoca `/rust-engineer` pasándole la ruta `docs/execution/STORY-008-worker-isolation-orchestrator.md`. El Rust-Engineer operará en **Modo Docente** (ADR-0122). Secuencia EPIC-0 restante: STORY-008 → STORY-009 (CLI + binario `app`) → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
+**✅ STORY-008 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
+**⚠️ TASK-011 ABIERTA:** escalamiento al Architect — enmienda ADR-0003 (tabla única por feature + TTRs de integración vs construcción). Pendiente invocación del Architect.
+**➡️ SIGUIENTE PASO:** invocar Architect para TASK-011 (ADR-0003 enmienda) → luego STORY-009 (CLI + binario `app`). Secuencia EPIC-0 restante: STORY-009 → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
+
+### 2026-06-20 — STORY-008 (`worker-isolation-orchestrator`) cerrada + SKILL.md actualizado
+
+**STORY-008 — Auditoría independiente del Tech-Lead:**
+- `cargo build --workspace` ✅ limpio.
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ 0 warnings.
+- `cargo test -p shared` → **91/91 verdes** (76 previos de STORY-001-007 + 16 nuevos de worker).
+- Los 8 criterios del §5 tienen prueba nombrada presente y en verde: `shared_memory_access_latency_under_1ms`, `shared_memory_ram_constant_with_n_workers`, `shared_memory_worker_write_is_rejected`, `worker_graceful_shutdown_under_2s`, `worker_terminates_when_parent_drops`, `worker_jobs_recovered_to_queued_on_restart`, `worker_respects_max_concurrent_workers`, FCIS grep (0 imports de sistema en domain).
+- Cobertura: `domain/worker_orchestrator.rs` 92.71% · `orchestrator/worker_runner.rs` 76.89% (aceptable, rutas OS-level parcialmente no ejercibles en CI sin procesos reales).
+- FCIS verificado por grep: `domain/worker_orchestrator.rs` — cero imports de `std::process`, `tokio`, `memmap2`, `nix`. ✅
+- Decisión de migración verificada: `process_id` ya existía en `jobs` (migración 0003) — no se añadió `0005_worker_pid.sql`. Correcto.
+- Feature sellada por el Rust-Engineer durante la sesión Docente. ROADMAP actualizado a "terminado".
+- **Modo Docente funcionó:** el Rust-Engineer completó bloques 1-4 con enseñanza bloque a bloque. Lección en `docs/lessons/rust/STORY-008-worker-isolation-orchestrator.md`.
+
+**SKILL.md (tech-lead) — 3 actualizaciones de esta sesión (pendiente autorización para commit):**
+1. Regla de git: autorización explícita por turno, sin herencia de sesiones previas.
+2. Gate de Coherencia Pre-Despacho: auditoría ADR-0020 en 4 pasos (Grupo I, Perfil, Grupos coherentes, catálogo de 25) + claridad sobre variantes locales de latencia.
+3. Modelo de tabla única por feature: una Feature → una tabla → un módulo dueño; consumidores usan el puerto, no duplican esquema.
+
+**Auditoría ADR-0020 (143 features barridas):** catálogo sigue en **25 campos exactos** (confirmado en texto ADR + conteo + SQL migración 0001). Campos fuera del catálogo encontrados: 4 falsos positivos del parser (constantes/parámetros CONFIG) + campos locales legítimos ya documentados (agentic-mcp-gateway, variantes de latencia) + 2 sin clasificar explícita (`active_genome_domain`, `phase_id`) → locales válidos por ser de dominio único. Único candidato a vigilar: `latency_ns` en pre-trade-validator (1 feature; necesita 3+ para promover al catálogo).
 
 ## Pendientes / vigilancia
 
