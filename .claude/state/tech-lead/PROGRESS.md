@@ -125,7 +125,22 @@
 **✅ STORY-008 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
 **✅ TASK-011 CERRADA (2026-06-20):** Architect enmendó ADR-0003 con la Regla de Tabla Única (una Feature → una tabla → un módulo dueño; TTR de Integración ≠ TTR de Construcción; "Consumido por" = accede al puerto). También actualizó ADR-0118 (referencia cruzada) y `docs/templates/FEATURE.md` (nota en "Dependencias y Bloqueantes"). El Gate de Coherencia Pre-Despacho del tech-lead ya incorporaba la regla; ahora puede citar **ADR-0003 §"Persistencia en Features Multi-Consumidor"**.
 **✅ STORY-009 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
-**➡️ SIGUIENTE PASO:** despachar **STORY-010** (`agentic-mcp-gateway` — núcleo MCP + evaluador de permisos, ADR-0123). Es la última Story de código de EPIC-0 antes de los SPIKE-001-006. Preguntar modo de acompañamiento.
+**✅ STORY-010 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo. 🟡 Parcial (TTR-001 UI + TTR-004 SaaS diferidos).
+**➡️ SIGUIENTE PASO:** despachar **SPIKE-001-006** (6 investigaciones de viabilidad técnica que son gate obligatorio de EPIC-0 antes de arrancar EPIC-1). Solo SPIKE-001 (smoke test NautilusTrader) sin validar de fondo. SPIKE-002-006 tienen veredicto en ADR, falta validación residual.
+
+### 2026-06-20 — STORY-010 (`agentic-mcp-gateway`) cerrada y auditada
+
+**Auditoría independiente del Tech-Lead:**
+- `cargo build --workspace` ✅ limpio.
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ 0 warnings.
+- `cargo test --workspace` → **103 verdes** (91 previos + 12 nuevos MCP).
+- 12 tests MCP verificados por nombre (9 requeridos + 3 bonus: withdraw_denied, audit_hash_deterministic, audit_hash_differs).
+- FCIS: `grep -n "sqlx\|tokio\|std::io" domain/mcp_gateway.rs` → 0 resultados. ✅
+- Cobertura: `domain/mcp_gateway.rs` 93.18% · `persistence/mcp_gateway.rs` 97.91% · `orchestrator/mcp_server.rs` 9.60% (esperado — el servidor stdio no tiene test de integración sin cliente MCP real).
+- Lección `docs/lessons/rust/STORY-010-agentic-mcp-gateway.md` creada (202 líneas, 5 bloques de enseñanza con código real).
+- Crate MCP elegido: `rmcp` 1.7.0 (SDK oficial modelcontextprotocol, versión estable, 13M descargas).
+- ADR-0123 sellado (✅), `agentic-mcp-gateway.md` sellado (🟡 Parcial — TTR-001 UI real + TTR-004 SaaS diferidos).
+- **Veredicto: APROBADO.** ROADMAP fila STORY-010 → "🟡 parcial".
 
 ### 2026-06-20 — STORY-009 (`cli-app`) cerrada y auditada
 
