@@ -1,4 +1,6 @@
 //! Test de integración de caja negra: gate EPIC-0 — job sobrevive a SIGKILL.
+//! Solo compila y corre en Unix (SIGKILL/SIGTERM no existen en Windows).
+#![cfg(unix)]
 //!
 //! Demuestra que los jobs persistidos en SQLite sobreviven a un `kill -9`
 //! (SIGKILL) y se recuperan al reiniciar el binario `drasus`.

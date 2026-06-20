@@ -29,16 +29,20 @@
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::time::Duration;
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
-use nix::sys::signal::{self, Signal};
-use nix::unistd::Pid;
 use uuid::Uuid;
+
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+#[cfg(unix)]
+use nix::sys::signal::{self, Signal};
+#[cfg(unix)]
+use nix::unistd::Pid;
 
 use crate::domain::worker_orchestrator::{WorkerBackend, WorkerBackendError};
 
@@ -180,32 +184,48 @@ pub fn open_readonly(path: &Path) -> Result<Mmap, ShmError> {
 /// de procesos pero ya terminó: el padre todavía no llamó a `wait()`.
 /// Para el orquestador, un zombie es equivalente a "terminado".
 ///
-/// Implementación Linux-específica (nuestro SO de despliegue, ADR-0016).
-#[cfg(target_os = "linux")]
+/// Implementación Unix (SO de despliegue, ADR-0016).
+/// En Linux usa `/proc/{pid}/stat` para excluir zombies.
+/// En otros Unix usa `kill(pid, 0)` (no envía señal, solo comprueba existencia).
+#[cfg(unix)]
 pub fn is_process_alive(pid: u32) -> bool {
-    // /proc/{pid}/stat: "pid (nombre) estado ..."
-    // Usamos rfind(')') porque el nombre puede contener paréntesis.
-    let stat = match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
-        Ok(s) => s,
-        Err(_) => return false, // no existe = terminado
-    };
-    if let Some(pos) = stat.rfind(')') {
-        // El estado es el primer carácter no-espacio después del ')'
-        let state = stat[pos + 1..].trim_start().chars().next().unwrap_or('Z');
-        state != 'Z' // zombie no cuenta como vivo
-    } else {
-        true // no pudimos parsear — asumir vivo para no matar prematuramente
+    #[cfg(target_os = "linux")]
+    {
+        // /proc/{pid}/stat: "pid (nombre) estado ..."
+        // Usamos rfind(')') porque el nombre puede contener paréntesis.
+        let stat = match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
+            Ok(s) => s,
+            Err(_) => return false, // no existe = terminado
+        };
+        if let Some(pos) = stat.rfind(')') {
+            let state = stat[pos + 1..].trim_start().chars().next().unwrap_or('Z');
+            state != 'Z' // zombie no cuenta como vivo
+        } else {
+            true
+        }
     }
+    #[cfg(not(target_os = "linux"))]
+    {
+        // macOS y otros Unix: kill(pid, 0) comprueba existencia sin enviar señal.
+        signal::kill(Pid::from_raw(pid as i32), None).is_ok()
+    }
+}
+
+/// Stub para Windows: sin soporte de señales OS — siempre devuelve false.
+#[cfg(not(unix))]
+pub fn is_process_alive(_pid: u32) -> bool {
+    false
 }
 
 /// Apaga gracefully una lista de procesos worker en dos fases.
 ///
 /// 1. Envía SIGTERM a todos los `pids` (petición de cierre ordenado).
 /// 2. Sondea cada 50ms hasta agotar `timeout`.
-/// 3. Envía SIGKILL a los procesos que aún sigan vivos.
+/// 3. Envía SIGKILL a los supervivientes.
 ///
 /// Devuelve los PIDs que requirieron SIGKILL (lista vacía si todos
 /// respondieron a SIGTERM dentro del plazo — el caso normal).
+#[cfg(unix)]
 pub async fn graceful_shutdown(pids: &[u32], timeout: Duration) -> Vec<u32> {
     // Paso 1: SIGTERM a todos.
     for &pid in pids {
@@ -227,6 +247,12 @@ pub async fn graceful_shutdown(pids: &[u32], timeout: Duration) -> Vec<u32> {
     }
 
     still_alive
+}
+
+/// Stub para Windows: no hay soporte de señales — retorna todos como no terminados.
+#[cfg(not(unix))]
+pub async fn graceful_shutdown(pids: &[u32], _timeout: Duration) -> Vec<u32> {
+    pids.to_vec()
 }
 
 // ── OsWorkerBackend (implementa WorkerBackend) ────────────────────────────────
@@ -269,6 +295,8 @@ impl OsWorkerBackend {
     }
 }
 
+/// Implementación Unix: usa `prctl`, SIGTERM/SIGKILL y `/proc` para liveness.
+#[cfg(unix)]
 impl WorkerBackend for OsWorkerBackend {
     /// Lanza el proceso worker con tres env vars:
     /// - `DRASUS_WORKER_JOB_ID`
@@ -306,12 +334,10 @@ impl WorkerBackend for OsWorkerBackend {
             .map_err(|e| WorkerBackendError(format!("spawn {:?}: {e}", self.binary)))?;
 
         let pid = child.id();
-
         self.children
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .insert(pid, child);
-
         Ok(pid)
     }
 
@@ -323,6 +349,45 @@ impl WorkerBackend for OsWorkerBackend {
     fn send_sigkill(&self, pid: u32) -> Result<(), WorkerBackendError> {
         signal::kill(Pid::from_raw(pid as i32), Signal::SIGKILL)
             .map_err(|e| WorkerBackendError(format!("SIGKILL pid {pid}: {e}")))
+    }
+
+    fn is_alive(&self, pid: u32) -> bool {
+        is_process_alive(pid)
+    }
+}
+
+/// Stub Windows: spawn sin prctl; señales no disponibles.
+/// El despliegue real es Linux (ADR-0016) — este bloque solo permite
+/// que el workspace compile en Windows para desarrollo local.
+#[cfg(not(unix))]
+impl WorkerBackend for OsWorkerBackend {
+    fn launch(
+        &self,
+        job_id: &str,
+        shm_path: &str,
+        keepalive_path: &str,
+    ) -> Result<u32, WorkerBackendError> {
+        let child = Command::new(&self.binary)
+            .env("DRASUS_WORKER_JOB_ID", job_id)
+            .env("DRASUS_WORKER_SHM_PATH", shm_path)
+            .env("DRASUS_WORKER_KEEPALIVE", keepalive_path)
+            .spawn()
+            .map_err(|e| WorkerBackendError(format!("spawn {:?}: {e}", self.binary)))?;
+
+        let pid = child.id();
+        self.children
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(pid, child);
+        Ok(pid)
+    }
+
+    fn send_sigterm(&self, pid: u32) -> Result<(), WorkerBackendError> {
+        Err(WorkerBackendError(format!("SIGTERM no disponible en Windows (pid {pid})")))
+    }
+
+    fn send_sigkill(&self, pid: u32) -> Result<(), WorkerBackendError> {
+        Err(WorkerBackendError(format!("SIGKILL no disponible en Windows (pid {pid})")))
     }
 
     fn is_alive(&self, pid: u32) -> bool {
@@ -407,8 +472,9 @@ mod tests {
         );
     }
 
-    // ── Criterio 4: shutdown graceful en < 2s ──────────────────────────────
+    // ── Criterio 4: shutdown graceful en < 2s (solo Unix) ─────────────────
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn worker_graceful_shutdown_under_2s() {
         // Lanzar 4 procesos de larga duración como trabajadores simulados.
@@ -442,13 +508,14 @@ mod tests {
         }
     }
 
-    // ── Criterio 5: workers terminan cuando el padre desaparece ────────────
+    // ── Criterio 5: workers terminan cuando el padre desaparece (solo Unix) ──
 
     /// Simula la muerte del padre mediante el drop del SharedMemorySegment.
     ///
     /// El worker es un proceso `sh` que sondea el archivo keepalive cada
     /// 50ms y sale cuando desaparece — el mismo mecanismo que usaría un
     /// worker real de Drasus Engine.
+    #[cfg(unix)]
     #[tokio::test]
     async fn worker_terminates_when_parent_drops() {
         let data = b"datos-keepalive-test";
