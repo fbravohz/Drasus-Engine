@@ -1,5 +1,7 @@
 # Alternative Data Fabric (Evolución SQX Data Manager)
 
+> 🔶 **Especializado por ADR-0125/0126/0127/0128** — El **núcleo determinista** de la indicatorización de datos fundamentales se extrajo a Features de producto: [`fundamental-event-store`](../features/fundamental-event-store.md), [`event-impact-scorer`](../features/event-impact-scorer.md), [`asset-exposure-map`](../features/asset-exposure-map.md) y [`fundamental-indicator-projector`](../features/fundamental-indicator-projector.md) (ver [SAD-21](../sad/SAD-21.md)). Este moonshot conserva únicamente la capa **visual y experimental** (lienzo de nodos, fuentes no estructuradas como sentimiento social y satélite, extracción NLP de texto libre) que se apoya en ese núcleo y permanece en R&D hasta validarse.
+
 **Carpeta:** `./moonshots/`
 **Estado:** Moonshot (Fase 5 - Experimental)
 **Última actualización:** 2026-06-06
