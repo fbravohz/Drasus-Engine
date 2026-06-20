@@ -123,8 +123,32 @@
   - EPIC-5: `order-fsm` y `advanced-trade-management` referenciados con ADR-0129.
 
 **✅ STORY-008 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
-**⚠️ TASK-011 ABIERTA:** escalamiento al Architect — enmienda ADR-0003 (tabla única por feature + TTRs de integración vs construcción). Pendiente invocación del Architect.
-**➡️ SIGUIENTE PASO:** invocar Architect para TASK-011 (ADR-0003 enmienda) → luego STORY-009 (CLI + binario `app`). Secuencia EPIC-0 restante: STORY-009 → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
+**✅ TASK-011 CERRADA (2026-06-20):** Architect enmendó ADR-0003 con la Regla de Tabla Única (una Feature → una tabla → un módulo dueño; TTR de Integración ≠ TTR de Construcción; "Consumido por" = accede al puerto). También actualizó ADR-0118 (referencia cruzada) y `docs/templates/FEATURE.md` (nota en "Dependencias y Bloqueantes"). El Gate de Coherencia Pre-Despacho del tech-lead ya incorporaba la regla; ahora puede citar **ADR-0003 §"Persistencia en Features Multi-Consumidor"**.
+**✅ STORY-009 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
+**➡️ SIGUIENTE PASO:** despachar **STORY-010** (`agentic-mcp-gateway` — núcleo MCP + evaluador de permisos, ADR-0123). Es la última Story de código de EPIC-0 antes de los SPIKE-001-006. Preguntar modo de acompañamiento.
+
+### 2026-06-20 — STORY-009 (`cli-app`) cerrada y auditada
+
+**Auditoría independiente del Tech-Lead:**
+- `cargo build --workspace` ✅ limpio.
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ 0 warnings.
+- `cargo test --workspace` → **93 verdes** (91 previos STORY-001-008 + 1 nuevo gate `kill -9` en `crates/app/tests/` + compilación de 8 módulos).
+- Gate EPIC-0 verificado: `job_survives_kill9_and_recovers_on_restart` → OK. Salida real observada: "Recuperados 1 jobs del crash anterior." + evento `JOB_RECOVERED_AT_STARTUP` en BD.
+- `drasus version` → `drasus v0.1.0` ✅; `drasus start` → arranca + apagado limpio ✅.
+- FCIS: grep de `domain::\|persistence::\|orchestrator::` en `main.rs` → solo líneas de comentarios (7 y 93). ✅
+- Cobertura: `app/src/main.rs` 95.77% líneas / 100% funciones. 8 regiones no cubiertas = rama `#[cfg(not(unix))]` (Windows) — inaccesible en Linux, aceptable.
+- Lección `docs/lessons/rust/STORY-009-cli-app.md` creada (254 líneas), enlaza a la Orden y cita código real de esta Story.
+- Decisión no especificada aceptada: re-exportaciones `create_pool`/`run_migrations` en `shared/public_interface.rs` para mantener ADR-0003 (el binario accede a `shared` solo por su `public_interface`).
+- **Veredicto: APROBADO.** ROADMAP fila STORY-009 → "✅ terminado".
+
+### 2026-06-20 — TASK-011 cerrada (Architect: enmienda ADR-0003)
+
+**Escalamiento resuelto:**
+- **ADR-0003** enmendado: sección "Persistencia en Features Multi-Consumidor (Regla de Tabla Única)" añadida. Fija 4 reglas FIJO: una Feature → una tabla → un módulo dueño (migración única); TTR de Integración = enchufar puerto, NUNCA migrar; "Consumido por" = accede al puerto; datos propios del consumidor van en tablas propias con referencia.
+- **ADR-0118**: referencia cruzada bidireccional con ADR-0003 (Construcción vs Integración y su cara de persistencia).
+- **`docs/templates/FEATURE.md`**: nota en "Dependencias y Bloqueantes" aclarando el significado de "Consumido por" para la persistencia.
+- **Hallazgo del Architect:** ADR-0006 (Migraciones Centralizadas) ya hacía estructuralmente imposible la "tabla por consumidor" — la regla de ADR-0003 ahora lo hace explícito.
+- **ADR a citar en Órdenes de Trabajo:** ADR-0003 §"Persistencia en Features Multi-Consumidor".
 
 ### 2026-06-20 — STORY-008 (`worker-isolation-orchestrator`) cerrada + SKILL.md actualizado
 
@@ -145,6 +169,16 @@
 3. Modelo de tabla única por feature: una Feature → una tabla → un módulo dueño; consumidores usan el puerto, no duplican esquema.
 
 **Auditoría ADR-0020 (143 features barridas):** catálogo sigue en **25 campos exactos** (confirmado en texto ADR + conteo + SQL migración 0001). Campos fuera del catálogo encontrados: 4 falsos positivos del parser (constantes/parámetros CONFIG) + campos locales legítimos ya documentados (agentic-mcp-gateway, variantes de latencia) + 2 sin clasificar explícita (`active_genome_domain`, `phase_id`) → locales válidos por ser de dominio único. Único candidato a vigilar: `latency_ns` en pre-trade-validator (1 feature; necesita 3+ para promover al catálogo).
+
+## Pendientes Windows (validación cruzada de plataforma)
+
+- **STORY-009 — rama Windows pendiente:** la rama `#[cfg(not(unix))]` de `crates/app/src/main.rs` (SIGTERM fallback) no se puede cubrir en Linux. Cuando el usuario baje los cambios en su máquina Windows, ejecutar:
+  ```bash
+  cargo test --workspace
+  cargo test -p app -- --nocapture
+  cargo llvm-cov --workspace --summary-only
+  ```
+  Evidencia esperada: todos los tests verdes + cobertura de `main.rs` sube al ~98%+. Reportar al Tech-Lead para actualizar el registro de STORY-009.
 
 ## Pendientes / vigilancia
 

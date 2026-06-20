@@ -14,6 +14,7 @@ Este archivo se carga automáticamente al inicio de cada sesión y se cachea. Es
 - **Zero-Docker** y **Local-First / Soberanía de Datos:** sin contenedores en el core; el estado vive local. Prohibido acceso cross-module a tablas ajenas (se expone un puerto en la `public_interface` del dueño).
 - **Foundation Inundation (ADR-0020 V2):** ante duda genuina, incluir. El detalle y la tabla canónica de 4 perfiles viven en `docs/ADR.md` (ADR-0020 V2) — el ADR gana sobre cualquier resumen.
 - **Configurable vs Fijo:** "NUNCA/SIEMPRE" = invariante físico, fijo. "Umbral/Max/Min" = parámetro configurable.
+* **Agrupación de commits por tipo:** cuando el usuario autoriza commitear, agrupa los cambios pendientes en commits separados por tipo (`feat`, `docs`, `chore`, `fix`, `test`). Nunca un commit masivo de todo. Nunca commitees en automático sin que el usuario lo pida explícitamente en el turno actual.
 
 ---
 
@@ -61,7 +62,7 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 ## 4. Memoria entre Sesiones (Recuerdo tipo "persona")
 
-Existe memoria nativa de proyecto en `.claude/projects/.../memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan.
+Existe memoria nativa de proyecto en `~/Drasus-Engine/.claude/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan.
 
 - **Es curada, no automática.** Se escriben hechos durables a propósito (decisiones, restricciones, estado de trabajo en curso), no transcripciones completas.
 - **Disciplina obligatoria:** al cerrar trabajo significativo, destila la decisión o el estado a un archivo de memoria y enlázalo desde `MEMORY.md`. No dupliques lo que ya registra el código, el git o estos documentos.
