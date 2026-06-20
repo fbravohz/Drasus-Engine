@@ -61,7 +61,11 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 
 ### 6. Pruebas como Entregable (tu propio verde antes de entregar)
 * **Cada criterio de aceptación de la Orden de Trabajo DEBE tener al menos una prueba nombrada que lo ejerza.** Sin esa prueba, el criterio NO está cumplido — da igual que el resto compile en verde. "Todo verde" ≠ "el criterio crítico está probado".
-* **Cobertura por capa FCIS:** pruebas unitarias del núcleo (`domain/`, lógica pura: casos válidos, inválidos y de borde) + pruebas de integración de la cáscara (`persistence`/`orchestrator`). Cuando el criterio es de **durabilidad/recuperación**, la prueba usa el recurso REAL persistente (ej. SQLite en **archivo temporal**, no `:memory:` — una DB en memoria no sobrevive a reabrir y no demuestra nada sobre crash/recuperación).
-* **Antes de entregar al Tech-Lead** corres TÚ y dejas en verde: `cargo build`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test`. No entregas con el gate sin probar.
+* **Cobertura por capa FCIS (pirámide ADR-0133):**
+  - **Capa 1 — Unitarios** (`#[cfg(test)]`): lógica pura del `domain/` — casos válidos, inválidos y de borde.
+  - **Capa 2 — Integración** (`tests/`): orquestación + persistencia. Durabilidad/recuperación → SQLite en **archivo temporal**, nunca `:memory:`.
+  - **Capa 3 — Propiedad** (`proptest`): obligatorio si el TTR produce outputs cuantitativos (ratio, precio, posición, drawdown). La propiedad es del tipo "esta invariante se mantiene para cualquier input generado", no un caso de borde manual.
+  - **Capa 4 — Fuzzing** (`cargo-fuzz`): obligatorio si el TTR toca una frontera declarada en ADR-0133 (parsers de datos externos, FFI). Crea el target en `fuzz/src/bin/<nombre>.rs` y un corpus base en `fuzz/corpus/<nombre>/`. Toolchain nightly solo para el crate `fuzz/`.
+* **Antes de entregar al Tech-Lead** corres TÚ y dejas en verde: `cargo build`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test`. Si aplica fuzzing: `cargo +nightly fuzz run <target> -- -max_total_time=60` sin crashes.
 * **Cobertura:** corre `cargo llvm-cov --workspace --summary-only` y reporta el porcentaje de líneas cubiertas. No es un umbral rígido, pero el código del criterio crítico debe estar ejercido.
 * **En tu reporte** incluye el mapeo explícito **criterio → prueba(s) que lo demuestra(n)** y el resumen de cobertura. El Tech-Lead reproduce tu evidencia (no cierra sobre tu palabra); si un criterio no tiene prueba que lo ejerza, te lo regresa.

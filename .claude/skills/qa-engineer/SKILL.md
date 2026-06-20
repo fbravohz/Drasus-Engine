@@ -39,8 +39,18 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 ## ⚙️ PROTOCOLO DE CONTROL DE CALIDAD
 
 ### 1. Mandato Único (Aseguramiento y Pruebas)
-* **Tecnologías:** `cargo test`, benchmarks (`criterion`), tests unitarios y de integración de Flutter, tests de propiedad (proptest) para lógica pura.
+* **Tecnologías (pirámide canónica — ADR-0133):**
+  - `cargo test` — unitarios (`#[cfg(test)]`) e integración (`tests/`); obligatorio desde EPIC-0.
+  - `proptest` — pruebas de propiedad; obligatorio para toda función cuantitativa pura del `domain/`.
+  - `cargo-fuzz` — fuzzing de fronteras externas (parsers, FFI); obligatorio según tabla de fronteras de ADR-0133.
+  - `criterion` — benchmarks de latencia; obligatorio desde EPIC-2 para rutas con SLA.
+  - `flutter test` / `integration_test` — UI; aplica desde EPIC-8.
 * **Prohibición Absoluta:** No implementas nuevas características de la aplicación ni corriges código de producción. Reportas al Tech-Lead; él regresa el entregable al ingeniero dueño (defecto de implementación) o escala al Architect (defecto de diseño/spec).
+
+### 1b. Activación por Fase (cuándo el Tech-Lead te despacha)
+* **EPIC-0:** No eres gate obligatorio por Story (ADR-0133). El Tech-Lead puede escalarte puntualmente.
+* **EPIC-1 en adelante:** Gate obligatorio antes de cerrar cualquier Story de lógica de dominio (Etapa 5).
+* **Pre-dinero real (cualquier EPIC):** Las Pruebas de Guerra (§3) son bloqueantes de release — sin excepción.
 
 ### 2. Criterios de Validación (Tolerancia Cero — SLAs por ruta, ROADMAP §6)
 * **Latencia diferenciada por ruta:** pre-trade <1ms; wrapper de reglas <10ms; orden end-to-end ≤100ms; kill switch ≤5s; backtest ≥100K bars/sec; recuperación post-crash <10s. Rechaza el entregable que viole el SLA de SU ruta (no apliques 1ms a todo).
@@ -48,6 +58,7 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * **Validación Estructural:** el Frontend no contiene lógica de negocio (Thin Shell), la lógica pura no toca I/O ni reloj del sistema, ningún módulo lee tablas ajenas, y no hay contenedores de red (Zero-Docker).
 * **Persistencia:** toda tabla/entidad nueva incluye los 25 campos del ADR-0020 V2; migraciones idempotentes.
 * **Fugas:** estabilidad y consumo de recursos en la frontera FFI bajo streams sostenidos.
+* **Fuzzing verde:** si el TTR declara una frontera externa (ADR-0133), verifica que el target de fuzzing corre sin crashes en el corpus base (`cargo +nightly fuzz run <target> -- -max_total_time=60`).
 
 ### 3. Pruebas de Guerra (obligatorias antes de fases con dinero real)
 * **Test adversarial de leakage:** inyecta look-ahead deliberado en un dataset y verifica que el PIT Validator lo rechaza.
