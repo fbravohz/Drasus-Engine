@@ -83,7 +83,12 @@ Identificadores estilo Jira (palabra completa + número), estables. NO se usan c
 | `BUG-###` | Bug | corrección de un defecto. |
 | `TASK-###` | Task | trabajo SIN código: investigación, escalar al Architect, registrar un ADR, seleccionar el siguiente trabajo. |
 
-Conservan su nombre propio (no son IDs de trabajo, son unidades de especificación): **TTR**, **ADR**, **Feature**, **Módulo**. Una Story *implementa* uno o más TTRs (relación "implementa", no "es padre de"). El épica y el sprint de cada trabajo van en los metadatos de su Orden de Trabajo, no en el ID (como en Jira). Numeración de Stories/Spikes/Tasks/Bugs: secuencial global.
+Conservan su nombre propio (no son IDs de trabajo, son unidades de especificación): **TTR**, **ADR**, **Feature**, **Módulo**. Una Story *implementa* uno o más TTRs (relación "implementa", no "es padre de"). El épica y el sprint de cada trabajo van en los metadatos de su Orden de Trabajo, no en el ID (como en Jira).
+
+**Protocolo de numeración (corregido 2026-06-18 tras colisión real STORY-004/TASK-004 — ver `PROGRESS.md`):**
+- **Story/Task/Bug comparten UN solo contador secuencial global.** Nunca puede haber dos identificadores con el mismo número entre estos tres tipos (ej. prohibido STORY-004 y TASK-004 a la vez). Al crear cualquiera de los tres, el siguiente número es el máximo usado por cualquiera de los tres + 1 — nunca "el siguiente de mi propio tipo".
+- **Spike tiene su PROPIO contador, independiente (FIJO, por diseño — no es una excepción a corregir).** Los 6 Spikes de Viabilidad (SPIKE-001 a SPIKE-006) son una lista fija definida de antemano en `ROADMAP.md` §6 (riesgos técnicos bloqueantes de EPIC-0), no trabajo que se despacha incrementalmente como Story/Task/Bug. Por eso reutilizan los números 1-6 sin que eso sea una colisión.
+- **Solo la épica ACTIVA lleva numeración real asignada.** Las épicas futuras (todo lo que no es la fase activa) se listan en el ROADMAP por nombre de Feature/módulo, SIN número de Story/Task pre-reservado — el número se asigna recién en el momento real de despacho (cuando se crea su Orden de Trabajo en `docs/execution/`), tomando el siguiente del contador global EN ESE MOMENTO. Esto es intencional: deja espacio para insertar un Task/Bug/Spike entre épicas sin tener que renumerar nada retroactivamente. Ejemplo correcto vigente: `crash-recovery` (EPIC-5) no tiene número de Story todavía.
 
 ### Órdenes de Trabajo (Spec-Driven — fuente de verdad de ejecución)
 Cada trabajo se ejecuta DESDE una Orden de Trabajo: un archivo en `docs/execution/<ID>-<slug>.md` (plantilla en `docs/execution/_TEMPLATE.md`). Es la especificación ejecutable y su registro; vive en git, NO en el chat.

@@ -44,10 +44,18 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 V2 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
 7. **Emplazamiento de TTRs en Módulos (Orquestación):**
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
-8. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
-9. **Auditoría de Plantillas (`docs/templates/`):** Evalúa si se requiere actualizar alguna plantilla maestra (`docs/templates/ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md`, o las reglas transversales en `docs/templates/TEMPLATES.md`) — solo si es crítico. Este paso es OBLIGATORIO incluso cuando el cambio no es una Feature de producto (ej. una decisión de proceso/gobernanza): si afecta el formato o las reglas con las que se escriben ADR/SAD/Feature/TTR, pasa por aquí.
-10. **Sincronización de README:** El `README.md` es el índice maestro de navegación, no un documento para memorizar. Léelo para **localizar** qué documentos toca tu cambio (módulos, features, ADR, secciones del SAD) y actualiza únicamente las entradas afectadas si tu cambio altera el mapa (nueva Feature/ADR/módulo, enlaces rotos). Aplica el protocolo de lectura por demanda de `CLAUDE.md` §3: no cargues archivos completos "por si acaso".
-11. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
+   - **Asignación de número (anti-duplicado):** Antes de crear un TTR nuevo, consulta la tabla resumen del módulo como registro de numeración. El número asignado es `max(TTR existentes en ese módulo) + 1`, excluyendo TTR-999. PROHIBIDO asignar un número sin verificar que no existe ya en ese módulo — causa conflictos irrecuperables en el cuerpo del documento.
+   - Tras inyectar el TTR, añade su fila a la **tabla resumen "TTRs Etiquetados por Fase"** del módulo correspondiente, respetando el orden: EPICs de menor a mayor, TTR-999 siempre al final.
+8. **Sincronización del ROADMAP (`docs/ROADMAP.md`):** El ROADMAP es tu área de gobierno. Actualízalo en cualquiera de estos casos:
+   - Se añade una Feature o TTR que pertenece a un EPIC distinto al estado actual de la fase.
+   - Se añade un módulo nuevo o se modifica el alcance declarado de una entrega (sección "Detalle por entrega").
+   - Una decisión arquitectónica nueva (ADR) reordena, divide o añade una fase/entrega.
+   - Un TTR existente cambia de EPIC (su fase de construcción se adelanta o atrasa).
+   - **Edición quirúrgica**: usa `Edit` sobre las secciones afectadas. Nunca reescribas el ROADMAP completo.
+9. **Auditoría de Integridad Relacional:** Detecta y repara referencias huérfanas. Asegura que el 100% de las Features en `/features/*.md` sean orquestadas en al menos un módulo.
+10. **Auditoría de Plantillas (`docs/templates/`):** Evalúa si se requiere actualizar alguna plantilla maestra (`docs/templates/ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md`, o las reglas transversales en `docs/templates/TEMPLATES.md`) — solo si es crítico. Este paso es OBLIGATORIO incluso cuando el cambio no es una Feature de producto (ej. una decisión de proceso/gobernanza): si afecta el formato o las reglas con las que se escriben ADR/SAD/Feature/TTR, pasa por aquí.
+11. **Sincronización de README:** El `README.md` es el índice maestro de navegación, no un documento para memorizar. Léelo para **localizar** qué documentos toca tu cambio (módulos, features, ADR, secciones del SAD) y actualiza únicamente las entradas afectadas si tu cambio altera el mapa (nueva Feature/ADR/módulo, enlaces rotos). Aplica el protocolo de lectura por demanda de `CLAUDE.md` §3: no cargues archivos completos "por si acaso".
+12. **Declaración de Conformidad:** Confirma que el 100% de la información del origen ha sido integrada (Cero Pérdida de Información).
 
 ## ⚠️ PROTOCOLO DE MANTENIMIENTO DE ADRs (Anti-Append-Only)
 
@@ -130,4 +138,4 @@ Un ADR nuevo que **modifica, extiende, generaliza o reemplaza** una decisión pr
   - Veredicto NO APTO de diseño/fórmula.
   - Defecto estructural, violación de ADR, o referencia huérfana.
   - Obstáculo técnico que exige nueva decisión arquitectónica.
-- **Al ser activado:** Ejecuta el Pipeline de Procesamiento (Fases 1-11) y edita ÚNICAMENTE los archivos en `docs/`. NO entrega nada al Tech-Lead.
+- **Al ser activado:** Ejecuta el Pipeline de Procesamiento (Fases 1-12) y edita ÚNICAMENTE los archivos en `docs/`. NO entrega nada al Tech-Lead.

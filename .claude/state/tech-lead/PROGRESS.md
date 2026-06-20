@@ -10,11 +10,13 @@
 
 - **Fase activa:** EPIC-0 — Fundación.
 - **Última sesión:** 2026-06-16.
-- **✅ TASK-004 (Auditoría Inundación de Fundaciones) CERRADA** (2026-06-13). Fases 1-4 completas y auditadas (ver `docs/execution/TASK-004-...md`). 137 features + 8 módulos auditados; perfiles reasignados, contratos diseñados, Grupo I completo en todo el corpus, ADR-0020 expone los 3 campos transversales (conteo se mantiene en 25), TEMPLATES arreglado (causa raíz P1). Commits: `bace15c` (fase 1), `4bf76b3` (decisiones fase 2), `ef6ca36` (fase 3). **Mantra del usuario** grabado en base/SKILL.md ("ante la duda, prefiero tenerlo y no necesitarlo").
+- **✅ TASK-006 (Auditoría Inundación de Fundaciones) CERRADA** (2026-06-13; renumerada desde TASK-004 el 2026-06-18, ver entrada de esa fecha). Fases 1-4 completas y auditadas (ver `docs/execution/TASK-006-...md`). 137 features + 8 módulos auditados; perfiles reasignados, contratos diseñados, Grupo I completo en todo el corpus, ADR-0020 expone los 3 campos transversales (conteo se mantiene en 25), TEMPLATES arreglado (causa raíz P1). Commits: `bace15c` (fase 1), `4bf76b3` (decisiones fase 2), `ef6ca36` (fase 3). **Mantra del usuario** grabado en base/SKILL.md ("ante la duda, prefiero tenerlo y no necesitarlo").
 - **⚠️ Cambio de rumbo del ROADMAP (2026-06-16, ADR-0118):** `crash-recovery` (antes "STORY-006") **YA NO es de EPIC-0** — pertenece a `execute`/EPIC-5 (necesita el conector de bróker, que no existe hasta entonces). El gate de recuperación tras `kill -9` que EPIC-0 sí exige ya está cubierto por `async-job-executor` (STORY-005, cerrado). El ROADMAP se reescribió a v3.0 (guía de orden + estado simple, sin bitácora narrativa — el detalle vive en las Órdenes de Trabajo).
 - **🎚️ Nuevo mecanismo (ADR-0120, 2026-06-16):** cada Agente de una Orden declara un **Modo de Acompañamiento** — Autónomo (despacho yo vía `Agent`) / Mentor (el usuario teclea, el Ingeniero dicta bloque a bloque) / Revisión (el usuario entrega código, el Ingeniero audita). Se declara en la Orden, nunca en el chat. Bajo Mentor/Revisión yo NO despacho: redacto la Orden y me detengo; el usuario invoca el skill del Ingeniero directamente.
-- **➡️ SIGUIENTE PASO CONCRETO:** Orden **STORY-007 (`telemetry`)** redactada y lista en `docs/execution/STORY-007-telemetry.md` — Rust-Engineer en **Modo Mentor** (decisión del usuario). Alcance: TTR-001 (buffer no bloqueante + heartbeat + persistencia + poda); TTR-002 y los sub-comportamientos avanzados (Builder ETA, Heap Monitor, Best Strategy Tracker, CPU/mem) quedan diferidos (detalle en §8 de la Orden). **Falta:** que el usuario invoque `/rust-engineer` pasándole esa Orden para arrancar la sesión de Mentor; yo audito y cierro cuando termine. Después: STORY-008 (`worker-isolation`), STORY-009 (CLI + binario raíz `app`). Transversal: los 6 spikes de gates (SPIKE-001–006) antes de cerrar EPIC-0 / arrancar EPIC-1 — solo SPIKE-001 (smoke test NautilusTrader) sin validar de fondo.
-- **Pendiente diferido:** auditoría de Inundación de Fundaciones en los 41 moonshots (misma estrategia, TASK futura — tarea #6 del tablero).
+- **✅ STORY-007 (`telemetry`, TTR-001) CERRADA y auditada** (2026-06-18). Ver entrada de esa fecha más abajo.
+- **➡️ SIGUIENTE PASO CONCRETO:** despachar **STORY-008 (`worker-isolation-orchestrator`)** — preguntar al usuario el Modo de Acompañamiento (ADR-0120) antes de redactar la Orden, igual que se hizo para STORY-007. Después: STORY-009 (CLI + binario raíz `app`), STORY-010 (`agentic-mcp-gateway`, núcleo MCP + evaluador de permisos, ADR-0123). Transversal: los 6 spikes de gates (SPIKE-001–006) antes de cerrar EPIC-0 / arrancar EPIC-1 — solo SPIKE-001 (smoke test NautilusTrader) sin validar de fondo.
+- **Pendiente diferido:** auditoría de Inundación de Fundaciones en los 41 moonshots (misma estrategia, TASK futura).
+- **🔢 Corrección de integridad de numeración (2026-06-18):** TASK-004 colisionaba con STORY-004 (ambos usaban "4" en el contador global Story/Spike/Task/Bug). Renumerada a **TASK-006** (siguiente número global libre, cronológicamente correcto). Protocolo de numeración aclarado en `tech-lead/SKILL.md` §"Vocabulario Ágil e Identificadores" (ver entrada de hoy abajo).
 - **Nomenclatura:** ya NO se usan códigos F/W/G. Identificadores estilo Jira: EPIC-n, SPRINT-n, STORY-###, SPIKE-###, TASK-###, BUG-###. Cada Story se ejecuta desde su Orden de Trabajo en `docs/execution/`.
 
 ## Reglas activas confirmadas con el usuario
@@ -72,9 +74,59 @@
 - **Bajo Modo Mentor, yo NO despacho** (ADR-0120): la Orden queda lista; el usuario decide cuándo invoca `/rust-engineer` pasándole la ruta de la Orden. Yo retomo auditoría y cierre cuando esa sesión termine.
 - ROADMAP actualizado: fila STORY-007 → "en curso (Modo Mentor, Orden lista, pendiente invocación)" con enlace a la Orden.
 
+### 2026-06-18 — Corrección de integridad de numeración (TASK-004→TASK-006) + protocolo aclarado
+- **Origen:** el usuario notó que STORY-004 y TASK-004 compartían el número "4", violando la regla "secuencial global" de `tech-lead/SKILL.md`. Investigación con `git log` (fechas reales de creación de archivos y commits) para reconstruir la cronología antes de tocar nada.
+- **Hallazgo:** STORY-001 a 005 se crearon juntas en un solo commit (2026-06-13 02:07). TASK (auditoría inundación) se creó 42 min después (02:49) — le correspondía el **6**, no el 4. "STORY-006" (crash-recovery) nunca tuvo archivo real: solo fue una mención de "siguiente paso" en un commit (17:11, ese mismo día) y una nota histórica en ADR-0118 — no es una colisión real, es una reserva fantasma. STORY-007 (`telemetry`) es trabajo ACTIVO (último commit real del repo) citado textualmente por ADR-0124 (protocolo de lecciones) — moverlo tenía mucho mayor radio de impacto que la única colisión real.
+- **Decisión del usuario (Opción A, de un menú de 2):** renumerar SOLO TASK-004 → **TASK-006**. STORY-007 no se toca. `crash-recovery` sigue sin número de Story (correcto: ADR-0118 ya no pre-numera trabajo de épicas futuras).
+- **Ejecutado:** `git mv` del archivo de la Orden + ID interno; referencias corregidas en ADR-0020 (línea del Registro de Mantenimiento), ADR-0120 (lista de compatibilidad retroactiva), ADR-0118 (nota histórica de "STORY-006" ahora explícita: nunca tuvo archivo, número liberado y reusado), `CONTENT-STRATEGY.md` (6 menciones, incl. una fila de tabla con placeholder obsoleto "STORY-006 — Próxima" corregida a STORY-007), y esta bitácora. Verificado con `grep -rn "TASK-004"` → 0 resultados reales restantes.
+- **Protocolo de numeración aclarado** (pregunta del usuario: "¿por qué los Spikes no respetan la numeración global?" + "quiero poder insertar un Task entre épicas sin renumerar"). Se actualizó `tech-lead/SKILL.md` §"Vocabulario Ágil e Identificadores" con dos reglas que ya eran la práctica real pero no estaban escritas:
+  1. **SPIKE-### tiene su PROPIO contador, independiente de Story/Task/Bug.** Los Spikes son una lista fija de 6 riesgos de viabilidad definida de antemano en el ROADMAP §6 (no se despachan incrementalmente como Stories/Tasks) — por diseño no comparten el contador global. Story/Task/Bug SÍ comparten un único contador secuencial entre ellos.
+  2. **Solo la épica activa tiene numeración real.** Las épicas futuras (EPIC-1+) se listan en el ROADMAP por nombre de Feature/módulo, SIN número de Story pre-asignado — el número se asigna recién cuando el trabajo se despacha de verdad (se crea su Orden en `docs/execution/`). Esto es intencional: deja espacio para insertar un Task/Bug/Spike entre épicas sin tener que renumerar nada. `crash-recovery` (EPIC-5) es el ejemplo correcto: no tiene número todavía.
+- **No se renumeraron los Spikes** (SPIKE-001-006): tienen su propio contador por diseño, no son una colisión real con Story/Task/Bug pese a reusar 1-6; renumerarlos habría sido una cascada masiva (citados en ADR-0107, ADR-0112 a ADR-0117, ROADMAP §6) para corregir algo que ya es coherente bajo la regla aclarada.
+
+### 2026-06-18 — STORY-007 (`telemetry`, TTR-001) cerrada y auditada
+- **Lo que pasó fuera de esta sesión del Tech-Lead:** el usuario arrancó en Modo Mentor (tecleó `TelemetrySampleContent`, defecto detectado en relectura: `process_id` duplicado), luego cambió la Story a **Modo Docente** (ADR-0122, nuevo) y el Rust-Engineer terminó la implementación completa con explicación profunda bloque a bloque. Lecciones formales en `docs/lessons/rust/STORY-007-telemetry.md` (ADR-0124: un archivo por Story, no por tema).
+- **Auditoría independiente del Tech-Lead (reproducida, no tomada del reporte):** `cargo build --workspace` limpio; `cargo clippy --workspace --all-targets -- -D warnings` 0 warnings; `cargo test -p shared` → 76/76 verdes, verifiqué por nombre los 8 tests mapeados 1-a-1 contra los 8 criterios de la Orden (§5); `cargo llvm-cov --workspace --summary-only` → `domain/telemetry.rs` 100%, `orchestrator/telemetry.rs` 93.19% (coinciden exacto con lo reportado), `persistence/telemetry.rs` 94.29% (reportado 93.55%, variación menor). Inspección manual: `domain/telemetry.rs` sin `SystemTime`/`sqlx` (FCIS limpio); `migrations/0004_telemetry.sql` con columnas exactas del perfil + 2 índices justificados, sin triggers append-only (correcto, esta tabla SÍ borra por poda); 8 exports verificados en `public_interface.rs`.
+- **Diseño de esquema** (`metric_name`/`details_json` fuera del contrato de 25 campos): aplicado por precedente directo de `audit_events` (STORY-004) — sin necesidad de escalar al Architect, ya resuelto.
+- **Veredicto: APROBADO.** Sellado `docs/features/telemetry.md` (banner 🟡 Parcial, TTR-002 → EPIC-7) y `docs/ROADMAP.md` (fila STORY-007 → "parcial (TTR-002 → EPIC-7)").
+- **Diferidos confirmados** (§8 de la Orden, sin cambios): TTR-002 → EPIC-7; Builder ETA/gRPC/WebSocket + Best Strategy Tracker → EPIC-3/EPIC-8; CPU/memoria por proceso → STORY-008.
+
+### 2026-06-19 — Revisión de commits y staged; ROADMAP actualizado a v3.1
+
+**Commits revisados (HEAD hasta 6353961):**
+- `d852540` — auditoría de integridad ADR: 42 hallazgos corregidos en 124 ADRs (documental).
+- `c879749` — ADR-0124 lecciones: un archivo por Story/Task, no por tema (ya estaba en PROGRESS).
+- `32fcb2e` — `agentic-mcp-gateway` dual-cabine (documental).
+- `c03ec68` — STORY-007 (`telemetry`) ya auditada y cerrada (registrada en entrada 2026-06-18).
+- `7741e46` — ADR-0122 Modo Docente + protocolo de lecciones (ya en PROGRESS).
+- Y commits anteriores ya documentados.
+
+**Staged (nuevas decisiones arquitectónicas del Architect):**
+- **ADR-0125-0128** — Capa de datos fundamentales:
+  - ADR-0125: Event Study + Surprise como métodos canónicos; NLP a `moonshots`.
+  - ADR-0126: Sourcing externo de hecho crudo + scoring 100% propio (Soberanía).
+  - ADR-0127: PIT de eventos — arrival timestamp + vintage/as-of (first-print vs revisiones).
+  - ADR-0128: Mapa de exposición evento→activo + normalización por instrumento.
+- **ADR-0129** — Entradas concurrentes no bloqueantes por defecto + de-duplicación de señal (extiende ADR-0004 y ADR-0081).
+- **ADR-0130** — Frecuencia/horizonte de operación como objetivo declarable + agnosticismo de temporalidad (extiende NSGA-II y backtest-engine).
+- **4 features nuevas:** `fundamental-event-store` (→ `ingest`/EPIC-1), `event-impact-scorer` + `asset-exposure-map` + `fundamental-indicator-projector` (→ `generate`/EPIC-3).
+- **Features modificadas:** `order-fsm`, `advanced-trade-management`, `backtest-engine`, `nsga2-optimizer` (extendidas por ADR-0129/0130).
+- **Módulos actualizados:** `ingest`, `generate`, `validate`, `execute`, `manage` (nuevos TTRs incorporados).
+- **SAD-21.md** — nueva sección del SAD.
+- **Índices actualizados por el Architect:** `docs/ADR.md` (ADR-0125-0130 registrados), `docs/README.md` (4 features nuevas con módulo asignado).
+
+**Qué actualizó el Tech-Lead:**
+- `docs/ROADMAP.md` → v3.1 (2026-06-19):
+  - EPIC-1: añadido `fundamental-event-store` (ADR-0126/0127).
+  - EPIC-2: añadidos ADR-0129 (N posiciones concurrentes) y ADR-0130 (agnosticismo de temporalidad).
+  - EPIC-3: añadidas 3 features fundamentales + objetivo de frecuencia/horizonte (ADR-0130).
+  - EPIC-5: `order-fsm` y `advanced-trade-management` referenciados con ADR-0129.
+
+**Próximo paso:** **STORY-008 (`worker-isolation-orchestrator`)** — preguntar al usuario el Modo de Acompañamiento (ADR-0120) antes de redactar la Orden. Secuencia EPIC-0 restante: STORY-008 → STORY-009 (CLI + binario `app`) → STORY-010 (`agentic-mcp-gateway`). Luego SPIKE-001-006.
+
 ## Pendientes / vigilancia
 
-- **Sprint 1:** STORY-003 ✅ → STORY-004 🟡 (TTR-001 hecho; TTR-002 a EPIC-2+) → STORY-005 ✅ → **STORY-007 (telemetry, Orden lista en Modo Mentor, SIGUIENTE: usuario invoca `/rust-engineer`)** → STORY-008 (worker-isolation) → STORY-009 (CLI + binario raíz `app`). `crash-recovery` (antes "STORY-006") salió de EPIC-0 por ADR-0118 → ahora es trabajo de EPIC-5.
+- **Sprint 1:** STORY-003 ✅ → STORY-004 🟡 (TTR-001 hecho; TTR-002 a EPIC-2+) → STORY-005 ✅ → STORY-007 🟡 (TTR-001 ✅ auditado 2026-06-18; TTR-002 a EPIC-7) → **STORY-008 (worker-isolation, SIGUIENTE)** → STORY-009 (CLI + binario raíz `app`) → STORY-010 (`agentic-mcp-gateway`, ADR-0123). `crash-recovery` (mencionado informalmente como "STORY-006" en su momento, sin archivo real) salió de EPIC-0 por ADR-0118 → ahora es trabajo de EPIC-5, sin número de Story asignado aún.
 - **`kill -9` real (subproceso + SIGKILL):** diferido a STORY-009 (necesita binario raíz). El gate de STORY-005 ya está demostrado con el test de cierre/reapertura de DB en archivo.
 - **Spikes de gates SPIKE-001–SPIKE-006:** aún no despachados (se decidió arrancar por cimientos). SPIKE-001 (smoke test NautilusTrader) es el único sin validar de fondo; SPIKE-002–SPIKE-006 tienen veredicto en ADR, resta validación residual. Bloquean el inicio de EPIC-1.
 - **Git:** el árbol tiene cambios sin commitear (Orden STORY-007 nueva, ediciones a ROADMAP.md y PROGRESS.md). No se ha commiteado nada (regla: git solo si el usuario lo pide).
