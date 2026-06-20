@@ -3,7 +3,7 @@
 **Carpeta:** `./features/nsga2-optimizer/`
 **Estado:** Lista para implementar
 **Última actualización:** 2026-06-11
-**Decisiones Arquitectónicas Asociadas:** ADR-0042, ADR-0044, ADR-0108, ADR-0109, ADR-0110, ADR-0111
+**Decisiones Arquitectónicas Asociadas:** ADR-0042, ADR-0044, ADR-0108, ADR-0109, ADR-0110, ADR-0111, ADR-0130
 
 ---
 
@@ -80,6 +80,9 @@ NSGA-II es un algoritmo de optimización que busca configuraciones de estrategia
 | LONG_SHORT_MODE | symmetric | sym/asymmetric | Reglas independientes por dirección (ADR-0041) |
 | ACTIVE_GENOME_DOMAINS | [Señal] | Señal / Riesgo y Gestión / Régimen y Filtro / Portafolio y Correlación | Dominio(s) genómico(s) que esta corrida evoluciona; los demás dominios del Manifest viajan congelados (ADR-0108) |
 | PORTFOLIO_COEVOLUTION_SIZE | 5 | 3-20 | Número de Manifests miembros co-evolucionados simultáneamente como una cartera (solo Fase C, ADR-0111) |
+| OPERATION_HORIZON | any | any / scalping / intraday / swing / position / tick | Perfil de operación declarado; `any` no impone sesgo de frecuencia (agnóstico, ADR-0130). Ajusta el fitness y el objetivo de frecuencia |
+| MIN_TRADES | configurable | 0-N | Mínimo de operaciones para validez estadística; estrategias por debajo se penalizan/rechazan (ADR-0130). Se combina con backtest multiactivo para alcanzar el N |
+| FREQUENCY_OBJECTIVE | off | off / target / maximize | Si la frecuencia entra como objetivo del Pareto: encajar una frecuencia objetivo del horizonte, o maximizarla sin sacrificar robustez (ADR-0130) |
 
 ---
 
@@ -142,6 +145,15 @@ NSGA-II es un algoritmo de optimización que busca configuraciones de estrategia
 *   **Entrada:** Conjunto de Manifests miembros validados, `DNA_pool` de configuraciones de cartera, `Market_Data` por miembro.
 *   **Salida:** `Pareto_Front` de configuraciones de cartera, con métricas agregadas (Sharpe/drawdown/correlación de cartera) y desglose por miembro.
 *   **Criterio de Éxito:** Ninguna configuración de cartera en la Frontera Pareto opera con menos de `PORTFOLIO_COEVOLUTION_SIZE` miembros activos simultáneamente sin que el Genoma de Portafolio y Correlación lo determine explícitamente.
+
+### TTR-008: Objetivo de Frecuencia/Horizonte y Restricción de Mínimo de Operaciones (ADR-0130)
+*   **¿Cuál es el problema?** Sin tratar la frecuencia como objetivo, el optimizador deriva a baja frecuencia (curvas más limpias con menos trades) y entrega estrategias de ~10 operaciones al mes en temporalidad de scalping — el sesgo de StrategyQuant que se quiere evitar.
+*   **¿Qué tiene que pasar?** El usuario declara un perfil de operación (`OPERATION_HORIZON`) y, opcionalmente, activa la frecuencia como objetivo del Pareto (`FREQUENCY_OBJECTIVE`). Las estrategias con menos de `MIN_TRADES` se penalizan/rechazan; el N se alcanza combinando el backtest multiactivo ([`universal-basket-backtester`](./universal-basket-backtester.md)).
+*   **¿Cómo sé que está hecho?**
+    - [ ] Con `OPERATION_HORIZON = scalping` y `FREQUENCY_OBJECTIVE = target`, la Frontera Pareto contiene estrategias de alta frecuencia, no swing de 10 trades/mes.
+    - [ ] Una estrategia bajo `MIN_TRADES` queda penalizada/rechazada.
+    - [ ] Con `OPERATION_HORIZON = any` el motor no impone sesgo de frecuencia (agnosticismo, ADR-0130).
+*   **¿Qué no puede pasar?** Maximizar trades a ciegas sacrificando robustez; ni sesgar estructuralmente el descubrimiento hacia una temporalidad (la agnosticidad de horizonte es invariante).
 
 ---
 

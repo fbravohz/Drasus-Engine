@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/advanced-trade-management/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0081, ADR-0009, ADR-0020 V2, ADR-0108, ADR-0109
+**Decisiones Arquitectónicas Asociadas:** ADR-0081, ADR-0009, ADR-0020 V2, ADR-0108, ADR-0109, ADR-0129
 
 ---
 
@@ -23,6 +23,7 @@ Este componente provee:
 
 - **Modificación Dinámica de Niveles:** El sistema recalcula la distancia del Trailing Stop al cierre de cada barra y transmite la actualización al broker.
 - **Pirámide de Posición (Scaling In):** A medida que el mercado avanza a favor de la posición, el gestor inyecta lotaje adicional según niveles predefinidos sin exceder el riesgo global.
+- **Entradas Concurrentes Independientes (ADR-0129):** Una posición abierta NO bloquea por defecto nuevas entradas de la misma estrategia; cada señal fresca válida (≥1 vela después, sin duplicar el mismo disparo) abre una **posición independiente** con su propio ticket. Es distinto del Scaling-In (que añade lotaje a una misma posición ganadora): aquí son posiciones separadas. El bloqueo "una a la vez" es configurable (`MAX_CONCURRENT_POSITIONS = 1`).
 - **Gestión de Cobertura (Hedging):** Permite abrir posiciones opuestas (Cortos vs Largos) sobre el mismo activo en subcuentas o tickets aislados.
 - [ ] Cuando el Genoma de Riesgo y Gestión de Posición (ADR-0109) está activo, `anti_martingale_scaling_factor`, `max_grid_levels` y `trailing_stop_atr_multiplier` pueden ser resueltos por el motor evolutivo en lugar de tomar su valor por defecto.
 
@@ -57,6 +58,18 @@ Se gestiona mediante el objeto `AdvancedTradeManagementConfig`:
     - [ ] Un Manifest sin Genoma de Riesgo y Gestión activo opera exactamente con los valores por defecto de esta tabla (sin regresión de comportamiento).
     - [ ] Un Manifest con Genoma de Riesgo y Gestión activo puede resolver `anti_martingale_scaling_factor` a un valor distinto del default sin afectar `trailing_stop_atr_multiplier` si este último no fue seleccionado por el genoma.
 - **¿Qué no puede pasar?** Ningún parámetro de esta tabla puede ser modificado en LIVE fuera del proceso de resolución de `wildcard_group` y re-compilación del Manifest (ADR-0043).
+
+---
+
+### TTR-004: Entradas Concurrentes Independientes No Bloqueantes (ADR-0129)
+- **¿Cuál es el problema?** Un motor que bloquea mientras hay una posición abierta estrangula la frecuencia: en temporalidad fina un trade ocupa cientos de velas durante las cuales toda señal nueva se ignora. Eso produce menos trades en 1M que en 15M y sesga el descubrimiento a baja frecuencia.
+- **¿Qué tiene que pasar?** Por defecto, una señal de entrada fresca y válida abre una posición independiente aunque ya exista una abierta de la misma estrategia, con de-duplicación de señal (separación mínima de velas) y sujeta al gate de riesgo pre-trade. El usuario puede limitar la concurrencia (incluido `=1` para el bloqueo clásico).
+- **¿Cómo sé que está hecho?**
+    - [ ] Con dos señales separadas por ≥1 vela, se abren dos posiciones independientes (dos tickets), no una sola con más lotaje.
+    - [ ] Con `MAX_CONCURRENT_POSITIONS = 1`, la segunda señal se ignora.
+    - [ ] Dos señales en la misma vela de disparo no abren dos posiciones (dedup).
+    - [ ] Al bajar la temporalidad del backtest, el número de trades sube (no baja).
+- **¿Qué no puede pasar?** Abrir posiciones concurrentes que violen el margen/exposición agregados (HARD, ADR-0010/0025), ni confundir esta mecánica con el Scaling-In sobre una misma posición.
 
 ---
 

@@ -55,6 +55,8 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 - **NUNCA el motor modifica el estado de la estrategia durante simulación.** Backtest es read-only.
 - **Contrato de Consistencia Conservadora (ADR-0114, FIJO):** la Ruta Express NUNCA puede ser más optimista que la Event-Driven. Se garantiza por: **(a) Bar-Open Alignment** —señal calculada al cierre de la barra N se ejecuta en la apertura de N+1, sin precios intermedios— y **(b) Regla Intrabar Pesimista** —si SL y TP se tocan en la misma vela, se asume SIEMPRE que el Stop Loss saltó primero—.
 - **Frontera Sin-Estado / Con-Estado (ADR-0114, FIJO):** ningún cálculo dependiente del estado de cuenta/posición corre en la sub-fase vectorizada; la lógica con estado (sizing, stops, Dominio de Riesgo y Gestión ADR-0109) corre en el mini-loop secuencial.
+- **Agnosticismo de Temporalidad (ADR-0130, FIJO):** el motor simula scalping, intradía, swing, posición y **ticks** como ciudadanos de primera clase, sin sesgo estructural hacia ninguna temporalidad. Bajar la temporalidad debe aumentar el número de oportunidades evaluadas, nunca reducirlo artificialmente.
+- **Posiciones Concurrentes (ADR-0129, FIJO):** el motor modela N posiciones concurrentes por estrategia/activo (no una sola), con contabilidad de margen agregada y P&L por ticket, para que el conteo de trades refleje la semántica no bloqueante. `MAX_CONCURRENT_POSITIONS = 1` reproduce el comportamiento clásico.
 
 ---
 
@@ -139,6 +141,17 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 *   **Entrada:** Tick data stream, Active Orders list.
 *   **Salida:** Precision Execution Logs.
 
+### **TTR-004: Simulación de Posiciones Concurrentes y Agnosticismo de Temporalidad (ADR-0129/0130)**
+*   **Descripción:** El motor simula N posiciones concurrentes por estrategia/activo (entradas no bloqueantes por defecto + de-duplicación de señal) sobre cualquier temporalidad o ticks, con margen agregado y P&L atribuido por ticket.
+*   **Reglas de Negocio:**
+    * Respeta `MAX_CONCURRENT_POSITIONS` y `SIGNAL_DEDUP_BARS` (ADR-0129); `=1` reproduce "una posición a la vez".
+    * El margen/exposición se validan sobre el agregado de posiciones concurrentes (HARD, ADR-0010/0025).
+    * Ninguna temporalidad recibe trato preferente; bajar el timeframe aumenta las oportunidades evaluadas (ADR-0130).
+*   **Entrada:** `strategy_dna`, dataset (OHLCV/ticks) de cualquier temporalidad, set de posiciones abiertas.
+*   **Salida:** `TradeLog` con trades concurrentes y conteo coherente con la temporalidad.
+*   **Precondición:** TTR-001/TTR-003 disponibles.
+*   **Postcondición:** Métricas (incl. número de trades) reflejan la semántica no bloqueante y la temporalidad real.
+
 ---
 
 ## Gobernanza y Estándares (Fijos)
@@ -169,6 +182,8 @@ Toda ejecución de backtest y resultado registra el set de relevancia técnica p
     - ADR-0020 V2: Inundación de Fundaciones.
     - ADR-0107: Integración nativa NT v2 (ruta Event-Driven).
     - ADR-0114: Motor dual, ruta Express híbrida, modo elegido por el usuario y contrato de consistencia conservadora.
+    - ADR-0129: Entradas Concurrentes No Bloqueantes + De-duplicación de Señal (N posiciones simuladas).
+    - ADR-0130: Frecuencia/Horizonte de Operación + Agnosticismo de Temporalidad.
 
 ---
 

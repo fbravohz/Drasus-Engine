@@ -43,6 +43,12 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
     2. Cantidad de contratos > 0 (para posiciones abiertas)
   → Si ambas se cumplen, la posición se persiste
 
+- [ ] Una estrategia con una posición ya abierta recibe una nueva señal de entrada válida (al menos una vela después)
+  → Por defecto NO se bloquea: se abre una **posición concurrente independiente** (ticket propio) — ADR-0129
+  → La nueva entrada pasa íntegra por el gate de riesgo pre-trade (margen sobre el agregado, exposición)
+  → Si `MAX_CONCURRENT_POSITIONS = 1`, la nueva señal se ignora (bloqueo clásico "una a la vez")
+  → Cada posición concurrente lleva su propio P&L y margen atribuidos por ticket
+
 - [ ] El usuario consulta "¿Qué órdenes enviadas hace más de 1 hora todavía están en ENVIADA?"
   → Sistema busca en el historial de órdenes
   → Devuelve la lista (todas están bloqueadas: en estado ENVIADA esperando respuesta del broker, algo puede estar mal)
@@ -56,6 +62,8 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 - **NUNCA una Posición abierta tiene cantidad de contratos <= 0.** Una posición cerrada se elimina (no persiste).
 - **NUNCA se persiste una orden sin timestamp.** Cada transición de estado incluye un timestamp para auditoría.
 - **NUNCA se permite una orden con precio fuera del rango válido del símbolo.** (Ej: precio negativo, precio 1000x el máximo histórico)
+- **NUNCA dos entradas se abren por el mismo disparo de señal.** De-duplicación: separación mínima de `SIGNAL_DEDUP_BARS` velas entre dos entradas de la misma estrategia (ADR-0129).
+- **NUNCA la concurrencia evade los límites duros de margen/exposición.** El margen se valida sobre el **agregado** de todas las posiciones concurrentes de la estrategia, no posición por posición aislada.
 
 ---
 
@@ -66,6 +74,8 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 | POSITION_MARGIN_HARD_LIMIT | true | true / false | Si true (FIJO NO CONFIGURABLE), margen negativo causa rechazo inmediato. Si false, permite margen negativo (NUNCA hacer esto en producción) |
 | ORDER_TIMEOUT | infinity | 1-86400 segundos | Si una orden está en ENVIADA > N segundos, se marca como timeout (opcional) |
 | SLIPPAGE_FACTOR | 0.0001 | 0.0-0.01 | Margen de precio simulado en backtests (multiplicado al precio) |
+| MAX_CONCURRENT_POSITIONS | sin límite (dentro del riesgo) | 1-N | Máximo de posiciones concurrentes por estrategia/activo. `=1` reproduce el bloqueo clásico "una a la vez" (ADR-0129) |
+| SIGNAL_DEDUP_BARS | 1 | 1-N | Separación mínima en velas entre dos entradas de la misma estrategia; evita doble apertura por el mismo disparo (ADR-0129) |
 
 ---
 
@@ -124,6 +134,17 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 
 ---
 
+### **TTR-004: Soporte de Posiciones Concurrentes y De-duplicación de Señal (ADR-0129)**
+*   **Descripción:** Permite N posiciones concurrentes por estrategia/activo (tickets independientes) con contabilidad de margen agregada y atribución de P&L por ticket, más la de-duplicación de señal que impide abrir dos entradas por el mismo disparo.
+*   **Reglas de Negocio:**
+    * Default no bloqueante: `MAX_CONCURRENT_POSITIONS` permite concurrencia; fijarlo en uno reproduce el bloqueo clásico.
+    * Cada apertura concurrente valida el margen sobre el **agregado** de posiciones de la estrategia (HARD, ADR-0010) y pasa el Pre-Trade Risk Gate (ADR-0025).
+    * `SIGNAL_DEDUP_BARS` impone la separación mínima en velas entre entradas; una entrada en la misma vela de disparo se descarta.
+*   **Entrada:** Nueva señal de entrada, conjunto de posiciones abiertas de la estrategia, `process_id` (ADR-0020 V2).
+*   **Salida:** Apertura concurrente aceptada, o descarte con motivo (bloqueo por límite / dedup / riesgo).
+*   **Precondición:** Gate de riesgo pre-trade disponible (ADR-0025).
+*   **Postcondición:** Posiciones concurrentes persistidas con margen agregado y P&L por ticket, auditadas.
+
 ## Gobernanza y Estándares (Fijos)
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
 
@@ -150,6 +171,7 @@ Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legít
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: Máquina de Estados FSM (int64).
     - ADR-0010: Hard Limits (Cierre automático ante margen insuficiente).
+    - ADR-0129: Entradas Concurrentes No Bloqueantes + De-duplicación de Señal.
     - ADR-0020 V2: Inundación de Fundaciones.
 
 ---
