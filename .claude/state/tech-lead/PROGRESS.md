@@ -187,17 +187,11 @@
 
 ## Pendientes Windows (validación cruzada de plataforma)
 
-- **STORY-009 — rama Windows pendiente:** la rama `#[cfg(not(unix))]` de `crates/app/src/main.rs` (SIGTERM fallback) no se puede cubrir en Linux. Cuando el usuario baje los cambios en su máquina Windows, ejecutar:
-  ```bash
-  cargo test --workspace
-  cargo test -p app -- --nocapture
-  cargo llvm-cov --workspace --summary-only
-  ```
-  Evidencia esperada: todos los tests verdes + cobertura de `main.rs` sube al ~98%+. Reportar al Tech-Lead para actualizar el registro de STORY-009.
+- **✅ CERRADO (2026-06-20, commit `baaaac2`):** Al correr `cargo test` desde el toolchain MSVC de Windows via PowerShell/WSL2 se descubrió que `worker_runner.rs` y `kill9_recovery.rs` no compilaban en Windows (APIs `nix`, `pre_exec`, `/proc/stat` sin gate). Corregidos con `#[cfg(unix)]` / `#[cfg(not(unix))]`. Resultado: Linux 93/93 ✅ · Windows 89/89 ✅ (4 tests Unix-only excluidos). La rama `#[cfg(not(unix))]` de `main.rs` (SIGTERM fallback) sigue sin cobertura medible en Linux — sin impacto funcional, despliegue real es Linux.
 
 ## Pendientes / vigilancia
 
-- **Sprint 1:** STORY-003 ✅ → STORY-004 🟡 (TTR-001 hecho; TTR-002 a EPIC-2+) → STORY-005 ✅ → STORY-007 🟡 (TTR-001 ✅ auditado 2026-06-18; TTR-002 a EPIC-7) → **STORY-008 (worker-isolation, SIGUIENTE)** → STORY-009 (CLI + binario raíz `app`) → STORY-010 (`agentic-mcp-gateway`, ADR-0123). `crash-recovery` (mencionado informalmente como "STORY-006" en su momento, sin archivo real) salió de EPIC-0 por ADR-0118 → ahora es trabajo de EPIC-5, sin número de Story asignado aún.
+- **Sprint 1:** STORY-003 ✅ → STORY-004 🟡 (TTR-001 hecho; TTR-002 a EPIC-2+) → STORY-005 ✅ → STORY-007 🟡 (TTR-001 ✅ auditado 2026-06-18; TTR-002 a EPIC-7) → STORY-008 ✅ → STORY-009 ✅ → **STORY-010 (`agentic-mcp-gateway`, SIGUIENTE)**. `crash-recovery` (mencionado informalmente como "STORY-006" en su momento, sin archivo real) salió de EPIC-0 por ADR-0118 → ahora es trabajo de EPIC-5, sin número de Story asignado aún.
 - **`kill -9` real (subproceso + SIGKILL):** diferido a STORY-009 (necesita binario raíz). El gate de STORY-005 ya está demostrado con el test de cierre/reapertura de DB en archivo.
 - **Spikes de gates SPIKE-001–SPIKE-006:** aún no despachados (se decidió arrancar por cimientos). SPIKE-001 (smoke test NautilusTrader) es el único sin validar de fondo; SPIKE-002–SPIKE-006 tienen veredicto en ADR, resta validación residual. Bloquean el inicio de EPIC-1.
 - **Git:** el árbol tiene cambios sin commitear (Orden STORY-007 nueva, ediciones a ROADMAP.md y PROGRESS.md). No se ha commiteado nada (regla: git solo si el usuario lo pide).
