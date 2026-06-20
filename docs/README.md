@@ -358,6 +358,16 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0121**](./adr/ADR-0121.md) | Comentarios de Código en Español — Identificadores en Inglés se Mantienen |
 | [**ADR-0122**](./adr/ADR-0122.md) | Cuarto Modo de Acompañamiento "Docente" + Protocolo de Lecciones Compartido (`docs/lessons/`) |
 | [**ADR-0123**](./adr/ADR-0123.md) | Cabina Dual — Acceso Agéntico vía MCP con Permisos Graduados por Riesgo de Pipeline |
+| [**ADR-0124**](./adr/ADR-0124.md) | Lecciones Organizadas por Story/Task, no por Tema — Corrige esa Regla de ADR-0122 |
+| [**ADR-0125**](./adr/ADR-0125.md) | Frontera Determinista de Datos Fundamentales — Event Study + Surprise como Métodos Canónicos; Extracción NLP Fuera del Núcleo |
+| [**ADR-0126**](./adr/ADR-0126.md) | Sourcing y Soberanía de Datos Fundamentales — Hecho Crudo Externo, Scoring 100% Propio |
+| [**ADR-0127**](./adr/ADR-0127.md) | Point-In-Time de Eventos Fundamentales — Instante de Publicación + Versionado Vintage/As-Of (First-Print vs Revisiones) |
+| [**ADR-0128**](./adr/ADR-0128.md) | Relevancia Evento→Activo y Normalización por Instrumento — Mapa de Exposición Determinista |
+| [**ADR-0129**](./adr/ADR-0129.md) | Entradas Concurrentes No Bloqueantes por Defecto + De-duplicación de Señal |
+| [**ADR-0130**](./adr/ADR-0130.md) | Frecuencia/Horizonte de Operación como Objetivo de Generación + Agnosticismo de Temporalidad |
+| [**ADR-0131**](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
+| [**ADR-0132**](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
+| [**ADR-0133**](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
 
 ---
 

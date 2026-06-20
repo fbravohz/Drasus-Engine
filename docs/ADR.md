@@ -134,3 +134,6 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0128](./adr/ADR-0128.md) | Relevancia Evento→Activo y Normalización por Instrumento — Mapa de Exposición Determinista |
 | [ADR-0129](./adr/ADR-0129.md) | Entradas Concurrentes No Bloqueantes por Defecto + De-duplicación de Señal |
 | [ADR-0130](./adr/ADR-0130.md) | Frecuencia/Horizonte de Operación como Objetivo de Generación + Agnosticismo de Temporalidad |
+| [ADR-0131](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
+| [ADR-0132](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
+| [ADR-0133](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
