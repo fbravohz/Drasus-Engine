@@ -48,6 +48,18 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * Datasets >100K puntos exigen downsampling en Rust antes de cruzar la frontera (ADR-0097).
 * Define y documenta APIs limpias por módulo, espejando los puertos públicos (`public_interface.rs`).
 
+### 2b. Política de Comentarios — FFI/Bridge (addendum a `base/SKILL.md`)
+
+El principio universal está en `base/SKILL.md`. Aquí los requisitos específicos del código de frontera:
+
+- **Cada función exportada por FFI** lleva un comentario que describe: qué hace, qué garantías de ownership da (quién libera la memoria), y qué ocurre si se llama con un puntero nulo o con datos malformados.
+- **Cada campo de un struct que cruza la frontera** tiene un comentario explicando su tipo en ambos lados (Rust y Dart) y si es nullable.
+- **Cada llamada gRPC** lleva un comentario que dice qué método del servicio invoca y qué campos del response usa.
+- **Código `unsafe`:** cualquier bloque `unsafe` en Rust del Bridge requiere un comentario que justifique por qué es seguro en ese contexto específico. Sin justificación, el QA lo marca como BLOQUEANTE.
+- Los archivos `.proto` también llevan comentarios: cada `message` y cada `field` describen qué dato contienen en lenguaje de negocio.
+
+**QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado. El QA revisará los contratos de tipo, los bloques `unsafe` y los comentarios de ownership — no solo compilará el binding.
+
 ### 3. Concurrencia y Seguridad
 * Maneja de forma segura el paso de datos a través de la frontera de C (FFI); cero punteros colgantes, ownership explícito.
 * El Event-Loop de Rust (Tokio) jamás bloquea el hilo principal (Isolate) de Flutter.

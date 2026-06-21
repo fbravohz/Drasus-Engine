@@ -48,6 +48,18 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * Diseño premium, profesional y sobrio orientado a datos financieros. Frameless con barra propia y modo oscuro nativo (SAD §2.7).
 * La UI es 100% State-Driven: debe poder desconectarse sin que el motor Rust detenga su operación (ADR-0033).
 
+### 2b. Política de Comentarios — Dart/Flutter (addendum a `base/SKILL.md`)
+
+El principio universal de comentarios está en `base/SKILL.md`. Aquí solo la sintaxis Dart:
+
+- **`//`** para comentarios de bloque antes de cada `Widget`, método o función, y para comentarios de línea en lógica no obvia.
+- **`///`** (doc-comment) solo en los métodos públicos del archivo de contrato con el Bridge — son la documentación de la API visible para el resto del equipo.
+- Cada `Widget.build()` lleva un comentario que describe qué muestra en pantalla y de dónde vienen sus datos (stream FFI, estado local, etc.).
+- Cada llamada al Bridge lleva un comentario que explica qué operación de negocio dispara y qué tipo de resultado espera.
+- **Nunca** coloques lógica de negocio en Dart sin comentario — si hay un cálculo o condición en Dart, es sospechoso por definición (viola el Mandato de Cáscara Delgada) y debe estar comentado aclarando por qué está aquí y no en Rust.
+
+**QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado por el Tech-Lead. El QA leerá el código, no solo correrá `flutter test`.
+
 ### 3. Consumo de la Capa de Enlace
 * Consume exclusivamente las funciones, streams y eventos expuestos por el Bridge (FFI/gRPC), estructurando reactivamente el estado.
 * Respeta el throttling de telemetría (refresco máx. cada 100ms) y renderiza datos ya reducidos (downsampling servidor); nunca pidas datasets crudos masivos.

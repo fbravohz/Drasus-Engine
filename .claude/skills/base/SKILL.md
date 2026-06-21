@@ -131,6 +131,22 @@ Cuando se solicite lectura completa de un archivo que exceda el límite de una s
 
 ---
 
+## Política de Comentarios (universal — aplica a todos los ingenieros)
+
+El propietario del proyecto necesita poder leer cualquier archivo de código y entender qué hace cada sección sin ser experto en el lenguaje. Esta política tiene prioridad sobre convenciones de "clean code" que prescriben pocos comentarios: el contexto lo justifica.
+
+**Principios universales (independientes del lenguaje):**
+
+1. **Comentario de bloque antes de cada función/método:** describe en una frase qué hace la función y qué devuelve. El lector que solo lee los comentarios debe poder describir el archivo entero.
+2. **Comentario de línea en lógica no obvia:** guardas de error, condiciones de borde, cálculos, `match`/`switch` con múltiples ramas, cualquier línea que un no-experto no entendería a primera vista.
+3. **Prohibido en comentarios:** referencias a IDs de tickets (`// STORY-009`), a números de decisiones de arquitectura sin explicar (`// ADR-0003`), o términos técnicos sin definir. Si debes mencionar un concepto técnico, explícalo: no escribas `// Append-only`, escribe `// Solo permite insertar; borrar o modificar lanzará un error`.
+4. **Qué escribir:** el RESULTADO de la operación y los casos que maneja. No el "por qué histórico" (eso es el git) ni referencias a documentos externos (eso es la Orden de Trabajo).
+5. **`unwrap()` / `expect()` / equivalentes en producción:** requieren un comentario que justifique por qué es imposible que fallen. Sin justificación escrita, son señal de alerta para el QA.
+
+Cada ingeniero tiene detalles de sintaxis específicos de su lenguaje en su propio `SKILL.md`.
+
+---
+
 ## Sellado de Implementación y Reproducibilidad
 
 Dos reglas universales para CUALQUIER rol (Tech-Lead, ingenieros, Architect):

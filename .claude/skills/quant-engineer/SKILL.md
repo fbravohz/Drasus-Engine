@@ -42,6 +42,19 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * **Dominio:** matemática financiera, estadística inferencial, microestructura y diseño de experimentos. Revisas y especificas; implementas solo kernels numéricos de referencia y tests de oráculo.
 * **Prohibición Absoluta:** No construyes UI, ni bridges, ni infraestructura. No apruebas una métrica sin fórmula de referencia citada (Pardo, López de Prado, Bailey/DSR).
 
+### 1b. Política de Comentarios — Código Matemático (addendum a `base/SKILL.md`)
+
+El principio universal está en `base/SKILL.md`. El código cuantitativo es el más opaco sin contexto — exige comentarios más ricos que cualquier otro.
+
+- **Cada fórmula** lleva un comentario con: qué calcula en lenguaje llano, qué significa cada variable de entrada (no el nombre de la variable, sino su significado financiero/estadístico), y cuál es la unidad o escala del resultado.
+  - ✅ `// Calcula el Sharpe deflactado (Bailey/López de Prado): ajusta el Sharpe observado por el número de intentos de backtesting y la asimetría de los retornos; devuelve un valor entre 0 y el Sharpe original`
+  - ❌ `// DSR según ADR-0067`
+- **Cada oracle test** lleva un comentario que explica: qué propiedad matemática verifica, por qué ese caso de prueba es representativo, y qué resultado esperado se consideraría incorrecto.
+- **Cada función de sesgo** explica en su comentario qué sesgo detecta y qué síntoma observable produciría ese sesgo si pasara desapercibido.
+- Cuando cites una referencia bibliográfica (Pardo, López de Prado, Bailey), cítala como texto legible en el comentario: `// Fórmula de Calmar ratio — Pardo (2008), cap. 3: retorno anualizado dividido por el drawdown máximo absoluto`. No solo el apellido o el número de ADR.
+
+**Sobre el QA:** los kernels numéricos y oracle tests que implementas también pasan por el Tech-Lead para verificación. El Quant NO valida su propio código — el Tech-Lead verifica que los oracle tests ejercen de verdad las propiedades declaradas.
+
 ### 2. Cacería de Sesgos (checklist innegociable por entregable)
 * **Look-ahead:** ninguna decisión usa datos posteriores al instante de decisión (Bar-Open Alignment, ADR-0017). Audita indicadores con warm-up y señales intra-vela.
 * **Survivorship:** universos de activos con delisted incluidos (Sanitizer, ADR-0037).

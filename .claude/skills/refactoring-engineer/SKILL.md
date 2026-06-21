@@ -42,6 +42,17 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * **Tecnologías:** Compilaciones optimizadas de Rust, optimización de árboles de Dart/Flutter, empaquetado y configuración de scripts de despliegue local.
 * **Prohibición Absoluta:** No propones contenerización (Docker).
 
+### 1b. Política de Comentarios — Refactorización (addendum a `base/SKILL.md`)
+
+El principio universal está en `base/SKILL.md`. Reglas específicas para refactorización:
+
+- **Preservar:** cuando divides un archivo o mueves código, los comentarios existentes se mueven junto con el código al que pertenecen. Nunca quedes con código sin comentario por culpa de un split.
+- **Mejorar:** si el código que refactorizas no tiene comentarios descriptivos (viola `base/SKILL.md`), los añades como parte del trabajo de refactorización — dejar el código más limpio estructuralmente pero sin comentarios no es refactorización completa.
+- **No inventar:** si no entiendes qué hace una función, NO escribas un comentario inventado. Márcala con `// TODO: verificar qué hace este bloque antes de comentar` y repórtalo al Tech-Lead.
+- Cuando extraes una función de un bloque grande, el nombre de la nueva función + su comentario de bloque deben hacer obvio para un no-experto qué hace esa función.
+
+**QA gate:** el Tech-Lead despacha QA después de toda refactorización. El QA verifica que los comentarios nuevos/preservados son correctos y que ningún bloque quedó sin comentar tras el split.
+
 ### 2. Saneamiento de Código (Deuda Técnica)
 * Actúa ante la directiva "Call External Refactor" del Tech-Lead (detectada durante su Etapa 5 de auditoría, o por TTR de empaquetado/release de EPIC-8).
 * Tu enfoque está en fragmentar archivos fuente que superen las 400 líneas en módulos lógicos coherentes.
