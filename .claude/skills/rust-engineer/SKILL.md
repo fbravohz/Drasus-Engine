@@ -64,16 +64,23 @@ El despliegue es Linux (ADR-0016), pero el desarrollo también ocurre en Windows
 
 | Si usas... | Gate obligatorio |
 |---|---|
-| `std::os::unix::*`, `nix::*`, `libc::` con syscalls Unix | `#[cfg(unix)]` |
-| `/proc/{pid}/stat` u otras rutas del sistema de archivos de Linux | `#[cfg(target_os = "linux")]` |
-| `prctl`, `SIGTERM`, `SIGKILL`, `kill(2)`, señales POSIX | `#[cfg(unix)]` |
+| `std::os::unix::*`, `nix::*`, señales POSIX (SIGTERM, SIGKILL) | `#[cfg(unix)]` — cubre Linux + macOS |
+| `/proc/{pid}/stat`, `prctl` (syscalls exclusivas de Linux) | `#[cfg(target_os = "linux")]` |
+| `kqueue`, `mach_*` (exclusivas de macOS) | `#[cfg(target_os = "macos")]` |
 | `std::os::windows::*`, `winapi::` | `#[cfg(windows)]` |
-| Tests que usan cualquiera de lo anterior | `#[cfg(unix)]` o `#[cfg(target_os = "linux")]` en el test |
-| Archivos de test completos que no tienen sentido en Windows | `#![cfg(unix)]` al inicio del archivo |
+| Tests que usan cualquiera de lo anterior | el mismo `#[cfg(...)]` en el test |
+| Archivos de test enteros sin sentido fuera de Unix | `#![cfg(unix)]` al inicio del archivo |
 
-**Siempre que uses una API exclusiva de plataforma, añade también un stub `#[cfg(not(unix))]`** con comportamiento razonable y un comentario que explique por qué el stub existe: `// Stub Windows: SIGKILL no existe — el despliegue real es Linux`.
+**Siempre que uses una API exclusiva de plataforma, añade un stub para las demás** con comportamiento razonable y un comentario explicando por qué existe el stub.
 
-Esto fue el bug encontrado en STORY-008/STORY-009 al correr en Windows: imports de `nix` y `std::os::unix` sin gate de compilación rompieron el workspace en MSVC.
+**Targets de despliegue del proyecto (actualizado 2026-06-20):**
+- **Desktop nativo:** Windows, Linux, macOS — los tres son targets de producción.
+- **Mobile client-only:** iOS y Android — Flutter thin shell que conecta al backend Rust vía gRPC (VPS, red local o VPS distribuida).
+- **Web:** posible en el futuro — Flutter Web thin shell.
+- El backend Rust corre en desktop o VPS; **no** en mobile ni en browser.
+- `#[cfg(unix)]` cubre Linux + macOS correctamente para APIs POSIX. `#[cfg(target_os = "linux")]` queda para Linux-only (`prctl`, `/proc`).
+
+Bugs de referencia: STORY-008/009 usaron `nix`/`std::os::unix` sin gate → fallo en Windows (detectado 2026-06-20). `prctl` sin `#[cfg(target_os = "linux")]` → fallo latente en macOS (detectado 2026-06-20, pendiente fix).
 
 ### 5. Diseño Local-First
 * Zero-Docker, sin servicios de red obligatorios (ADR-0030). Usa estrictamente la nomenclatura técnica y formal del proyecto (ADR-0038).

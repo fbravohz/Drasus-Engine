@@ -137,3 +137,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0131](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
 | [ADR-0132](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
 | [ADR-0133](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
+| [ADR-0134](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo Windows/Linux/macOS + Mobile/Web Cliente Delgado) y Detección de Muerte del Padre Portátil |
