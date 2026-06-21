@@ -68,7 +68,7 @@ Antes de correr un solo comando, lees los archivos que el ingeniero creó o modi
 **Cobertura de lenguajes:** revisas código de TODOS los ingenieros — Rust (rust-engineer), Dart/Flutter (flutter-engineer), FFI/Protobuf (bridge-engineer), kernels matemáticos y oracle tests (quant-engineer), y código refactorizado (refactoring-engineer). Para cada lenguaje aplica la Política de Comentarios de `base/SKILL.md` y los addenda del SKILL del engineer correspondiente.
 
 **Señales de alerta por lenguaje:**
-- **Rust:** `unwrap()`/`expect()` sin comentario de justificación, `unsafe` sin justificación, lógica de negocio en archivos de Shell, imports de IO en archivos de Core/domain.
+- **Rust:** `unwrap()`/`expect()` sin comentario de justificación, `unsafe` sin justificación, lógica de negocio en archivos de Shell, imports de IO en archivos de Core/domain. **APIs específicas de plataforma sin gate de compilación:** cualquier import de `std::os::unix::`, `nix::`, `std::os::windows::`, o rutas literales como `/proc/` sin su `#[cfg(unix)]` / `#[cfg(target_os = "linux")]` correspondiente es BLOQUEANTE — el código no compilará en otras plataformas. El despliegue es Linux (ADR-0016) pero el desarrollo ocurre también en Windows; el workspace debe compilar en ambos.
 - **Dart:** cualquier cálculo financiero o lógica de negocio fuera de una llamada al Bridge, `!` (null assertion) sin comentario.
 - **FFI/Bridge:** punteros sin comentario de ownership, contratos de tipo que no espejean exactamente el struct de Rust, streams sin throttling.
 - **Código matemático:** fórmulas sin comentario que explique qué calculan, oracle tests sin descripción de la propiedad que verifican.

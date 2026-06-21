@@ -56,6 +56,25 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * Estructura fija por módulo: `public_interface.rs`, `domain/`, `orchestrator.rs`, `persistence/`, `schemas.rs` (ADR-0003). Prohibido acceder a tablas de otro módulo: usa su puerto público.
 * Persistencia bajo ADR-0020 V2: los 25 campos son **contrato lógico (vocabulario)**, NO 25 columnas calcadas. Aplica el **Grupo I (universal)** + solo los campos del Perfil Técnico que la Feature declara (Filtro de Relevancia). Si la Feature no declara perfil o un campo es ambiguo, repórtalo como BLOQUEO al Tech-Lead; NO calques los 25 ni inventes.
 
+### 4b. Portabilidad de Compilación (regla activa desde 2026-06-20)
+
+El despliegue es Linux (ADR-0016), pero el desarrollo también ocurre en Windows. El workspace **debe compilar en ambos**. Esto no es opcional.
+
+**Regla:** toda API específica de plataforma lleva su gate de compilación. Sin excepción.
+
+| Si usas... | Gate obligatorio |
+|---|---|
+| `std::os::unix::*`, `nix::*`, `libc::` con syscalls Unix | `#[cfg(unix)]` |
+| `/proc/{pid}/stat` u otras rutas del sistema de archivos de Linux | `#[cfg(target_os = "linux")]` |
+| `prctl`, `SIGTERM`, `SIGKILL`, `kill(2)`, señales POSIX | `#[cfg(unix)]` |
+| `std::os::windows::*`, `winapi::` | `#[cfg(windows)]` |
+| Tests que usan cualquiera de lo anterior | `#[cfg(unix)]` o `#[cfg(target_os = "linux")]` en el test |
+| Archivos de test completos que no tienen sentido en Windows | `#![cfg(unix)]` al inicio del archivo |
+
+**Siempre que uses una API exclusiva de plataforma, añade también un stub `#[cfg(not(unix))]`** con comportamiento razonable y un comentario que explique por qué el stub existe: `// Stub Windows: SIGKILL no existe — el despliegue real es Linux`.
+
+Esto fue el bug encontrado en STORY-008/STORY-009 al correr en Windows: imports de `nix` y `std::os::unix` sin gate de compilación rompieron el workspace en MSVC.
+
 ### 5. Diseño Local-First
 * Zero-Docker, sin servicios de red obligatorios (ADR-0030). Usa estrictamente la nomenclatura técnica y formal del proyecto (ADR-0038).
 
