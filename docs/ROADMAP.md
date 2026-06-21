@@ -86,6 +86,8 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | TASK-011 — Enmienda ADR-0003: tabla única por feature + TTRs de integración vs construcción | pendiente | [TASK-011](./execution/TASK-011-persistencia-reutilizacion-feature.md) |
 | STORY-009 — CLI Clap + binario raíz `app` | ✅ terminado | [Orden](./execution/STORY-009-cli-app.md) |
 | STORY-010 — `agentic-mcp-gateway` (núcleo MCP + evaluador de permisos) | 🟡 parcial (TTR-001 UI + TTR-004 SaaS → futuras épicas) | [Orden](./execution/STORY-010-agentic-mcp-gateway.md) |
+| STORY-014 — Smoke test NautilusTrader v2 crates (cierra SPIKE-001) | ✅ terminado | [Orden](./execution/STORY-014-nautilus-smoke-test.md) |
+| STORY-015 — Panel Operativo Fundacional (cierra SPIKE-006, primera Cáscara Delgada Flutter) | ✅ terminado | [Orden](./execution/STORY-015-panel-operativo-fundacional.md) |
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
@@ -172,12 +174,12 @@ Los 6 gates ya tienen veredicto documentado como ADR. En EPIC-0 solo resta la va
 
 | Spike | Riesgo | Veredicto (ADR) | Estado |
 |---|---|---|---|
-| SPIKE-001 | NautilusTrader como crate Rust | ADR-0107 | pendiente (smoke test) |
+| SPIKE-001 | NautilusTrader como crate Rust | ADR-0107 | ✅ cerrado (STORY-014, `nautilus-model =0.58.0` compila, QA APTO 2026-06-21) |
 | SPIKE-002 | `tch-rs`/libtorch | ADR-0112 (erradicado; escalera `ndarray`→`candle`→`burn`) | resta validación |
 | SPIKE-003 | PySR "en Rust" | ADR-0113 (erradicado; simbólico nativo en NSGA-II) | resta validación |
 | SPIKE-004 | Motor de backtest dual | ADR-0114 (Express híbrido + Event-Driven) | resta validación |
 | SPIKE-005 | Ollama/LLM local | ADR-0115 (Verdict Engine determinista; LLM opcional) | resta validación |
-| SPIKE-006 | `flutter_rust_bridge` a escala | ADR-0116 + ADR-0117 (Panel Operativo Fundacional) | resta validación |
+| SPIKE-006 | `flutter_rust_bridge` a escala | ADR-0116 + ADR-0117 (Panel Operativo Fundacional) | ✅ cerrado (STORY-015, `flutter build linux` verde, QA APTO 2026-06-21) |
 
 ---
 

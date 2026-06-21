@@ -1,8 +1,11 @@
 # Integración con NautilusTrader
 
+> 🟡 **Parcial** 2026-06-21 · Orden de trabajo [STORY-014](../execution/STORY-014-nautilus-smoke-test.md)
+> SPIKE-001 cerrado: `nautilus-model =0.58.0` compila en el workspace, capa anticorrupción stub verificada. Implementación real (TTR-001 a TTR-004) → EPIC-2/5.
+
 **Carpeta:** `./features/`
 **Estado:** En Diseño (Pilar Central)
-**Última actualización:** 2026-06-10
+**Última actualización:** 2026-06-21
 **Decisión Arquitectónica Asociada:** ADR-0013, ADR-0107
 
 ---
