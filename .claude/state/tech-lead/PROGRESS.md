@@ -126,6 +126,8 @@
 **✅ TASK-011 CERRADA (2026-06-20):** Architect enmendó ADR-0003 con la Regla de Tabla Única (una Feature → una tabla → un módulo dueño; TTR de Integración ≠ TTR de Construcción; "Consumido por" = accede al puerto). También actualizó ADR-0118 (referencia cruzada) y `docs/templates/FEATURE.md` (nota en "Dependencias y Bloqueantes"). El Gate de Coherencia Pre-Despacho del tech-lead ya incorporaba la regla; ahora puede citar **ADR-0003 §"Persistencia en Features Multi-Consumidor"**.
 **✅ STORY-009 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo.
 **✅ STORY-010 CERRADA Y AUDITADA (2026-06-20).** Ver entrada de hoy abajo. 🟡 Parcial (TTR-001 UI + TTR-004 SaaS diferidos).
+**✅ TASK-012 CERRADA (2026-06-20):** Architect creó ADR-0134 — matriz de plataformas (Windows/Linux/macOS nativos; iOS/Android cliente delgado gRPC; Web futuro incierto). Decisión prctl: optimización Linux-only; macOS y Windows usan keepalive file. ADR-0016/0030/0033 actualizados con refs cruzadas.
+**✅ BUG-013 CERRADO (2026-06-20):** `prctl` gateado bajo `#[cfg(target_os = "linux")]` en `worker_runner.rs`. QA veredicto APTO. 103/103 tests verdes. Primera vez que el QA-Engineer actúa como gate obligatorio (nueva política de sesión).
 **➡️ SIGUIENTE PASO:** despachar **SPIKE-001-006** (6 investigaciones de viabilidad técnica que son gate obligatorio de EPIC-0 antes de arrancar EPIC-1). Solo SPIKE-001 (smoke test NautilusTrader) sin validar de fondo. SPIKE-002-006 tienen veredicto en ADR, falta validación residual.
 
 ### 2026-06-20 — STORY-010 (`agentic-mcp-gateway`) cerrada y auditada

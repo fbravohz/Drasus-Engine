@@ -7,10 +7,10 @@
 | **Tipo** | Bug |
 | **Épica (Fase)** | EPIC-0 — Fundación |
 | **Sprint** | 1 |
-| **Estado** | En curso |
-| **Responsable** | Rust-Engineer (Sonnet) · Modo Autónomo · auditará Tech-Lead + QA-Engineer |
+| **Estado** | ✅ Completada |
+| **Responsable** | Rust-Engineer (Sonnet) · QA-Engineer (Sonnet) · auditó Tech-Lead |
 | **Creada** | 2026-06-20 |
-| **Completada** | — |
+| **Completada** | 2026-06-20 |
 
 ## 0. Resumen ejecutivo
 
@@ -183,7 +183,39 @@ grep -n "#\[cfg(unix)\]" crates/shared/src/orchestrator/worker_runner.rs
 
 ## 7. Registro de ejecución
 
-*(pendiente — Rust-Engineer y QA-Engineer)*
+### Rust-Engineer — 2026-06-20
+
+**Archivo modificado:** `crates/shared/src/orchestrator/worker_runner.rs`
+
+**Líneas cambiadas:**
+
+| Línea(s) | Cambio |
+|---|---|
+| 1–3 (doc módulo) | Eliminadas referencias `ADR-0013, ADR-0016`; añadida frase de soporte multi-plataforma |
+| 25–28 (doc TTR-002) | Aclarado que `prctl` es Linux-only; keepalive cubre macOS y Windows |
+| 187–190 (is_process_alive doc) | Reemplazado "SO de despliegue, ADR-0016" por descripción correcta de los tres sistemas |
+| 264–272 (OsWorkerBackend doc) | Reescrito para reflejar que `prctl` solo aplica en Linux |
+| 301–315 (impl unix doc) | Cabecera e introducción actualizadas: "Linux y macOS" explícito; `prctl` marcado como Linux |
+| 323–332 (bloque unsafe) | Añadido `#[cfg(target_os = "linux")]` antes del `unsafe`; comentario actualizado |
+| 362–364 (stub Windows doc) | Eliminada referencia "despliegue real es Linux (ADR-0016)" |
+
+**Criterios de cierre:**
+
+| # | Resultado |
+|---|---|
+| 1 | `cargo build --workspace` — `Finished` sin errores |
+| 2 | `cargo clippy --workspace --all-targets -- -D warnings` — 0 warnings |
+| 3 | `grep -n "prctl" worker_runner.rs` — único `nix::sys::prctl::set_pdeathsig` en línea 333, bajo `#[cfg(target_os = "linux")]` en línea 330 |
+| 4 | `nix::sys::prctl` no aparece en ningún scope `#[cfg(unix)]` sin subnivel linux |
+| 5 | `cargo test --workspace` — 103 tests passed, 0 failed |
+
+### QA-Engineer — 2026-06-20
+
+Revisión completa de `worker_runner.rs`. Sin hallazgos BLOQUEANTES. Confirmado: único `prctl` bajo `#[cfg(target_os = "linux")]`; imports unix solo usan POSIX (válidos en macOS); keepalive presente en dos capas; comentarios sin referencias a ADR por número. Veredicto: **APTO**.
+
+### Tech-Lead — 2026-06-20 (auditoría independiente)
+
+Build limpio, clippy 0 warnings, 103/103 tests verdes. `prctl` en línea 333 confirmado bajo `#[cfg(target_os = "linux")]` en línea 330 (lectura directa del archivo). BUG-013 → **CERRADO**.
 
 ## 8. Pendientes derivados
 

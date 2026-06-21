@@ -1,6 +1,6 @@
 //! [SHELL] Cáscara de workers aislados: spawn OS, memoria compartida y señales.
-//! (`docs/features/worker-isolation-orchestrator.md` TTR-001/TTR-002,
-//! ADR-0013, ADR-0016).
+//! (`docs/features/worker-isolation-orchestrator.md` TTR-001/TTR-002).
+//! Soporta los tres sistemas operativos de producción: Windows, Linux y macOS.
 //!
 //! Implementa [`WorkerBackend`] con efectos reales del SO:
 //! - `memmap2`: mapea el buffer de datos sin copias entre procesos.
@@ -22,9 +22,10 @@
 //! Detección de muerte del padre: el orquestador crea un archivo keepalive
 //! que los workers sondean. Cuando el [`SharedMemorySegment`] hace drop
 //! (simulando la muerte del padre), el archivo keepalive desaparece y cada
-//! worker detecta el cambio y termina. En producción, `prctl(PR_SET_PDEATHSIG,
-//! SIGTERM)` provee una segunda capa: el kernel envía SIGTERM al hijo
-//! automáticamente cuando el padre termina.
+//! worker detecta el cambio y termina. En Linux, `prctl(PR_SET_PDEATHSIG,
+//! SIGTERM)` añade una segunda capa: el kernel envía SIGTERM al hijo
+//! automáticamente si el padre termina. En macOS y Windows solo se usa el
+//! mecanismo de keepalive (suficiente — latencia de detección ~50ms).
 
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
@@ -184,9 +185,9 @@ pub fn open_readonly(path: &Path) -> Result<Mmap, ShmError> {
 /// de procesos pero ya terminó: el padre todavía no llamó a `wait()`.
 /// Para el orquestador, un zombie es equivalente a "terminado".
 ///
-/// Implementación Unix (SO de despliegue, ADR-0016).
+/// Soporta los tres sistemas operativos de producción: Windows, Linux y macOS.
 /// En Linux usa `/proc/{pid}/stat` para excluir zombies.
-/// En otros Unix usa `kill(pid, 0)` (no envía señal, solo comprueba existencia).
+/// En macOS y otros Unix usa `kill(pid, 0)` (no envía señal, solo comprueba existencia).
 #[cfg(unix)]
 pub fn is_process_alive(pid: u32) -> bool {
     #[cfg(target_os = "linux")]
@@ -261,8 +262,10 @@ pub async fn graceful_shutdown(pids: &[u32], _timeout: Duration) -> Vec<u32> {
 ///
 /// Cada llamada a `launch` spawna un proceso hijo real via
 /// `std::process::Command`. El hijo recibe las rutas del segmento y del
-/// keepalive por variables de entorno y configura `prctl(PR_SET_PDEATHSIG)`
-/// para recibir SIGTERM si el padre muere inesperadamente.
+/// keepalive por variables de entorno. En Linux, también registra
+/// `prctl(PR_SET_PDEATHSIG, SIGTERM)` para que el kernel envíe SIGTERM
+/// automáticamente si el padre muere; en macOS y Windows el archivo
+/// keepalive cumple la misma función.
 ///
 /// El campo `children` guarda los handles de los procesos para poder
 /// recoger zombies con `reap_finished()`.
@@ -295,7 +298,8 @@ impl OsWorkerBackend {
     }
 }
 
-/// Implementación Unix: usa `prctl`, SIGTERM/SIGKILL y `/proc` para liveness.
+/// Implementación Unix (Linux y macOS): usa SIGTERM/SIGKILL y `kill(0)` para liveness.
+/// En Linux además usa `prctl` y `/proc` para detección precisa de zombies.
 #[cfg(unix)]
 impl WorkerBackend for OsWorkerBackend {
     /// Lanza el proceso worker con tres env vars:
@@ -303,9 +307,10 @@ impl WorkerBackend for OsWorkerBackend {
     /// - `DRASUS_WORKER_SHM_PATH`
     /// - `DRASUS_WORKER_KEEPALIVE`
     ///
-    /// También registra `prctl(PR_SET_PDEATHSIG, SIGTERM)` en el hijo
-    /// antes del exec (via `CommandExt::pre_exec`) para que el kernel
-    /// envíe SIGTERM al hijo automáticamente si el padre muere.
+    /// En Linux, registra `prctl(PR_SET_PDEATHSIG, SIGTERM)` en el hijo
+    /// antes del exec (via `CommandExt::pre_exec`) para que el kernel envíe
+    /// SIGTERM automáticamente si el padre muere. En macOS este paso se
+    /// omite — el archivo keepalive cubre esa función.
     fn launch(
         &self,
         job_id: &str,
@@ -317,9 +322,12 @@ impl WorkerBackend for OsWorkerBackend {
             .env("DRASUS_WORKER_SHM_PATH", shm_path)
             .env("DRASUS_WORKER_KEEPALIVE", keepalive_path);
 
+        // Optimización Linux: el kernel envía SIGTERM al hijo si el padre muere.
+        // En macOS y Windows el archivo keepalive cumple la misma función.
         // SAFETY: pre_exec corre en el hijo después del fork, antes del exec.
         // Estamos en un contexto de proceso recién forkeado — es seguro llamar
         // prctl aquí porque no hay hilos vivos (solo el hilo que hizo fork).
+        #[cfg(target_os = "linux")]
         unsafe {
             cmd.pre_exec(|| {
                 nix::sys::prctl::set_pdeathsig(Signal::SIGTERM)
@@ -356,9 +364,9 @@ impl WorkerBackend for OsWorkerBackend {
     }
 }
 
-/// Stub Windows: spawn sin prctl; señales no disponibles.
-/// El despliegue real es Linux (ADR-0016) — este bloque solo permite
-/// que el workspace compile en Windows para desarrollo local.
+/// Stub Windows: spawn sin prctl ni señales POSIX.
+/// Windows es un sistema de producción junto a Linux y macOS; el keepalive
+/// file cubre la detección de muerte del padre en esta plataforma.
 #[cfg(not(unix))]
 impl WorkerBackend for OsWorkerBackend {
     fn launch(
