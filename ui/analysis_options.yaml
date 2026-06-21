@@ -1,0 +1,26 @@
+# Configuración del analizador estático de Dart para el proyecto Drasus UI.
+# El analizador es equivalente a `cargo clippy`: detecta errores de estilo
+# y patrones problemáticos antes de compilar.
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Tratar advertencias como errores en las categorías más importantes.
+  errors:
+    # Importación de un paquete que no existe en pubspec.yaml → error.
+    uri_does_not_exist: error
+    # Llamar a un método que no existe en el tipo → error.
+    undefined_method: error
+
+linter:
+  rules:
+    # Usar const donde sea posible: permite al compilador reutilizar
+    # la misma instancia de widget en lugar de crear una nueva cada frame.
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    # Requerir tipos explícitos en variables de nivel de archivo y campos.
+    always_specify_types: false
+    # Ordenar imports: primero dart:, luego package:, luego relativos.
+    directives_ordering: true
+    # Evitar print() en producción (usar un logger o debugPrint).
+    avoid_print: true

@@ -1,0 +1,10 @@
+[package]
+name = "nautilus_compat"
+version = "0.1.0"
+edition = "2021"
+license = "Proprietary"
+
+[dependencies]
+# Crate de dominio de NautilusTrader v2: tipos de instrumentos, órdenes, barras y eventos.
+# Versión exacta fijada (=) porque la serie 0.x del upstream no garantiza estabilidad entre releases.
+nautilus-model = { version = "=0.58.0" }

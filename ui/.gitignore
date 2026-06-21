@@ -1,0 +1,27 @@
+# Directorio de herramientas internas de Dart/Flutter (equivalente a target/ en Rust).
+.dart_tool/
+
+# Directorio de salida de compilación: binarios, apks, bundles.
+build/
+
+# Archivo de caché de plugins Flutter (generado por flutter pub get).
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Caché del analizador Dart.
+.dart_tool/
+
+# Archivos de configuración del IDE.
+.idea/
+.vscode/
+*.iml
+
+# Archivos de configuración específicos de la máquina.
+local.properties
+
+# Directorio de paquetes descargados (equivalente a ~/.cargo/registry en Rust).
+# NO ignorar: en Flutter, los paquetes viven en el caché global de Dart
+# (~/.pub-cache), no en el directorio del proyecto. pubspec.lock SÍ se versiona.
+
+# Archivos temporales de macOS.
+.DS_Store

@@ -1,0 +1,16 @@
+# Configuración del generador de bindings flutter_rust_bridge v2.
+#
+# flutter_rust_bridge_codegen lee las funciones y structs marcados en
+# rust_input y genera los archivos Dart equivalentes en dart_output.
+# El Flutter-Engineer importa esos archivos generados — nunca los escribe
+# a mano (garantía de consistencia de tipos entre Rust y Dart).
+
+# rust_root: directorio raíz del crate Rust a analizar.
+rust_root: "crates/bridge"
+
+# rust_input: módulo Rust de entrada en notación de ruta de módulo.
+# El codegen analiza api y sus submódulos (clock, jobs, audit).
+rust_input: "crate::api"
+
+# dart_output: directorio donde el codegen deposita los archivos .dart.
+dart_output: "ui/lib/src/rust"

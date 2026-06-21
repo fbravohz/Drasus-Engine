@@ -11,6 +11,8 @@ members = [
     "crates/feedback",
     "crates/withdraw",
     "crates/app",
+    "crates/bridge",
+    "crates/nautilus_compat",
 ]
 
 [workspace.package]

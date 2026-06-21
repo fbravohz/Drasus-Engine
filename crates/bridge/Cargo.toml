@@ -1,0 +1,44 @@
+[package]
+name = "bridge"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+# cdylib   → librería dinámica compatible con C (.so en Linux, .dylib en macOS,
+#             .dll en Windows). flutter_rust_bridge la carga en tiempo de
+#             ejecución dentro del proceso Flutter usando dlopen/LoadLibrary.
+# staticlib → librería estática (.a / .lib). Algunos targets (iOS, algunos
+#             builds de Android) requieren enlazar Rust de forma estática en
+#             vez de dinámica. flutter_rust_bridge elige entre ambas según el
+#             target de compilación; declarar las dos aquí garantiza que ambas
+#             opciones estén disponibles.
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+# flutter_rust_bridge usa el cfg interno `frb_expand` para su macro de
+# expansión en tiempo de codegen. Cuando el codegen aún no ha generado el
+# scaffold completo de Rust, el cfg queda sin declarar y Rust emite una
+# advertencia. Se suprime aquí (no en el código) para no contaminar los
+# archivos fuente con #[allow(...)].
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+[dependencies]
+# shared expone los puertos públicos del Core de Drasus (Clock, JobRepository,
+# AuditLogRepository) — acceso exclusivo vía public_interface.rs (ADR-0003).
+shared = { path = "../shared" }
+
+# flutter_rust_bridge genera los bindings Dart desde las funciones Rust
+# marcadas con #[frb(...)]. En tiempo de ejecución proporciona el runtime
+# de comunicación entre los dos lados de la frontera.
+flutter_rust_bridge = "=2.12.0"
+
+# Tokio es el runtime asíncrono de Rust. Las funciones async del Bridge
+# necesitan un runtime activo para ejecutar futures; flutter_rust_bridge
+# lo gestiona internamente pero requiere que Tokio esté como dependencia.
+tokio = { version = "1", features = ["full"] }
+
+# sqlx se usa en el Bridge para consultas de listado que no existen como
+# métodos en los repositorios de shared (ej. "últimos 20 jobs de cualquier
+# estado"). Solo se usan las features mínimas: sqlite + runtime-tokio.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
