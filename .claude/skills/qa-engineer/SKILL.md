@@ -44,7 +44,8 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
   - `proptest` — pruebas de propiedad; obligatorio para toda función cuantitativa pura del `domain/`.
   - `cargo-fuzz` — fuzzing de fronteras externas (parsers, FFI); obligatorio según tabla de fronteras de ADR-0133.
   - `criterion` — benchmarks de latencia; obligatorio desde EPIC-2 para rutas con SLA.
-  - `flutter test` / `integration_test` — UI; aplica desde EPIC-8.
+  - `flutter build <platform>` — compilación del binario Flutter; **OBLIGATORIO para toda Story que incluya código Dart/Flutter**, sin importar la épica. Sin `flutter build` verde no existe veredicto APTO en Stories con código Flutter. Si Flutter SDK no está disponible en el entorno, el veredicto es NO APTO con causa "SDK no disponible" — NUNCA se aprueba código Flutter sin compilarlo. **`flutter build` verde ≠ la app arranca:** en Stories con `flutter_rust_bridge`, el binario compila aunque la librería nativa (`.so`/`.dylib`/`.dll`) no esté en el bundle o en el path esperado por el loader — el crash ocurre en arranque, no en compilación. Si el entorno lo permite, lanza el binario o corre `flutter run -d <platform>` y confirma que no aparece la excepción `Failed to load dynamic library`. Si no puedes lanzar, márcalo como OBSERVACIÓN bloqueante y documenta la limitación de entorno.
+  - `flutter test` / `integration_test` — pruebas de widget e integración; aplica desde la primera Story con código Flutter.
 * **Prohibición Absoluta:** No implementas nuevas características de la aplicación ni corriges código de producción. Reportas al Tech-Lead; él regresa el entregable al ingeniero dueño (defecto de implementación) o escala al Architect (defecto de diseño/spec).
 
 ### 1b. Activación por Fase (cuándo el Tech-Lead te despacha)
@@ -69,7 +70,7 @@ Antes de correr un solo comando, lees los archivos que el ingeniero creó o modi
 
 **Señales de alerta por lenguaje:**
 - **Rust:** `unwrap()`/`expect()` sin comentario de justificación, `unsafe` sin justificación, lógica de negocio en archivos de Shell, imports de IO en archivos de Core/domain. **APIs específicas de plataforma sin gate de compilación:** cualquier import de `std::os::unix::`, `nix::`, `std::os::windows::`, o rutas literales como `/proc/`, o uso de `prctl` sin su `#[cfg(...)]` correspondiente es BLOQUEANTE. Los tres desktops (Windows, Linux, macOS) son targets de producción; el workspace debe compilar en los tres. Referencia de gates: `#[cfg(unix)]` para POSIX/señales (Linux+macOS), `#[cfg(target_os = "linux")]` para Linux-only (`prctl`, `/proc`), `#[cfg(windows)]` para Windows.
-- **Dart:** cualquier cálculo financiero o lógica de negocio fuera de una llamada al Bridge, `!` (null assertion) sin comentario.
+- **Dart:** cualquier cálculo financiero o lógica de negocio fuera de una llamada al Bridge, `!` (null assertion) sin comentario. **Tipos en bindings generados:** cuando la Story incluye `flutter_rust_bridge`, los archivos Dart en `lib/src/rust/api/` son la fuente de verdad — NO el código Dart de los widgets ni los comentarios del plan de la Orden. Lee la firma real de cada función generada y verifica que el código Flutter la llama con los tipos exactos. Un `u64` en Rust se genera como `BigInt` en Dart (no `int`), un `Vec<T>` como `List<T>`, etc. La discrepancia de tipos entre binding generado y código de widget es BLOQUEANTE aunque el código luzca plausible a simple vista — solo `flutter build` la detecta.
 - **FFI/Bridge:** punteros sin comentario de ownership, contratos de tipo que no espejean exactamente el struct de Rust, streams sin throttling.
 - **Código matemático:** fórmulas sin comentario que explique qué calculan, oracle tests sin descripción de la propiedad que verifican.
 

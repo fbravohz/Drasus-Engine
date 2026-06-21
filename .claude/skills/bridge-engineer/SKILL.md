@@ -60,6 +60,43 @@ El principio universal está en `base/SKILL.md`. Aquí los requisitos específic
 
 **QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado. El QA revisará los contratos de tipo, los bloques `unsafe` y los comentarios de ownership — no solo compilará el binding.
 
+### 2c. Post-Codegen Obligatorio — Corrección de `ioDirectory` en Workspace Cargo
+
+Después de cada ejecución de `flutter_rust_bridge_codegen generate`, verifica y corrige `ui/lib/src/rust/frb_generated.dart`:
+
+```dart
+// Lo que codegen genera (incorrecto en workspace Cargo):
+ioDirectory: '../crates/bridge/target/release/',
+
+// Lo correcto (target/ en la raíz del workspace):
+ioDirectory: '../target/release/',
+```
+
+**Por qué codegen lo genera mal:** el codegen asume que cada crate tiene su propio `target/`. En un workspace Cargo, Cargo consolida toda la salida en un único `target/` en la raíz del workspace (`Drasus-Engine/target/`), no dentro del crate (`crates/bridge/target/`). El loader de FRB resuelve el path relativo desde el CWD del proceso Flutter (que es `ui/`), por lo que `../crates/bridge/target/release/` lleva a una ruta inexistente.
+
+**Plataformas afectadas por este fix:**
+
+| Plataforma | Mecanismo de carga | ¿Afectada? |
+|---|---|---|
+| Linux desktop | `dlopen` vía `ioDirectory` | ✅ Sí — `libbridge.so` |
+| macOS desktop | `dlopen` vía `ioDirectory` | ✅ Sí — `libbridge.dylib` |
+| Windows desktop | `LoadLibrary` vía `ioDirectory` | ✅ Sí — `bridge.dll` |
+| iOS | Enlace estático vía Xcode | ❌ No aplica |
+| Android | JNI desde APK `lib/` | ❌ No aplica |
+| Web | WASM, loader diferente | ❌ No aplica |
+
+iOS/Android/Web no usan `flutter_rust_bridge` FFI en Drasus Engine — son clientes gRPC delgados per ADR-0134. Si en el futuro se agrega soporte FFI para alguno de ellos, revisar el loader correspondiente (`_io.dart` para iOS/macOS, `_web.dart` para Web).
+
+**Prerequisito de arranque (desktop):** antes de `flutter run -d <platform>`, la librería Rust debe existir en `target/release/`. Si no existe, el binario Flutter compila pero crashea al arrancar con `Failed to load dynamic library`. El orden correcto:
+
+```bash
+# 1. Desde la raíz del workspace — compila la librería nativa
+cargo build --release -p bridge
+
+# 2. Desde ui/ — lanza Flutter (CWD=ui/ para que ioDirectory resuelva correcto)
+cd ui && flutter run -d linux   # o macos / windows
+```
+
 ### 3. Concurrencia y Seguridad
 * Maneja de forma segura el paso de datos a través de la frontera de C (FFI); cero punteros colgantes, ownership explícito.
 * El Event-Loop de Rust (Tokio) jamás bloquea el hilo principal (Isolate) de Flutter.
