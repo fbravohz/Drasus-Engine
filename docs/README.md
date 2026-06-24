@@ -4,9 +4,9 @@ Este es el punto de entrada central a la arquitectura y especificación de Drasu
 
 ---
 
-## 🏗️ Módulos (Pipeline de Trading)
+## 🏗️ Módulos (Presets de Composición — ADR-0137)
 
-Los módulos son **Orquestadores Puros** (Imperative Shell) que definen las etapas secuenciales del ciclo de vida de una estrategia. Cada módulo consume múltiples features para realizar su tarea.
+Los módulos son **presets de cableado** (ADR-0137): plantillas que conectan features entre sí en un orden recomendado. No son dueños de las features — cada feature es un hexágono independiente con puertos tipados accesibles directamente desde el Canvas [Forge/Reactor].
 
 | Módulo | Descripción | Estado |
 |--------|-------------|--------|
@@ -26,7 +26,7 @@ Los módulos son **Orquestadores Puros** (Imperative Shell) que definen las etap
 
 ## 🧩 Features (Componentes Reutilizables)
 
-Las features son las piezas de **Lógica Pura** (Functional Core) o drivers de infraestructura que son agnósticas a los módulos y pueden ser reutilizadas en diferentes contextos.
+Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone puertos de entrada y salida tipados (`InputPorts` / `OutputPorts`) y se implementa como un crate Rust independiente bajo `crates/features/<dominio>/<feature>/`. Pueden conectarse libremente en el Canvas sin pasar por un módulo.
 
 | Feature | Descripción | Consumido por |
 |---------|-------------|---------------|

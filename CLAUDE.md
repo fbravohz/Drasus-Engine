@@ -11,6 +11,8 @@ Este archivo se carga automáticamente al inicio de cada sesión y se cachea. Es
 - **Stack único:** Rust (Core/Backend) + Flutter con Dart/Impeller (Frontend). Prohibido Python, FastAPI, Tauri, React, TypeScript en el diseño. Residuos se purgan a FFI nativo (`flutter_rust_bridge`) y Rust.
 - **Modo Headless (SaaS):** gRPC.
 - **FCIS:** Functional Core (lógica pura) / Imperative Shell (orquestación). Los módulos son Shell delgada; **toda lógica vive en una Feature**.
+- **Arquitectura Hexagonal (ADR-0137):** cada feature es un hexágono con puertos tipados (`InputPorts` / `OutputPorts`). Los módulos son presets de composición, no dueños. Cada feature-crate depende solo de `shared`; prohibido acoplar features entre sí.
+- **Workspace de crates:** `shared/` (tipos ADR-0137 + plumbing), `features/<dominio>/<feature>/` (un crate hexagonal por feature), `presets/` (cableado sin lógica), `app/` (binario), `bridge/` (FFI).
 - **Zero-Docker** y **Local-First / Soberanía de Datos:** sin contenedores en el core; el estado vive local. Prohibido acceso cross-module a tablas ajenas (se expone un puerto en la `public_interface` del dueño).
 - **Foundation Inundation (ADR-0020 V2):** ante duda genuina, incluir. El detalle y la tabla canónica de 4 perfiles viven en `docs/ADR.md` (ADR-0020 V2) — el ADR gana sobre cualquier resumen.
 - **Configurable vs Fijo:** "NUNCA/SIEMPRE" = invariante físico, fijo. "Umbral/Max/Min" = parámetro configurable.

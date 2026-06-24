@@ -53,7 +53,7 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 ### 4. Determinismo y FCIS (innegociable)
 * Lógica pura sin I/O, sin reloj del sistema (el tiempo se inyecta — feature `clock`), sin aleatoriedad sin semilla. Mismo input → mismo output, bit-a-bit (ADR-0002/0004).
 * Precios como enteros exactos (ticks/centavos) en el Core; conversión decimal solo en el Shell.
-* Estructura fija por módulo: `public_interface.rs`, `domain/`, `orchestrator.rs`, `persistence/`, `schemas.rs` (ADR-0003). Prohibido acceder a tablas de otro módulo: usa su puerto público.
+* Estructura fija por **feature crate** (`crates/features/<dominio>/<feature>/`): `public_interface.rs` (ÚNICO módulo `pub`), `domain/` (Core), `orchestrator.rs` (Shell), `persistence/` (si aplica), `schemas.rs` (si aplica). Template canónico en `crates/features/_TEMPLATE/`. Ver ADR-0137.
 * Persistencia bajo ADR-0020 V2: los 25 campos son **contrato lógico (vocabulario)**, NO 25 columnas calcadas. Aplica el **Grupo I (universal)** + solo los campos del Perfil Técnico que la Feature declara (Filtro de Relevancia). Si la Feature no declara perfil o un campo es ambiguo, repórtalo como BLOQUEO al Tech-Lead; NO calques los 25 ni inventes.
 
 ### 4b. Portabilidad de Compilación (regla activa desde 2026-06-20)

@@ -1,49 +1,53 @@
-## 16. Grafo de Dependencias Técnicas Entre Módulos
+## 16. Grafo de Dependencias Técnicas (Arquitectura Hexagonal — ADR-0137)
 
-El sistema está estructurado en capas de dependencia que definen el orden lógico requerido:
+> ⚠️ **Actualizado 2026-06-23** — La estructura de dependencias anterior ("módulo X depende de módulo Y") fue reemplazada por el modelo hexagonal (ADR-0137): cada feature crate depende SOLO de `shared`. Los módulos como dueños runtime no existen; el pipeline es un preset de cableado, no una cadena de dependencias de compilación.
 
-### Capa Base: Ingesta de Datos
-**MOD-01 (ingest)** — Fuente de datos inmutable de verdad.
-* Sin dependencias de otros módulos.
-* Todos los módulos posteriores dependen directa o indirectamente de su salida.
+### Regla de dependencia (FIJO)
 
-### Capas de Descubrimiento y Validación
-**MOD-02 (generate)** depende de MOD-01.
-* Lee datos históricos de ingest.
-* Genera candidatas de estrategias.
+Toda feature crate de `crates/features/<dominio>/<feature>/` declara UNA sola dependencia:
 
-**MOD-03 (validate)** depende de MOD-02.
-* Valida candidatas generadas.
-* Produce veredictos sobre robustez.
+```
+feature crate → shared  (tipos ADR-0137 + plumbing)
+```
 
-### Capa de Forward Testing
-**MOD-04 (incubate)** depende de MOD-03.
-* Requiere estrategias aprobadas en validación.
-* Prueba en tiempo forward (perfil de incubación configurable: 7/21 días o 3-6 meses — ADR-0088).
-* Filtra overfitting y cambios de régimen.
+Prohibido: feature → feature, feature → preset.
 
-### Capa de Orquestación
-**MOD-05 (manage)** depende de MOD-04.
-* Requiere estrategias promovidas desde incubación.
-* Ensambla portafolios optimizados.
-* Define reglas de portafolio que guían ejecución.
+### Grafo real (star topology)
 
-### Capas Vivas (Ejecución y Monitoreo — Paralelo Continuo)
-Estas capas operan en paralelo mientras el portafolio está activo. No tienen relación secuencial entre sí, pero todas dependen de MOD-05:
+```
+                    ┌──────────────────┐
+                    │     shared       │
+                    │  (tipos + infra) │
+                    └────────┬─────────┘
+           ┌─────────┬───────┼───────┬─────────┐
+           ▼         ▼       ▼       ▼         ▼
+      backtest-  monte-    wfa-   nsga2-    portfolio-
+      engine     carlo     ...    opt       optimizer
+```
 
-**MOD-06 (execute)** depende de MOD-05.
-* Recibe portafolio optimizado y reglas.
-* Ejecuta en tiempo real.
-* Registra todas las decisiones automáticas en audit trail.
+Cada feature compila aislada. Cambiar `monte-carlo` no recompila `backtest-engine`.
 
-**MOD-07 (feedback)** — Analista. Observa TODOS los módulos en paralelo.
-* Recolecta datos de ejecución (MOD-06), validación histórica (MOD-03) y P&L del portafolio.
-* Detecta degradación y anomalías transversales; diagnostica la causa (Alpha muerto vs Beta/régimen).
-* Emite el veredicto de continuidad/retiro y retroalimenta constraints a MOD-02 (cierre de bucle, ADR-0015).
+### Orden del pipeline (preset, no dependencia de compilación)
 
-**MOD-08 (withdraw)** — Actuador. Ejecuta el veredicto de retiro emitido por MOD-07 (no monitorea).
-* Gestiona la transición del FSM: Ejecutando → En Pausa (ventana de veto) → Retirado/Archivo.
-* Archiva métricas terminales y notifica a MOD-05 (manage) para rebalanceo.
+El orden `ingest → generate → validate → incubate → manage → execute → feedback → withdraw` es una **recomendación de cableado**, implementada en el preset `standard-pipeline` (crate `crates/presets/standard-pipeline/`). Un usuario experto puede ignorar este orden en el Canvas [Forge/Reactor] y cablear features directamente por sus puertos tipados.
+
+### Dependencias de datos (runtime, no compilación)
+
+Las features se conectan en runtime a través de sus puertos tipados (ADR-0137). Ejemplo:
+
+```
+sovereign-fetcher ──Bars──► data-sanitizer ──SanitizedDataframe──► backtest-engine ──BacktestResult──► wfa-analyzer
+```
+
+La validez de cada conexión la verifica el Canvas comparando los tipos de los puertos. Una conexión `Bars → Signal` se marca inválida en el canvas (`criticalCrimson`).
+
+### Orden de construcción (ADR-0118)
+
+El orden de DESARROLLO sí sigue el pipeline, por dependencias de datos reales:
+- WFA necesita backtests → backtest necesita datos limpios
+- Monte Carlo necesita resultados del motor → motor necesita estrategias generadas
+
+Pero estas son dependencias de DATOS (lo que una feature consume como input), no dependencias de COMPILACIÓN. Cada feature se construye en el momento que su primer consumidor del pipeline la necesita, pero compila de forma aislada contra `shared`.
 
 ---
 
