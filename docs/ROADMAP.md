@@ -62,15 +62,15 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 ### EPIC-0 — Fundación y Spikes de Riesgo
 
-**Objetivo:** esqueleto del monolito modular FCIS compilando, con las fundaciones anti-retrabajo (ADR-0020 V2) y los 6 gates de viabilidad resueltos.
+**Objetivo:** esqueleto del workspace hexagonal (ADR-0137) compilando, con las fundaciones anti-retrabajo (ADR-0020 V2) y los 6 gates de viabilidad resueltos.
 
-**Alcance:** workspace Cargo con los 8 módulos + `shared` (ADR-0003); migración 0001 con la tabla ancla `foundation_master_fields` (catálogo de 25 campos, ADR-0020 V2); features transversales de plomería [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md), [`agentic-mcp-gateway`](./features/agentic-mcp-gateway.md) (núcleo del servidor MCP + evaluador de permisos, ADR-0123); CLI con Clap + binario raíz `app` (SAD §4.2); Panel Operativo Fundacional (SPIKE-006/ADR-0117).
+**Alcance:** workspace Cargo hexagonal (ADR-0137): `shared` (catálogo de tipos + plomería de infraestructura), `crates/features/<dominio>/` (un crate hexagonal por feature de dominio — vacío al cierre de EPIC-0, se puebla desde EPIC-1), `presets/` (cableado sin lógica), `app` (binario) y `bridge` (FFI). Las 6 features de Fundación viven en `shared` como infraestructura crosscutting bendecida (ADR-0137 enmienda 2026-06-23), no como crates propios. Migración 0001 con la tabla ancla `foundation_master_fields` (catálogo de 25 campos, ADR-0020 V2); features transversales de plomería [`clock`](./features/clock.md), [`audit-log`](./features/audit-log.md), [`telemetry`](./features/telemetry.md), [`async-job-executor`](./features/async-job-executor.md) (ADR-0011), [`worker-isolation-orchestrator`](./features/worker-isolation-orchestrator.md), [`agentic-mcp-gateway`](./features/agentic-mcp-gateway.md) (núcleo del servidor MCP + evaluador de permisos, ADR-0123); CLI con Clap + binario raíz `app` (SAD §4.2); Panel Operativo Fundacional (SPIKE-006/ADR-0117).
 
 > **Nota de secuenciación (ADR-0118):** la recuperación post-crash que EPIC-0 exige (job que sobrevive a un cierre y se recupera <10s) la cubre [`async-job-executor`](./features/async-job-executor.md). La feature [`crash-recovery`](./features/crash-recovery.md) (reconciliación de una sesión de trading en vivo contra el bróker, ADR-0027) **no** es de Fundación: pertenece a `execute`/EPIC-5, porque necesita el conector de bróker y el Event Store que no existen hasta entonces.
 >
 > **Nota de secuenciación (ADR-0123):** el núcleo de [`agentic-mcp-gateway`](./features/agentic-mcp-gateway.md) (servidor MCP + evaluador de permisos para `ingest`/`generate`/`validate`/`incubate`/`feedback`, abiertos por defecto) se construye en EPIC-0 como el resto de la plomería transversal. El permiso condicionado por `institutional_tag` sobre `manage` y el bloqueo de `execute`/`withdraw` se activan naturalmente cuando esos módulos existen (EPIC-5/6) — no requieren trabajo adicional, son la misma evaluación de permisos aplicada a fronteras que aún no existían. El flujo de aceptación de términos de riesgo en modo SaaS depende de `saas-gateway` y llega con EPIC-9+.
 
-**Criterio de salida:** `cargo test` verde en el esqueleto; la migración 0001 aplica los 25 campos; un job asíncrono sobrevive a un `kill -9` y se recupera; los 6 veredictos SPIKE están en ADR con su validación residual ejecutada; el Panel Operativo Fundacional muestra en vivo clock, cola de trabajos y bitácora de auditoría (primera Cáscara Delgada, ADR-0117).
+**Criterio de salida:** `cargo test` verde en el esqueleto; la migración 0001 aplica los 25 campos; un job asíncrono sobrevive a un `kill -9` y se recupera; los 6 gates SPIKE tienen veredicto en ADR y, de los que aplican a Fundación, su residual está ejercido y verificable en EPIC-0 — smoke de compilación para SPIKE-001 (NautilusTrader) y SPIKE-006 (`flutter_rust_bridge`), erradicación grep-verificable para SPIKE-002 (`tch`/`libtorch`) y SPIKE-003 (`pysr`/`python`); la medición de desempeño del motor (SPIKE-004) se ejerce en EPIC-2 y la validación del LLM/Verdict Engine (SPIKE-005) en EPIC-8, porque esos motores no existen en Fundación (ver §6); el Panel Operativo Fundacional muestra en vivo clock, cola de trabajos y bitácora de auditoría (primera Cáscara Delgada, ADR-0117).
 
 **Estado de las entregas de EPIC-0:**
 
@@ -88,6 +88,8 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-010 — `agentic-mcp-gateway` (núcleo MCP + evaluador de permisos) | 🟡 parcial (TTR-001 UI + TTR-004 SaaS → futuras épicas) | [Orden](./execution/STORY-010-agentic-mcp-gateway.md) |
 | STORY-014 — Smoke test NautilusTrader v2 crates (cierra SPIKE-001) | ✅ terminado | [Orden](./execution/STORY-014-nautilus-smoke-test.md) |
 | STORY-015 — Panel Operativo Fundacional (cierra SPIKE-006, primera Cáscara Delgada Flutter) | ✅ terminado | [Orden](./execution/STORY-015-panel-operativo-fundacional.md) |
+
+> **Nota de reestructura (ADR-0137, 2026-06-23):** el esqueleto original de STORY-001 eran 8 crates de módulo vacíos (`ingest`, `generate`, …). El giro a arquitectura hexagonal los **demolió**: el módulo dejó de ser dueño runtime y pasó a ser preset de composición. El workspace hoy es `shared` + `crates/features/<dominio>/` (vacío al cierre de EPIC-0) + `presets/` + `app` + `bridge`. STORY-001 sigue "terminada" como hito histórico, pero su artefacto fue sustituido por la nueva estructura; el código de Fundación (que vivía en `shared`, no en los crates de módulo) sobrevivió intacto y verde. Pendiente documental progresivo: añadir `## Puertos de Integración` (ADR-0137) a las 6 features de Fundación.
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
@@ -175,10 +177,10 @@ Los 6 gates ya tienen veredicto documentado como ADR. En EPIC-0 solo resta la va
 | Spike | Riesgo | Veredicto (ADR) | Estado |
 |---|---|---|---|
 | SPIKE-001 | NautilusTrader como crate Rust | ADR-0107 | ✅ cerrado (STORY-014, `nautilus-model =0.58.0` compila, QA APTO 2026-06-21) |
-| SPIKE-002 | `tch-rs`/libtorch | ADR-0112 (erradicado; escalera `ndarray`→`candle`→`burn`) | resta validación |
-| SPIKE-003 | PySR "en Rust" | ADR-0113 (erradicado; simbólico nativo en NSGA-II) | resta validación |
-| SPIKE-004 | Motor de backtest dual | ADR-0114 (Express híbrido + Event-Driven) | resta validación |
-| SPIKE-005 | Ollama/LLM local | ADR-0115 (Verdict Engine determinista; LLM opcional) | resta validación |
+| SPIKE-002 | `tch-rs`/libtorch | ADR-0112 (erradicado; escalera `ndarray`→`candle`→`burn`) | ✅ cerrado para EPIC-0 (erradicación verificada: `tch`/`libtorch` ausentes del workspace, grep 2026-06-23; el build nativo de ML llega en su épica) |
+| SPIKE-003 | PySR "en Rust" | ADR-0113 (erradicado; simbólico nativo en NSGA-II) | ✅ cerrado para EPIC-0 (erradicación verificada: `pysr`/`python` ausentes del workspace, grep 2026-06-23; el simbólico nativo se construye en EPIC-3) |
+| SPIKE-004 | Motor de backtest dual | ADR-0114 (Express híbrido + Event-Driven) | veredicto en ADR; **validación de desempeño diferida a EPIC-2** (es su criterio de salida — el motor no existe en EPIC-0) |
+| SPIKE-005 | Ollama/LLM local | ADR-0115 (Verdict Engine determinista; LLM opcional) | veredicto en ADR; **validación residual diferida a EPIC-8** (el Verdict Engine/LLM no existe en EPIC-0) |
 | SPIKE-006 | `flutter_rust_bridge` a escala | ADR-0116 + ADR-0117 (Panel Operativo Fundacional) | ✅ cerrado (STORY-015, `flutter build linux` verde, QA APTO 2026-06-21) |
 
 ---

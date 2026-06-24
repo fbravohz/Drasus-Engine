@@ -113,6 +113,21 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 
 ---
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `audit_content_in` | `(interno)` | Input | 1 | Payload de auditoría que el llamador entrega: `action_type`, `entity_kind`, `entity_id`, `details_json`, `process_id`. No es un tipo de canvas; es la firma Rust de la API de la feature (Enmienda 2026-06-24 de ADR-0137). |
+| `audit_event_out` | `AuditEvent` | Output | 1..N | Evento auditado persistido de forma inmutable (append-only) con `audit_hash` y `audit_chain_hash`. Representa la salida canónica de la bitácora. |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Puerto interno (ADR-0137 Enmienda 2026-06-24):** `audit_content_in` es un puerto interno — plomería `textLabel`, payload específico de esta feature, nunca cableable en el canvas. No requiere tipo de catálogo.
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 - **Inundación de Fundaciones (ADR-0020 V2) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, forense de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020 V2.
 

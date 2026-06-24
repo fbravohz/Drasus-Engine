@@ -51,6 +51,21 @@ Crear la lógica que permita al módulo de `feedback` preguntar: "¿Cuál era la
 
 ---
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `telemetry_sample_in` | `(interno)` | Input | 1..N | Muestra cruda emitida por cualquier módulo: `metric_kind` (latencia / heartbeat / cpu_ram), `value_f64`, `source_id`, `timestamp_ns`. No es un tipo de canvas; es la firma Rust del receptor de telemetría (Enmienda 2026-06-24 de ADR-0137). |
+| `telemetry_out` | `TelemetrySample` | Output | 1..N | Muestra de telemetría encadenada (latencia señal→orden, heartbeat, métricas del sistema) persistida en el buffer de alta velocidad. |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Puerto interno (ADR-0137 Enmienda 2026-06-24):** `telemetry_sample_in` es un puerto interno — plomería `textLabel`, payload específico de esta feature, nunca cableable en el canvas. No requiere tipo de catálogo.
+
+---
+
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
 Toda serie de telemetría porta el set de relevancia técnica:

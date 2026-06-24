@@ -75,6 +75,19 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
     - [ ] El watchdog registra el cierre de cada worker en el log de auditoría (`AuditLogRepository`) con evento `WORKER_TERMINATED`.
 * **¿Qué no puede pasar?** PROHIBIDO dejar procesos de NautilusTrader activos tras el cierre del orquestador.
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `job_in` | `Job` | Input | 1..N | Job a despachar a un worker aislado. El orquestador consume el Job del repositorio durable (STORY-005), lo asigna a un worker según capacidad y supervisa su ciclo de vida. |
+| `job_result_out` | `(interno)` | Output | 1 | Resultado que el worker emite al terminar: `job_id`, `status` (DONE/FAILED), `output_path` (ruta al artefacto generado), `duration_ms`. No es un tipo de canvas; es la firma Rust de la respuesta del worker (Enmienda 2026-06-24 de ADR-0137). |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Puerto interno (ADR-0137 Enmienda 2026-06-24):** `job_result_out` es un puerto interno — plomería `textLabel`, payload específico de esta feature, nunca cableable en el canvas. No requiere tipo de catálogo.
+
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría de infraestructura)
 
 Orquestación/aislamiento de procesos worker (infra), no hot-path de mercado → **Perfil D** (I + II + IV), con linaje de job padre-hijo documentado como híbrido legítimo (orquestador→worker):

@@ -111,6 +111,20 @@ El Clock es un puerto inyectado que proporciona el tiempo actual a cualquier mó
 
 ---
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `timestamp_out` | `timestamp_ns` | Output | 1 | Unix timestamp en nanosegundos que el Clock entrega en cada solicitud. En producción refleja el tiempo real del sistema; en backtest/test devuelve el tiempo determinista inyectado. |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Sin puertos internos de entrada:** el Clock no recibe payload externo — es una primitiva pura. El llamador solo invoca la función; no hay dato que inyectar. No aplica la categoría de puerto interno (ADR-0137 Enmienda 2026-06-24) porque no existe contrato de entrada que documentar.
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 
 ### Persistencia y Perfil de Auditoría

@@ -328,6 +328,21 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 
 ---
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `job_request_in` | `(interno)` | Input | 1 | Solicitud de encolar un trabajo: `operation_kind`, `params_json`, `user_id`. No es un tipo de canvas; es la firma Rust de la API del executor (Enmienda 2026-06-24 de ADR-0137). |
+| `job_out` | `Job` | Output | 1..N | Job con su ciclo de vida completo (PENDING → RUNNING → DONE / FAILED / CANCELLED). Representa la unidad de trabajo durable gestionada por el executor. |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Puerto interno (ADR-0137 Enmienda 2026-06-24):** `job_request_in` es un puerto interno — plomería `textLabel`, payload específico de esta feature, nunca cableable en el canvas. No requiere tipo de catálogo.
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. La cola de trabajos y sus resultados se gestionan íntegramente en el hardware local.

@@ -110,6 +110,20 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
   - [ ] Reviso el log de auditoría y cada acción del agente está marcada como tal, con su `agent_session_id`.
 * **¿Qué no puede pasar?** No puede existir una entrada de auditoría sin procedencia identificada.
 
+## Puertos de Integración (ADR-0137)
+
+> Obligatorio en toda feature. Define los tipos de dato que la feature acepta (inputs) y produce (outputs).
+> Los IDs de tipo deben pertenecer al catálogo de ADR-0137. Un puerto sin tipo declarado es inválido en el Canvas [Forge/Reactor].
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `mcp_call_in` | `(interno)` | Input | 1 | Llamada MCP entrante del agente: `pipeline_target`, `scope_boundary`, `params_json`, `agent_session_id`. No es un tipo de canvas; es la firma Rust del receptor de llamadas MCP (Enmienda 2026-06-24 de ADR-0137). |
+| `permission_outcome_out` | `(interno)` | Output | 1 | Decisión de permiso resultante: `granted` (bool), `reason` (texto), `agent_session_id`. No es un tipo de canvas; es la respuesta síncrona al llamador MCP (Enmienda 2026-06-24 de ADR-0137). |
+| `audit_event_out` | `AuditEvent` | Output | 1..N | Evento auditado que registra cada decisión de permiso (concedido/denegado) y cada activación/desactivación del interruptor de producción, marcado con procedencia agente. |
+
+> **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
+> **Puertos internos (ADR-0137 Enmienda 2026-06-24):** `mcp_call_in` y `permission_outcome_out` son puertos internos — plomería `textLabel`, payload específico del protocolo MCP de esta feature, nunca cableables en el canvas. No requieren tipo de catálogo.
+
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** El canal MCP corre contra el mismo Core local; en modo SaaS hereda las garantías de `saas-gateway`.
 - **Inundación de Fundaciones (ADR-0020 V2): Perfil D (Ops / Auditoría)** — Identidad (I) + Soberanía (II) + Hardware (IV).
