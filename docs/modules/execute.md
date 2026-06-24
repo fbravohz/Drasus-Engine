@@ -140,6 +140,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`order-fsm`](../features/order-fsm.md)** — Máquina de estados de órdenes (atómica e inmutable).
 - **[`broker-connector`](../features/broker-connector.md)** — Adaptador de comunicación de baja latencia con brokers.
 - **[`system-watchdog`](../features/system-watchdog.md)** — Guardián de seguridad y kill switch de emergencia.

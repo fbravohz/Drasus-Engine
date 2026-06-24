@@ -165,6 +165,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`pit-data-validator`](../features/pit-data-validator.md)** — Validación de datos Point-In-Time.
 - **[`backtest-engine`](../features/backtest-engine.md)** — Simulación de alta fidelidad 4-ticks.
 - **[`walk-forward-analyzer`](../features/walk-forward-analyzer.md)** — Orquestación de ventanas móviles.

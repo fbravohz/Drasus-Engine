@@ -172,7 +172,7 @@ Las features son las piezas de **Lógica Pura** (Functional Core) o drivers de i
 | [**walk-forward-analyzer**](./features/walk-forward-analyzer.md) | Es el motor de validación dinámica de Drasus Engine. Utiliza una **Matriz WFA** y el método **CPCV (Cross-Validation Combinatorial)** con técnicas... | validate, manage |
 | [**worker-isolation-orchestrator**](./features/worker-isolation-orchestrator.md) | El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tareas pesadas (simulaciones, entrenamientos de IA) en procesos... | Todos |
 | [**zero-crossing-filter**](./features/zero-crossing-filter.md) | Filtra señales de trading para detectar aquellas que son ortogonales (independientes) respecto a factores de mercado conocidos. Detecta los momentos... | generate |
-| [**zui-navigation**](./features/zui-navigation.md) | La **Zoomable User Interface (ZUI)** es el paradigma de navegación espacial y contextual de Drasus Engine. En lugar de pantallas y menús aislados... | validate, generate |
+| [**canvas-navigation**](./features/canvas-navigation.md) | Canvas Navigation gestiona el viewport, zoom, breadcrumb y navegación por la jerarquía de entidades del Canvas unificado (ADR-0136) | validate, generate |
 
 ---
 
@@ -409,6 +409,7 @@ La carpeta `.claude/` alberga la configuración, estado, skills especializados y
 | [**social-strategist**](./../.claude/skills/social-strategist/SKILL.md) | Social Strategist | Estrategia digital y orquestación de contenido para Drasus Engine |
 | [**summarizer**](./../.claude/skills/summarizer/SKILL.md) | Summarizer | [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA] |
 | [**tech-lead**](./../.claude/skills/tech-lead/SKILL.md) | Tech Lead | Lee docs/ y toma iniciativa autónoma de desarrollo, despachando a Ingenieros |
+| [**ui-designer**](./../.claude/skills/ui-designer/SKILL.md) | UI Designer | Etapa 0.5: audita y escribe la sección `## Cáscara Visual` de cada feature antes de que llegue al Flutter Engineer |
 
 ### Estado Persistente
 

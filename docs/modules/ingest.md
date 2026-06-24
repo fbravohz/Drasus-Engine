@@ -149,6 +149,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`sovereign-data-fetcher`](../features/sovereign-data-fetcher.md)** — Ingesta híbrida (Bulk S3 + API Delta) saturando ancho de banda.
 - **[`hybrid-data-transformer`](../features/hybrid-data-transformer.md)** — Transformación de alto rendimiento (Polars 80/20).
 - **[`data-sanitizer-pipeline`](../features/data-sanitizer-pipeline.md)** — Pipeline obligatorio de calidad (Gap filling, OHLC check).
@@ -165,7 +167,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`clock`](../features/clock.md)** — Timestamps deterministas.
 - **[`algorithmic-bars`](../features/algorithmic-bars.md)** — Generación de barras sintéticas por Tick/Volumen/Rango.
 - **[`flutter-packaging-manager`](../features/flutter-packaging-manager.md)** — Gestión de binarios y servicios locales.
-- **[`zui-navigation`](../features/zui-navigation.md)** — Exploración visual de datasets masivos.
+- **[`canvas-navigation`](../features/canvas-navigation.md)** — Exploración visual de datasets masivos.
 - **[`order-flow-microstructure`](../features/order-flow-microstructure.md)** — Enriquecimiento de barras con CVD, OFI y VWAP.
 - **[`fractional-differencer`](../features/fractional-differencer.md)** — Preservación de memoria estadística via diferenciación fraccional (ADR-0064).
 - **[`manual-regime-tagger`](../features/manual-regime-tagger.md)** — Etiquetado visual manual de zonas de crisis sobre el activo de referencia.
@@ -327,8 +329,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Arranque del sistema.
 *   **Postcondición:** Backend listo para recibir tráfico de datos.
 
-### **TTR-016: Orquestación de Navegación Infinita (ZUI Navigation)**
-*   **Descripción:** Invoca a [`zui-navigation`](../features/zui-navigation.md) para permitir la exploración visual de los datos ingestados.
+### **TTR-016: Orquestación de Navegación del Canvas (Canvas Navigation)**
+*   **Descripción:** Invoca a [`canvas-navigation`](../features/canvas-navigation.md) para permitir la exploración visual de los datos ingestados.
 *   **Reglas de Orquestación:**
     * Coordina el zoom desde visión de meses a visión de ticks usando el resample dinámico.
     * Inyecta marcas de régimen técnico en el eje temporal.

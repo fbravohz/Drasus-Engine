@@ -49,7 +49,7 @@ EPIC-8 ZUI ← EPIC-7 feedback+withdraw ← EPIC-6 manage+execute(nativo) ← EP
 | EPIC-5 | **Primer Dinero Real** | `incubate` + `execute` (bridge + REST/FIX nativo) | Estrategia viva en cuenta real vía bridge (MT5/cTrader) y conectores nativos REST/FIX (forex/CFD/futuros) | pendiente |
 | EPIC-6 | Portafolio y Ejecución Nativa Profunda | `manage` + `execute` (LiveNode) | Flota multi-estrategia + stack nativo profundo (LiveNode, todos los brókeres) | pendiente |
 | EPIC-7 | Ciclo Cerrado 24/7 | `feedback` + `withdraw` | Fábrica autónoma que se mejora sola | pendiente |
-| EPIC-8 | Unificación ZUI y Pulido | UI | Interfaz unificada y empaquetado (ADR-0117) | pendiente |
+| EPIC-8 | Canvas [Forge/Reactor — TBD] y Pulido | UI | Dashboard + canvas unificado + inspector panels + empaquetado (ADR-0136, ADR-0117) | pendiente |
 | EPIC-9+ | Moonshots | según ROI | Colmena, Marketplace, SaaS, Copy-Trading | pendiente |
 
 **Splits por dependencia dura (ADR-0118):** `validate` se entrega en dos fases (núcleo de backtest en EPIC-2, necesario antes de generar; guantelete completo en EPIC-4). `execute` igual: el bridge (MT5/cTrader) y los conectores nativos REST/FIX (forex/CFD/futuros) son **co-prioritarios en EPIC-5** para llegar al dinero rápido; el stack nativo profundo (LiveNode de todos los brókeres, incl. cripto, + ejecución a nivel portafolio) llega en EPIC-6. Son las únicas particiones de módulo permitidas, y cada una está justificada por una dependencia citable.
@@ -145,11 +145,11 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 **Criterio de salida:** 30 días de operación desatendida — el sistema generó, validó, incubó, promovió y retiró estrategias solo, con audit trail completo y cero intervenciones de emergencia.
 
-### EPIC-8 — Unificación ZUI y Pulido (ADR-0117)
+### EPIC-8 — Canvas [Forge/Reactor — TBD] y Pulido (ADR-0136, ADR-0117)
 
-**Objetivo:** desde EPIC-0, cada Feature con superficie UI entrega su Cáscara Delgada junto a su backend. EPIC-8 ya **no** construye la interfaz desde cero: **unifica** las pestañas en la navegación fractal de 3 niveles (ADR-0028), **pule** (theming, animaciones, responsive) y construye lo que requiere datos agregados de varias fases (UMAP, parallel-coordinates, time-warp, etc.) o lo diferido por veredicto SPIKE-005 (LLM). Incluye el empaquetado comercial (ADR-0029).
+**Objetivo:** desde EPIC-0, cada Feature con superficie UI entrega su Cáscara Delgada junto a su backend. EPIC-8 ya **no** construye la interfaz desde cero: **unifica** las Cáscaras Delgadas en el Dashboard + canvas [Forge/Reactor] (ADR-0136), implementa el sistema de card-nodes con puertos tipados (ADR-0137), los inspector panels de features, la vista de módulo (mixer + graph view) y los visualizadores que requieren datos agregados de varias fases (UMAP, parallel-coordinates, time-warp, etc.) o lo diferido por veredicto SPIKE-005 (LLM). Incluye el empaquetado comercial (ADR-0029).
 
-**Criterio de salida:** ZUI unificada operativa, visualizadores avanzados funcionando e instaladores para los 3 OS.
+**Criterio de salida:** Dashboard + canvas unificado operativo, inspector panels de todas las features funcionando, card-nodes con tipos validados, instaladores para los 3 OS.
 
 ### EPIC-9+ — Moonshots (post-rentabilidad, ADR-0103)
 

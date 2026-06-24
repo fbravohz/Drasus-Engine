@@ -112,7 +112,7 @@ Para evitar la explosión de consumo de memoria RAM que causaría mantener millo
 ## Dependencias
 **Depende de:**
 - [`audit-event-store`](../features/audit-event-store.md) — para la recuperación de eventos inmutables.
-- [`zui-navigation`](../features/zui-navigation.md) — para renderizar en el Strategy Inspector del Nivel 3.
+- [`canvas-navigation`](../features/canvas-navigation.md) — para renderizar en el Inspector Panel de la Strategy.
 - [`hive-partition-manager`](../features/hive-partition-manager.md) — para la estructura Hive-style en disco.
 
 **Bloquea:**

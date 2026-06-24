@@ -132,6 +132,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`portfolio-optimizer`](../features/portfolio-optimizer.md)** — Cálculo de pesos y optimización de capital.
 - **[`signal-correlation-analyzer`](../features/signal-correlation-analyzer.md)** — Diversificación de señales del portafolio.
 - **[`factor-decomposition`](../features/factor-decomposition.md)** — Análisis de riesgo y atribución del portafolio.

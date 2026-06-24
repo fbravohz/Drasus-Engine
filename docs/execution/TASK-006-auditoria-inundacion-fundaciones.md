@@ -58,7 +58,7 @@ Verificar que el Filtro de Relevancia por Perfil (ADR-0020 V2) se aplicó bien e
 | strategy-self-explanation | "Documentación" (no existe) | **B** | Deriva de generación |
 | cross-market-validation | "Ops/Validación" (no existe) | **B** | Motor estadístico comparativo |
 | equity-curve-tracker | (sin) | **C o D** | Tracking en vivo, no R&D |
-| zui-navigation | D | **sin persistencia** | UI/navegación frontend |
+| canvas-navigation | D | **sin persistencia** | UI/navegación frontend |
 | worker-isolation-orchestrator | (sin) | **D o sin persistencia** | Orquestación de procesos |
 | audit-event-store | "AI/R&D" (B) | **D** | Es el registro forense en sí |
 | adversarial-noise-agent | D | **B** | Red-team AI / perturbación |
@@ -128,7 +128,7 @@ Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido docu
 | kinetic-micro-management | **C** |
 | worker-isolation-orchestrator | **C/D** (infra; afinar en Fase 3) |
 | equity-curve-tracker | **B** (auditoría + linaje) |
-| zui-navigation | **persiste** preferencias de UI → perfil mínimo (Grupo I + II Soberanía) |
+| canvas-navigation | **persiste** preferencias de UI → perfil mínimo (Grupo I + II Soberanía) |
 | efficiency-incubation-dashboard | **B** (guarda config del dashboard) |
 | fractional-differencer | **A** (persiste series transformadas + linaje del `d`) |
 

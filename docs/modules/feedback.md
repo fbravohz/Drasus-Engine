@@ -115,6 +115,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`trade-reconciler`](../features/trade-reconciler.md)** — Reconciliación de fills reales vs esperados.
 - **[`pardo-comparison`](../features/pardo-comparison.md)** — Validación de drift estadístico y consistencia.
 - **[`anomaly-detector`](../features/anomaly-detector.md)** — Detección de patrones anómalos de ejecución.

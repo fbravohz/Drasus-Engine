@@ -149,6 +149,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`nsga2-optimizer`](../features/nsga2-optimizer.md)** — Optimización multiobjetivo (Sharpe↑, DD↓, WR↑)
 - **[`symbolic-signal-discovery`](../moonshots/symbolic-signal-discovery.md)** — Descubrimiento de ecuaciones simbólicas
 - **[`hmm-regime-detection`](../features/hmm-regime-detection.md)** — Detección de régimen (regime-aware generation)

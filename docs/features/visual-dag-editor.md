@@ -1,42 +1,42 @@
-# Visual DAG Editor — Orquestación de Canales Sin Código
+# Visual DAG Editor — Canvas Nodal de Construcción de Lógica
 
 **Carpeta:** `./features/visual-dag-editor/`
 **Estado:** Lista para implementar
-**Última actualización:** 2026-06-06
-**Decisión Arquitectónica Asociada:** ADR-0022 (Pipeline No-Lineal (DAG Multiflujal)), ADR-0028 (ZUI Fractal Navigation)
+**Última actualización:** 2026-06-23
+**Decisión Arquitectónica Asociada:** ADR-0022 (Pipeline No-Lineal), ADR-0136 (Canvas [Forge/Reactor])
 
 ---
 
 ## ¿Qué es esta feature?
 
-El Visual DAG Editor es la herramienta de diseño gráfico y configuración de alto nivel de Drasus Engine. Utiliza un lienzo interactivo renderizado por GPU mediante **Flutter CustomPainter** (Impeller) que permite al usuario arrastrar, conectar y bifurcar bloques lógicos (nodos) de la estrategia. 
+El Visual DAG Editor implementa el lienzo nodal interactivo del Canvas [Forge/Reactor] (ADR-0136). Permite al usuario construir y modificar pipelines de estrategias mediante **card-nodes rectangulares** estilo N8N / React Flow: arrastrar nodos desde una paleta, conectar puertos tipados con bezier S-curves, expandir módulos en sus features internas, y editar la lógica interna de una Strategy mediante bloques micro (Logic Blocks).
 
-Mapea visualmente la lógica a través de tres niveles de profundidad (ZUI):
-1. **Nivel 1 (Macro): Fleet Command:** Vista de gestión de portafolios agregada.
-2. **Nivel 2 (Meso): La Fábrica Visual (Pipeline CI/CD Quant):** Un pipeline horizontal continuo donde se arrastran bloques de control para la validación progresiva de estrategias: Generador Genético, Filtro Base y Optimizador Secuencial (con Coordenadas Paralelas y UMAP 3D), Walk-Forward Analysis (WFA) y Simulador de Montecarlo.
-3. **Nivel 3 (Micro): El ADN y los Indicadores:** Editor de Visual Scripting puro que expone bloques micro (`Data Source`, `Signal Blocks`, `Indicator Blocks`, `Execution Blocks`), un inspector de ultra-bajo nivel con toggle de optimización, plantillas base (Templates) y un catálogo completo de nodos clasificados.
-
-La interfaz implementa un **Motor de Estado UI** acoplado al JSON AST global con un **Mecanismo de Invalidación Estricta**: si se edita cualquier parámetro micro en el Nivel 3, el sistema invalida y marca visualmente en rojo los resultados de robustez asociados en el Nivel 2, obligando al operador a re-evaluar la estrategia.
+La feature también implementa el **Motor de Invalidación Reactiva**: cualquier cambio en parámetros de Logic Blocks invalida el caché de validación de la estrategia padre y lo marca visualmente en el canvas, impidiendo el despliegue a producción con resultados obsoletos.
 
 ---
 
 ## Comportamientos Observables
 
-- [ ] El usuario puede arrastrar bloques macro en la Fábrica Visual (Nivel 2) para reconfigurar el pipeline de validación (ej. mover Montecarlo antes de WFA).
-- [ ] Al hacer doble clic en una estrategia aprobada en el Nivel 2, la UI realiza zoom dinámico al Nivel 3 expeliendo el lienzo de Visual Scripting micro.
-- [ ] Si el usuario modifica el período de un RSI en el Nivel 3, todos los bloques del pipeline de la Fábrica Visual en el Nivel 2 para esa estrategia se colorean en rojo indicando "Caché de Validación Invalido".
-- [ ] En el Nivel 3, el usuario puede arrastrar nodos de categorías como `Candle Patterns` o `Time Filters` y conectarlos mediante flujos tipados.
-- [ ] Cada parámetro en el inspector de ultra-bajo nivel posee un toggle "Exponer al Optimizador"; al activarlo, dicho parámetro se inyecta en el espacio de búsqueda del Generador Genético del Nivel 2.
-- [ ] La UI renderiza gráficos de Coordenadas Paralelas para visualizar agrupaciones de parámetros optimizados y dispersión UMAP 3D para análisis de estabilidad.
+- [ ] El usuario arrastra un nodo de Módulo al canvas y lo conecta a otro mediante su puerto de salida — el canvas valida que los tipos de puerto sean compatibles (ADR-0137) antes de aceptar la conexión.
+- [ ] Si el usuario intenta conectar un puerto `Bars` a un input `Signal`, la línea aparece en `criticalCrimson` con tooltip "tipos incompatibles: Bars → Signal".
+- [ ] Doble clic en un nodo de Módulo (compound) → canvas anima zoom in-place y expone sus Features internas, con toggle entre graph view y mixer view (estilo DAW).
+- [ ] Doble clic en una Strategy → canvas expone sus Logic Blocks (DAG de señales e indicadores micro).
+- [ ] Clic en un Feature node (nodo atómico hoja) → abre Inspector Panel lateral derecho sin salir del canvas.
+- [ ] Al editar un parámetro en el Inspector Panel de un Logic Block, todos los nodos de validación de esa strategy en el canvas se colorean en `criticalCrimson` con etiqueta "Caché de Validación Inválido".
+- [ ] Un parámetro con el toggle "Exponer al Optimizador" activado queda resaltado en el Inspector Panel y se inyecta en el espacio de búsqueda del motor genético.
+- [ ] El usuario activa "Modo Rendimiento" y los nodos del canvas se colorean con gradiente `reactorGreen → alertAmber → criticalCrimson` según sus microsegundos de latencia medidos.
+- [ ] El usuario activa "Vista Diff" al comparar dos versiones del DAG — los nodos eliminados muestran overlay `criticalCrimson`, los añadidos muestran `reactorGreen`.
+- [ ] En el Inspector Panel de un Logic Block, el usuario escribe una función Rhai, define dos pines tipados, y el nodo se ejecuta a velocidad nativa en Rust.
 
 ---
 
 ## Restricciones
 
-- **NUNCA** permitir la ejecución de estrategias en vivo con bloques de validación marcados como invalidantes (en rojo).
-- **NUNCA** mezclar tipos de datos incompatibles en las conexiones micro sin un nodo convertidor explícito.
-- **NUNCA** utilizar intérpretes externos en caliente (Python u otros lenguajes interpretados) para la ejecución matemática; todo cálculo en el lienzo se compila a código nativo de Rust (Rhai scripting seguro o AST optimizado).
-- **Límite Técnico:** Invalidación de estados y actualización visual en la UI Flutter debe completarse en menos de 16ms (1 frame a 60fps).
+- **NUNCA** permitir el despliegue a producción de una strategy con nodos de validación marcados como inválidos (caché stale).
+- **NUNCA** conectar tipos de datos incompatibles sin nodo convertidor explícito — la validación de tipos es inmediata en el canvas (ADR-0137).
+- **NUNCA** usar WebGL, WebView, DOM, HTML ni SVG. Todo el rendering del canvas es `CustomPainter` / Impeller GPU nativo (ADR-0097).
+- **NUNCA** usar Python u otros intérpretes externos — el Rhai Escape Hatch evalúa código en el runtime de scripting Rhai embebido en Rust.
+- **Límite Técnico:** Invalidación visual y actualización de estado del canvas en < 16ms (1 frame a 60fps).
 
 ---
 
@@ -44,101 +44,165 @@ La interfaz implementa un **Motor de Estado UI** acoplado al JSON AST global con
 
 | Parámetro | Default | Rango | Qué hace | FIJO/CONFIG |
 |---|---|---|---|---|
-| AUTO_INVALIDATE_CACHE | true | true/false | Controla si la edición micro invalida automáticamente los tests de robustez | [FIJO] |
-| MAX_OPT_PARAMETERS | 20 | 5 - 100 | Límite de parámetros expuestos simultáneamente al optimizador | CONFIG |
-| UMAP_DIMENSIONS | 3 | 2 - 3 | Dimensiones del gráfico de dispersión de estabilidad | CONFIG |
+| `AUTO_INVALIDATE_CACHE` | `true` | true/false | Si la edición de un Logic Block invalida automáticamente el caché de validación | [FIJO] |
+| `MAX_OPT_PARAMETERS` | 20 | 5 – 100 | Límite de parámetros expuestos simultáneamente al optimizador genético | CONFIG |
+| `MAX_VISIBLE_NODES` | 200 | 50 – 500 | Máximo de nodos visibles sin culling en el canvas | CONFIG |
+| `BEZIER_TENSION` | 0.5 | 0.2 – 0.9 | Curvatura de las bezier S-curves de conexión | CONFIG |
 
 ---
 
 ## Estructura Interna (FCIS — ADR-0002)
 
-- **Core (Lógica Pura):** Gestor de estados de invalidación, validación de tipos del AST global y mapeo de parámetros expuestos.
-- **Shell (Infraestructura):** Componentes gráficos de Coordenadas Paralelas, visualizador UMAP WebGL en Flutter, y motor de plantillas JSON AST.
-- **Frontera Pública:** Contrato de importación/exportación de `Pipeline_JSON_Manifest` y bus de eventos de invalidación de estado.
+- **Core (Lógica Pura):** Gestión del grafo DAG (aciclicidad via `petgraph`); validación de tipos de puerto en conexiones; motor de invalidación de caché (comparación de `logic_hash`); mapeo de parámetros expuestos al optimizador; evaluación segura de nodos Rhai.
+- **Shell (Infraestructura):** Renderer del canvas (`CustomPainter`/Impeller): card-nodes, bezier S-curves, port handles, dot-grid background; gestor de drag-and-drop; Inspector Panel lateral en Flutter; lector de manifiestos JSON AST; motor de templates.
+- **Frontera Pública:** Contrato de importación/exportación de `ExecutableContainer` / `StrategyManifest` y bus de eventos de invalidación de caché.
 
 ---
 
 ## Ciclo de Vida de la Feature
 
 ### Entrada
-- Interacciones del usuario en los tres niveles de la interfaz.
-- Manifiestos de plantillas base (Templates JSON AST).
-- Resultados y métricas de ejecución de DuckDB/Parquet.
+- Interacciones del usuario en el canvas (drag, connect, doble clic, edits en Inspector Panel).
+- `ExecutableContainer` existentes cargados desde los módulos `manage` o `generate`.
+- `BacktestResult` / `RobustnessScore` para colorear el estado de validación de los nodos.
+- `TelemetrySample` de latencia para el modo heatmap de rendimiento.
 
 ### Proceso
-- Mapea elementos gráficos 1:1 con nodos del JSON AST global.
-- Evalúa dependencias de parámetros y marca invalidaciones en cascada.
-- Renderiza dispersión espacial de parámetros optimizados.
+- Mapea elementos gráficos del canvas 1:1 con nodos y aristas del JSON AST global.
+- Valida compatibilidad de tipos en cada conexión nueva (ADR-0137).
+- Evalúa dependencias de parámetros y marca invalidaciones en cascada cuando se edita un Logic Block.
+- Gestiona el estado de cada nodo (valid / stale / running / error) basado en eventos del pipeline.
 
 ### Salida
-- JSON AST sincronizado y validado.
-- Viewports gráficos con marcas de estado.
+- `ExecutableContainer` modificado / ensamblado tras la edición en el canvas.
+- `StrategyVersionNode` creado al guardar cambios (versionado git-like).
+- Bus de eventos de invalidación hacia el módulo `validate`.
 
 ---
 
 ## Tareas (TTRs)
 
-### **TTR-001: Motor de Diagrama de Fábrica Visual (Nivel 2 Meso)**
-*   **¿Cuál es el problema?** El operador requiere configurar pipelines de validación complejos y ver el embudo de estrategias de forma continua y clara.
-*   **¿Qué tiene que pasar?** Implementar el lienzo horizontal en Flutter con bloques móviles que representen Ingesta, NSGA-II, WFA y Montecarlo, mostrando tasas de filtrado dinámicas.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Puedo conectar y reordenar visualmente los 4 bloques de validación principales.
+### TTR-001: Canvas de Card-Nodes (N8N / React Flow)
 
-### **TTR-002: Editor de Visual Scripting Micro (Nivel 3 Micro)**
-*   **¿Cuál es el problema?** Diseñar reglas de señal específicas requiere granularidad de indicadores, patrones de velas y operadores matemáticos.
-*   **¿Qué tiene que pasar?** Desarrollar la paleta de micro-bloques clasificados (Candle Patterns, Time Filters, Position State) y conectores con validación de tipos en lienzo CustomPainter.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Puedo diseñar un cruce de EMA con filtrado por patrón Doji y día de la semana.
+**¿Cuál es el problema?** El operador necesita construir y reconfigurar pipelines de validación y estrategia de forma visual, conectando módulos y features como si fueran bloques.
 
-### **TTR-003: Validador y Motor de Invalidación Reactiva (Flutter JSON AST)**
-*   **¿Cuál es el problema?** Alterar parámetros de bajo nivel sin re-evaluar la robustez conduce a falsos positivos en producción.
-*   **¿Qué tiene que pasar?** Implementar un motor de invalidación en Flutter que compare hashes lógicos de la estrategia; cualquier cambio micro marca en rojo y descarta el caché de validación en Nivel 2.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Cambio una variable de entrada en el Nivel 3 y observo que el bloque WFA del Nivel 2 pasa de verde a rojo parpadeante con advertencia "Re-evaluación Mandatoria".
+**¿Qué tiene que pasar?** Implementar el canvas interactivo en Flutter `CustomPainter` con:
+- Card-nodes: header `32–36px` (nombre, ícono, borde izquierdo coloreado por dominio), body (key-values del nodo).
+- Port handles: círculos de `10px` en los laterales izquierdo (inputs) y derecho (outputs).
+- Conexiones: bezier S-curves coloreadas por tipo de dato (ADR-0137), con arrowhead en el target.
+- Fondo: dot-grid `borderPanel #1B2440` 1.5px @ 20px sobre `deepSpace #080A18`.
+- Drag-and-drop de nodos desde una paleta lateral.
+- Layout automático con algoritmos jerárquicos (Dagre) como opción de auto-organización.
 
-### **TTR-004: Visualizador de Coordenadas Paralelas y UMAP 3D**
-*   **¿Cuál es el problema?** Identificar el agrupamiento y estabilidad de parámetros optimizados entre 10,000 iteraciones es inmanejable en tablas.
-*   **¿Qué tiene que pasar?** Integrar gráficos vectoriales de Coordenadas Paralelas en la UI para evaluar regímenes estables, y gráfico WebGL UMAP 3D para dispersión espacial de robustez.
-*   **¿Cómo sé que está hecho?**
-    - [ ] El Nivel 2 renderiza interactivamente las coordenadas paralelas y dispersión 3D de optimización en menos de 50ms al cargar datos.
+**¿Cómo sé que está hecho?**
+- [ ] Puedo arrastrar un nodo de Feature desde la paleta y soltarlo en el canvas.
+- [ ] Puedo conectar el output de un nodo al input de otro — la línea es bezier S-curve del color del tipo.
+- [ ] Puedo reordenar nodos y reconectar sin que el DAG acíclico se rompa.
 
-### **TTR-005: Escape Hatch (Editor de Código Embebido Nativo Flutter y Rhai Scripting)**
-*   **¿Cuál es el problema?** El Grafo visual puede carecer de operadores específicos que el operador desea programar a mano.
-*   **¿Qué tiene que pasar?** Crear un nodo inyectable especial con un editor de código embebido nativo Flutter en el frontend, que permita escribir código de cálculo matemático evaluado de forma segura en Rust mediante el motor de scripting Rhai.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Escribo una función de filtro matemático personalizada en el editor de código embebido nativo Flutter del nodo, expongo dos pines numéricos, y se ejecuta a velocidad nativa sin depender de intérpretes externos.
+### TTR-002: Logic Block Editor (Canvas Interior de Strategy)
 
-### **TTR-006: Visor de Latencia de Nodos (Heatmap)**
-*   **¿Cuál es el problema?** Identificar cuellos de botella de latencia entre decenas de nodos en el lienzo visual es difícil sin perfiles visuales.
-*   **¿Qué tiene que pasar?** Colorear los nodos del lienzo con un mapa de calor (verde a rojo) mostrando microsegundos de ejecución/backtest medidos en el core.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Al activar el "Modo Rendimiento", los nodos lentos se colorean en rojo indicando visualmente el retardo en microsegundos.
+**¿Cuál es el problema?** Diseñar reglas de señal específicas requiere granularidad de indicadores, patrones de velas y operadores matemáticos.
 
-### **TTR-007: Git Visual Gráfico (Diffs de Grafo)**
-*   **¿Cuál es el problema?** Comparar cambios entre versiones lógicas del lienzo a nivel de texto JSON es propenso a errores cognitivos.
-*   **¿Qué tiene que pasar?** Proveer una vista de diferencias del lienzo que resalte gráficamente los nodos eliminados en rojo y los añadidos en verde.
-*   **¿Cómo sé que está hecho?**
-    - [ ] Al comparar dos versiones lógicas del DAG, la UI resalta claramente el diff gráfico de nodos.
+**¿Qué tiene que pasar?** Al expandir una Strategy (zoom in-place al canvas interior), exponer una paleta de micro-bloques clasificados: `Data Source`, `Indicator Blocks`, `Signal Blocks` (Candle Patterns, Time Filters, Position State), `Execution Blocks`. Los bloques se conectan con validación de tipos en el canvas interior.
 
-### **TTR-008: Meta-Estrategias (Lienzo Macro Nodal)**
-*   **¿Cuál es el problema?** Orquestar múltiples estrategias con lógicas de control de capital cruzadas requiere un nivel superior de abstracción visual.
-*   **¿Qué tiene que pasar?** Implementar un lienzo de alto nivel donde los nodos representen estrategias completas y permitan trazar lógica de rebalanceo y distribución de margen (ej: si Estrategia A Drawdown > 15%, desactiva Estrategia B y transfiere margen a C).
-*   **¿Cómo sé que está hecho?**
-    - [ ] Puedo diseñar un grafo de portafolio conectando dos bloques de estrategia independientes a una regla global de balance.
+**¿Cómo sé que está hecho?**
+- [ ] Puedo diseñar un cruce de EMA con filtrado por patrón Doji y día de la semana.
+- [ ] Los tipos de conexión entre micro-bloques se validan igual que en el canvas principal.
+
+### TTR-003: Motor de Invalidación Reactiva
+
+**¿Cuál es el problema?** Alterar parámetros de Logic Blocks sin re-evaluar la robustez conduce a falsos positivos en producción.
+
+**¿Qué tiene que pasar?** Implementar motor de invalidación en Flutter que compare `logic_hash` de la strategy antes y después de cada edición. Si difieren, todos los nodos de validación de esa strategy en el canvas (WFA, MC, CPCV) cambian a estado stale: `criticalCrimson` con etiqueta "Re-evaluación Mandatoria".
+
+**¿Cómo sé que está hecho?**
+- [ ] Cambio el período de un RSI en el Inspector Panel y los nodos WFA y MC pasan de `optimaCyan` a `criticalCrimson` con la advertencia.
+- [ ] El sistema bloquea el despliegue a producción mientras haya nodos en estado stale.
+
+### TTR-004: Visualizadores de Optimización (CustomPainter — sin WebGL)
+
+**¿Cuál es el problema?** Identificar agrupamientos y estabilidad de parámetros optimizados entre miles de iteraciones es inmanejable en tablas.
+
+**¿Qué tiene que pasar?** En el Inspector Panel de una Strategy, implementar dos visualizadores de análisis de optimización con `CustomPainter` nativo (ADR-0097 — prohibido WebGL):
+1. **Parallel Coordinates** — para evaluar regímenes estables de parámetros (referencia: `ParameterSensitivityPainter` en la galería).
+2. **Scatter UMAP 2D** — dispersión espacial de robustez de candidatos. Las coordenadas UMAP se calculan en Rust; el canvas solo renderiza puntos 2D. Soporta brushing (lasso) para drill-down. Referencia: `RiskReturnScatterPainter` en la galería.
+
+**¿Cómo sé que está hecho?**
+- [ ] El Inspector Panel muestra el scatter UMAP 2D de candidatos optimizados en < 50ms.
+- [ ] Puedo seleccionar un clúster con lasso y el canvas resalta esos nodos candidatos.
+- [ ] El parallel coordinates chart muestra los parámetros de los candidatos seleccionados.
+
+### TTR-005: Rhai Escape Hatch (Nodo de Código Embebido)
+
+**¿Cuál es el problema?** El catálogo de bloques puede carecer de operadores específicos que el operador desea programar a mano.
+
+**¿Qué tiene que pasar?** Crear un tipo de nodo especial inyectable con editor de código embebido nativo Flutter. El código (Rhai) se evalúa en el runtime de scripting Rust. El usuario declara explícitamente los tipos de puerto de entrada y salida del nodo para que el canvas pueda validar conexiones (ADR-0137).
+
+**¿Cómo sé que está hecho?**
+- [ ] Escribo una función de filtro matemático en el editor Rhai del nodo, expongo un input `Bars` y un output `Signal`, y el nodo se conecta y ejecuta sin intérpretes externos.
+
+### TTR-006: Heatmap de Latencia de Nodos
+
+**¿Cuál es el problema?** Identificar cuellos de botella entre decenas de nodos es difícil sin perfiles visuales.
+
+**¿Qué tiene que pasar?** En "Modo Rendimiento", colorear los card-nodes con gradiente `reactorGreen → alertAmber → criticalCrimson` según sus microsegundos de ejecución medidos via `TelemetrySample`.
+
+**¿Cómo sé que está hecho?**
+- [ ] Al activar el Modo Rendimiento, los nodos lentos muestran su color de heatmap y un tooltip con los microsegundos.
+
+### TTR-007: Git Visual — Diff de Grafo
+
+**¿Cuál es el problema?** Comparar cambios entre versiones lógicas del canvas a nivel de texto JSON es propenso a errores cognitivos.
+
+**¿Qué tiene que pasar?** Vista de diff del canvas: nodos eliminados con overlay `criticalCrimson`, nodos añadidos con `reactorGreen`, nodos modificados con `alertAmber`. Alimentada por `strategy-versioning`.
+
+**¿Cómo sé que está hecho?**
+- [ ] Al comparar dos `StrategyVersionNode`, el canvas resalta el diff gráfico en colores semánticos.
+
+### TTR-008: Canvas de Meta-estrategias (Vista Interior de Portfolio)
+
+**¿Cuál es el problema?** Orquestar múltiples strategies con lógicas de control de capital cruzadas requiere un nivel de abstracción superior.
+
+**¿Qué tiene que pasar?** En la Vista Interior de un nodo Portfolio (jerarquía de entidades), el canvas expone un grafo donde los nodos son Strategies completas y las aristas representan reglas de rebalanceo y distribución de margen (ej: si Strategy A Drawdown > 15%, desactiva Strategy B y transfiere margen a C). Las reglas se evalúan en Rust durante la ejecución.
+
+**¿Cómo sé que está hecho?**
+- [ ] Puedo diseñar un grafo de portfolio conectando dos nodos de strategy a una regla global de balance.
+- [ ] La regla dispara los ajustes de margen correspondientes en el runtime.
+
+---
+
+## Puertos de Integración (ADR-0137)
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `container_in` | `ExecutableContainer` | Input | `0..N` | Containers de strategy/portfolio que se cargan como nodos en el canvas |
+| `manifest_in` | `StrategyManifest` | Input | `0..1` | Manifiesto de strategy para renderizar su estado en el canvas |
+| `backtest_results_in` | `BacktestResult` | Input | `0..N` | Resultados de validación para colorear el estado (valid/stale/running) de los nodos |
+| `robustness_score_in` | `RobustnessScore` | Input | `0..N` | Score de robustez para el indicador de vitalidad en el header del card-node |
+| `telemetry_in` | `TelemetrySample` | Input | `0..N` | Muestras de latencia para el heatmap de rendimiento (TTR-006) |
+| `container_out` | `ExecutableContainer` | Output | `0..1` | Container ensamblado/modificado tras la edición en el canvas |
+| `version_node_out` | `StrategyVersionNode` | Output | `0..1` | Nodo de versión creado al guardar cambios en el DAG |
 
 ---
 
 ## Gobernanza y Estándares (Fijos)
+
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `logic_hash`, `manifest_id`, `version_node_id`, `node_id`.
-- **Rastro de Evidencia:** Emite hash de invalidación y auditoría de parámetros expuestos para el módulo de `feedback`.
+- **Inundación de Fundaciones (ADR-0020 V2):** Perfil B (IA / R&D). Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `logic_hash`, `manifest_id`, `version_node_id`, `node_id`.
+
+**Rastro de Evidencia:** Emite `logic_hash` de invalidación y auditoría de parámetros expuestos para el módulo `feedback`.
 
 ---
 
-## Dependencias
+## Dependencias y Bloqueantes
+
 **Depende de:**
-- [`strategy-versioning`](../features/strategy-versioning.md) — para la gestión de versiones del AST.
-- [`robustness-score-aggregator`](../features/robustness-score-aggregator.md) — para actualizar estados del Nivel 2.
+- [`strategy-versioning`](../features/strategy-versioning.md) — para el DAG de versiones del AST y TTR-007.
+- [`robustness-score-aggregator`](../features/robustness-score-aggregator.md) — para actualizar el estado de nodos de validación.
+- [`canvas-navigation`](../features/canvas-navigation.md) — para el viewport manager y las transiciones de zoom in-place.
 
 **Bloquea:**
-- [`generate`](../modules/generate.md) — requiere la UI micro/meso.
+- [`generate`](../modules/generate.md) — requiere el canvas para la construcción y visualización de Logic Blocks.
+
+**Contrato de Integración UI (ADR-0117):**
+- **Superficie propia:** el Canvas [Forge/Reactor] es la superficie central de la app. SVF: un nodo arrastrable al canvas, una conexión válida entre dos nodos, y el `ExecutableContainer` resultante persistido y visible tras recargar.

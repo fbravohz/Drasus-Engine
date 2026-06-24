@@ -109,6 +109,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`performance-monitor`](../features/performance-monitor.md)** — Detección proactiva de degradación estadística.
 - **[`regime-guard`](../features/regime-guard.md)** — Guardian de coherencia entre estrategia y mercado.
 - **[`equity-curve-tracker`](../features/equity-curve-tracker.md)** — Monitoreo de capital y PnL en background.

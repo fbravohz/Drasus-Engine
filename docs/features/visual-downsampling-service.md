@@ -88,4 +88,4 @@ Cada reducción visual registra el set de relevancia técnica:
 
 ## Dependencias y Bloqueantes
 **Depende de:** `binary-arrow-transport` (para el envío).
-**Bloquea:** `equity-curve-tracker`, `zui-navigation`.
+**Bloquea:** `equity-curve-tracker`, `canvas-navigation`.

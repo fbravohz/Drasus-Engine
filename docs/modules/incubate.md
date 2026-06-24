@@ -115,6 +115,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Features Consumidas (Reutilizables)
 
+> *(ADR-0137)* Este módulo es la **composición preset canónica** de estas features — define el cableado por defecto. En el Canvas [Forge/Reactor], las features pueden conectarse directamente sin que este módulo sea intermediario obligatorio en runtime.
+
 - **[`paper-trader`](../features/paper-trader.md)** — Simulación de trading sin capital real.
 - **[`executable-container`](../features/executable-container.md)** — Entorno aislado de ejecución para la estrategia (Runner).
 - **[`incubation-manager`](../features/incubation-manager.md)** — Gestión del ciclo de vida de la sesión (Start/Pause/Stop).
