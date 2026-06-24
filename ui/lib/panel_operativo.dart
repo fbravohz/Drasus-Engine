@@ -2,9 +2,11 @@
 // Contiene las 3 pestañas del observable de EPIC-0: Reloj, Trabajos, Auditoría.
 
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'tabs/clock_tab.dart';
 import 'tabs/jobs_tab.dart';
 import 'tabs/audit_tab.dart';
+import 'gallery/gallery_tab.dart';
 
 // Widget raíz del Panel Operativo. Es StatelessWidget porque el estado de
 // qué pestaña está activa lo gestiona DefaultTabController, no este widget.
@@ -20,7 +22,7 @@ class PanelOperativo extends StatelessWidget {
     // length indica cuántas pestañas hay — debe coincidir con los hijos
     // de TabBar y TabBarView o Flutter lanzará una excepción.
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         // AppBar es la barra superior. Aquí contiene el título de la app
         // y el TabBar con las 3 pestañas navegables.
@@ -41,6 +43,9 @@ class PanelOperativo extends StatelessWidget {
               Tab(icon: Icon(Icons.access_time), text: 'Reloj'),
               Tab(icon: Icon(Icons.queue), text: 'Trabajos'),
               Tab(icon: Icon(Icons.security), text: 'Auditoría'),
+              // Pestaña 3 — galería del sistema de diseño.
+              // Iconsax Plus linear: element_plus como icono de "componentes/paleta".
+              Tab(icon: Icon(IconsaxPlusLinear.element_plus), text: 'Components'),
             ],
           ),
         ),
@@ -55,6 +60,8 @@ class PanelOperativo extends StatelessWidget {
             JobsTab(),
             // Pestaña 2 — lista los últimos 50 eventos de la bitácora de auditoría.
             AuditTab(),
+            // Pestaña 3 — galería de componentes del sistema de diseño.
+            GalleryTab(),
           ],
         ),
       ),
