@@ -106,6 +106,7 @@ Cada trabajo se ejecuta DESDE una Orden de Trabajo: un archivo en `docs/executio
      2. **Perfil correcto (A/B/C/D):** ¿el perfil declarado coincide con el tipo de feature? Referencia canónica: **A** = Datos/Ingest · **B** = IA/R&D · **C** = Ops/Hot-Path (<1ms) · **D** = Ops/Auditoría/Forense. Si el perfil está mal → corrígelo tú mismo y ajusta los grupos.
      3. **Grupos coherentes con el perfil:** ¿los campos usados (fuera del Grupo I) pertenecen a los grupos que el perfil autoriza? (A→III+IV; B→II+III+IV; C→II+IV+V latencia/gobernanza; D→II+IV+V gobernanza/cumplimiento). Si hay campos de grupos ajenos al perfil → quítalos. Si faltan campos obligatorios del perfil que la feature sí necesita → añádelos.
      4. **Campos dentro del catálogo de 25:** ¿todos los campos de la tabla están en el catálogo? El catálogo completo: Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`), Grupo II (`owner_id`, `institutional_tag`, `manifest_id`, `access_token_id`), Grupo III (`version_node_id`, `parent_id`, `logic_hash`, `data_snapshot_id`, `transformation_id`), Grupo IV (`process_id`, `session_id`, `node_id`), Grupo V (`portfolio_container_id`, `compliance_status_id`, `risk_audit_id`, `indicator_state_hash`, `execution_latency_ms`, `source_signal_id`, `signature_hash`). **Excepción válida:** campos propios de la feature (dominio-específicos, fuera del catálogo de gobernanza) son aceptables si están explícitamente marcados como "campo propio fuera del catálogo" en el doc. Las variantes de latencia con distinta precisión o contexto (`latency_ns`, `recovery_latency_ms`, `heartbeat_latency_ms`) son locales válidas si están documentadas como derivadas de `execution_latency_ms`. Si hay un campo no catalogado SIN documentar → escala al Architect para que decida si entra al catálogo (requiere 3+ features usándolo) o se queda como campo local.
+   - **Puertos de Integración (ADR-0137):** ¿la feature tiene la sección `## Puertos de Integración` con al menos un puerto declarado con ID de tipo válido del catálogo de ADR-0137? Si la sección no existe o está vacía → la completas tú mismo derivando los puertos de las secciones "Ciclo de Vida", "Comportamientos Observables" y "Dependencias" de la feature. Si la feature es plomería (sin superficie propia y sin interacción con otras features por datos tipados), declara al menos sus puertos técnicos (`Job`, `AuditEvent`, `TelemetrySample`, etc.). Si los puertos son ambiguos o requieren una decisión de tipado nuevo que no esté en el catálogo → **escala al Architect**.
    - **FCIS íntegro:** ¿la sección FCIS distingue Core (lógica pura, cero imports de I/O) de Shell (efectos del sistema)? ¿hay lógica de infraestructura en el Core? Si sí → corriges.
    - **TTRs completos:** ¿cada TTR tiene problema, postcondición verificable y criterio concreto? Si un TTR está vacío o es ambiguo → **escala al Architect** (vacío de diseño, no es corrección cosmética).
    - **Referencias huérfanas:** ¿la spec cita un puerto, proceso, daemon o servicio externo que ya no existe en el diseño? → corriges tú mismo.
@@ -160,6 +161,14 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
   3. Aplicas §5 (Gobernanza ROADMAP): si el TTR no corresponde a la fase activa, o los SPIKE-001-SPIKE-006 bloqueantes no están resueltos (gate EPIC-0), el TTR queda `Secuenciado / En Espera` — eliges el siguiente candidato.
   4. Para el TTR seleccionado, lees su(s) Feature(s) referenciada(s) en `features/*.md` y los ADRs citados.
 * Acción: clasificas el TTR/Feature como (a) "matemática/estrategia/métrica" → activa Etapas 1 y 6, y/o (b) su Contrato de Integración UI (templates/FEATURE.md → "Dependencias y Bloqueantes") declara "Superficie propia" → activa Etapas 3-4 bajo el Techo Fijo (ADR-0117). Si declara "Ventana de Verificación" (Feature de plomería, sin superficie propia), Etapas 3-4 no se activan directamente para ella — ver §5.
+
+**Etapa 0.5 — Diseño Visual (UI-Designer)**
+* Trigger: feature seleccionada en Etapa 0 declara "Superficie propia" en su "Contrato de Integración UI" (ADR-0117) Y no tiene aún una sección `## Cáscara Visual` actualizada (post-2026-06-22).
+* Rol del UI-Designer: lee la feature, clasifica su contexto de superficie (Dashboard widget / Canvas Vista Relacional / Canvas Vista Interior / Inspector Panel — ADR-0136), detecta y corrige violaciones arquitectónicas UI (WebGL, alias informales, cálculo en frontend), y escribe la sección `## Cáscara Visual (Thin Shell)` en `docs/features/<feature>.md` con el vocabulario canónico de `DESIGN.md` + catálogo `DESIGN.md §"Catálogo de Componentes"`.
+* Salida esperada: feature doc actualizada con `## Cáscara Visual` completa. Reporte al Tech Lead: contexto de superficie asignado + componentes principales + violaciones corregidas.
+* Condición de omisión: si la sección ya existe y está actualizada → omites la Etapa 0.5 para esa feature.
+* Features de plomería ("Ventana de Verificación"): el UI-Designer escribe solo la nota de observable — no diseña pantalla completa. Etapa 0.5 aplica igualmente para dejar esa nota.
+* **Gate bloqueante (ADR-0135):** si la feature tiene "Superficie propia" y la Etapa 0.5 no se completó, NO despachas al Flutter Engineer (Etapa 4). La Cáscara Visual es prerequisito de la Etapa 4.
 
 **Etapa 1 — Validación Cuantitativa Pre-Código (Quant-Engineer)**
 * Trigger: Feature spec marcada como matemática/estrategia (Etapa 0).
@@ -236,38 +245,41 @@ docs/ (ROADMAP + SAD + ADR + modules/*.md + features/*.md)
         ▼
    TECH-LEAD (Etapa 0: lee §0, selecciona TTR según §5)
         │
-        ├─[matemática?]→ Quant-Engineer (Etapa 1, pre) ─APTO─┐
-        │                                                     │
-        └─[no matemática]───────────────────────────────────►├→ Rust-Engineer (Etapa 2)
-                                                               │       │
-                                                      [UI?] ───┘       │
-                                                        │               │
-                                                        ▼               │
-                                                 Bridge-Engineer (3)    │
-                                                        │               │
-                                                        ▼               │
-                                                 Flutter-Engineer (4)   │
-                                                        │               │
-                                                        └───────┬───────┘
-                                                                ▼
-                                                  QA-Engineer (Etapa 5: continuo+final)
-                                                                │
-                                                  [matemática?]─┴─[no]→ TECH-LEAD: cierre TTR → vuelve a Etapa 0
-                                                        │
-                                                        ▼
-                                          Quant-Engineer (Etapa 6, post) ─APTO→ TECH-LEAD: cierre TTR → vuelve a Etapa 0
-                                                        │
-                                                     NO APTO
-                                                        │
-                                          ┌─────────────┴─────────────┐
-                                          ▼                           ▼
-                                   Rust-Engineer                  Architect (escalamiento §3:
-                                  (bug numérico)              defecto de diseño/fórmula,
-                                                               edita docs/)
-                                                                       │
-                                                                       ▼
-                                                              TECH-LEAD relee §0 y retoma
-                                                              desde etapa correspondiente
+        ├─[UI surface? sin Cáscara Visual]→ UI-Designer (Etapa 0.5) ──actualiza feature doc──┐
+        │                                                                                     │
+        └─[UI con Cáscara Visual o sin UI]───────────────────────────────────────────────────┤
+                                                                                              │
+        ├─[matemática?]→ Quant-Engineer (Etapa 1, pre) ─APTO─────────────────────────────────┤
+        │                                                                                     │
+        └─[no matemática]────────────────────────────────────────────────────────────────────►│→ Rust-Engineer (Etapa 2)
+                                                                                               │       │
+                                                                                      [UI?] ───┘       │
+                                                                                        │               │
+                                                                                        ▼               │
+                                                                                 Bridge-Engineer (3)    │
+                                                                                        │               │
+                                                                                        ▼               │
+                                                                                 Flutter-Engineer (4)   │
+                                                                                 [lee ## Cáscara Visual]│
+                                                                                        │               │
+                                                                                        └───────┬───────┘
+                                                                                                ▼
+                                                                                  QA-Engineer (Etapa 5: continuo+final)
+                                                                                                │
+                                                                                [matemática?]─┴─[no]→ TECH-LEAD: cierre TTR → vuelve a Etapa 0
+                                                                                        │
+                                                                                        ▼
+                                                                          Quant-Engineer (Etapa 6, post) ─APTO→ cierre TTR
+                                                                                        │
+                                                                                     NO APTO
+                                                                                        │
+                                                                          ┌─────────────┴─────────────┐
+                                                                          ▼                           ▼
+                                                                   Rust-Engineer                  Architect (escalamiento §3)
+                                                                  (bug numérico)                  edita docs/
+                                                                                                       │
+                                                                                                       ▼
+                                                                                              TECH-LEAD relee §0 y retoma
 ```
 
 ### Lateral — Refactoring-Engineer

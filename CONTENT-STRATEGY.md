@@ -207,7 +207,31 @@ Cada pilar mapea a material que **ya existe** en `docs/SAD.md` / `docs/ADR.md` /
   - *"Le dimos a nuestro motor de trading un libro de contabilidad que ni nosotros podemos alterar"* (STORY-004).
   - *"Auditamos 137 piezas de nuestro propio diseño con IA, antes de escribir código. Así fue el proceso"* (TASK-006).
 
-> **Distribución de esfuerzo (fase EPIC-0/1):** Pilar **G** = contenido insignia actual (Tier 2, cadencia ~cada 2-4 semanas según ritmo de STORYs). Pilar **E** = puente (se funde con G en esta fase). Pilar **D** = arranca en paralelo apenas haya material de EPIC-1. Pilar **F** = combustible diario para shorts, independiente del calendario de desarrollo. Pilares **A/B/C** = en backlog, se activan según §1.4.
+### 🆕 Pilar H — "La Ciencia Detrás del Motor" (Educación Conceptual)
+- **Tesis:** Cada feature de Drasus implementa un concepto con historia, creador y propósito. Enseñar el contexto —no la fórmula completa— es la forma más accesible de construir autoridad técnica real.
+- **Desbloquea en:** **SIEMPRE.** Contexto histórico y conceptual, sin dependencia de datos reales ni de ninguna épica concreta.
+- **Fuentes:** `docs/features/*.md`, `docs/adr/*.md`, TTRs — cualquier entidad que implemente un algoritmo, método estadístico o patrón de ingeniería.
+- **Formato de Cápsula (4 bloques fijos, en este orden):**
+  1. **Contexto:** "En [año], [creador/institución] enfrentaba el problema de [X]..." — el origen, el momento, la pregunta que nadie había resuelto bien.
+  2. **La idea:** El concepto central explicado sin cálculos completos — suficiente para entender *qué* resuelve y *por qué* es elegante.
+  3. **Por qué importa en quant/trading:** Una aplicación concreta al mundo de estrategias, backtesting o ejecución — algo que el espectador reconoce o padece.
+  4. **En Drasus:** "Lo implementamos en [feature/módulo] para [propósito específico]." — el puente entre el concepto universal y la decisión de diseño real.
+- **Taxonomía de candidatos (para detectar automáticamente en `docs/features/`):**
+  - *Algoritmos:* NSGA-II, Monte Carlo, algoritmos genéticos, programación simbólica, CPCV, WFA, Simulated Annealing...
+  - *Métodos estadísticos:* Sharpe/Sortino/Calmar, drawdown, Pareto fronts, bootstrapping, regresión simbólica, distribuciones de rendimiento...
+  - *Patrones de ingeniería:* append-only, determinismo, WAL (Write-Ahead Log), hash chains, colas idempotentes, reloj lógico...
+- **Granularidad adaptable:** un concepto simple (ej. WAL) → thread de Twitter de 4 tweets. Un algoritmo rico (ej. NSGA-II, Monte Carlo) → Short/Reel 60s con animación Manim + thread de soporte.
+- **Sinergias clave:**
+  - Alimenta **Pilar F:** un mito se desmonta con la cápsula del concepto correcto (la educación ES el argumento).
+  - Alimenta **Tier 2:** cuando 3+ cápsulas relacionadas acumulan tracción, el Episodio profundiza con código y datos reales.
+  - Complementa **Pilar G:** el "building in public" gana densidad cuando se explica *por qué* se eligió un concepto, no solo que se eligió.
+- **Ejemplos:**
+  - *"NSGA-II: el algoritmo que no busca 'la mejor estrategia' — busca el frente que no puedes mejorar sin sacrificar algo"* — algoritmo, creadores (Deb et al., 2002), historia del Problema Multi-Objetivo, uso en Drasus para descubrir estrategias sin sesgar el fitness.
+  - *"Monte Carlo no es suerte: es tortura estadística sistemática"* — método, origen en Los Álamos (1940s), por qué un backtest sin él miente, cómo Drasus lo usa en el Guantelete de Robustez.
+  - *"Append-only: la decisión de diseño que hace que Drasus no pueda mentir sobre su historial"* — patrón de ingeniería, STORY-004, por qué los sistemas que permiten borrar no son auditables.
+  - *"WAL: cómo SQLite sobrevive a un apagón inesperado sin perder datos"* — decisión de infraestructura de STORY-002, aplicación en integridad de datos del motor.
+
+> **Distribución de esfuerzo (fase EPIC-0/1):** Pilar **G** = contenido insignia actual (Tier 2, cadencia ~cada 2-4 semanas según ritmo de STORYs). Pilar **H** = combustible constante, disponible ya — una cápsula por feature/ADR relevante, independiente del calendario de épicas. Pilar **E** = puente (se funde con G en esta fase). Pilar **D** = arranca en paralelo apenas haya material de EPIC-1. Pilar **F** = confrontación directa para Shorts; se potencia con las cápsulas de Pilar H como argumento técnico. Pilares **A/B/C** = en backlog, se activan según §1.4.
 
 ---
 
