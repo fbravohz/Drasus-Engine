@@ -189,6 +189,35 @@
 
 **Auditoría ADR-0020 (143 features barridas):** catálogo sigue en **25 campos exactos** (confirmado en texto ADR + conteo + SQL migración 0001). Campos fuera del catálogo encontrados: 4 falsos positivos del parser (constantes/parámetros CONFIG) + campos locales legítimos ya documentados (agentic-mcp-gateway, variantes de latencia) + 2 sin clasificar explícita (`active_genome_domain`, `phase_id`) → locales válidos por ser de dominio único. Único candidato a vigilar: `latency_ns` en pre-trade-validator (1 feature; necesita 3+ para promover al catálogo).
 
+### 2026-06-23 — Repaso de EPIC-0 contra la arquitectura hexagonal (ADR-0135/0136/0137)
+
+**Contexto:** el usuario pidió repasar toda la Épica 0 tras el giro arquitectónico de los últimos commits (`d9d44bf`→`134c21d`). Releí base/tech-lead SKILL, ROADMAP, ADR-0135/0136/0137, estructura física de crates y los 15 commits.
+
+**Verificación independiente reproducida:**
+- `cargo test --workspace` → **verde tras la reestructura**: 103 (`shared`) + 1 (kill-9 en `app`) + 1 (smoke Nautilus) + 1 (preset) = 106 tests. `app`/`bridge`/`nautilus_compat` compilan.
+- Estructura nueva confirmada: los 8 crates de módulo (cascarones de STORY-001) **fueron demolidos** por `98a8e7c`. Hoy el workspace es `shared` + `crates/features/<dominio>/` (7 dominios vacíos + `_TEMPLATE`) + `crates/presets/standard-pipeline` + `app` + `bridge` + `nautilus_compat`.
+- **Todo el código de EPIC-0 sobrevivió** porque vive en `crates/shared` (clock, audit_log, job, telemetry, worker_orchestrator, mcp_gateway) + 5 migraciones. No se tocó.
+
+**Desajustes encontrados (lo construido vs ADR-0137):**
+1. **🔑 (duda madre, ESCALADA al Architect):** las 6 features de Fundación son módulos dentro de `shared`, no crates hexagonales bajo `crates/features/infrastructure/`. ADR-0137 + invariante de CLAUDE.md exigen "un crate hexagonal por feature", pero la *nota* de ADR-0137 bendice que los *tipos* de infra vivan en `shared` y calla sobre las *features*. Decisión del usuario: **escalar al Architect** para que enmiende el ADR y zanje si migran o se quedan.
+2. Ninguna de las 6 features de Fundación tiene `## Puertos de Integración` (verificado con grep). Pendiente backfill — **bloqueado por el veredicto** (#1 define en qué contexto se declaran).
+3. Ficha EPIC-0 del ROADMAP desactualizada ("8 módulos + shared", "monolito modular FCIS"). Pendiente reescritura — se bundle con el post-veredicto para no editar dos veces.
+4. **SPIKE-002/003 cerrados hoy** (erradicación de `tch`/`libtorch`/`pysr`/`python` verificada ausente por grep; ROADMAP §6 actualizado). **SPIKE-004/005:** su validación residual NO es ejecutable en EPIC-0 (desempeño del motor → EPIC-2; LLM → EPIC-8). Esto choca con el criterio de salida literal de EPIC-0 ("los 6 SPIKE con su validación residual ejecutada") → señalado al usuario como wrinkle del criterio.
+
+**Decisión del usuario (2 preguntas):** (a) duda madre → escalar al Architect; (b) alcance → re-alinear docs + plan de migración. El plan de migración queda **bloqueado** hasta el veredicto (no se especula su contenido).
+
+**VEREDICTO DEL ARCHITECT (subagente Opus, 2026-06-23) — auditado y APROBADO por el Tech-Lead:**
+- **Problema 1 → SE QUEDAN EN `shared`.** Las 6 features de infra crosscutting NO migran. ADR-0137 enmendado (bloque "Enmienda 2026-06-23 — Excepción bendecida", línea 106) con criterio anti-coladero de 3 condiciones (produce tipo `textLabel` del catálogo + consumida por ≥2 dominios + sin puerto de Alpha en canvas). `crates/features/infrastructure/` queda vacía a propósito. **La Orden de migración queda DESCARTADA** (no hay nada que migrar).
+- **Problema 2 → criterio de salida de EPIC-0 reformulado** (ROADMAP línea 73): gate de Fundación = veredicto en ADR para los 6 + residual ejercible en EPIC-0 (smoke SPIKE-001/006, erradicación grep SPIKE-002/003); desempeño (SPIKE-004) → EPIC-2, LLM (SPIKE-005) → EPIC-8.
+- **Archivos del Architect:** `docs/adr/ADR-0137.md`, `CLAUDE.md` §1, `docs/ADR.md`, `docs/ROADMAP.md` línea 73. **Auditoría:** grep G1=0 contradicciones, G2=enmienda en los 3 archivos, alcance respetado (cero cambios en `crates/`/código/git).
+- **Tech-Lead además:** selló SPIKE-002/003 en ROADMAP §6; reescribió ficha EPIC-0 (Objetivo + Alcance hexagonal) + nota de reestructura bajo la tabla de estado.
+
+**✅ Backfill de puertos COMPLETADO y auditado (2026-06-23, subagente Sonnet).** Las 6 features de Fundación (`clock`, `audit-log`, `async-job-executor`, `telemetry`, `worker-isolation-orchestrator`, `agentic-mcp-gateway`) ya tienen `## Puertos de Integración` (posición correcta Tareas→Puertos→Gobernanza/Persistencia en las 6, verificado por grep). Puertos OUTPUT declarados con tipos válidos del catálogo: `timestamp_ns` (clock), `AuditEvent` (audit-log, agentic-mcp-gateway), `Job` (async-job-executor out / worker-isolation in), `TelemetrySample` (telemetry).
+
+**✅ HUECO RESUELTO (2026-06-24, Architect Sonnet, auditado y APROBADO):** los 6 puertos sin tipo de catálogo NO eran un defecto sino una categoría faltante. ADR-0137 enmendado (Enmienda 2026-06-24, línea 165) crea la categoría **"puerto interno"**: la firma Rust que una feature `textLabel` de infraestructura expone a sus llamadores directos, que NO es un conector del canvas y por tanto NO requiere tipo de catálogo (se documenta con `(interno)`). Tres criterios para calificar + regla de promoción (3+ features de dominios distintos → se promueve al catálogo). Regla FIJO reescrita: "todo puerto DE CANVAS requiere tipo" (antes "todo puerto"); puertos internos exentos; un nodo sin puertos de canvas no conecta (los internos no cuentan); ante la duda → puerto de canvas (más restrictivo). Las 6 features actualizadas con sus puertos internos completos; flags de escalamiento eliminados. Auditoría: grep A1=0 flags obsoletos, A2=6 puertos internos presentes, A3=regla antigua reemplazada + 1 sola sección FIJO, alcance respetado (cero cambios en `ui/`/`crates/`). Seguimiento natural: cuando se construya `agentic-mcp-gateway` en su épica, el Rust-Engineer confirma que `mcp_call_in` coincide con la firma real del protocolo MCP (ajustable sin enmienda, es firma interna).
+
+**➡️ SIGUIENTE PASO:** EPIC-0 queda coherente con la arquitectura hexagonal (código verde + docs realineados). Pendiente para cerrar formalmente EPIC-0: nada bloqueante. Listo para arrancar EPIC-1 (`ingest`) cuando el usuario lo autorice. Recordatorio: hay cambios sin commitear (regla: git solo si el usuario lo pide; agrupar por tipo `docs`/`chore`).
+
 ## Pendientes Windows (validación cruzada de plataforma)
 
 - **✅ CERRADO (2026-06-20, commit `baaaac2`):** Al correr `cargo test` desde el toolchain MSVC de Windows via PowerShell/WSL2 se descubrió que `worker_runner.rs` y `kill9_recovery.rs` no compilaban en Windows (APIs `nix`, `pre_exec`, `/proc/stat` sin gate). Corregidos con `#[cfg(unix)]` / `#[cfg(not(unix))]`. Resultado: Linux 93/93 ✅ · Windows 89/89 ✅ (4 tests Unix-only excluidos). La rama `#[cfg(not(unix))]` de `main.rs` (SIGTERM fallback) sigue sin cobertura medible en Linux — sin impacto funcional, despliegue real es Linux.
