@@ -2,14 +2,15 @@
 resolver = "2"
 members = [
     "crates/shared",
-    "crates/ingest",
-    "crates/generate",
-    "crates/validate",
-    "crates/incubate",
-    "crates/manage",
-    "crates/execute",
-    "crates/feedback",
-    "crates/withdraw",
+    # ── Feature crates (se añaden al crear cada feature en el ROADMAP) ──
+    # "crates/features/infrastructure/*",
+    # "crates/features/data/*",
+    # "crates/features/generation/*",
+    # "crates/features/validation/*",
+    # "crates/features/execution/*",
+    # "crates/features/portfolio/*",
+    # "crates/features/lifecycle/*",
+    "crates/presets/*",
     "crates/app",
     "crates/bridge",
     "crates/nautilus_compat",

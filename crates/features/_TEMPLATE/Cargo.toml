@@ -1,0 +1,11 @@
+[package]
+name = "feature-template"
+description = "Plantilla canónica para todo feature crate hexagonal de Drasus Engine (ADR-0137). Copia este directorio y renombra el package."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ÚNICA dependencia permitida para un feature crate.
+# PROHIBIDO depender de otros feature crates o presets.
+shared = { path = "../../../shared" }
