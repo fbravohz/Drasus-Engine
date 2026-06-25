@@ -819,7 +819,7 @@ class _GlowMentionInputState extends State<GlowMentionInput> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill.withAlpha(hasFocus ? 200 : 125),
+            color: Gx.glassFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
               color: hasFocus ? Gx.transitionIndigo : Gx.borderPanel,

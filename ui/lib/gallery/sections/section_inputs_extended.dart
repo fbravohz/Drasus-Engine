@@ -52,7 +52,7 @@ class _GlowComboboxState extends State<GlowCombobox> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill.withAlpha(_open ? 200 : 125),
+            color: Gx.glassFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
                 color: _open ? Gx.transitionIndigo : Gx.borderPanel,
@@ -279,7 +279,7 @@ class _GlowTextareaState extends State<GlowTextarea> {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Gx.glassFill.withAlpha(focused ? 200 : 125),
+        color: Gx.glassFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(
             color: focused ? Gx.transitionIndigo : Gx.borderPanel,
@@ -333,7 +333,7 @@ class _GlowOtpInputState extends State<GlowOtpInput> {
             height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Gx.glassFill.withAlpha(isActive ? 200 : 80),
+              color: Gx.glassFill,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isActive ? Gx.transitionIndigo : Gx.borderPanel,
@@ -506,7 +506,7 @@ class _GlowFormFieldState extends State<GlowFormField> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill.withAlpha(focused ? 200 : 100),
+            color: Gx.glassFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
                 color: (focused || widget.error) ? activeColor : Gx.borderPanel,
