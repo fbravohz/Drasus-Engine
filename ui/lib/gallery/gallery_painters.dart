@@ -11,10 +11,18 @@ import 'gallery_tokens.dart';
 // Telón cósmico estático: resplandor violeta (supernova) + tenue disco de
 // acreción + campo de estrellas. Es ambiente sutil; jamás compite con los datos.
 class CosmicBackdropPainter extends CustomPainter {
+  final Color deepSpace;
+  final Color supernovaColor;
+
+  const CosmicBackdropPainter({
+    this.deepSpace = Gx.deepSpace,
+    this.supernovaColor = Gx.transitionIndigo,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    canvas.drawRect(rect, Paint()..color = Gx.deepSpace);
+    canvas.drawRect(rect, Paint()..color = deepSpace);
 
     final center = Offset(size.width * 0.5, size.height * 0.34);
     final maxR = size.shortestSide * 0.75;
@@ -26,7 +34,7 @@ class CosmicBackdropPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            Gx.transitionIndigo.withOpacity(0.16),
+            supernovaColor.withOpacity(0.16),
             Gx.transitionPurple.withOpacity(0.06),
             Colors.transparent,
           ],

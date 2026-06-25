@@ -8,16 +8,51 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'gallery_tokens.dart';
 import 'gallery_painters.dart';
+import '../drasus_theme.dart';
 
-// Vidrio Apple: translúcido pero "opaco". Desenfoque del fondo + degradado
-// vertical sutil + borde de luz (rim-light) + glow opcional.
+// Vidrio Apple — o lo que indique el modo global de superficie.
+// Lee DrasusThemeState.globalSurfaceMode para decidir la receta:
+//   glass → BackdropFilter + blur + rim (vidrio completo)
+//   tint  → Solo glassFill, sin blur ni rim (panel translúcido)
+//   solid → panelSolid oscuro (datos densos)
 Widget frosted({
   required Widget child,
   EdgeInsets padding = const EdgeInsets.all(12),
   double radius = Gx.rChrome,
-  double blur = 28,
+  double blur = 36,
   List<BoxShadow>? glow,
 }) {
+  final mode = DrasusThemeState.globalSurfaceMode;
+
+  if (mode == DrasusSurfaceMode.solid) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Gx.panelSolid,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: Gx.borderPanel),
+        boxShadow: glow,
+      ),
+      child: child,
+    );
+  }
+
+  if (mode == DrasusSurfaceMode.tint) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Gx.glassFill,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
+        ),
+        boxShadow: glow,
+      ),
+      child: child,
+    );
+  }
+
+  // mode == glass: vidrio Apple completo.
   return ClipRRect(
     borderRadius: BorderRadius.circular(radius),
     child: BackdropFilter(
@@ -25,16 +60,19 @@ Widget frosted({
       child: Container(
         padding: padding,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Gx.glassFill.withOpacity(0.85),
-              Gx.glassFill.withOpacity(0.5),
+              Color(0x14AAAAFF),
+              Colors.transparent,
             ],
           ),
+          color: Gx.glassFill,
           borderRadius: BorderRadius.circular(radius),
-          border: Gx.rimLight(0.12),
+          border: Border.all(
+            color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
+          ),
           boxShadow: glow,
         ),
         child: child,
@@ -318,7 +356,7 @@ class _GlowInputState extends State<GlowInput> {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: Gx.glassFill.withOpacity(focused ? 0.8 : 0.5),
+        color: Gx.glassFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(
             color: focused ? widget.color : Gx.borderPanel,

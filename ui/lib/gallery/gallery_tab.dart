@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'gallery_tokens.dart';
 import 'gallery_fx.dart';
 import 'gallery_painters.dart';
+import '../drasus_theme.dart';
 import 'sections/section_nav.dart';
 import 'sections/section_inputs_extended.dart';
 import 'sections/section_buttons_extended.dart';
@@ -18,6 +19,10 @@ import 'sections/section_dataviz_extended.dart';
 import 'sections/section_drasus_core_extended.dart';
 import 'sections/section_std_missing.dart';
 import 'sections/section_dataviz_quant.dart';
+import 'sections/section_dataviz_new.dart';
+import 'sections/section_dag_nodes.dart';
+import 'sections/section_animations.dart';
+import 'sections/section_trade_tape.dart';
 
 // Widget raíz de la pestaña. Telón cósmico estático + catálogo en scroll.
 class GalleryTab extends StatelessWidget {
@@ -25,41 +30,46 @@ class GalleryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Telón cósmico estático (ambiente sutil, no animado).
-        Positioned.fill(child: CustomPaint(painter: CosmicBackdropPainter())),
-        SingleChildScrollView(
+    final theme = DrasusTheme.of(context);
+    final surfaces = theme?.surfaces;
+    final ds = surfaces?.deepSpace ?? Gx.deepSpace;
+
+    return Container(
+      color: ds,
+      child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _hero(),
               const SizedBox(height: 32),
-              _section('Fundamentos', _foundations()),
-              _section('Layout y estructura', _layout()),
-              _section('Navegación', _navigation()),
-              _section('Inputs y formularios', _inputs()),
-              _section('Inputs extendidos', _inputsExtended()),
-              _section('Botones y acciones', _buttons()),
-              _section('Botones extendidos', _buttonsExtended()),
-              _section('Data display', _dataDisplay()),
-              _section('Data display extendido', _dataDisplayExtended()),
-              _section('Feedback y overlays', _feedback()),
-              _section('Feedback extendido', _feedbackExtended()),
-              _section('Data-viz (dominio Drasus)', _dataviz()),
-              _section('Data-viz extendida', _datavizExtended()),
-              _section('Data-viz cuantitativa', _datavizQuant()),
-              _section('Núcleo Drasus', _drasusCore()),
-              _section('Núcleo Drasus extendido', _drasusCoreExtended()),
-              _section('Animaciones de Vitalidad', _vitalityAnimations()),
+              _section(context, 'Fundamentos', _foundations()),
+              _section(context, 'Layout y estructura', _layout()),
+              _section(context, 'Navegación', _navigation()),
+              _section(context, 'Inputs y formularios', _inputs()),
+              _section(context, 'Inputs extendidos', _inputsExtended()),
+              _section(context, 'Botones y acciones', _buttons()),
+              _section(context, 'Botones extendidos', _buttonsExtended()),
+              _section(context, 'Data display', _dataDisplay()),
+              _section(context, 'Data display extendido', _dataDisplayExtended()),
+              _section(context, 'Feedback y overlays', _feedback()),
+              _section(context, 'Feedback extendido', _feedbackExtended()),
+              _section(context, 'Data-viz (dominio Drasus)', _dataviz()),
+              _section(context, 'Data-viz extendida', _datavizExtended()),
+              _section(context, 'Data-viz cuantitativa', _datavizQuant()),
+              _sectionFull(context, 'Monte Carlo + Cluster 3D', _datavizNew()),
+              _sectionFull(context, 'Nodos y Conexiones DAG', _dagNodes()),
+              _sectionFull(context, 'Trade Tape + Ticker', _tradeTape()),
+              _section(context, 'Núcleo Drasus', _drasusCore()),
+              _section(context, 'Núcleo Drasus extendido', _drasusCoreExtended()),
+              _section(context, 'Animaciones de Vitalidad', _vitalityAnimations()),
+              _sectionFull(context, 'Odómetro + Gauge + Path Drawing', _animationsNew()),
               const SizedBox(height: 48),
             ],
           ),
         ),
-      ],
-    );
-  }
+      );
+    }
 
   // ---------------------------------------------------------------------------
   // Estructura
@@ -72,13 +82,8 @@ class GalleryTab extends StatelessWidget {
         ShaderMask(
           shaderCallback: (rect) =>
               const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
-          child: const Text('Drasus Design System',
-              style: TextStyle(
-                  fontSize: 40,
-                  height: 1.1,
-                  letterSpacing: -0.8,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white)),
+          child: Text('Drasus Design System',
+              style: Gx.zuiTitle.copyWith(color: Colors.white)),
         ),
         const SizedBox(height: 8),
         // Texto con propagación de luz: tócalo para ver la "explosión".
@@ -88,7 +93,7 @@ class GalleryTab extends StatelessWidget {
     );
   }
 
-  Widget _section(String title, List<Widget> children) {
+  Widget _section(BuildContext context, String title, List<Widget> children) {
     return Padding(
       padding: const EdgeInsets.only(top: 28),
       child: Column(
@@ -108,6 +113,32 @@ class GalleryTab extends StatelessWidget {
           ]),
           const SizedBox(height: 16),
           Wrap(spacing: 16, runSpacing: 16, children: children),
+        ],
+      ),
+    );
+  }
+
+  // Variante de _section que usa Column en vez de Wrap — para widgets
+  // de ancho completo como Monte Carlo y Cluster 3D.
+  Widget _sectionFull(BuildContext context, String title, List<Widget> children) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+                width: 3,
+                height: 20,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                    gradient: Gx.linear(Gx.gradAurora,
+                        begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                    boxShadow: Gx.glow(Gx.transitionIndigo, blur: 10, opacity: 0.7))),
+            Text(title, style: Gx.sectionHeading),
+          ]),
+          const SizedBox(height: 16),
+          ...children,
         ],
       ),
     );
@@ -161,8 +192,7 @@ class GalleryTab extends StatelessWidget {
         boxShadow: Gx.glow(fg, blur: 12, opacity: 0.30),
       ),
       child: Text(text,
-          style: TextStyle(
-              fontSize: 12, color: fg, height: 1.2, shadows: Gx.textGlow(fg))),
+          style: Gx.uiSans(fontSize: 12, color: fg, height: 1.2).copyWith(shadows: Gx.textGlow(fg))),
     );
   }
 
@@ -237,6 +267,10 @@ class GalleryTab extends StatelessWidget {
           glow: Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.25),
           child: _panelHeader(Gx.iconBlurOn, 'Frosted translúcido'),
         )),
+        _frame('Acento dinámico', _panelSolid(
+          padding: const EdgeInsets.all(8),
+          child: const AccentAbSection(),
+        ), width: 380),
       ];
 
   Widget _swatches(List<List<Object>> entries, {bool glow = false}) {
@@ -475,10 +509,10 @@ class GalleryTab extends StatelessWidget {
   Widget _iconBtn(IconData icon) => Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.cardInner,
             borderRadius: BorderRadius.circular(Gx.rButton),
             border: Border.all(color: Gx.borderPanel)),
-        child: Icon(icon, size: 18, color: Gx.textSecondary),
+        child: Icon(icon, size: 18, color: Gx.textPrimary),
       );
 
   // ---------------------------------------------------------------------------
@@ -970,6 +1004,41 @@ class GalleryTab extends StatelessWidget {
           padding: EdgeInsets.zero,
           child: HoverableChart(builder: (h) => OptimizationContourPainter(hover: h), height: 114),
         ), width: 220),
+      ];
+
+  // §10 Data-viz nuevos: Monte Carlo scanInit eléctrico + Cluster 3D nebulosa.
+  List<Widget> _datavizNew() => [
+        const MonteCarloLinesWidget(),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+           child: const StrategyCluster3dWidget(),
+        ),
+      ];
+
+  // §10 Data-viz — nodos y conexiones DAG.
+  List<Widget> _dagNodes() => [
+        const DagNodesSection(),
+      ];
+
+  // §10 Data-viz — trade tape + ticker bar.
+  List<Widget> _tradeTape() => [
+        const TradeTapeSection(),
+      ];
+
+  // Animaciones universales: odómetro, gauge radial, path drawing eléctrico.
+  List<Widget> _animationsNew() => [
+        const OdometerSection(),
+        const SizedBox(height: 16),
+        const GaugeSection(),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: _panelSolid(
+            padding: EdgeInsets.zero,
+            child: const EquityCurveAnimated(),
+          ),
+        ),
       ];
 
   // ---------------------------------------------------------------------------

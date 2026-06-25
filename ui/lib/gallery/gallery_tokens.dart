@@ -22,7 +22,7 @@ class Gx {
   static const panelSolid = Color(0xFF0E1426); // panel de datos
   static const cardInner = Color(0xFF11182E); // tarjeta interna
   static const surfaceRaised = Color(0xFF161E38); // hover de fila
-  static const glassFill = Color(0x73141C36); // vidrio del chrome (~45%)
+  static const glassFill = Color(0x40F0F2FF); // vidrio Apple — tinte claro (~25%) sobre fondo oscuro
   static const gaugeTrack = Color(0xFF16203A); // riel de las barras de vitalidad
 
   // --- Estructura (bordes y separadores tintados) ---
@@ -66,6 +66,10 @@ class Gx {
   static const cosmicB = Color(0xFFB79CFF);
   static const cosmicC = Color(0xFF56A8FF);
   static const starField = Color(0xFFE6ECF8);
+
+  // --- Vidrio Apple ---
+  static const glassEdgeOpacity = 0.28;
+  static const glassBlur = 36.0;
 
   // --- Radios (Border Radius de DESIGN.md) ---
   static const rPanel = 11.0;
@@ -144,9 +148,9 @@ class Gx {
   // Las constantes que usan google_fonts no pueden ser 'const' porque los
   // TextStyle devueltos incluyen referencias a FontLoader, que no es const.
   static TextStyle get microLabel =>
-      uiSans(fontSize: 11, height: 1.3, color: textLabel);
+      uiSans(fontSize: 13, height: 1.3, color: textLabel);
   static TextStyle get label =>
-      uiSans(fontSize: 12, height: 1.4, color: textLabel);
+      uiSans(fontSize: 14, height: 1.4, color: textLabel);
   static TextStyle get body =>
       uiSans(fontSize: 14, height: 1.5, color: textPrimary);
   static TextStyle get bodySecondary =>
@@ -154,7 +158,7 @@ class Gx {
   static TextStyle get subheading =>
       uiSans(fontSize: 16, height: 1.5, color: textPrimary);
   static TextStyle get panelTitle => displayGrotesque(
-      fontSize: 14, height: 1.3, color: textSecondary, weight: FontWeight.w500);
+      fontSize: 16, height: 1.3, color: textSecondary, weight: FontWeight.w500);
   static TextStyle get sectionHeading => displayGrotesque(
       fontSize: 22,
       height: 1.15,
@@ -170,7 +174,7 @@ class Gx {
 
   // Datos en JetBrains Mono (numStyle de DESIGN.md).
   static TextStyle get dataSmall =>
-      dataMono(fontSize: 13, height: 1.4, color: textPrimary);
+      dataMono(fontSize: 14, height: 1.4, color: textPrimary);
   static TextStyle get dataHero =>
       dataMono(fontSize: 28, height: 1.1, color: textPrimary);
 
