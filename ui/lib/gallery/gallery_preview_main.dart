@@ -9,6 +9,8 @@
 //   cero persistencia) para que se pueda lanzar en cualquier máquina sin
 //   tener el backend Rust listo.
 //
+//   Incluye selector de temas (acento + paleta de fondo) vía SettingsDrawer.
+//
 // Cómo usarlo:
 //   cd ui
 //   flutter run -d linux -t lib/gallery/gallery_preview_main.dart
@@ -17,29 +19,64 @@
 //   flutter test --update-goldens test/gallery_golden_test.dart
 
 import 'package:flutter/material.dart';
+import '../drasus_theme.dart';
+import '../tabs/settings_drawer.dart';
+import 'gallery_tokens.dart';
 import 'gallery_tab.dart';
 
-// Punto de entrada: monta solo la galería sin inicializar el Bridge Rust.
+// Punto de entrada: monta solo la galería con selector de temas.
 void main() {
-  runApp(const _GalleryPreviewApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  final state = DrasusThemeState();
+  state.load().then((_) {
+    runApp(_GalleryPreviewApp(state: state));
+  });
 }
 
-// Aplicación minimal que envuelve la galería en un tema oscuro.
-class _GalleryPreviewApp extends StatelessWidget {
-  const _GalleryPreviewApp();
+// Aplicación con DrasusTheme + galería + selector de temas en settings drawer.
+class _GalleryPreviewApp extends StatefulWidget {
+  final DrasusThemeState state;
+  const _GalleryPreviewApp({required this.state});
+
+  @override
+  State<_GalleryPreviewApp> createState() => _GalleryPreviewAppState();
+}
+
+class _GalleryPreviewAppState extends State<_GalleryPreviewApp> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.state.addListener(() => setState(() {}));
+  }
 
   @override
   Widget build(BuildContext context) {
-    // MaterialApp con tema oscuro para que el fondo del sistema no
-    // choque con el deep space de la galería.
-    return MaterialApp(
-      title: 'Drasus — Preview de Galería',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: false),
-      // Scaffold raíz: body = GalleryTab, que ya lleva su propio
-      // telón cósmico y scroll. Sin AppBar para maximizar el lienzo.
-      home: const Scaffold(
-        body: GalleryTab(),
+    return DrasusTheme(
+      state: widget.state,
+      child: MaterialApp(
+        title: 'Drasus — Preview de Galería',
+        debugShowCheckedModeBanner: false,
+        theme: widget.state.buildThemeData(),
+        home: Scaffold(
+          key: _scaffoldKey,
+          appBar: AppBar(
+            title: const Text('Galería de Componentes',
+                style: TextStyle(fontFamily: 'SpaceGrotesk', fontSize: 16)),
+            backgroundColor: Gx.deepSpace,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Temas',
+                onPressed: () =>
+                    _scaffoldKey.currentState!.openEndDrawer(),
+              ),
+            ],
+          ),
+          endDrawer: const SettingsDrawer(),
+          body: const GalleryTab(),
+        ),
       ),
     );
   }
