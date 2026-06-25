@@ -52,7 +52,7 @@ class _GlowComboboxState extends State<GlowCombobox> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
                 color: _open ? Gx.transitionIndigo : Gx.borderPanel,
@@ -235,7 +235,7 @@ class _GlowNumberInputState extends State<GlowNumberInput> {
           height: 28,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Transform.rotate(
@@ -279,7 +279,7 @@ class _GlowTextareaState extends State<GlowTextarea> {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(
             color: focused ? Gx.transitionIndigo : Gx.borderPanel,
@@ -333,7 +333,7 @@ class _GlowOtpInputState extends State<GlowOtpInput> {
             height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Gx.glassFill,
+              color: Gx.surfaceFill,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isActive ? Gx.transitionIndigo : Gx.borderPanel,
@@ -435,7 +435,7 @@ Widget richTextEditorPlaceholder() {
       Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Gx.panelSolid,
+          color: Gx.surfacePanel,
           borderRadius: BorderRadius.circular(Gx.rPanel),
           border: Border.all(color: Gx.borderPanel),
         ),
@@ -506,7 +506,7 @@ class _GlowFormFieldState extends State<GlowFormField> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
                 color: (focused || widget.error) ? activeColor : Gx.borderPanel,

@@ -13,7 +13,7 @@ import '../drasus_theme.dart';
 // DrasusGlass — vidrio Apple (chrome translúcido + rim-light).
 // ---------------------------------------------------------------------------
 class DrasusGlass extends ThemeExtension<DrasusGlass> {
-  // Relleno base del vidrio (60% alpha). Default: Gx.glassFill.
+  // Relleno base del vidrio (60% alpha). Default: Gx.surfaceFill.
   final Color fill;
   // Sigma del desenfoque del BackdropFilter. Default: 36 (Gx.glassBlur).
   final double blurSigma;

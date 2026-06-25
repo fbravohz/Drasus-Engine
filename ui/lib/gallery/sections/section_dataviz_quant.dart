@@ -256,7 +256,7 @@ class WfaChartPainter extends CustomPainter {
         canvas.drawCircle(dotCenter, hov ? 3.5 : 2.5, Paint()..color = c);
       } else {
         canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)),
-            Paint()..color = hov ? Gx.surfaceRaised : Gx.panelSolid);
+            Paint()..color = hov ? Gx.surfaceRaised : Gx.surfacePanel);
         canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)),
             Paint()
               ..style = PaintingStyle.stroke

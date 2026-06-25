@@ -348,7 +348,7 @@ class _WidgetCatalogSheet extends StatelessWidget {
         child: Container(
           height: 400,
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: Border(
               top: BorderSide(color: Gx.textPrimary.withOpacity(Gx.glassEdgeOpacity), width: 1),
@@ -417,7 +417,7 @@ class _GlowWidgetCatalogItem extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: Gx.cardInner,
+              color: Gx.surfaceCard,
               borderRadius: BorderRadius.circular(Gx.rChip),
               border: Border.all(color: Gx.borderPanel),
             ),
@@ -440,7 +440,7 @@ class _GlowWidgetCatalogItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: Gx.cardInner,
+              color: Gx.surfaceCard,
               borderRadius: BorderRadius.circular(Gx.rChip),
               border: Border.all(color: Gx.borderPanel),
             ),

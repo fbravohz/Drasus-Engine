@@ -67,7 +67,7 @@ class _CanvasTabState extends State<CanvasTab> {
   Widget build(BuildContext context) {
     final surfaces = DrasusTheme.surfaceFor(context);
     // panelSolid: color de fondo del panel lateral de features.
-    final panelBg = surfaces?.panelSolid ?? Gx.panelSolid;
+    final panelBg = surfaces?.panelSolid ?? Gx.surfacePanel;
 
     return Row(
       children: [
@@ -237,7 +237,7 @@ class _FeatureNodeCard extends StatelessWidget {
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Gx.cardInner,
+        color: Gx.surfaceCard,
         borderRadius: BorderRadius.circular(Gx.rPanel),
         border: Border.all(color: Gx.borderPanel, width: 1),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.15),
@@ -257,7 +257,7 @@ class _FeatureNodeCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
-              color: Gx.cardInner,
+              color: Gx.surfaceCard,
               borderRadius: BorderRadius.circular(Gx.rChip),
               border: Border.all(color: Gx.borderPanel),
             ),
@@ -363,7 +363,7 @@ class _FeatureListItem extends StatelessWidget {
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.cardInner.withOpacity(0.9),
+            color: Gx.surfaceCard.withOpacity(0.9),
             borderRadius: BorderRadius.circular(Gx.rPanel),
             border: Border.all(color: Gx.transitionIndigo.withOpacity(0.6)),
             boxShadow: Gx.glowStrong(Gx.transitionIndigo),
@@ -442,7 +442,7 @@ class _BreadcrumbPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(20),
             border: Gx.rimLight(0.15),
           ),
@@ -483,7 +483,7 @@ class _CanvasToolbar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(Gx.rChrome),
             border: Gx.rimLight(0.15),
           ),

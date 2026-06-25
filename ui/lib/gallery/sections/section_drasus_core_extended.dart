@@ -26,7 +26,7 @@ class FleetCommandPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         borderRadius: BorderRadius.circular(Gx.rPanel),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.08),
@@ -207,7 +207,7 @@ class _ZuiZoomFrameState extends State<ZuiZoomFrame> {
                     boxShadow: isActive
                         ? Gx.glowStrong(_colors[i], 0.8)
                         : null,
-                    color: Gx.cardInner.withAlpha(isActive ? 60 : 30),
+                    color: Gx.surfaceCard.withAlpha(isActive ? 60 : 30),
                   ),
                   child: Center(
                     child: Text(_labels[i],

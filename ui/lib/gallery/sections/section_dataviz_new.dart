@@ -303,7 +303,7 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Gx.panelSolid, Gx.cardInner],
+          colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
@@ -411,7 +411,7 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Gx.glassFill,
+                    color: Gx.surfaceFill,
                     border: Border.all(color: Gx.borderPanel),
                     borderRadius: BorderRadius.circular(Gx.rChip),
                   ),
@@ -1064,7 +1064,7 @@ class _ClusterLegendPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         border: Border.all(color: Gx.borderPanel),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(11),

@@ -208,7 +208,7 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
       height: 350,
       child: Container(
         decoration: BoxDecoration(
-          color: Gx.panelSolid,
+          color: Gx.surfacePanel,
           border: Border.all(color: Gx.borderPanel),
           borderRadius: BorderRadius.circular(Gx.rPanel),
         ),
@@ -376,7 +376,7 @@ class _TickerDemo extends StatelessWidget {
       width: 260,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
       ),

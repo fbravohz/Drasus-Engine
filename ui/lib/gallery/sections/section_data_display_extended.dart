@@ -30,7 +30,7 @@ Widget avatarGroup() {
           height: 32,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Gx.cardInner,
+            color: Gx.surfaceCard,
             border: Border.all(color: colors[i], width: 1.5),
             boxShadow: Gx.glow(colors[i], blur: 8, opacity: 0.4),
           ),
@@ -110,7 +110,7 @@ Widget codeBlock() {
   return Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Gx.cardInner,
+      color: Gx.surfaceCard,
       borderRadius: BorderRadius.circular(Gx.rPanel),
       border: Border.all(color: Gx.borderPanel),
     ),
@@ -147,7 +147,7 @@ Widget kbdRow() {
           margin: const EdgeInsets.symmetric(horizontal: 2),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Gx.cardInner,
+            color: Gx.surfaceCard,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Gx.borderPanel),
             boxShadow: Gx.glow(Gx.transitionIndigo, blur: 6, opacity: 0.15),
@@ -235,7 +235,7 @@ Widget imageThumbnail() {
     width: 120,
     height: 68,
     decoration: BoxDecoration(
-      gradient: Gx.linear([Gx.cardInner, Gx.panelSolid]),
+      gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
       borderRadius: BorderRadius.circular(Gx.rPanel),
       border: Border.all(color: Gx.borderPanel),
     ),
@@ -304,7 +304,7 @@ Widget popoverExample() {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Gx.glassFill,
+          color: Gx.surfaceFill,
           borderRadius: BorderRadius.circular(Gx.rChip),
           border: Border.all(color: Gx.borderPanel),
         ),
@@ -469,7 +469,7 @@ class _GlowCarouselState extends State<GlowCarousel> {
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: Gx.linear([Gx.cardInner, Gx.panelSolid]),
+                  gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
                   borderRadius: BorderRadius.circular(Gx.rPanel),
                   border: Border.all(color: card.$3.withAlpha(100)),
                   boxShadow: Gx.glow(card.$3, blur: 14, opacity: 0.2),

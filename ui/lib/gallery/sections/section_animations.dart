@@ -97,7 +97,7 @@ class _AccentPanelState extends State<_AccentPanel> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               decoration: BoxDecoration(
-                color: Gx.glassFill,
+                color: Gx.surfaceFill,
                 borderRadius: BorderRadius.circular(Gx.rInput),
                 border: Border.all(
                   color: _focused ? widget.color : Gx.borderPanel,
@@ -317,7 +317,7 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Gx.panelSolid, Gx.cardInner],
+          colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
@@ -355,7 +355,7 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Gx.glassFill,
+                color: Gx.surfaceFill,
                 border: Border.all(color: Gx.borderPanel),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),
@@ -477,7 +477,7 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Gx.panelSolid, Gx.cardInner],
+          colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
@@ -519,7 +519,7 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: Gx.glassFill,
+                color: Gx.surfaceFill,
                 border: Border.all(color: Gx.borderPanel),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),
@@ -681,7 +681,7 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Gx.panelSolid, Gx.cardInner],
+          colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
@@ -732,7 +732,7 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Gx.glassFill,
+                color: Gx.surfaceFill,
                 border: Border.all(color: Gx.borderPanel),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),

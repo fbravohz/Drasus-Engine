@@ -37,7 +37,7 @@ class GlassSurface extends StatelessWidget {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
-          color: Gx.panelSolid,
+          color: Gx.surfacePanel,
           borderRadius: radius,
           border: Border.all(color: Gx.borderPanel),
         ),
@@ -49,7 +49,7 @@ class GlassSurface extends StatelessWidget {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
-          color: Gx.glassFill,
+          color: Gx.surfaceFill,
           borderRadius: radius,
           border: Border.all(
             color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),

@@ -29,7 +29,7 @@ class _GlowNotificationCardState extends State<GlowNotificationCard> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: Gx.linear([Gx.panelSolid, Gx.cardInner]),
+          gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard]),
           borderRadius: BorderRadius.circular(Gx.rPanel),
           border: Border.all(
               color: _unread ? Gx.transitionIndigo.withAlpha(80) : Gx.borderPanel),
@@ -98,7 +98,7 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Gx.glassFill,
+              color: Gx.surfaceFill,
               borderRadius: BorderRadius.circular(Gx.rButton),
               border: Border.all(color: Gx.borderPanel),
             ),
@@ -153,7 +153,7 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 7),
                               decoration: BoxDecoration(
-                                color: Gx.glassFill,
+                                color: Gx.surfaceFill,
                                 borderRadius: BorderRadius.circular(Gx.rButton),
                                 border: Border.all(color: Gx.borderPanel),
                               ),
@@ -229,7 +229,7 @@ Widget resultPage({bool success = true}) {
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      gradient: Gx.linear([Gx.panelSolid, Gx.deepSpace]),
+      gradient: Gx.linear([Gx.surfacePanel, Gx.deepSpace]),
       borderRadius: BorderRadius.circular(Gx.rChrome),
       border: Border.all(color: c.withAlpha(80)),
       boxShadow: Gx.glow(c, blur: 20, opacity: 0.15),
@@ -428,7 +428,7 @@ class _GlowAccordionState extends State<GlowAccordion> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isOpen ? Gx.surfaceRaised : Gx.panelSolid,
+                  color: isOpen ? Gx.surfaceRaised : Gx.surfacePanel,
                   border: Border(
                       bottom: BorderSide(
                           color: isOpen ? Gx.transitionIndigo : Gx.divider,
@@ -463,7 +463,7 @@ class _GlowAccordionState extends State<GlowAccordion> {
                   ? Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
-                      color: Gx.cardInner,
+                      color: Gx.surfaceCard,
                       child: Text(e.value.$2,
                           style: Gx.uiSans(
                               fontSize: 12, color: Gx.textSecondary)),

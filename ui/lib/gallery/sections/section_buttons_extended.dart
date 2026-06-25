@@ -36,7 +36,7 @@ class _GlowToggleButtonState extends State<GlowToggleButton> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           gradient: _on ? Gx.linear(Gx.gradTransition) : null,
-          color: _on ? null : Gx.glassFill,
+          color: _on ? null : Gx.surfaceFill,
           borderRadius: BorderRadius.circular(Gx.rButton),
           border: Border.all(
               color: _on ? Gx.transitionIndigo : Gx.borderPanel),
@@ -168,7 +168,7 @@ class _GlowButtonGroupState extends State<GlowButtonGroup> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
               gradient: isActive ? Gx.linear(Gx.gradTransition) : null,
-              color: isActive ? null : Gx.glassFill,
+              color: isActive ? null : Gx.surfaceFill,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(isFirst ? Gx.rButton : 0),
                 bottomLeft: Radius.circular(isFirst ? Gx.rButton : 0),

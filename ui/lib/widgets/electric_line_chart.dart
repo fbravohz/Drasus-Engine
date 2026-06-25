@@ -89,7 +89,7 @@ class _ElectricLineChartState extends State<ElectricLineChart>
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         borderRadius: BorderRadius.circular(Gx.rPanel),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(widget.color, blur: 14, opacity: 0.10),
@@ -110,7 +110,7 @@ class _ElectricLineChartState extends State<ElectricLineChart>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Gx.glassFill,
+                  color: Gx.surfaceFill,
                   border: Border.all(color: Gx.borderPanel),
                   borderRadius: BorderRadius.circular(Gx.rChip),
                 ),

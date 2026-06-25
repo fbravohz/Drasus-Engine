@@ -11,6 +11,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import '../drasus_theme.dart';
 
 // Gx = "Gallery tokens". Espejo 1:1 de la sección "Tokens — Colors" de DESIGN.md.
 class Gx {
@@ -66,6 +67,33 @@ class Gx {
   static const cosmicB = Color(0xFFB79CFF);
   static const cosmicC = Color(0xFF56A8FF);
   static const starField = Color(0xFFE6ECF8);
+
+  // -------------------------------------------------------------------------
+  // GxSurface — getters dinámicos que reflejan el modo global de superficie.
+  // Reemplazan a glassFill, panelSolid y cardInner como referencias directas.
+  // Cambiar el modo en SettingsDrawer → TODOS los componentes reflejan el cambio.
+  // -------------------------------------------------------------------------
+
+  /// Superficie translúcida: en modo glass/tint → glassFill, en solid → panelSolid.
+  static Color get surfaceFill {
+    final mode = DrasusThemeState.globalSurfaceMode;
+    if (mode == DrasusSurfaceMode.solid) return Gx.surfacePanel;
+    return Gx.glassFill;
+  }
+
+  /// Panel de datos: en modo glass → panelSolid, en tint → glassFill, en solid → panelSolid.
+  static Color get surfacePanel {
+    final mode = DrasusThemeState.globalSurfaceMode;
+    if (mode == DrasusSurfaceMode.tint) return Gx.glassFill;
+    return Gx.surfacePanel;
+  }
+
+  /// Tarjeta interna: en modo glass → cardInner, en tint → glassFill, en solid → cardInner.
+  static Color get surfaceCard {
+    final mode = DrasusThemeState.globalSurfaceMode;
+    if (mode == DrasusSurfaceMode.tint) return Gx.glassFill;
+    return Gx.cardInner;
+  }
 
   // --- Vidrio Apple ---
   static const glassEdgeOpacity = 0.28;

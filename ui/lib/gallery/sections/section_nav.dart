@@ -169,7 +169,7 @@ class _GlowPaginationState extends State<GlowPagination> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Gx.glassFill,
+          color: Gx.surfaceFill,
           border: Border.all(color: Gx.borderPanel),
         ),
         child: Transform.rotate(
@@ -240,7 +240,7 @@ class _CommandPaletteState extends State<CommandPalette> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Gx.cardInner,
+                  color: Gx.surfaceCard,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: Gx.borderPanel),
                 ),
@@ -431,7 +431,7 @@ class _GlowScrollspyState extends State<GlowScrollspy> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rPanel),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.15),

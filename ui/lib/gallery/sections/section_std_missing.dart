@@ -41,7 +41,7 @@ class _GlowCascaderState extends State<GlowCascader> {
     return Container(
       height: 130,
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.2),
@@ -165,7 +165,7 @@ class _GlowTransferListState extends State<GlowTransferList> {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
-          color: Gx.panelSolid,
+          color: Gx.surfacePanel,
           borderRadius: BorderRadius.circular(Gx.rPanel),
           border: Border.all(color: Gx.borderPanel),
         ),
@@ -307,7 +307,7 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
@@ -340,7 +340,7 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(color: Gx.transitionIndigo.withOpacity(0.6)),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.2),
@@ -447,7 +447,7 @@ class _GlowTimePickerState extends State<GlowTimePicker> {
     return Container(
       height: 120,
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
@@ -570,7 +570,7 @@ class _GlowColorPickerState extends State<GlowColorPicker> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: Gx.glow(_selected, blur: 12, opacity: 0.2),
@@ -702,7 +702,7 @@ class _GlowDropzoneState extends State<GlowDropzone> {
                 ? Gx.transitionIndigo.withOpacity(0.08)
                 : _state == _DropState.loading
                     ? Gx.optimaCyan.withOpacity(0.06)
-                    : Gx.panelSolid,
+                    : Gx.surfacePanel,
             borderRadius: BorderRadius.circular(Gx.rPanel),
             border: Border.all(
               color: stateColor.withOpacity(
@@ -819,7 +819,7 @@ class _GlowMentionInputState extends State<GlowMentionInput> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Gx.glassFill,
+            color: Gx.surfaceFill,
             borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(
               color: hasFocus ? Gx.transitionIndigo : Gx.borderPanel,
@@ -845,7 +845,7 @@ class _GlowMentionInputState extends State<GlowMentionInput> {
               ? Container(
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(
-                    color: Gx.glassFill,
+                    color: Gx.surfaceFill,
                     borderRadius: BorderRadius.circular(Gx.rPanel),
                     border: Border.all(color: Gx.borderPanel),
                     boxShadow: Gx.glow(Gx.transitionIndigo,
@@ -972,7 +972,7 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
               ? Container(
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(
-                    color: Gx.glassFill,
+                    color: Gx.surfaceFill,
                     borderRadius: BorderRadius.circular(Gx.rPanel),
                     border: Border.all(color: Gx.borderPanel),
                     boxShadow:
@@ -1021,7 +1021,7 @@ class GlowBackToTop extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Gx.glassFill,
+          color: Gx.surfaceFill,
           shape: BoxShape.circle,
           border: Border.all(color: Gx.borderPanel),
           boxShadow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.35),

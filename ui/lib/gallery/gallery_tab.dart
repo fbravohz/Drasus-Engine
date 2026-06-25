@@ -170,7 +170,7 @@ class GalleryTab extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: Gx.linear([Gx.panelSolid, Gx.cardInner],
+        gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard],
             begin: Alignment.topCenter, end: Alignment.bottomCenter),
         border: Border.all(color: Gx.borderPanel),
         borderRadius: BorderRadius.circular(Gx.rPanel),
@@ -211,11 +211,11 @@ class GalleryTab extends StatelessWidget {
   // ---------------------------------------------------------------------------
 
   List<Widget> _foundations() => [
-        _frame('Paleta — superficies', _swatches(const [
+        _frame('Paleta — superficies', _swatches([
           ['deepSpace', Gx.deepSpace],
           ['navRail', Gx.navRail],
-          ['panelSolid', Gx.panelSolid],
-          ['cardInner', Gx.cardInner],
+          ['panelSolid', Gx.surfacePanel],
+          ['cardInner', Gx.surfaceCard],
           ['surfaceRaised', Gx.surfaceRaised],
         ])),
         _frame('Paleta — vitalidad (con glow)', _swatches(const [
@@ -509,7 +509,7 @@ class GalleryTab extends StatelessWidget {
   Widget _iconBtn(IconData icon) => Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-            color: Gx.cardInner,
+            color: Gx.surfaceCard,
             borderRadius: BorderRadius.circular(Gx.rButton),
             border: Border.all(color: Gx.borderPanel)),
         child: Icon(icon, size: 18, color: Gx.textPrimary),
@@ -700,7 +700,7 @@ class GalleryTab extends StatelessWidget {
   Widget _alert(IconData icon, String msg, Color c, Color bg) => Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-            gradient: Gx.linear([bg, Gx.panelSolid]),
+            gradient: Gx.linear([bg, Gx.surfacePanel]),
             borderRadius: BorderRadius.circular(Gx.rPanel),
             border: Border(left: BorderSide(color: c, width: 3)),
             boxShadow: Gx.glow(c, blur: 14, opacity: 0.2)),
@@ -770,7 +770,7 @@ class GalleryTab extends StatelessWidget {
   Widget _organismCard() => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            gradient: Gx.linear([Gx.cardInner, Gx.panelSolid]),
+            gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
             borderRadius: BorderRadius.circular(Gx.rPanel),
             border: Border.all(color: Gx.alertAmber.withOpacity(0.5)),
             boxShadow: Gx.glow(Gx.alertAmber, blur: 16, opacity: 0.18)),
@@ -1083,7 +1083,7 @@ class GalleryTab extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Gx.cardInner,
+                    color: Gx.surfaceCard,
                     borderRadius: BorderRadius.circular(Gx.rChip),
                     border: Border.all(color: Gx.optimaCyan.withOpacity(0.5)),
                     boxShadow: Gx.glow(Gx.optimaCyan, blur: 12, opacity: 0.2),
@@ -1157,7 +1157,7 @@ class GalleryTab extends StatelessWidget {
   Widget _autopsyHeader() => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            gradient: Gx.linear([Gx.panelSolid, Gx.deepSpace]),
+            gradient: Gx.linear([Gx.surfacePanel, Gx.deepSpace]),
             borderRadius: BorderRadius.circular(Gx.rChrome),
             border: Border.all(color: Gx.criticalChipBorder),
             boxShadow: Gx.glow(Gx.criticalCrimson, blur: 20, opacity: 0.2)),

@@ -67,7 +67,7 @@ class SettingsDrawer extends StatelessWidget {
           filter: ui.ImageFilter.blur(sigmaX: 36, sigmaY: 36),
           child: Container(
             decoration: BoxDecoration(
-              color: Gx.glassFill,
+              color: Gx.surfaceFill,
               border: const Border(
                 // Borde izquierdo tintado de índigo: separa visualmente el drawer.
                 left: BorderSide(color: Color(0x380E2AFF), width: 1),

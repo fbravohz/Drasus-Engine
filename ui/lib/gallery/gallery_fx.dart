@@ -28,7 +28,7 @@ Widget frosted({
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Gx.panelSolid,
+        color: Gx.surfacePanel,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: glow,
@@ -41,7 +41,7 @@ Widget frosted({
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
           color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
@@ -68,7 +68,7 @@ Widget frosted({
               Colors.transparent,
             ],
           ),
-          color: Gx.glassFill,
+          color: Gx.surfaceFill,
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(
             color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
@@ -356,7 +356,7 @@ class _GlowInputState extends State<GlowInput> {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: Gx.glassFill,
+        color: Gx.surfaceFill,
         borderRadius: BorderRadius.circular(Gx.rInput),
         border: Border.all(
             color: focused ? widget.color : Gx.borderPanel,
@@ -843,7 +843,7 @@ class _InteractiveDagState extends State<InteractiveDag> {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Gx.cardInner,
+                    color: Gx.surfaceCard,
                     border: Border.all(color: color, width: 2),
                     boxShadow: hov
                         ? Gx.glowStrong(color)

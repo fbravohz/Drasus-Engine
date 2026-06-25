@@ -169,7 +169,7 @@ class _DagNodeCard extends StatelessWidget {
             // Cuerpo del nodo.
             Container(
               decoration: BoxDecoration(
-                color: Gx.cardInner,
+                color: Gx.surfaceCard,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Gx.borderPanel, width: borderWidth),
                 boxShadow: Gx.glow(glowColor, blur: 14, opacity: 0.12),
@@ -332,7 +332,7 @@ class _Port extends StatelessWidget {
       height: 14,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Gx.cardInner,
+        color: Gx.surfaceCard,
         border: Border.all(color: color, width: 1.5),
         boxShadow: Gx.glow(color, blur: 6, opacity: 0.4),
       ),
@@ -818,7 +818,7 @@ class _MiniNode extends StatelessWidget {
           height: 60,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: Gx.cardInner,
+            color: Gx.surfaceCard,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Gx.borderPanel),
             boxShadow: Gx.glow(color, blur: 10, opacity: 0.10),
@@ -1049,7 +1049,7 @@ class _ConnectionHoverState extends State<_ConnectionHover> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Gx.glassFill,
+                            color: Gx.surfaceFill,
                             border: Border.all(
                                 color: Gx.textPrimary.withOpacity(0.12)),
                             borderRadius: BorderRadius.circular(Gx.rTooltip),
