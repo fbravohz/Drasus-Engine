@@ -18,7 +18,7 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 | Panel Sólido | `#0E1426` | `panelSolid` | Fondo de los Paneles de Datos: tablas, rejillas, contenedores con números. La superficie de trabajo densa |
 | Tarjeta Interna | `#11182E` | `cardInner` | Tercer nivel de profundidad: tarjetas dentro de paneles, relleno de nodos del DAG |
 | Superficie Elevada | `#161E38` | `surfaceRaised` | Hover de fila, estados elevados, celda activa de tabla |
-| Vidrio (chrome) | `#141C36` @ 50–85% (`0x73141C36`) | `glassFill` | Vidrio **Apple**: translúcido pero "opaco". `BackdropFilter` blur ≈ 28 + degradado vertical (más opaco arriba, ~85% → ~50% abajo) + borde de luz (rim-light). Para nav, menús, botones, inputs, dropdowns, modales, tooltips |
+| Vidrio (chrome) | `0x40F0F2FF` @ 25% | `glassFill` | Vidrio **Apple**: tinte claro sobre fondo oscuro. `BackdropFilter` blur 36 + tinte superior `0x14AAAAFF` + rim-light `0x20A096FF @ 28%`. NUNCA se multiplica la opacidad con `.withOpacity()` — el alpha ya es el correcto. Para nav, menús, botones, inputs, dropdowns, modales, tooltips. El fill es un blanco frío translúcido (~25%), NO un color oscuro — sobre fondo oscuro el tinte claro crea el contraste de vidrio real |
 | Borde Panel | `#1B2440` | `borderPanel` | Hairline tintado del Panel de Datos sólido — la "rayita fina" limpia. Jamás gris neutro |
 | Separador | `#141C32` | `divider` | Separador interno sutil: cabeceras, filas de tabla, key-value rows |
 | Texto Principal | `#E6ECF8` | `textPrimary` | Títulos, cuerpo de alto contraste, valores destacados — blanco azulado, nunca blanco puro |
@@ -160,7 +160,7 @@ Relleno sólido `#0E1426`, borde de 1px tintado `#1B2440` (sin gloss, sin sombra
 ### Panel / Control de Cristal (Vidrio Apple)
 **Role:** Todo el chrome — nav ZUI, menús, dropdowns, modales, tooltips, botón secundario
 
-Vidrio **Apple**: translúcido pero opaco. `BackdropFilter` blur ≈ 28 + relleno con **degradado vertical** (`glassFill` ~85% arriba → ~50% abajo) + borde de luz (rim-light, no borde duro) + **glow** de color opcional en el estado activo/hover. Radio 14–16px. Deja entrever, muy tenue, el telón cósmico del fondo.
+Vidrio **Apple**: translúcido pero opaco. `BackdropFilter` blur 36 + relleno `glassFill` `0x40F0F2FF` + tinte superior `0x14AAAAFF` (milk glass) + rim-light `0x20A096FF @ 28%`. Radio 14–16px. El fill es blanco frío al ~25%: sobre fondo oscuro crea el contraste que define el vidrio. NUNCA aplicar `.withOpacity()` sobre `glassFill` — el alpha ya es el correcto.
 
 ### Chip / Badge de Estado
 **Role:** Píldora que indica régimen o estado del pipeline
@@ -485,6 +485,7 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 - Renderiza todo (DAGs, conos, vidrio, galaxia) con `CustomPainter`/`Canvas`/`Shader` nativo sobre Impeller.
 - Da profundidad con **glow de color**, rim-light interno y el telón cósmico — nunca con sombra gris tipo Material.
 - Usa **glow y gradientes ampliamente**, a lo largo de casi todos los componentes (botones, nodos, líneas, chips, gauges, iconos, KPIs, focos), siempre en el color del estado.
+- **Estandariza el vidrio:** todo componente que requiera superficie translúcida usa `frosted()` o `GlassSurface` — NUNCA `Gx.glassFill` suelto en `BoxDecoration` sin `BackdropFilter`. El `glassFill` es un color, no un componente. La receta completa (blur 36 + fill 0x40F0F2FF + rim 0x20A096FF @ 28%) vive en `frosted()` y `GlassSurface`, que deben producir resultados idénticos.
 - Alinea todos los números a la derecha y ponlos en mono (`numStyle`).
 - El cristal limpio es un **gradiente radial + `glowStrong`** (orbe), no filos RGB desfasados.
 - Anima la **interacción**, no la decoración: clic (propagación de luz), hover (glow), foco (glow), abrir dropdown, tocar día, switch, slider.
@@ -510,7 +511,7 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 | 2 | Panel Sólido | `#0E1426` | Paneles de Datos: tablas, rejillas, contenedores con números |
 | 3 | Tarjeta Interna | `#11182E` | Tarjetas dentro de paneles, relleno de nodos del DAG |
 | 4 | Superficie Elevada | `#161E38` | Hover de fila, celda activa, estado elevado |
-| — | Vidrio (chrome) | `0x73141C36` + blur 24 | Capa translúcida del chrome, fuera de la pila sólida — se separa por rim-light, no por nivel |
+| — | Vidrio (chrome) | `0x40F0F2FF` @ 25% + blur 36 + rim `0x20A096FF` @ 28% | Capa translúcida del chrome, fuera de la pila sólida — se separa por rim-light, no por nivel. Tinte claro sobre fondo oscuro: física inversa a lo intuitivo |
 
 ## Elevation
 
@@ -546,7 +547,7 @@ Ambas viven en el mismo canvas con focus mode de visibilidad independiente.
 - background: `#080A18`
 - panel sólido: `#0E1426`
 - borde: `#1B2440`
-- vidrio (chrome): `0x73141C36` + blur 24
+- vidrio (chrome): `0x40F0F2FF` @ 25% + blur 36 + rim `0x20A096FF @ 28%`
 - óptimo: `#54E8D0` · transición: `#9A8CFF` · alerta: `#FFC94D` · crítico: `#F0413F`
 - acción viva (botón primario): `#7CF06A` (relleno) con texto `#080A18`
 
@@ -586,6 +587,37 @@ La animación es funcional, nunca decorativa, pero **rica**. El **zoom del canva
 - **Área de relleno en líneas:** toda línea de gráfico de renta, equity, fitness o métrica rolling lleva un gradiente de relleno bajo la curva del color de su familia semántica (alpha ≈ 12–30 en la parte alta, transparente en la base). En el hover el alpha del área sube ~50%. El relleno es siempre del color que corresponde al estado de la línea — nunca decorativo.
 
 Ninguna animación existe "porque se ve bien" — cada una comunica un cambio de dato, foco o estado.
+
+## Performance Guidelines
+
+Reglas duras de rendering para mantener 60fps en CustomPainter sobre Impeller:
+
+### GPU (Raster)
+
+| Operación | Costo típico | Regla |
+|---|---|---|
+| `saveLayer` + `ImageFilter.blur(sigma > 4)` sobre lienzo >200px² | ~90ms | **Prohibido en animación.** Sustituir con capas de círculos/líneas a distintas opacidades (halo sin blur) |
+| `MaskFilter.blur` en loop de >100 iteraciones | 15–90ms | **Prohibido.** Reemplazar con `strokeWidth` más grueso a baja opacidad |
+| `drawPicture()` con Picture pre-grabado | <1ms | **Forma canónica para fondos estáticos.** Grabar una vez, dibujar siempre |
+| `drawCircle()` × 5000 | ~5ms | Aceptable si se evita blur. Reducir a 1 sola pasada (no nebula+sharp) durante rotación |
+
+### CPU (UI Thread)
+
+| Operación | Costo típico | Regla |
+|---|---|---|
+| Proyección 3D + sort en `paint()` | 10–15ms | Mover al State con caché por ángulo. Recalcular solo cuando el ángulo cambia |
+| `exp()` en loop de >1000 iteraciones | 5–10ms | Pre-calcular array de intensidades una vez por frame, no por segmento |
+| Sort O(n log n) de >1000 elementos por frame | 5ms | Mover al State. Cachear resultado ordenado; invalidar solo con cambio de datos |
+| `compute()` (Isolate) para generación de datos | asíncrono | Usar para generar datos sintéticos. No bloquea el UI thread |
+
+### Medicion
+
+```bash
+flutter run --profile -t lib/gallery/gallery_preview_main.dart
+# Abrir URL de DevTools en Chrome → Performance → Record
+# Barra superior = GPU (raster thread), inferior = UI (Dart thread)
+# Target: ambas <16ms para 60fps
+```
 
 ## Similar Aesthetics
 
