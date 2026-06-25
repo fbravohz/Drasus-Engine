@@ -13,6 +13,7 @@ dependencies:
   flutter_rust_bridge: ^2.0.0
   google_fonts: ^8.1.0
   iconsax_plus: ^1.0.0
+  shared_preferences: ^2.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
