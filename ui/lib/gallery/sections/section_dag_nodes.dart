@@ -1192,7 +1192,7 @@ class _FullDagCanvas extends StatelessWidget {
               borderRadius: BorderRadius.circular(Gx.rPanel),
               // InteractiveDag implementa el canvas nodal completo con
               // hover, nodos, puertos y conexiones bezier (gallery_fx.dart).
-              child: const InteractiveDag(),
+              child: InteractiveDag(),
             ),
           ),
         ),

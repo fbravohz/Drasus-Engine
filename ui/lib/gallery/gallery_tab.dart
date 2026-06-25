@@ -87,7 +87,7 @@ class GalleryTab extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         // Texto con propagación de luz: tócalo para ver la "explosión".
-        const LightBurstText(
+        LightBurstText(
             'Terminal futurista en GPU — toca este texto, pasa el mouse, arrastra.'),
       ],
     );
@@ -162,20 +162,35 @@ class GalleryTab extends StatelessWidget {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  // Panel de Datos sólido: degradado vertical sutil + hairline + glow tenue.
+  // Panel que respeta el modo global de superficie (ADR-0137 §Superficies).
+  //   glass:  vidrio Apple — BackdropFilter blur 36 + rim-light
+  //   tint:   relleno glassFill translúcido, sin blur
+  //   solid:  gradiente vertical panelSolid → cardInner tradicional
   Widget _panelSolid(
       {required Widget child,
       EdgeInsets? padding,
       Color glowColor = Gx.transitionIndigo}) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard],
-            begin: Alignment.topCenter, end: Alignment.bottomCenter),
-        border: Border.all(color: Gx.borderPanel),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        boxShadow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
-      ),
+    final mode = DrasusThemeState.globalSurfaceMode;
+    final pad = padding ?? const EdgeInsets.all(12);
+
+    if (mode == DrasusSurfaceMode.solid) {
+      return Container(
+        padding: pad,
+        decoration: BoxDecoration(
+          gradient: Gx.linear([Gx.panelSolid, Gx.cardInner],
+              begin: Alignment.topCenter, end: Alignment.bottomCenter),
+          border: Border.all(color: Gx.borderPanel),
+          borderRadius: BorderRadius.circular(Gx.rPanel),
+          boxShadow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
+        ),
+        child: child,
+      );
+    }
+
+    return panelSurface(
+      padding: pad,
+      radius: Gx.rPanel,
+      glow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
       child: child,
     );
   }
@@ -269,7 +284,7 @@ class GalleryTab extends StatelessWidget {
         )),
         _frame('Acento dinámico', _panelSolid(
           padding: const EdgeInsets.all(8),
-          child: const AccentAbSection(),
+        child: AccentAbSection(),
         ), width: 380),
       ];
 
@@ -418,16 +433,16 @@ class GalleryTab extends StatelessWidget {
 
   List<Widget> _inputs() => [
         _frame('Text field (foco con glow)',
-            const GlowInput(hint: 'Símbolo…', initial: 'SPX')),
-        _frame('Search', const GlowInput(hint: 'Buscar estrategia…', color: Gx.optimaCyan)),
-        _frame('Dropdown (abre)', const GlowDropdown(
+            GlowInput(hint: 'Símbolo…', initial: 'SPX')),
+        _frame('Search', GlowInput(hint: 'Buscar estrategia…', color: Gx.optimaCyan)),
+        _frame('Dropdown (abre)', GlowDropdown(
             label: 'Régimen…', options: ['Tendencia', 'Rango', 'Volátil', 'Calmo'])),
         _frame('Switch (toca)', Row(children: const [
           GlowSwitch(initial: true),
           SizedBox(width: 12),
           GlowSwitch(initial: false, color: Gx.transitionIndigo),
         ])),
-        _frame('Slider (arrastra)', const GlowSlider()),
+        _frame('Slider (arrastra)', GlowSlider()),
         _frame('Checkbox / Radio', Row(children: [
           _checkbox(true),
           const SizedBox(width: 10),
@@ -479,16 +494,16 @@ class GalleryTab extends StatelessWidget {
   // ---------------------------------------------------------------------------
 
   List<Widget> _buttons() => [
-        _frame('Acción viva (clic)', const GlowButton(
+        _frame('Acción viva (clic)', GlowButton(
             label: 'EJECUTAR', gradient: Gx.gradReactor, glowColor: Gx.reactorGreen)),
-        _frame('Primario — cian', const GlowButton(
+        _frame('Primario — cian', GlowButton(
             label: 'CONFIRMAR', gradient: Gx.gradOptima, glowColor: Gx.optimaCyan)),
-        _frame('Transición', const GlowButton(
+        _frame('Transición', GlowButton(
             label: 'INCUBAR',
             gradient: Gx.gradTransition,
             glowColor: Gx.transitionIndigo,
             textColor: Gx.pureWhite)),
-        _frame('Peligro', const GlowButton(
+        _frame('Peligro', GlowButton(
             label: 'RETIRAR',
             gradient: Gx.gradCritical,
             glowColor: Gx.criticalCrimson,
@@ -550,7 +565,7 @@ class GalleryTab extends StatelessWidget {
             _progress(0.68, Gx.gradTransition, Gx.transitionIndigo),
           ]),
         )),
-        _frame('Calendario (toca un día)', const GlowCalendar()),
+        _frame('Calendario (toca un día)', GlowCalendar()),
         _frame('Tooltip', frosted(
           glow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.25),
           radius: Gx.rTooltip,
@@ -735,7 +750,7 @@ class GalleryTab extends StatelessWidget {
   // ---------------------------------------------------------------------------
 
   List<Widget> _dataviz() => [
-        _frame('DAG (hover en nodos)', _panelSolid(child: const InteractiveDag()), width: 360),
+        _frame('DAG (hover en nodos)', _panelSolid(child: InteractiveDag()), width: 360),
         _frame('Cono de Monte Carlo (hover)', _panelSolid(
           padding: EdgeInsets.zero,
           child: HoverableChart(builder: (h) => MonteCarloPainter(hover: h), height: 120),
@@ -826,38 +841,38 @@ class GalleryTab extends StatelessWidget {
 
   // §5 Navegación: ZUI pill, breadcrumbs, pagination, command palette, tree.
   List<Widget> _navigation() => [
-        _frame('ZUI Nav Pill', const ZuiNavPill()),
+        _frame('ZUI Nav Pill', ZuiNavPill()),
         _frame('Breadcrumbs', _panelSolid(child: breadcrumbs())),
-        _frame('Pagination', _panelSolid(child: const GlowPagination())),
+        _frame('Pagination', _panelSolid(child: GlowPagination())),
         _frame('Command Palette', const CommandPalette(), width: 320),
-        _frame('Tree View', _panelSolid(child: const GlowTreeView()), width: 240),
+        _frame('Tree View', _panelSolid(child: GlowTreeView()), width: 240),
         // back-to-top: botón flotante vidrio Apple — §5 STD.
         _frame('Back to Top', _panelSolid(
-          child: SizedBox(height: 60, child: const GlowBackToTop()),
+          child: SizedBox(height: 60, child: GlowBackToTop()),
         )),
-        _frame('Anchor / Scrollspy', const GlowScrollspy(), width: 200),
+        _frame('Anchor / Scrollspy', GlowScrollspy(), width: 200),
       ];
 
   // §6 Inputs extendidos: combobox, multiselect, number, textarea, OTP, rating, rich-text, form-field.
   List<Widget> _inputsExtended() => [
-        _frame('Combobox / Autocomplete', const GlowCombobox()),
-        _frame('Multiselect', const GlowMultiSelect()),
-        _frame('Number Input', _panelSolid(child: const GlowNumberInput())),
-        _frame('Textarea', const GlowTextarea()),
-        _frame('OTP / PIN Input', _panelSolid(child: const GlowOtpInput())),
-        _frame('Rating', _panelSolid(child: const GlowRating())),
+        _frame('Combobox / Autocomplete', GlowCombobox()),
+        _frame('Multiselect', GlowMultiSelect()),
+        _frame('Number Input', _panelSolid(child: GlowNumberInput())),
+        _frame('Textarea', GlowTextarea()),
+        _frame('OTP / PIN Input', _panelSolid(child: GlowOtpInput())),
+        _frame('Rating', _panelSolid(child: GlowRating())),
         _frame('Rich Text (placeholder)', richTextEditorPlaceholder()),
-        _frame('Form Field (normal)', const GlowFormField()),
-        _frame('Form Field (error)', const GlowFormField(error: true)),
+        _frame('Form Field (normal)', GlowFormField()),
+        _frame('Form Field (error)', GlowFormField(error: true)),
         // Piezas STD §6 faltantes — cascader, transfer, date-range,
         // time-picker, color-picker, dropzone, mention.
-        _frame('Cascader', const GlowCascader(), width: 300),
-        _frame('Transfer / Dual-list', const GlowTransferList(), width: 380),
-        _frame('Date-range Picker', const GlowDateRangePicker(), width: 340),
-        _frame('Time Picker', const GlowTimePicker(), width: 200),
-        _frame('Color Picker', const GlowColorPicker(), width: 260),
-        _frame('File Upload / Dropzone', const GlowDropzone(), width: 280),
-        _frame('Mention Input', const GlowMentionInput(), width: 280),
+        _frame('Cascader', GlowCascader(), width: 300),
+        _frame('Transfer / Dual-list', GlowTransferList(), width: 380),
+        _frame('Date-range Picker', GlowDateRangePicker(), width: 340),
+        _frame('Time Picker', GlowTimePicker(), width: 200),
+        _frame('Color Picker', GlowColorPicker(), width: 260),
+        _frame('File Upload / Dropzone', GlowDropzone(), width: 280),
+        _frame('Mention Input', GlowMentionInput(), width: 280),
       ];
 
   // §7 Botones extendidos: toggle, loading, group, FAB, segmented.
@@ -868,12 +883,12 @@ class GalleryTab extends StatelessWidget {
           SizedBox(width: 10),
           GlowToggleButton(label: 'AUTO', labelOff: 'MANUAL', initial: false),
         ]))),
-        _frame('Loading Button', _panelSolid(child: const GlowLoadingButton())),
-        _frame('Button Group', _panelSolid(child: const GlowButtonGroup())),
-        _frame('FAB', _panelSolid(child: const GlowFab())),
-        _frame('Segmented Control', const GlowSegmented()),
+        _frame('Loading Button', _panelSolid(child: GlowLoadingButton())),
+        _frame('Button Group', _panelSolid(child: GlowButtonGroup())),
+        _frame('FAB', _panelSolid(child: GlowFab())),
+        _frame('Segmented Control', GlowSegmented()),
         // Split-button — botón con acción principal + dropdown de variantes. §7 STD.
-        _frame('Split Button', const GlowSplitButton(), width: 200),
+        _frame('Split Button', GlowSplitButton(), width: 200),
       ];
 
   // §8 Data display extendido: avatar, timeline, code-block, kbd, desc-list,
@@ -896,20 +911,20 @@ class GalleryTab extends StatelessWidget {
           ]),
         )),
         _frame('Popover', popoverExample()),
-        _frame('Tree Table', _panelSolid(child: const GlowTreeTable()), width: 340),
-        _frame('Carousel', _panelSolid(child: const GlowCarousel()), width: 280),
+        _frame('Tree Table', _panelSolid(child: GlowTreeTable()), width: 340),
+        _frame('Carousel', _panelSolid(child: GlowCarousel()), width: 280),
       ];
 
   // §9 Feedback extendido: notification, popconfirm, snackbars, result, backdrop, stepper, accordion.
   List<Widget> _feedbackExtended() => [
-        _frame('Notification Card', const GlowNotificationCard()),
-        _frame('Popconfirm', const GlowPopconfirm()),
+        _frame('Notification Card', GlowNotificationCard()),
+        _frame('Popconfirm', GlowPopconfirm()),
         _frame('Snackbar variantes', snackbarVariants(), width: 320),
         _frame('Result — éxito', resultPage(success: true), width: 260),
         _frame('Result — error', resultPage(success: false), width: 260),
         _frame('Backdrop / Scrim', backdropExample(), width: 280),
-        _frame('Stepper / Wizard', _panelSolid(child: const GlowStepper()), width: 340),
-        _frame('Accordion / Collapse', const GlowAccordion(), width: 300),
+        _frame('Stepper / Wizard', _panelSolid(child: GlowStepper()), width: 340),
+        _frame('Accordion / Collapse', GlowAccordion(), width: 300),
       ];
 
   // §10 Data-viz extendida: heatmap, scatter, regime-map, parallel-coords,
@@ -939,10 +954,10 @@ class GalleryTab extends StatelessWidget {
   // §11 Núcleo Drasus extendido: fleet-command-panel, zui-zoom-frame,
   // expectation-badge, pipeline-8-steps completo.
   List<Widget> _drasusCoreExtended() => [
-        _frame('Fleet Command Panel', const FleetCommandPanel(), width: 480),
-        _frame('ZUI Zoom Frame', const ZuiZoomFrame()),
-        _frame('Expectation Envelope', const ExpectationEnvelopeBadge()),
-        _frame('Pipeline 8 pasos', _panelSolid(child: const Pipeline8Steps()), width: 400),
+        _frame('Fleet Command Panel', FleetCommandPanel(), width: 480),
+        _frame('ZUI Zoom Frame', ZuiZoomFrame()),
+        _frame('Expectation Envelope', ExpectationEnvelopeBadge()),
+        _frame('Pipeline 8 pasos', _panelSolid(child: Pipeline8Steps()), width: 400),
       ];
 
   // ---------------------------------------------------------------------------
@@ -1008,35 +1023,35 @@ class GalleryTab extends StatelessWidget {
 
   // §10 Data-viz nuevos: Monte Carlo scanInit eléctrico + Cluster 3D nebulosa.
   List<Widget> _datavizNew() => [
-        const MonteCarloLinesWidget(),
+        MonteCarloLinesWidget(),
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-           child: const StrategyCluster3dWidget(),
+           child: StrategyCluster3dWidget(),
         ),
       ];
 
   // §10 Data-viz — nodos y conexiones DAG.
   List<Widget> _dagNodes() => [
-        const DagNodesSection(),
+        DagNodesSection(),
       ];
 
   // §10 Data-viz — trade tape + ticker bar.
   List<Widget> _tradeTape() => [
-        const TradeTapeSection(),
+        TradeTapeSection(),
       ];
 
   // Animaciones universales: odómetro, gauge radial, path drawing eléctrico.
   List<Widget> _animationsNew() => [
-        const OdometerSection(),
+        OdometerSection(),
         const SizedBox(height: 16),
-        const GaugeSection(),
+        GaugeSection(),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: _panelSolid(
             padding: EdgeInsets.zero,
-            child: const EquityCurveAnimated(),
+            child: EquityCurveAnimated(),
           ),
         ),
       ];

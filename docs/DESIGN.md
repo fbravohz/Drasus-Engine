@@ -485,7 +485,7 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 - Renderiza todo (DAGs, conos, vidrio, galaxia) con `CustomPainter`/`Canvas`/`Shader` nativo sobre Impeller.
 - Da profundidad con **glow de color**, rim-light interno y el telón cósmico — nunca con sombra gris tipo Material.
 - Usa **glow y gradientes ampliamente**, a lo largo de casi todos los componentes (botones, nodos, líneas, chips, gauges, iconos, KPIs, focos), siempre en el color del estado.
-- **Estandariza el vidrio:** todo componente que requiera superficie translúcida usa `frosted()` o `GlassSurface` — NUNCA `Gx.glassFill` suelto en `BoxDecoration` sin `BackdropFilter`. El `glassFill` es un color, no un componente. La receta completa (blur 36 + fill 0x40F0F2FF + rim 0x20A096FF @ 28%) vive en `frosted()` y `GlassSurface`, que deben producir resultados idénticos.
+- **Estandariza la superficie:** todo componente que requiera superficie translúcida usa `frosted()` o `GlassSurface` (vidrio Apple completo con BackdropFilter) o los getters dinámicos `Gx.surfaceFill` / `Gx.surfacePanel` / `Gx.surfaceCard`. NUNCA uses los tokens raw (`Gx.glassFill`, `Gx.panelSolid`, `Gx.cardInner`) directamente en widgets — esos son constantes de referencia internas. Los getters dinámicos leen `DrasusSurfaceMode` global y devuelven el color correcto según el modo activo (glass/tint/solid). Cambiar el modo en `SettingsDrawer` impacta instantáneamente a TODA la UI.
 - Alinea todos los números a la derecha y ponlos en mono (`numStyle`).
 - El cristal limpio es un **gradiente radial + `glowStrong`** (orbe), no filos RGB desfasados.
 - Anima la **interacción**, no la decoración: clic (propagación de luz), hover (glow), foco (glow), abrir dropdown, tocar día, switch, slider.
@@ -547,7 +547,9 @@ Ambas viven en el mismo canvas con focus mode de visibilidad independiente.
 - background: `#080A18`
 - panel sólido: `#0E1426`
 - borde: `#1B2440`
-- vidrio (chrome): `0x40F0F2FF` @ 25% + blur 36 + rim `0x20A096FF @ 28%`
+- vidrio (chrome): `0x40F0F2FF` @ 25% + blur 36 + rim `0x20A096FF @ 28%` · consumo via `Gx.surfaceFill` (NO `Gx.glassFill` raw)
+- panel sólido: `#0E1426` · consumo via `Gx.surfacePanel` (NO `Gx.panelSolid` raw)
+- tarjeta interna: `#11182E` · consumo via `Gx.surfaceCard` (NO `Gx.cardInner` raw)
 - óptimo: `#54E8D0` · transición: `#9A8CFF` · alerta: `#FFC94D` · crítico: `#F0413F`
 - acción viva (botón primario): `#7CF06A` (relleno) con texto `#080A18`
 
@@ -555,7 +557,7 @@ Ambas viven en el mismo canvas con focus mode de visibilidad independiente.
 
 1. Crea un panel de monitoreo del Dashboard: fondo `#0E1426`, borde 1px `#1B2440`, radio 11px, padding 10px. Dentro, una tabla densa con cabecera 12px `#8492B0` y filas en mono 13px alineadas a la derecha, separador `#141C32`, hover de fila `#161E38`. A la derecha de cada fila, un chip de régimen (texto `#54E8D0`, fondo `#08251F`, borde `#1E5E4F`, radio 8px).
 
-2. Crea el breadcrumb flotante del canvas: pill de cristal flotante, `BackdropFilter` blur 24 + relleno `Color(0x73141C36)`, radio 16px, rim-light interno (sin borde duro). Segmento activo con texto `#E6ECF8`.
+2. Crea el breadcrumb flotante del canvas: pill de cristal flotante, `BackdropFilter` blur 36 + relleno `Color(0x40F0F2FF)`, radio 16px, rim-light interno (sin borde duro). Segmento activo con texto `#E6ECF8`.
 
 3. Crea un nodo de DAG para el Canvas (Vista Relacional — estilo N8N/React Flow): el nodo es un `Container` Flutter (NO `canvas.drawCircle`). Cuerpo `cardInner #11182E`, radio 10px, borde hairline `#1B2440`. Header: franja izq 3px en el color de estado + nombre `displayGrotesque 13px`. Body: key-values mono 12px. Puertos laterales: círculos 10px con anillo 1.5px del color del tipo. Las conexiones bezier se dibujan con `CustomPainter`: S-curve (`strokeWidth 2` + halo `blur 4`) + punta de flecha en el target 8px. Lienzo: dot-grid `#1B2440` @ 1.5px / 20px sobre `#080A18`. Al hover, el nodo escala 1.02 + `glowStrong(estadoColor)`; al recibir datos, `sonarPulse(estadoColor)` en el puerto de entrada; mientras procesa, `scanRing(estadoColor)` en el puerto de salida.
 
@@ -640,7 +642,7 @@ const navRail        = Color(0xFF0B1022); // riel de navegación
 const panelSolid     = Color(0xFF0E1426); // panel de datos
 const cardInner      = Color(0xFF11182E); // tarjeta interna
 const surfaceRaised  = Color(0xFF161E38); // hover de fila
-const glassFill      = Color(0x73141C36); // vidrio del chrome (≈45%) + BackdropFilter blur 24
+const glassFill      = Color(0x40F0F2FF); // vidrio del chrome (≈25%) + BackdropFilter blur 36
 
 // Estructura
 const borderPanel    = Color(0xFF1B2440); // hairline tintado del panel
@@ -704,6 +706,28 @@ const glassRim = BoxShadow(color: Color(0x0DA096FF), blurRadius: 24); // interno
 // Spacing: 4 · 8 · 9 · 12 · 16 · 24 · 32 · 48 · 64  (gaps densos 8–9, ceremonial 24–32)
 ```
 
+### Modo Global de Superficie (`DrasusSurfaceMode`)
+
+Toda la superficie de la UI se controla desde un solo enum global, sincronizado con `SharedPreferences` desde el `SettingsDrawer`. El cambio es instantáneo en todos los componentes — sin tocar componente por componente.
+
+| Modo | Comportamiento | Uso |
+|------|---|-----|
+| `glass` (default) | Vidrio Apple completo: `BackdropFilter` blur 36 + `glassFill` `0x40F0F2FF` + rim-light `0x20A096FF @ 28%` | Experiencia premium completa |
+| `tint` | Solo relleno `glassFill` sin blur ni rim-light — translúcido ligero | Transición rápida, fondos con poco contenido detrás |
+| `solid` | `panelSolid` `#0E1426` sólido oscuro | Datos densos, contextos donde el vidrio distrae |
+
+**Implementación:** `DrasusThemeState.globalSurfaceMode` (estático, accesible sin `BuildContext`). La decisión de superficie se toma en dos niveles:
+
+1. **Color dinámico** (via getters en `gallery_tokens.dart`): `Gx.surfaceFill`, `Gx.surfacePanel`, `Gx.surfaceCard` — todos retornan `glassFill` `0x40F0F2FF` en modo glass/tint, y los colores sólidos tradicionales (`panelSolid` / `cardInner`) solo en modo solid.
+
+2. **Efecto completo** (via wrappers en `gallery_fx.dart`): `panelSurface()`, `cardSurface()`, `PanelFromDecoration` — envuelven el contenido con `frosted()` (BackdropFilter blur 36 + rim-light) en modo glass, y solo Color en tint/solid. El helper `_panelSolid()` en `gallery_tab.dart` (69+ callsites) usa estos wrappers, cubriendo toda sección de la galería.
+
+**Regla de estandarización (irrompible):**
+- todo contenedor visible usa `frosted()`, `GlassSurface`, `panelSurface()`, `cardSurface()`, `PanelFromDecoration` o `_panelSolid()` — **nunca** un `Color` sólido suelto en `BoxDecoration`
+- los getters `Gx.surfaceFill/Panel/Card` son la única fuente de color — prohibido `Gx.glassFill`, `Gx.panelSolid`, `Gx.cardInner` fuera de `gallery_tokens.dart`
+- ningún widget de superficie se construye con `const` — el `const` impide que Flutter reconstruya el widget al cambiar el modo, porque la referencia es la misma y el framework reúsa la instancia sin llamar a `build()` (los colores quedan congelados)
+```
+
 ### Galería de Componentes — Implementación
 
 **Estado:** implementado (2026-06-22). `flutter build linux --debug` verde + `flutter test test/gallery_smoke_test.dart` verde (Flutter 3.44.2).
@@ -715,8 +739,9 @@ const glassRim = BoxShadow(color: Color(0x0DA096FF), blurRadius: 24); // interno
 ui/lib/gallery/
   gallery_tokens.dart   # ÚNICO sitio con hex → Color/TextStyle + gradientes + glow. Clase Gx.
   gallery_painters.dart # CustomPainter: telón cósmico, líneas de DAG, cono MC, heatmap, scatter
-  gallery_fx.dart       # interacción: vidrio Apple, GlowButton, GlowSwitch, GlowSlider,
-                        #   GlowInput, GlowDropdown, GlowCalendar, LightBurstText, InteractiveDag
+  gallery_fx.dart       # Efectos: frosted(), panelSurface(), cardSurface(), PanelFromDecoration
+                        #   GlowButton, GlowSwitch, GlowSlider, GlowInput, GlowDropdown,
+                        #   GlowCalendar, LightBurstText, InteractiveDag
   gallery_tab.dart      # GalleryTab: arma la vitrina por secciones
   sections/             # archivos por sección del catálogo
 ```

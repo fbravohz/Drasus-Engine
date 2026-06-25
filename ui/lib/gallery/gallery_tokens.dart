@@ -70,29 +70,31 @@ class Gx {
 
   // -------------------------------------------------------------------------
   // GxSurface — getters dinámicos que reflejan el modo global de superficie.
-  // Reemplazan a glassFill, panelSolid y cardInner como referencias directas.
-  // Cambiar el modo en SettingsDrawer → TODOS los componentes reflejan el cambio.
+  //
+  // glass:  glassFill (0x40F0F2FF) — translúcido uniforme en TODOS los niveles.
+  //         El BackdropFilter + rim-light lo añaden frosted() y GlassSurface.
+  // tint:   glassFill — mismo fill, sin blur ni rim.
+  // solid:  panelSolid / cardInner — colores oscuros tradicionales.
+  //
+  // Cambiar el modo en SettingsDrawer → TODO pixel de la UI reacciona.
   // -------------------------------------------------------------------------
 
-  /// Superficie translúcida: en modo glass/tint → glassFill, en solid → panelSolid.
+  /// glass/tint → glassFill, solid → panelSolid
   static Color get surfaceFill {
     final mode = DrasusThemeState.globalSurfaceMode;
-    if (mode == DrasusSurfaceMode.solid) return Gx.surfacePanel;
-    return Gx.glassFill;
+    return mode == DrasusSurfaceMode.solid ? Gx.panelSolid : Gx.glassFill;
   }
 
-  /// Panel de datos: en modo glass → panelSolid, en tint → glassFill, en solid → panelSolid.
+  /// glass/tint → glassFill, solid → panelSolid
   static Color get surfacePanel {
     final mode = DrasusThemeState.globalSurfaceMode;
-    if (mode == DrasusSurfaceMode.tint) return Gx.glassFill;
-    return Gx.surfacePanel;
+    return mode == DrasusSurfaceMode.solid ? Gx.panelSolid : Gx.glassFill;
   }
 
-  /// Tarjeta interna: en modo glass → cardInner, en tint → glassFill, en solid → cardInner.
+  /// glass/tint → glassFill, solid → cardInner
   static Color get surfaceCard {
     final mode = DrasusThemeState.globalSurfaceMode;
-    if (mode == DrasusSurfaceMode.tint) return Gx.glassFill;
-    return Gx.cardInner;
+    return mode == DrasusSurfaceMode.solid ? Gx.cardInner : Gx.glassFill;
   }
 
   // --- Vidrio Apple ---

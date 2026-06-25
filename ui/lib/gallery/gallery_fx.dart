@@ -14,12 +14,13 @@ import '../drasus_theme.dart';
 // Lee DrasusThemeState.globalSurfaceMode para decidir la receta:
 //   glass → BackdropFilter + blur + rim (vidrio completo)
 //   tint  → Solo glassFill, sin blur ni rim (panel translúcido)
-//   solid → panelSolid oscuro (datos densos)
+//   solid → El color sólido indicado (por defecto panelSolid)
 Widget frosted({
   required Widget child,
   EdgeInsets padding = const EdgeInsets.all(12),
   double radius = Gx.rChrome,
   double blur = 36,
+  Color? solidColor,
   List<BoxShadow>? glow,
 }) {
   final mode = DrasusThemeState.globalSurfaceMode;
@@ -28,7 +29,7 @@ Widget frosted({
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Gx.surfacePanel,
+        color: solidColor ?? Gx.panelSolid,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: Gx.borderPanel),
         boxShadow: glow,
@@ -81,8 +82,125 @@ Widget frosted({
   );
 }
 
-// Envoltura genérica: al pasar el mouse, glow + leve escala. Para tarjetas,
-// chips, cualquier cosa que deba "encenderse" al hover.
+// ─── Surface Builders ───
+// Wrappers que reemplazan BoxDecoration(color: Gx.surfacePanel / surfaceCard).
+// En modo glass, el hijo recibe vidrio completo (BackdropFilter + rim-light).
+// En modo tint/solid, solo color de fondo — sin blur.
+//
+// USO:  Gx.panelSurface(child: ..., radius: Gx.rPanel)
+//       en vez de Container(decoration: BoxDecoration(color: Gx.surfacePanel, ...))
+//
+// Para migrar patrones existentes sin reescribir toda la decoration:
+//   Container(decoration: BoxDecoration(color: Gx.surfacePanel, ...), child: x)
+//   → panelFromDecoration(decoration: BoxDecoration(color: Gx.surfacePanel, ...), padding: ..., child: x)
+
+Widget panelSurface({
+  required Widget child,
+  double radius = Gx.rPanel,
+  EdgeInsets? padding,
+  List<BoxShadow>? glow,
+}) {
+  return frosted(
+    child: child,
+    padding: padding ?? const EdgeInsets.all(12),
+    radius: radius,
+    solidColor: Gx.panelSolid,
+    glow: glow,
+  );
+}
+
+Widget cardSurface({
+  required Widget child,
+  double radius = Gx.rPanel,
+  EdgeInsets? padding,
+  List<BoxShadow>? glow,
+}) {
+  return frosted(
+    child: child,
+    padding: padding ?? const EdgeInsets.all(10),
+    radius: radius,
+    solidColor: Gx.cardInner,
+    glow: glow,
+  );
+}
+
+/// Drop-in wrapper para reemplazar Container(decoration: BoxDecoration(color: Gx.surfacePanel/Card), ...)
+/// sin reescribir toda la decoration existente.
+class PanelFromDecoration extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double? width;
+  final double? height;
+  final BoxConstraints? constraints;
+  final AlignmentGeometry? alignment;
+  final BoxDecoration decoration;
+  final Color? solidColor;
+
+  const PanelFromDecoration({
+    super.key,
+    required this.child,
+    this.padding,
+    this.margin,
+    this.width,
+    this.height,
+    this.constraints,
+    this.alignment,
+    required this.decoration,
+    this.solidColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = DrasusThemeState.globalSurfaceMode;
+
+    if (mode == DrasusSurfaceMode.solid) {
+      return Container(
+        padding: padding,
+        margin: margin,
+        width: width,
+        height: height,
+        constraints: constraints,
+        alignment: alignment,
+        decoration: decoration,
+        child: child,
+      );
+    }
+
+    // glass / tint: vidrio Apple o relleno translúcido
+    final radiusGeom = decoration.borderRadius;
+    double r = Gx.rPanel;
+    if (radiusGeom != null) {
+      final resolved = radiusGeom.resolve(Directionality.of(context));
+      r = resolved.topLeft.x;
+    }
+
+    List<BoxShadow>? shadows;
+    if (decoration.boxShadow != null) {
+      shadows = decoration.boxShadow!
+          .map((s) => BoxShadow(
+              color: s.color,
+              blurRadius: s.blurRadius,
+              spreadRadius: s.spreadRadius,
+              offset: s.offset))
+          .toList();
+    }
+
+    return frosted(
+      child: Container(
+        margin: margin,
+        alignment: alignment,
+        child: child,
+      ),
+      padding: padding != null && padding is EdgeInsets ? padding as EdgeInsets : const EdgeInsets.all(12),
+      radius: r,
+      solidColor: solidColor,
+      glow: shadows,
+    );
+  }
+}
+
+// ─── Interacción ───
 class HoverGlow extends StatefulWidget {
   final Widget child;
   final Color color;
