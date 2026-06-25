@@ -9,6 +9,8 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 
 > **Fuente única de verdad.** Este archivo absorbe la galería de componentes (antes `DESIGN-COMPONENTS-GALLERY.md`). Para modificar un token, un componente o una regla visual, se edita aquí primero — el código sigue al documento. El catálogo de IDs de componentes vive en §"Catálogo de Componentes". Los `hex`, snippets `dart` y tablas son especificación de diseño, no código literal a copiar.
 
+> **Primer — Reutilización sobre invención.** Antes de crear una sola línea de UI nueva, el Designer y el Flutter Engineer verifican en §"Component Map" si el componente ya existe. Si existe, se reutiliza sin debate. Si no existe y es necesario, se crea **siguiendo el patrón de la galería** (`gallery_fx.dart` para widgets de interacción, `gallery_painters.dart` para CustomPainters) y se registra en ambas secciones: su ID en el Catálogo (§4–§11) y su clase Dart en el Component Map (§Component Map). **Prohibido** inventar un componente sin registrarlo aquí.
+
 ## Tokens — Colors
 
 | Name | Value | Token | Role |
@@ -476,9 +478,230 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 
 ---
 
+## Component Map — De la Especificación al Código
+
+> **Regla de oro:** si un componente está en esta tabla, YA EXISTE en `ui/lib/gallery/`. Reutilízalo. Solo crea uno nuevo si no aparece aquí y lo necesitas — y cuando lo hagas, regístralo en ambas secciones: Catálogo (§4–§11) y este Map.
+
+Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El Designer sabe qué pedir; el Flutter Engineer sabe en qué archivo está y cómo se llama.
+
+### §0 — Sistema de Superficie (cross-cutting, aplica a TODO)
+
+| Id | Widget Dart / Helper | Archivo |
+|---|---|---|
+| `frosted` | `frosted({child, radius, padding, solidColor?, glow?})` | `gallery/gallery_fx.dart` |
+| `panel-surface` | `panelSurface({child, radius, padding, glow?})` | `gallery/gallery_fx.dart` |
+| `card-surface` | `cardSurface({child, radius, padding, glow?})` | `gallery/gallery_fx.dart` |
+| `panel-from-decoration` | `PanelFromDecoration({child, decoration, padding, solidColor?})` | `gallery/gallery_fx.dart` |
+| `glass-surface` | `GlassSurface({child, borderRadius, tint?, rimOpacity?})` | `widgets/glass_surface.dart` |
+| `surface-fill` | `Gx.surfaceFill` (getter dinámico) | `gallery/gallery_tokens.dart` |
+| `surface-panel` | `Gx.surfacePanel` (getter dinámico) | `gallery/gallery_tokens.dart` |
+| `surface-card` | `Gx.surfaceCard` (getter dinámico) | `gallery/gallery_tokens.dart` |
+
+### §1 — Tokens, Tipografía y Efectos
+
+| Id | Widget Dart / Helper | Archivo |
+|---|---|---|
+| `display-grotesque` | `Gx.displayGrotesque({fontSize, height})` → Space Grotesk w500 | `gallery/gallery_tokens.dart` |
+| `ui-sans` | `Gx.uiSans({fontSize, height, weight})` → Inter w400/w500 | `gallery/gallery_tokens.dart` |
+| `data-mono` | `Gx.dataMono({fontSize, height})` → JetBrains Mono w400/w500 | `gallery/gallery_tokens.dart` |
+| `glow` | `Gx.glow(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
+| `glow-strong` | `Gx.glowStrong(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
+| `text-glow` | `Gx.textGlow(color)` → `List<Shadow>` | `gallery/gallery_tokens.dart` |
+| `linear-gradient` | `Gx.linear(colors, {begin, end})` → `LinearGradient` | `gallery/gallery_tokens.dart` |
+| `grad-optima` | `Gx.gradOptima` | `gallery/gallery_tokens.dart` |
+| `grad-reactor` | `Gx.gradReactor` | `gallery/gallery_tokens.dart` |
+| `grad-transition` | `Gx.gradTransition` | `gallery/gallery_tokens.dart` |
+| `grad-aurora` | `Gx.gradAurora` | `gallery/gallery_tokens.dart` |
+| `grad-alert` | `Gx.gradAlert` | `gallery/gallery_tokens.dart` |
+| `grad-critical` | `Gx.gradCritical` | `gallery/gallery_tokens.dart` |
+| `grad-cosmic` | `Gx.gradCosmic` | `gallery/gallery_tokens.dart` |
+
+### §4 — Layout y Estructura
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `panel-solid` | `_panelSolid({child, padding, glowColor})` (69 callsites) | `gallery/gallery_tab.dart` |
+| `panel-glass` | `frosted({child, radius: 14})` | `gallery/gallery_fx.dart` |
+| `card` | `cardSurface({child, radius})` o `HoverGlow(child: PanelFromDecoration(...))` | `gallery/gallery_fx.dart` |
+| `divider / separator` | `Gx.vDivider({height})` | `gallery/gallery_tokens.dart` |
+| `tabs / tab-bar` | `_tabsMock()` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `segmented-control` | `GlowSegmented({options, selected, onChanged})` | `gallery/sections/section_buttons_extended.dart` |
+| `stepper / wizard` | `GlowStepper({steps, currentStep, onStepTapped})` | `gallery/sections/section_feedback_extended.dart` |
+| `pipeline-8-steps` | `Pipeline8Steps()` | `gallery/sections/section_drasus_core_extended.dart` |
+| `accordion / collapse` | `GlowAccordion({title, content, isExpanded})` | `gallery/sections/section_feedback_extended.dart` |
+
+### §5 — Navegación
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `canvas-breadcrumb` | `ZuiNavPill({segments})` | `gallery/sections/section_nav.dart` |
+| `menu / dropdown-menu` | `GlowContextMenu({items})` | `gallery/gallery_fx.dart` |
+| `command-palette` | `GlowCommandPalette({onSelect})` | `gallery/sections/section_nav.dart` |
+| `tree-view` | `GlowTreeView({root})` | `gallery/sections/section_nav.dart` |
+| `pagination` | `GlowPagination({current, total, onPage})` | `gallery/sections/section_nav.dart` |
+| `anchor / scrollspy` | `GlowScrollspy({sections})` | `gallery/sections/section_nav.dart` |
+| `back-to-top` | `GlowBackToTop()` | `gallery/sections/section_std_missing.dart` |
+
+### §6 — Inputs y Formularios
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `text-field / input` | `GlowInput({hint, initial, color?})` | `gallery/gallery_fx.dart` |
+| `search-input` | `GlowInput(hint: 'Buscar…', color: Gx.optimaCyan)` | `gallery/gallery_fx.dart` |
+| `textarea` | `GlowTextarea({hint, initial, maxLines})` | `gallery/sections/section_inputs_extended.dart` |
+| `number-input / stepper` | `GlowNumberInput({initial, min, max, onChanged})` | `gallery/sections/section_inputs_extended.dart` |
+| `select / dropdown` | `GlowDropdown({label, options, onSelected})` | `gallery/gallery_fx.dart` |
+| `combobox / autocomplete` | `GlowCombobox({hint, options, onSelected})` | `gallery/sections/section_inputs_extended.dart` |
+| `multiselect` | `GlowMultiSelect({label, options, selected})` | `gallery/sections/section_inputs_extended.dart` |
+| `cascader` | `GlowCascader({options, onSelected})` | `gallery/sections/section_std_missing.dart` |
+| `transfer / dual-list` | `GlowTransferList({source, target})` | `gallery/sections/section_std_missing.dart` |
+| `switch / toggle` | `GlowSwitch({initial, color?})` | `gallery/gallery_fx.dart` |
+| `slider` | `GlowSlider({initial, min, max, color?})` | `gallery/gallery_fx.dart` |
+| `date-picker` | `GlowDatePicker({initial, onSelected})` | `gallery/gallery_fx.dart` |
+| `date-range` | `GlowDateRangePicker({initial, onRange})` | `gallery/sections/section_std_missing.dart` |
+| `time-picker` | `GlowTimePicker({initial})` | `gallery/sections/section_std_missing.dart` |
+| `color-picker` | `GlowColorPicker({initial})` | `gallery/sections/section_std_missing.dart` |
+| `file-upload / dropzone` | `GlowDropzone({onFile})` | `gallery/sections/section_std_missing.dart` |
+| `rating` | `GlowRating({initial, onChanged})` | `gallery/sections/section_inputs_extended.dart` |
+| `tags-input / chips-input` | `GlowTagsInput({initial, suggestions})` | `gallery/sections/section_inputs_extended.dart` |
+| `otp / pin-input` | `GlowOtpInput({length, onComplete})` | `gallery/sections/section_inputs_extended.dart` |
+| `mention-input` | `GlowMentionInput({hint, suggestions})` | `gallery/sections/section_std_missing.dart` |
+| `form-field` | `GlowFormField({label, hint, error?})` | `gallery/sections/section_inputs_extended.dart` |
+
+### §7 — Botones y Acciones
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `button-primary` | `GlowButton({label, onTap, color?, gradient?})` | `gallery/gallery_fx.dart` |
+| `button-glass` | `GlowButton({label, variant: secondary})` | `gallery/gallery_fx.dart` |
+| `button-ghost` | `GlowButton({label, variant: ghost})` | `gallery/gallery_fx.dart` |
+| `button-danger` | `GlowButton({label, color: Gx.criticalCrimson})` | `gallery/gallery_fx.dart` |
+| `icon-button` | `_iconBtn(icon)` (maqueta) | `gallery/gallery_tab.dart` |
+| `button-group` | `GlowButtonGroup({buttons})` | `gallery/sections/section_buttons_extended.dart` |
+| `split-button` | `GlowSplitButton({label, items})` | `gallery/sections/section_std_missing.dart` |
+| `toggle-button` | `GlowToggleButton({label, isOn, onToggle})` | `gallery/sections/section_buttons_extended.dart` |
+| `fab` | `GlowFab({icon, onTap})` | `gallery/sections/section_buttons_extended.dart` |
+| `loading-button` | `GlowLoadingButton({label, isLoading})` | `gallery/sections/section_buttons_extended.dart` |
+
+### §8 — Data Display
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `table / data-grid` | `GlowTable({columns, rows})` | `gallery/sections/section_data_display_extended.dart` |
+| `tree-table` | `GlowTreeTable({root})` | `gallery/sections/section_data_display_extended.dart` |
+| `list / list-item` | `GlowList({items, onTap})` | `gallery/sections/section_data_display_extended.dart` |
+| `key-value-row` | `_keyValue(key, value, color?)` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `badge / tag / chip / pill` | `_chip(text, fg, bg, border)` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `regime-chip` | `_regimeChip(label, regime)` | `gallery/gallery_tab.dart` |
+| `tooltip` | `GlowTooltip({message, child})` o `Widget` con `GlassSurface` | `gallery/gallery_fx.dart` / `widgets/glass_surface.dart` |
+| `popover` | `GlowPopover({content, child})` | `gallery/gallery_fx.dart` |
+| `timeline` | `GlowTimeline({events})` | `gallery/sections/section_data_display_extended.dart` |
+| `carousel` | `GlowCarousel({items})` | `gallery/sections/section_data_display_extended.dart` |
+| `calendar / scheduler` | `GlowCalendar({onDayTapped})` | `gallery/gallery_fx.dart` |
+| `code-block` | `GlowCode({code, language})` | `gallery/sections/section_data_display_extended.dart` |
+| `kbd` | `GlowKbd({key})` | `gallery/sections/section_data_display_extended.dart` |
+| `stat / metric` | `_kpi(value, label, color?)` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `gauge` | `GaugeSection()` (radial animado) | `gallery/sections/section_animations.dart` |
+| `micro-gauge / vitality-bar` | `_vitalityBar(label, value, color?)` (maqueta) | `gallery/gallery_tab.dart` |
+| `progress-bar` | `GlowProgress({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
+| `progress-circular` | `GlowProgressCircular({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
+| `skeleton` | `GlowSkeleton({width, height})` | `gallery/sections/section_data_display_extended.dart` |
+| `empty-state` | `GlowEmpty({message, icon})` | `gallery/sections/section_data_display_extended.dart` |
+
+### §9 — Feedback y Overlays
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `alert / banner / callout` | `GlowBanner({message, type})` | `gallery/sections/section_feedback_extended.dart` |
+| `toast / snackbar` | `GlowToast({message, type})` | `gallery/sections/section_feedback_extended.dart` |
+| `notification-card` | `GlowNotificationCard({title, body, isRead})` | `gallery/sections/section_feedback_extended.dart` |
+| `modal / dialog` | `GlowModal({title, content, actions})` con `showDialog` | `gallery/gallery_fx.dart` |
+| `popconfirm` | `GlowPopconfirm({message, onConfirm})` | `gallery/sections/section_feedback_extended.dart` |
+| `spinner / loader` | `_spinner()` / `_scanRing(color)` (maqueta) | `gallery/gallery_tab.dart` |
+
+### §10 — Data-Viz (Dominio Drasus)
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `dag-node-graph` | `InteractiveDag()` (canvas + nodos + bezier) | `gallery/gallery_fx.dart` |
+| `dag-nodes-section` | `DagNodesSection()` | `gallery/sections/section_dag_nodes.dart` |
+| `monte-carlo-cone` | `MonteCarloLinesWidget()` (scanInit eléctrico) | `gallery/sections/section_dataviz_new.dart` |
+| `scatter-umap-pca` | `StrategyCluster3dWidget()` (nebulosa 3D) | `gallery/sections/section_dataviz_new.dart` |
+| `trade-timeline` | `TradeTimelinePainter(hover:)` → `HoverableChart` | `gallery/gallery_painters.dart` |
+| `trade-tape` | `TradeTapeSection()` | `gallery/sections/section_trade_tape.dart` |
+| `equity-curve` | `EquityCurveAnimated()` (animado) / `EquityCurvePainter({hover})` | `gallery/sections/section_animations.dart` / `gallery/gallery_painters.dart` |
+| `multi-equity-overlay` | `MultiEquityOverlayPainter({hover})` | `gallery/gallery_painters.dart` |
+| `wfa-chart` | `WfaChartPainter({hover})` | `gallery/gallery_painters.dart` |
+| `returns-calendar` | `ReturnsCalendarPainter({hover})` | `gallery/gallery_painters.dart` |
+| `fitness-evolution` | `FitnessEvolutionPainter({hover})` | `gallery/gallery_painters.dart` |
+| `rolling-metric` | `RollingMetricPainter({hover})` | `gallery/gallery_painters.dart` |
+| `underwater-plot` | `UnderwaterPlotPainter({hover})` | `gallery/gallery_painters.dart` |
+| `risk-return-scatter` | `RiskReturnScatterPainter({hover})` | `gallery/gallery_painters.dart` |
+| `trade-distribution` | `TradeDistributionPainter({hover})` | `gallery/gallery_painters.dart` |
+| `parameter-sensitivity` | `ParameterSensitivityPainter({hover})` | `gallery/gallery_painters.dart` |
+| `regime-timeline` | `RegimeTimelinePainter({hover})` | `gallery/gallery_painters.dart` |
+| `optimization-contour` | `OptimizationContourPainter({hover})` | `gallery/gallery_painters.dart` |
+| `hoverable-chart` | `HoverableChart({builder, height})` — wrapper con `MouseRegion` | `gallery/gallery_painters.dart` |
+| `odometer` | `OdometerSection()` (animación numérica) | `gallery/sections/section_animations.dart` |
+
+### §11 — Núcleo Drasus (Piezas Únicas)
+
+| Id | Widget Dart | Archivo |
+|---|---|---|
+| `organism-cell-card` | `_organismCell({status, label})` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `vitality-spectrum-legend` | `_vitalityLegend()` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `crystal-orb` | `_crystalOrb(color)` (maqueta) | `gallery/gallery_tab.dart` |
+| `galaxy-background` | `CosmicBackdropPainter()` → `CustomPaint` en `gallery_preview_main.dart` | `gallery/gallery_painters.dart` |
+| `autopsy-header` | `LightBurstText(...)` con `gradCosmic` + `ShaderMask` | `gallery/gallery_fx.dart` |
+| `canvas-zoom-frame` | `ZuiZoomFrame({zoom, content})` | `gallery/sections/section_drasus_core_extended.dart` |
+| `dashboard-panel` | `DashboardTab()` (tab en panel_operativo) | `tabs/dashboard_tab.dart` |
+| `expectation-envelope-badge` | `ExpectationEnvelopeBadge({isInside})` | `gallery/sections/section_drasus_core_extended.dart` |
+| `fleet-command-panel` | `FleetCommandPanel({source, items})` | `gallery/sections/section_drasus_core_extended.dart` |
+| `accent-ab` | `AccentAbSection()` | `gallery/sections/section_drasus_core_extended.dart` |
+
+### Glow Primitive (fábrica de interacción)
+
+Un único widget compositivo (`HoverGlow` en `gallery/gallery_fx.dart`) sirve como base reutilizable para cualquier superficie que necesite hover con glow + escala. No se crean wrappers por componente — se compone:
+
+```dart
+// Tarjeta con hover: glow potente + escala 1.02 en 160ms
+HoverGlow(
+  color: Gx.transitionIndigo,
+  radius: Gx.rPanel,
+  child: cardSurface(child: contenido),
+)
+
+// Fila de tabla con hover: glow + superficie elevada
+HoverGlow(
+  color: Gx.transitionIndigo,
+  radius: 0,
+  child: Container(color: Gx.surfaceRaised, child: fila),
+)
+```
+
+### Cómo pedir un componente (Designer → Engineer)
+
+El Designer nunca pide "un dropdown con vidrio". Pide: **"`GlowDropdown` con label 'Régimen' y opciones [Tendencia, Rango, Volátil, Calmo]"**. El Engineer busca `GlowDropdown` en este Map, ve que está en `gallery/gallery_fx.dart`, y lo instancia. Sin invención, sin ambigüedad.
+
+### Cómo crear un componente nuevo (cuando NO existe)
+
+1. Verificar que no existe en este Map
+2. Si es un widget de interacción → `gallery/gallery_fx.dart` (mismo patrón: `StatefulWidget` + `_XxxState` con foco/hover locales)
+3. Si es un CustomPainter → `gallery/gallery_painters.dart` (mismo patrón: `shouldRepaint` ligero, sin blur en animación)
+4. Si es una sección standalone → `gallery/sections/` (mismo patrón: `StatelessWidget` o `StatefulWidget` con builder)
+5. Registrarlo inmediatamente en el Catálogo (§4–§11) y en este Map
+6. Usar `frosted()`, `panelSurface()`, `cardSurface()` o `PanelFromDecoration` para TODA superficie — nunca un `Color` sólido suelto
+7. **Nunca `const`** en la instanciación (el `const` congela los colores al cambiar el modo global de superficie)
+8. Surface colors via `Gx.surfaceFill/surfacePanel/surfaceCard` — nunca `Gx.glassFill/panelSolid/cardInner` raw
+
+---
+
 ## Do's and Don'ts
 
 ### Do
+- **Antes de crear, busca en el Component Map.** Si el componente ya existe, reutilízalo — nunca lo dupliques.
+- **Reutiliza `frosted()`, `panelSurface()`, `cardSurface()`, `PanelFromDecoration`** para toda superficie. El color via `Gx.surfaceFill/surfacePanel/surfaceCard` — NUNCA tokens raw.
+- **Nunca uses `const`** en widgets que dependen del modo de superficie (todos los Glow*, InteractiveDag, secciones, etc.). El `const` impide que Flutter reconstruya al cambiar el modo.
 - Pon cada zona de datos sobre la pila sólida (`#080A18` → `#0E1426` → `#11182E`) y reserva el vidrio para el chrome (nav, menús, botones, inputs).
 - Ata SIEMPRE el color a un estado (óptimo/transición/alerta/crítico). El neón es semántico y escaso: pocos puntos encendidos sobre la oscuridad.
 - Usa el grotesco display a peso 500 para titulares; sube el piso tipográfico (cuerpo 14px, datos 13px) — se acabaron los 9–10px.
@@ -492,6 +715,8 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 - Estratifica la densidad: MACRO/MESO densos y operativos; MICRO y splash con aire y escala ceremonial.
 
 ### Don't
+- **No dupliques componentes.** Si ya existe en el Component Map, reutilízalo aunque "no sea exactamente igual" — extiéndelo con parámetros en vez de clonarlo.
+- **No uses `const`** en widgets de superficie (Glow*, secciones, InteractiveDag, etc.) — el `const` congela la instancia y evita que los colores reaccionen al cambio de modo.
 - No uses gráficos de velas japonesas ni libros de órdenes como elemento central — Drasus destrona al precio (prioridad mínima, salvo que se especifique).
 - No uses el color como decoración: nada de neón "porque se ve bonito" sin un estado detrás.
 - No uses negro plano `#000000` de lienzo ni gris neutro de oficina en bordes — todo lleva el tinte azul-violeta.
