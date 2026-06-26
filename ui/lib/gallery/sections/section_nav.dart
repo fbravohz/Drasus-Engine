@@ -12,6 +12,9 @@ import '../gallery_fx.dart';
 
 // Muestra el pill de cristal flotante del ZUI con el tab activo resaltado
 // por un filo neón de 2px. Toca cada opción para cambiar el nivel activo.
+// Parámetros: ninguno (estado local _active).
+// Tokens: frosted() · Gx.glow() · Gx.space4 · Gx.space8 · Gx.space12 ·
+//   Gx.transitionIndigo · Gx.textBase · Gx.textBaseLabel · Gx.rButton.
 class ZuiNavPill extends StatefulWidget {
   const ZuiNavPill({super.key});
   @override
@@ -25,7 +28,7 @@ class _ZuiNavPillState extends State<ZuiNavPill> {
   @override
   Widget build(BuildContext context) {
     // Pill de cristal flotante: vidrio Apple con rim-light y glow del tab activo.
-    return frosted(
+    return panelSurface(
       radius: 999,
       padding: const EdgeInsets.all(4),
       glow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.25),
@@ -52,7 +55,7 @@ class _ZuiNavPillState extends State<ZuiNavPill> {
                 e.value,
                 style: Gx.uiSans(
                   fontSize: 12,
-                  color: isActive ? Gx.textPrimary : Gx.textLabel,
+                  color: isActive ? Gx.textBase : Gx.textBaseLabel,
                   weight:
                       isActive ? FontWeight.w500 : FontWeight.w400,
                 ),
@@ -81,14 +84,14 @@ Widget breadcrumbs() {
           e.value,
           style: Gx.uiSans(
             fontSize: 13,
-            color: isLast ? Gx.textPrimary : Gx.textLabel,
+            color: isLast ? Gx.textBase : Gx.textBaseLabel,
             weight: isLast ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
         if (!isLast)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text('/', style: Gx.uiSans(fontSize: 13, color: Gx.textMuted)),
+            child: Text('/', style: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted)),
           ),
       ];
     }).toList(),
@@ -145,7 +148,7 @@ class _GlowPaginationState extends State<GlowPagination> {
                 '$p',
                 style: Gx.dataMono(
                   fontSize: 12,
-                  color: isActive ? Gx.transitionIndigo : Gx.textLabel,
+                  color: isActive ? Gx.transitionIndigo : Gx.textBaseLabel,
                 ),
               ),
             ),
@@ -170,12 +173,12 @@ class _GlowPaginationState extends State<GlowPagination> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Gx.surfaceFill,
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
         ),
         child: Transform.rotate(
           angle: rotate ? 3.14159 : 0,
           child: Icon(icon, size: 14,
-              color: onTap != null ? Gx.textSecondary : Gx.textMuted),
+              color: onTap != null ? Gx.textBaseSecondary : Gx.textBaseMuted),
         ),
       ),
     );
@@ -213,9 +216,8 @@ class _CommandPaletteState extends State<CommandPalette> {
 
   @override
   Widget build(BuildContext context) {
-    return frosted(
-      padding: EdgeInsets.zero,
-      glow: Gx.glow(Gx.transitionIndigo, blur: 20, opacity: 0.3),
+    return panelSurface(
+      padding: const EdgeInsets.all(0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -223,15 +225,15 @@ class _CommandPaletteState extends State<CommandPalette> {
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(children: [
-              Icon(Gx.iconChart, size: 14, color: Gx.textLabel),
+              Icon(Gx.iconChart, size: 14, color: Gx.textBaseLabel),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: _ctrl,
-                  style: Gx.dataMono(fontSize: 13),
+                  style: Gx.dataMono(fontSize: 13, color: Gx.textBase),
                   decoration: InputDecoration.collapsed(
                     hintText: 'Buscar o ejecutar…',
-                    hintStyle: Gx.uiSans(fontSize: 13, color: Gx.textMuted),
+                    hintStyle: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted),
                   ),
                   cursorColor: Gx.transitionIndigo,
                 ),
@@ -241,10 +243,10 @@ class _CommandPaletteState extends State<CommandPalette> {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: Gx.surfaceCard,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Gx.borderPanel),
+                  borderRadius: BorderRadius.circular(Gx.rChip),
+                  border: Border.all(color: Gx.borderBase),
                 ),
-                child: Text('⌘K', style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+                child: Text('⌘K', style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
               ),
             ]),
           ),
@@ -263,19 +265,19 @@ class _CommandPaletteState extends State<CommandPalette> {
                     : Colors.transparent,
                 child: Row(children: [
                   Icon(Gx.iconBolt, size: 13,
-                      color: isSelected ? Gx.transitionIndigo : Gx.textMuted),
+                      color: isSelected ? Gx.transitionIndigo : Gx.textBaseMuted),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       e.value,
                       style: Gx.uiSans(
                         fontSize: 13,
-                        color: isSelected ? Gx.textPrimary : Gx.textSecondary,
+                        color: isSelected ? Gx.textBase : Gx.textBaseSecondary,
                       ),
                     ),
                   ),
                   if (isSelected)
-                    Text('↵', style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+                    Text('↵', style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
                 ]),
               ),
             );
@@ -331,11 +333,11 @@ class _GlowTreeViewState extends State<GlowTreeView> {
                     turns: isOpen ? 0.25 : 0,
                     duration: const Duration(milliseconds: 180),
                     child: Icon(Gx.iconChevronDown,
-                        size: 12, color: Gx.textSecondary),
+                        size: 12, color: Gx.textBaseSecondary),
                   ),
                   const SizedBox(width: 6),
                   Text(root.value['label'] as String,
-                      style: Gx.uiSans(fontSize: 13, color: Gx.textSecondary,
+                      style: Gx.uiSans(fontSize: 13, color: Gx.textBaseSecondary,
                           weight: FontWeight.w500)),
                 ]),
               ),
@@ -362,7 +364,7 @@ class _GlowTreeViewState extends State<GlowTreeView> {
                               color: isSel
                                   ? Gx.transitionIndigo.withAlpha(20)
                                   : Colors.transparent,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(Gx.rChip),
                               border: isSel
                                   ? Border(
                                       left: BorderSide(
@@ -376,7 +378,7 @@ class _GlowTreeViewState extends State<GlowTreeView> {
                                 fontSize: 12,
                                 color: isSel
                                     ? Gx.transitionIndigo
-                                    : Gx.textLabel,
+                                    : Gx.textBaseLabel,
                               ),
                             ),
                           ),
@@ -428,14 +430,8 @@ class _GlowScrollspyState extends State<GlowScrollspy> {
   @override
   Widget build(BuildContext context) {
     // Panel de cristal que contiene la lista de anclas.
-    return Container(
+    return panelSurface(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        border: Border.all(color: Gx.borderPanel),
-        boxShadow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.15),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +467,7 @@ class _GlowScrollspyState extends State<GlowScrollspy> {
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive ? Gx.transitionIndigo : Gx.textMuted,
+                      color: isActive ? Gx.transitionIndigo : Gx.textBaseMuted,
                       boxShadow: isActive
                           ? Gx.glow(Gx.transitionIndigo, blur: 6, opacity: 0.8)
                           : null,
@@ -482,7 +478,7 @@ class _GlowScrollspyState extends State<GlowScrollspy> {
                     e.value,
                     style: Gx.uiSans(
                       fontSize: 12,
-                      color: isActive ? Gx.textPrimary : Gx.textLabel,
+                      color: isActive ? Gx.textBase : Gx.textBaseLabel,
                       weight: isActive ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),

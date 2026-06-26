@@ -90,9 +90,9 @@ Widget timeline() {
             padding: const EdgeInsets.only(bottom: 6),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(ev.$1,
-                  style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary)),
+                  style: Gx.uiSans(fontSize: 13, color: Gx.textBase)),
               Text(ev.$2,
-                  style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+                  style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
             ]),
           ),
         ),
@@ -112,7 +112,7 @@ Widget codeBlock() {
     decoration: BoxDecoration(
       color: Gx.surfaceCard,
       borderRadius: BorderRadius.circular(Gx.rPanel),
-      border: Border.all(color: Gx.borderPanel),
+      border: Border.all(color: Gx.borderBase),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,13 +120,13 @@ Widget codeBlock() {
         Text('fn execute_order(node: &str) {',
             style: Gx.dataMono(fontSize: 12, color: Gx.optimaCyan)),
         Text('    let regime = detect_regime();',
-            style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+            style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
         Text('    if regime == Regime::Volatile {',
-            style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+            style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
         Text('        return; // pausa en volátil',
-            style: Gx.dataMono(fontSize: 12, color: Gx.textMuted)),
+            style: Gx.dataMono(fontSize: 12, color: Gx.textBaseMuted)),
         Text('    }',
-            style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+            style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
         Text('}',
             style: Gx.dataMono(fontSize: 12, color: Gx.optimaCyan)),
       ],
@@ -148,12 +148,12 @@ Widget kbdRow() {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Gx.surfaceCard,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Gx.borderPanel),
+            borderRadius: BorderRadius.circular(Gx.rChip),
+            border: Border.all(color: Gx.borderBase),
             boxShadow: Gx.glow(Gx.transitionIndigo, blur: 6, opacity: 0.15),
           ),
           child:
-              Text(k, style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+              Text(k, style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
         )).toList(),
   );
 }
@@ -181,11 +181,11 @@ Widget descriptionList() {
               SizedBox(
                 width: 80,
                 child: Text(p.$1,
-                    style: Gx.uiSans(fontSize: 12, color: Gx.textLabel)),
+                    style: Gx.uiSans(fontSize: 12, color: Gx.textBaseLabel)),
               ),
               Expanded(
                 child: Text(p.$2,
-                    style: Gx.dataMono(fontSize: 12, color: Gx.textPrimary)),
+                    style: Gx.dataMono(fontSize: 12, color: Gx.textBase)),
               ),
             ],
           ),
@@ -208,19 +208,19 @@ Widget emptyState() {
         height: 48,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            colors: [Gx.transitionIndigo, Gx.cardInner],
+          gradient: RadialGradient(
+            colors: [Gx.transitionIndigo, Gx.surfaceCard],
             stops: [0.0, 1.0],
           ),
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
         ),
       ),
       const SizedBox(height: 12),
       Text('Sin estrategias activas',
-          style: Gx.uiSans(fontSize: 14, color: Gx.textMuted)),
+          style: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted)),
       const SizedBox(height: 6),
       Text('Crea tu primera célula para comenzar.',
-          style: Gx.uiSans(fontSize: 12, color: Gx.textMuted)),
+          style: Gx.uiSans(fontSize: 12, color: Gx.textBaseMuted)),
     ],
   );
 }
@@ -235,12 +235,13 @@ Widget imageThumbnail() {
     width: 120,
     height: 68,
     decoration: BoxDecoration(
-      gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
+      gradient: Gx.linear([Gx.surfacePanel, Gx.canvasBase]),
       borderRadius: BorderRadius.circular(Gx.rPanel),
-      border: Border.all(color: Gx.borderPanel),
+      border: Border.all(color: Gx.transitionIndigo.withAlpha(80)),
+      boxShadow: Gx.glow(Gx.transitionIndigo, blur: 20, opacity: 0.15),
     ),
     child: Center(
-      child: Icon(Gx.iconChart, size: 24, color: Gx.textMuted),
+      child: Icon(Gx.iconChart, size: 24, color: Gx.textBaseMuted),
     ),
   );
 }
@@ -306,14 +307,14 @@ Widget popoverExample() {
         decoration: BoxDecoration(
           color: Gx.surfaceFill,
           borderRadius: BorderRadius.circular(Gx.rChip),
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
         ),
         child: Text('Sharpe 1.84',
             style: Gx.dataMono(fontSize: 12, color: Gx.optimaCyan)),
       ),
       const SizedBox(height: 6),
       // Popover flotante.
-      frosted(
+      panelSurface(
         radius: Gx.rTooltip,
         glow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.2),
         child: Column(
@@ -321,11 +322,11 @@ Widget popoverExample() {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('Sharpe ajustado',
-                style: Gx.uiSans(fontSize: 12, color: Gx.textSecondary,
+                style: Gx.uiSans(fontSize: 12, color: Gx.textBaseSecondary,
                     weight: FontWeight.w500)),
             const SizedBox(height: 4),
             Text('Ratio de Sharpe ponderado por régimen\nen los últimos 90 días.',
-                style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)),
+                style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)),
           ],
         ),
       ),
@@ -356,10 +357,10 @@ class _GlowTreeTableState extends State<GlowTreeTable> {
           child: Text(t,
               textAlign: num ? TextAlign.right : TextAlign.left,
               style: header
-                  ? Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+                  ? Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
                   : Gx.dataMono(
                       fontSize: 12,
-                      color: c ?? Gx.textPrimary)),
+                      color: c ?? Gx.textBase)),
         );
 
     Widget row(List<Widget> cells, {Color? bg, bool child = false}) => Container(
@@ -390,11 +391,11 @@ class _GlowTreeTableState extends State<GlowTreeTable> {
                   turns: _expanded ? 0.25 : 0,
                   duration: const Duration(milliseconds: 180),
                   child: Icon(Gx.iconChevronDown,
-                      size: 10, color: Gx.textSecondary),
+                      size: 10, color: Gx.textBaseSecondary),
                 ),
                 const SizedBox(width: 4),
                 Flexible(child: Text('Grupo A', overflow: TextOverflow.ellipsis,
-                    style: Gx.uiSans(fontSize: 12, color: Gx.textPrimary))),
+                    style: Gx.uiSans(fontSize: 12, color: Gx.textBase))),
               ]),
             ),
             cell('—', num: false),
@@ -469,7 +470,7 @@ class _GlowCarouselState extends State<GlowCarousel> {
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
+      gradient: Gx.linear([Gx.surfacePanel, Gx.canvasBase]),
                   borderRadius: BorderRadius.circular(Gx.rPanel),
                   border: Border.all(color: card.$3.withAlpha(100)),
                   boxShadow: Gx.glow(card.$3, blur: 14, opacity: 0.2),
@@ -480,7 +481,7 @@ class _GlowCarouselState extends State<GlowCarousel> {
                   children: [
                     Text(card.$1, style: Gx.dataMono(fontSize: 14, color: card.$3)),
                     Text(card.$2,
-                        style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)),
+                        style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)),
                   ],
                 ),
               );
@@ -503,8 +504,8 @@ class _GlowCarouselState extends State<GlowCarousel> {
                 height: 8,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
-                  color: active ? Gx.transitionIndigo : Gx.borderPanel,
-                  borderRadius: BorderRadius.circular(4),
+                  color: active ? Gx.transitionIndigo : Gx.borderBase,
+                  borderRadius: BorderRadius.circular(Gx.rChip),
                   boxShadow: active
                       ? Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.6)
                       : null,

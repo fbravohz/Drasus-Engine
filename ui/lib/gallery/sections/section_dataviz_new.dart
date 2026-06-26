@@ -11,8 +11,9 @@
 
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../gallery_fx.dart';
 import '../gallery_tokens.dart';
 import '../../widgets/electric_primitives.dart';
 import '../../widgets/glass_surface.dart';
@@ -294,31 +295,28 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
   }
 
   @override
+  // Monte Carlo principal: envuelto en panelSurface() para reaccionar a los N modos
+  // (glass/tint/solid/enhancedGlass). Icono de cabecera usa textBaseSecondary (dinámico).
   Widget build(BuildContext context) {
-    return Container(
+    return panelSurface(
+      padding: const EdgeInsets.all(Gx.space16 - 2), // 14px
+      child: SizedBox(
       width: double.infinity,
-      constraints: const BoxConstraints(minWidth: 500),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Gx.surfacePanel, Gx.surfaceCard],
-        ),
-        border: Border.all(color: Gx.borderPanel),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        boxShadow: Gx.glow(Gx.transitionIndigo, blur: 24, opacity: 0.08),
-      ),
-      child: Column(
+      // minWidth de 500px para que el gráfico de Monte Carlo tenga espacio mínimo.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 500),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           // Cabecera con título y selector de número de líneas.
           Row(
             children: [
-              Icon(Icons.multiline_chart, size: 14, color: Gx.textSecondary),
+              Icon(Icons.multiline_chart, size: 14, color: Gx.textBaseSecondary),
               const SizedBox(width: 6),
-              Text('Monte Carlo — Trayectorias', style: Gx.panelTitle),
+              // Título de panel con énfasis dinámico — reacciona al color de acento activo.
+              Text('Monte Carlo — Trayectorias',
+                  style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
               const Spacer(),
               // SegmentedControl de recuento de líneas.
               _LineCountSelector(
@@ -341,11 +339,11 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
             height: 420, // mínimo 420px según spec DESIGN.md §10
             child: RepaintBoundary(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(Gx.rChip),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Gx.deepSpace,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(Gx.rChip),
                   ),
                   child: AnimatedBuilder(
                     animation: _scanCtrl,
@@ -408,22 +406,26 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
               // Botón para repetir la animación eléctrica.
               GestureDetector(
                 onTap: _replay,
+                // Chip "Replay scanInit": superficie dinámica con borde estructural global.
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: Gx.space8 + 2, vertical: Gx.space4),
                   decoration: BoxDecoration(
                     color: Gx.surfaceFill,
-                    border: Border.all(color: Gx.borderPanel),
+                    border: Border.all(color: Gx.borderBase),
                     borderRadius: BorderRadius.circular(Gx.rChip),
                   ),
+                  // Texto del botón Replay con token dinámico secundario.
                   child: Text('Replay scanInit',
-                      style: Gx.uiSans(fontSize: 11, color: Gx.textSecondary)),
+                      style: Gx.uiSans(fontSize: 11, color: Gx.textBaseSecondary)),
                 ),
               ),
             ],
           ),
         ],
       ),
-    );
+      ),   // ConstrainedBox
+      ),   // SizedBox
+    );     // panelSurface
   }
 }
 
@@ -440,13 +442,11 @@ class _LineCountSelector extends StatelessWidget {
   });
 
   @override
+  // Selector segmentado: fondo con frosted(), borde estructural global, texto dinámico.
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Gx.deepSpace,
-        border: Border.all(color: Gx.borderPanel),
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return panelSurface(
+      padding: EdgeInsets.zero,
+      radius: Gx.rChip,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(options.length, (i) {
@@ -458,19 +458,22 @@ class _LineCountSelector extends StatelessWidget {
             onTap: () => onChanged(i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: Gx.space8 + 2, vertical: Gx.space4 + 1),
               decoration: BoxDecoration(
+                // Activo: fondo semántico tenue (estado de selección).
                 color: active ? Gx.transitionIndigo.withOpacity(0.20) : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: BorderRadius.circular(Gx.rChip - 1),
                 border: Border.all(
+                  // Activo: borde semántico del estado de selección. Inactivo: invisible.
                   color: active ? Gx.transitionIndigo : Colors.transparent,
-                  width: active ? 1 : 0,
+                  width: active ? Gx.borderHairline : 0,
                 ),
               ),
+              // Texto activo: semántico (estado seleccionado). Inactivo: dinámico muted.
               child: Text(label,
                   style: Gx.dataMono(
                       fontSize: 11,
-                      color: active ? Gx.transitionIndigo : Gx.textMuted)),
+                      color: active ? Gx.transitionIndigo : Gx.textBaseMuted)),
             ),
           );
         }),
@@ -499,11 +502,13 @@ class _LegendDot extends StatelessWidget {
         height: thick ? 2.0 : 8,
         decoration: BoxDecoration(
           color: color,
+          // punto de leyenda decorativo, radio menor sin token canónico
           borderRadius: BorderRadius.circular(4),
         ),
       ),
       const SizedBox(width: 5),
-      Text(label, style: Gx.uiSans(fontSize: 10, color: Gx.textMuted)),
+      // Etiqueta de leyenda con token dinámico muted — legible en paper y bunker.
+      Text(label, style: Gx.uiSans(fontSize: 10, color: Gx.textBaseMuted)),
     ]);
   }
 }
@@ -951,22 +956,23 @@ class _StrategyCluster3dWidgetState extends State<StrategyCluster3dWidget>
             ),
           ),
 
-          // Canvas 3D.
+          // Canvas 3D: deepSpace como lienzo negro para el scatter 3D (color funcional del fondo
+          // del lienzo, no superficie de panel — no pasa por frosted para no distorsionar el render).
           Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: Gx.deepSpace,
-                border: Border(left: BorderSide(color: Gx.borderPanel)),
+                border: Border(left: BorderSide(color: Gx.borderBase)),
                 borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(11),
-                  bottomRight: Radius.circular(11),
+                  topRight: Radius.circular(Gx.rPanel),
+                  bottomRight: Radius.circular(Gx.rPanel),
                 ),
                 boxShadow: Gx.glow(Gx.transitionIndigo, blur: 24, opacity: 0.08),
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(11),
-                  bottomRight: Radius.circular(11),
+                  topRight: Radius.circular(Gx.rPanel),
+                  bottomRight: Radius.circular(Gx.rPanel),
                 ),
                 child: Stack(
                   children: [
@@ -1061,26 +1067,29 @@ class _ClusterLegendPanel extends StatelessWidget {
   });
 
   @override
+  // Panel de leyenda izquierdo: envuelto en PanelFromDecoration para respetar el radio
+  // asimétrico (solo esquinas izquierdas) y reaccionar a los N modos de superficie.
   Widget build(BuildContext context) {
-    return Container(
+    return PanelFromDecoration(
       decoration: BoxDecoration(
         color: Gx.surfacePanel,
-        border: Border.all(color: Gx.borderPanel),
+        border: Border.all(color: Gx.borderBase),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(11),
-          bottomLeft: Radius.circular(11),
+          topLeft: Radius.circular(Gx.rPanel),
+          bottomLeft: Radius.circular(Gx.rPanel),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: Gx.space12, vertical: Gx.space16 - 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título del panel lateral.
-          Text('Clusters', style: Gx.panelTitle),
-          const SizedBox(height: 4),
+          // Título del panel con énfasis dinámico.
+          Text('Clusters', style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
+          const SizedBox(height: Gx.space4),
+          // Subtítulo con token dinámico muted.
           Text('${totalPoints.toString()} estrategias',
-              style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
-          const SizedBox(height: 16),
+              style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
+          const SizedBox(height: Gx.space16),
           // Un item por cluster con hover interactivo.
           ...List.generate(clusterColors.length, (i) {
             final pct = (clusterCounts[i] / totalPoints * 100).toStringAsFixed(0);
@@ -1138,7 +1147,7 @@ class _ClusterLegendItem extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isHighlighted ? color.withOpacity(0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(Gx.rChip),
             border: Border.all(
               color: isHighlighted ? color.withOpacity(0.4) : Colors.transparent,
             ),
@@ -1162,9 +1171,11 @@ class _ClusterLegendItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: Gx.dataMono(fontSize: 11, color: Gx.textPrimary)),
+                    // Nombre de cluster: token dinámico base — legible en paper y bunker.
+                    Text(name, style: Gx.dataMono(fontSize: 11, color: Gx.textBase)),
+                    // Conteo y porcentaje: token dinámico muted.
                     Text('$count · $pct%',
-                        style: Gx.dataMono(fontSize: 10, color: Gx.textMuted)),
+                        style: Gx.dataMono(fontSize: 10, color: Gx.textBaseMuted)),
                   ],
                 ),
               ),
@@ -1290,16 +1301,18 @@ class _TooltipOverlay extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 5),
+              // Nombre del cluster: token dinámico base — legible sobre el tooltip de vidrio.
               Text(point.clusterName,
                   style: Gx.uiSans(
                       fontSize: 12,
-                      color: Gx.textPrimary,
+                      color: Gx.textBase,
                       weight: FontWeight.w500)),
             ]),
-            const SizedBox(height: 4),
+            const SizedBox(height: Gx.space4),
+            // Coordenadas del punto: token dinámico muted.
             Text(
               'x=${point.x.toStringAsFixed(2)}  y=${point.y.toStringAsFixed(2)}',
-              style: Gx.dataMono(fontSize: 10, color: Gx.textMuted),
+              style: Gx.dataMono(fontSize: 10, color: Gx.textBaseMuted),
             ),
           ],
         ),

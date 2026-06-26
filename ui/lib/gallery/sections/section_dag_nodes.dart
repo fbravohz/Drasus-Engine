@@ -3,8 +3,6 @@
 // los 3 tipos de conexión bezier, y el canvas DAG interactivo completo.
 // Sin lógica de negocio ni FFI — solo widgets y CustomPainter visuales.
 
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
 import '../gallery_fx.dart';
@@ -54,7 +52,8 @@ class _NodeAnatomyDemo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Anatomía del nodo', style: Gx.panelTitle),
+        // Título de subsección con énfasis dinámico (token accentDynamic).
+        Text('Anatomía del nodo', style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
         const SizedBox(height: 10),
         // Stack: el nodo centrado + anotaciones a los lados.
         _AnnotatedNode(),
@@ -116,7 +115,7 @@ class _Annotation extends StatelessWidget {
       child: Text(
         text,
         textAlign: right ? TextAlign.right : TextAlign.left,
-        style: Gx.uiSans(fontSize: 10, color: Gx.textMuted),
+        style: Gx.uiSans(fontSize: 10, color: Gx.textBaseMuted),
       ),
     );
   }
@@ -166,12 +165,13 @@ class _DagNodeCard extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Cuerpo del nodo.
+            // Cuerpo del nodo: superficie de tarjeta + borde estructural global dinámico.
             Container(
               decoration: BoxDecoration(
                 color: Gx.surfaceCard,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Gx.borderPanel, width: borderWidth),
+                borderRadius: BorderRadius.circular(Gx.rButton),
+                // Borde estructural global (dinámico con énfasis activo).
+                border: Border.all(color: Gx.borderBase, width: borderWidth),
                 boxShadow: Gx.glow(glowColor, blur: 14, opacity: 0.12),
               ),
               child: Column(
@@ -247,25 +247,28 @@ class _NodeHeader extends StatelessWidget {
     return Container(
       height: 36,
       // Solo el borde inferior — color uniforme, sin conflicto con borderRadius.
-      decoration: const BoxDecoration(
+      // No const: Gx.borderBase es un getter dinámico (no const).
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Gx.borderPanel, width: 1),
+          // Separador interno de la cabecera: borde dinámico con el énfasis activo.
+          bottom: BorderSide(color: Gx.borderBase, width: Gx.borderHairline),
         ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(10),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(Gx.rButton),
+          topRight: Radius.circular(Gx.rButton),
         ),
       ),
       child: Row(
         children: [
           // Borde izquierdo de color semántico (implementado como Container,
           // no como BorderSide, para evitar el error de Flutter con borderRadius).
+          // Borde izquierdo de color semántico del estado del nodo.
           Container(
             width: 3,
             decoration: BoxDecoration(
               color: color,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
+                topLeft: Radius.circular(Gx.rButton),
               ),
             ),
           ),
@@ -273,8 +276,9 @@ class _NodeHeader extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Expanded(
+            // Nombre del nodo con token dinámico de texto base.
             child: Text(name,
-                style: Gx.displayGrotesque(fontSize: 13, color: Gx.textPrimary),
+                style: Gx.displayGrotesque(fontSize: 13, color: Gx.textBase),
                 overflow: TextOverflow.ellipsis),
           ),
           // Chip de tipo de nodo.
@@ -309,10 +313,12 @@ class _KeyValueRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Etiqueta de la fila: token de texto etiqueta dinámico.
           Text(label,
-              style: Gx.dataMono(fontSize: 11, color: Gx.textLabel)),
+              style: Gx.dataMono(fontSize: 11, color: Gx.textBaseLabel)),
+          // Valor de la fila: token de texto secundario dinámico.
           Text(value,
-              style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+              style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
         ],
       ),
     );
@@ -354,7 +360,8 @@ class _NodeStatesGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Estados del nodo', style: Gx.panelTitle),
+        // Título de subsección con énfasis dinámico.
+        Text('Estados del nodo', style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 24,
@@ -388,7 +395,8 @@ class _LabeledNodeState extends StatelessWidget {
       children: [
         child,
         const SizedBox(height: 6),
-        Text(label, style: Gx.uiSans(fontSize: 11, color: Gx.textMuted)),
+        // Etiqueta descriptiva con token muted dinámico.
+        Text(label, style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted)),
       ],
     );
   }
@@ -425,6 +433,7 @@ class _NodeStateHoverState extends State<_NodeStateHover> {
   bool _hovered = false;
 
   @override
+  // Nodo en estado hover: escala 1.02 y glowStrong al posicionar el cursor encima.
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -432,7 +441,7 @@ class _NodeStateHoverState extends State<_NodeStateHover> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(Gx.rButton),
           boxShadow: _hovered
               ? Gx.glowStrong(Gx.optimaCyan)
               : [],
@@ -458,10 +467,11 @@ class _NodeStateSelected extends StatelessWidget {
   const _NodeStateSelected();
 
   @override
+  // Nodo seleccionado: glow optimaCyan y borde 2px activo.
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(Gx.rButton),
         boxShadow: Gx.glow(Gx.optimaCyan, blur: 16, opacity: 0.45),
       ),
       child: _DagNodeCard(
@@ -708,7 +718,8 @@ class _NodeStateErrorState extends State<_NodeStateError>
       animation: _blinkCtrl,
       builder: (_, __) => Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          // Radio del contenedor glow = Gx.rButton para alinearse con el nodo interior.
+          borderRadius: BorderRadius.circular(Gx.rButton),
           boxShadow: Gx.glow(Gx.criticalCrimson,
               blur: 20, opacity: 0.30 + _blinkCtrl.value * 0.25),
         ),
@@ -730,6 +741,9 @@ class _NodeStateErrorState extends State<_NodeStateError>
     );
   }
 }
+
+// Nota: el radio del glow del nodo error usa Gx.rButton para mantener
+// la consistencia con el radio del cuerpo del nodo (que también usa Gx.rButton).
 
 // ===========================================================================
 // 7c. Tipos de conexión bezier (3 ejemplos)
@@ -788,7 +802,8 @@ class _LabeledConnection extends StatelessWidget {
       children: [
         child,
         const SizedBox(height: 6),
-        Text(label, style: Gx.uiSans(fontSize: 11, color: Gx.textMuted)),
+        // Etiqueta descriptiva con token muted dinámico.
+        Text(label, style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted)),
       ],
     );
   }
@@ -819,8 +834,8 @@ class _MiniNode extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: Gx.surfaceCard,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Gx.borderPanel),
+            borderRadius: BorderRadius.circular(Gx.rButton),
+            border: Border.all(color: Gx.borderBase),
             boxShadow: Gx.glow(color, blur: 10, opacity: 0.10),
           ),
           child: Column(
@@ -832,13 +847,14 @@ class _MiniNode extends StatelessWidget {
                 height: 3,
                 decoration: BoxDecoration(
                   color: color,
+                  // barra de color del mini-nodo (3px alto): radio decorativo
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 5),
               Text(name,
                   style:
-                      Gx.displayGrotesque(fontSize: 12, color: Gx.textSecondary)),
+                      Gx.displayGrotesque(fontSize: 12, color: Gx.textBaseSecondary)),
             ],
           ),
         ),
@@ -1051,13 +1067,14 @@ class _ConnectionHoverState extends State<_ConnectionHover> {
                           decoration: BoxDecoration(
                             color: Gx.surfaceFill,
                             border: Border.all(
-                                color: Gx.textPrimary.withOpacity(0.12)),
+                                // Borde del tooltip: token dinámico de texto base al 12%.
+                            color: Gx.textBase.withOpacity(0.12)),
                             borderRadius: BorderRadius.circular(Gx.rTooltip),
                           ),
                           child: Text(
                             'DataStream<Float32>',
                             style:
-                                Gx.dataMono(fontSize: 10, color: Gx.textPrimary),
+                                Gx.dataMono(fontSize: 10, color: Gx.textBase),
                           ),
                         ),
                       ),
@@ -1184,7 +1201,7 @@ class _FullDagCanvas extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: Gx.deepSpace,
-              border: Border.all(color: Gx.borderPanel),
+              border: Border.all(color: Gx.borderBase),
               borderRadius: BorderRadius.circular(Gx.rPanel),
               boxShadow: Gx.glow(Gx.transitionIndigo, blur: 20, opacity: 0.10),
             ),

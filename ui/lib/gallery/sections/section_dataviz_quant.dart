@@ -12,22 +12,32 @@ import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
 
 // ---------------------------------------------------------------------------
-// Helper: cursor hover compartido por todos los painters de línea.
+// _hoverCursor — helper compartido por todos los painters de línea.
 // Dibuja la línea vertical tenue y el punto resaltado en (cx, cy).
+// Tokens de chrome: textBaseMuted (cursor), textBase (dot de datos).
 // ---------------------------------------------------------------------------
+
+// Cursor de hover compartido: línea vertical tenue + círculo de datos en (cx, cy).
+// textBaseMuted y textBase reaccionan a la paleta activa (paper/bunker).
 void _hoverCursor(Canvas canvas, Size size, double cx, double cy, Color c) {
   canvas.drawLine(Offset(cx, 0), Offset(cx, size.height), Paint()
-    ..color = Gx.textMuted.withAlpha(50)
+    ..color = Gx.textBaseMuted.withAlpha(50)
     ..strokeWidth = 0.5);
   canvas.drawCircle(Offset(cx, cy), 7, Paint()
     ..color = c.withAlpha(70)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
-  canvas.drawCircle(Offset(cx, cy), 3.5, Paint()..color = Gx.textPrimary.withAlpha(230));
+  canvas.drawCircle(Offset(cx, cy), 3.5, Paint()..color = Gx.textBase.withAlpha(230));
 }
 
 // ---------------------------------------------------------------------------
-// EquityCurvePainter — curva de equity acumulada (P&L normalizado)
+// EquityCurvePainter — curva de equity acumulada (P&L normalizado).
+// Recibe: Offset? hover (posición del cursor; null si no hay hover).
+// Tokens de dato (se conservan): optimaCyan, optimaTeal (familia óptima —
+//   codifican dirección alcista del equity).
+// MaskFilter.blur condicionado a hover (no en bucle de AnimationController) → aceptado.
 // ---------------------------------------------------------------------------
+
+// Curva de equity con relleno de área y glow progresivo en hover.
 class EquityCurvePainter extends CustomPainter {
   final Offset? hover;
   EquityCurvePainter({this.hover});
@@ -39,6 +49,7 @@ class EquityCurvePainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja la curva de equity con relleno semántico y cursor de hover.
   void paint(Canvas canvas, Size size) {
     final n = _pts.length;
     final dx = size.width / (n - 1);
@@ -87,12 +98,14 @@ class EquityCurvePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// MultiEquityOverlayPainter — superposición de curvas con áreas apiladas
+// MultiEquityOverlayPainter — superposición de curvas con áreas apiladas.
+// Las áreas entre curvas se colorean con el color de la curva superior del
+// par (por segmento, orden por Y). Recibe: Offset? hover.
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson (cada uno codifica el estado de una estrategia distinta).
 // ---------------------------------------------------------------------------
-// Las áreas entre curvas se colorean con el color de la curva superior del par,
-// según la descripción del usuario: la sombra de cada línea se extiende hacia
-// abajo hasta tocar la siguiente línea; la del siguiente hasta tocar la siguiente,
-// y así hasta el eje. Al cruzarse dos curvas, el orden cambia por segmento.
+
+// Superposición de 4 curvas de equity con áreas apiladas entre ellas.
 class MultiEquityOverlayPainter extends CustomPainter {
   final Offset? hover;
   MultiEquityOverlayPainter({this.hover});
@@ -105,6 +118,7 @@ class MultiEquityOverlayPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja las áreas apiladas entre curvas y las líneas encima; cursor de hover.
   void paint(Canvas canvas, Size size) {
     double minV = 0, maxV = 0;
     for (final s in _series) {
@@ -126,7 +140,7 @@ class MultiEquityOverlayPainter extends CustomPainter {
 
     // Eje cero.
     canvas.drawLine(Offset(0, toY(0)), Offset(size.width, toY(0)),
-        Paint()..color = Gx.borderPanel..strokeWidth = 0.5);
+        Paint()..color = Gx.borderBase..strokeWidth = 0.5);
 
     // ── Áreas apiladas entre curvas (por segmento, orden por Y) ─────────────
     // Para cada columna [i, i+1] se ordena las curvas de arriba a abajo (Y menor
@@ -194,8 +208,16 @@ class MultiEquityOverlayPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// WfaChartPainter — Walk Forward Analysis
+// WfaChartPainter — Walk Forward Analysis.
+// Barras de ventanas IS/OOS a lo largo del tiempo; ventanas OOS llevan color
+// semántico y glow, IS quedan neutras. Recibe: Offset? hover.
+// Tokens de chrome: surfaceCard (fondo ventana IS en hover), surfacePanel
+//   (fondo ventana IS normal), borderBase (borde IS).
+// Tokens de dato (se conservan): textMuted (ventanas IS), optimaCyan y
+//   alertAmber (ventanas OOS — codifican resultado positivo/negativo del OOS).
 // ---------------------------------------------------------------------------
+
+// Barras de WFA con ventanas IS (neutras) y OOS (coloreadas por resultado).
 class WfaChartPainter extends CustomPainter {
   final Offset? hover;
   WfaChartPainter({this.hover});
@@ -211,6 +233,7 @@ class WfaChartPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja ventanas IS y OOS; las OOS llevan glow semántico y se amplían en hover.
   void paint(Canvas canvas, Size size) {
     double x = 0;
     final barH = size.height * 0.55;
@@ -255,22 +278,25 @@ class WfaChartPainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
         canvas.drawCircle(dotCenter, hov ? 3.5 : 2.5, Paint()..color = c);
       } else {
+        // Ventana IS: fondo de superficie dinámica y borde estructural.
+        // surfaceCard en hover (step up leve) vs surfacePanel en reposo.
         canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)),
-            Paint()..color = hov ? Gx.surfaceRaised : Gx.surfacePanel);
+            Paint()..color = hov ? Gx.surfaceCard : Gx.surfacePanel);
         canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)),
             Paint()
               ..style = PaintingStyle.stroke
               ..strokeWidth = 0.5
-              ..color = hov ? Gx.textMuted : Gx.borderPanel);
+              ..color = hov ? Gx.textBaseMuted : Gx.borderBase);
         _label(canvas, 'IS', x + w / 2, barY + barH / 2);
       }
       x += win.$1 * size.width;
     }
   }
 
+  // Etiqueta centrada en el interior de la ventana IS.
   void _label(Canvas canvas, String t, double cx, double cy) {
     final tp = TextPainter(
-      text: TextSpan(text: t, style: TextStyle(fontFamily: Gx.fontMono, fontSize: 9, color: Gx.textMuted)),
+      text: TextSpan(text: t, style: TextStyle(fontFamily: Gx.fontMono, fontSize: 9, color: Gx.textBaseMuted)),
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
@@ -281,8 +307,15 @@ class WfaChartPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// TradeTimelinePainter — entrada/salida de trades sobre eje temporal
+// TradeTimelinePainter — entrada/salida de trades sobre eje temporal.
+// Cada trade es una marca vertical coloreada por tipo; las cercanas al cursor
+// se amplían. Recibe: Offset? hover.
+// Tokens de chrome: borderBase (eje temporal).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, criticalCrimson,
+//   reactorGreen (cada color codifica el tipo de señal de entrada/salida).
 // ---------------------------------------------------------------------------
+
+// Eje temporal con marcas de entrada/salida de trades coloreadas por tipo.
 class TradeTimelinePainter extends CustomPainter {
   final Offset? hover;
   TradeTimelinePainter({this.hover});
@@ -297,12 +330,14 @@ class TradeTimelinePainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja el eje central y las marcas de trade; la marca más cercana al cursor se amplía.
   void paint(Canvas canvas, Size size) {
     final midY = size.height / 2;
     final markH = size.height * 0.35;
 
+    // Eje temporal: borde estructural → borderBase.
     canvas.drawLine(Offset(0, midY), Offset(size.width, midY),
-        Paint()..color = Gx.borderPanel..strokeWidth = 1);
+        Paint()..color = Gx.borderBase..strokeWidth = 1);
 
     for (final t in _trades) {
       final x = t.$1 * size.width;
@@ -330,8 +365,14 @@ class TradeTimelinePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// ReturnsCalendarPainter — heatmap de rentabilidad mensual
+// ReturnsCalendarPainter — heatmap de rentabilidad mensual (6×4).
+// El color de cada celda codifica el retorno del mes (positivo/neutro/negativo).
+// Recibe: Offset? hover (celda resaltada al pasar el cursor).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, criticalCrimson
+//   (señalizan retorno positivo/neutro/negativo de cada mes).
 // ---------------------------------------------------------------------------
+
+// Heatmap de retornos mensuales con 24 celdas (6 columnas × 4 filas).
 class ReturnsCalendarPainter extends CustomPainter {
   final Offset? hover;
   ReturnsCalendarPainter({this.hover});
@@ -344,6 +385,7 @@ class ReturnsCalendarPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja la grilla de retornos; la celda bajo el cursor se resalta con mayor alpha y borde.
   void paint(Canvas canvas, Size size) {
     const cols = 6;
     const rows = 4;
@@ -379,6 +421,7 @@ class ReturnsCalendarPainter extends CustomPainter {
     }
   }
 
+  // Clasifica el retorno mensual en tres estados semánticos.
   static Color _colorFor(double v) {
     if (v > 0.02) return Gx.optimaCyan;
     if (v > -0.02) return Gx.transitionIndigo;
@@ -390,8 +433,15 @@ class ReturnsCalendarPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// FitnessEvolutionPainter — curva de fitness del algoritmo genético
+// FitnessEvolutionPainter — curva de fitness del algoritmo genético.
+// La línea se colorea por segmento según el nivel de fitness alcanzado.
+// Recibe: Offset? hover.
+// Tokens de dato (se conservan): transitionIndigo (fase inicial), alertAmber
+//   (fase media), optimaCyan (fase de convergencia) — codifican la evolución
+//   del fitness a lo largo del proceso de optimización.
 // ---------------------------------------------------------------------------
+
+// Curva de evolución del fitness con color por segmento y punto de convergencia.
 class FitnessEvolutionPainter extends CustomPainter {
   final Offset? hover;
   FitnessEvolutionPainter({this.hover});
@@ -405,6 +455,7 @@ class FitnessEvolutionPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja la curva de fitness segmento a segmento con color dinámico y punto final.
   void paint(Canvas canvas, Size size) {
     final n = _pts.length;
     final dx = size.width / (n - 1);
@@ -453,6 +504,7 @@ class FitnessEvolutionPainter extends CustomPainter {
     }
   }
 
+  // Clasifica el nivel de fitness en tres fases de evolución semántica.
   static Color _colorForFitness(double v) {
     if (v < 0.35) return Gx.transitionIndigo;
     if (v < 0.60) return Gx.alertAmber;
@@ -464,8 +516,14 @@ class FitnessEvolutionPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// RollingMetricPainter — métricas rolling en el tiempo
+// RollingMetricPainter — métricas rolling en el tiempo (3 series).
+// Cada serie es una métrica distinta; la más cercana al cursor recibe el cursor.
+// Recibe: Offset? hover.
+// Tokens de dato (se conservan): optimaCyan, alertAmber, criticalCrimson
+//   (cada color identifica una métrica específica a lo largo del tiempo).
 // ---------------------------------------------------------------------------
+
+// Tres series de métricas rolling con relleno de área y cursor selectivo.
 class RollingMetricPainter extends CustomPainter {
   final Offset? hover;
   RollingMetricPainter({this.hover});
@@ -477,6 +535,7 @@ class RollingMetricPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja tres series rolling; el cursor de hover se muestra en la métrica más cercana verticalmente.
   void paint(Canvas canvas, Size size) {
     const pad = 8.0;
     final h = size.height - pad * 2;
@@ -528,8 +587,15 @@ class RollingMetricPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// UnderwaterPlotPainter — drawdown bajo el eje cero
+// UnderwaterPlotPainter — drawdown bajo el eje cero.
+// Muestra la magnitud del drawdown (%) a lo largo del tiempo con relleno
+// semántico de la familia crítica. Recibe: Offset? hover.
+// Tokens de chrome: borderBase (eje cero), textBaseMuted (cursor vertical),
+//   textBase (dot de hover).
+// Tokens de dato (se conservan): criticalCrimson, criticalRed (familia crítica).
 // ---------------------------------------------------------------------------
+
+// Curva de drawdown bajo el eje cero con relleno semántico y cursor de hover.
 class UnderwaterPlotPainter extends CustomPainter {
   final Offset? hover;
   UnderwaterPlotPainter({this.hover});
@@ -541,6 +607,7 @@ class UnderwaterPlotPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja el área de drawdown con relleno semántico y cursor dinámico en hover.
   void paint(Canvas canvas, Size size) {
     final n = _pts.length;
     final dx = size.width / (n - 1);
@@ -548,8 +615,9 @@ class UnderwaterPlotPainter extends CustomPainter {
     final h = size.height - zeroY - 4;
     final isHov = hover != null;
 
+    // Eje cero: borde estructural → borderBase.
     canvas.drawLine(Offset(0, zeroY), Offset(size.width, zeroY),
-        Paint()..color = Gx.borderPanel..strokeWidth = 1);
+        Paint()..color = Gx.borderBase..strokeWidth = 1);
 
     final path = Path()..moveTo(0, zeroY);
     for (var i = 0; i < n; i++) path.lineTo(i * dx, zeroY + _pts[i] * h);
@@ -584,8 +652,15 @@ class UnderwaterPlotPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// RiskReturnScatterPainter — frontera de eficiencia
+// RiskReturnScatterPainter — frontera de eficiencia riesgo/retorno.
+// Puntos coloreados por zona de la frontera de Pareto; la más cercana al
+// cursor se amplía. Recibe: Offset? hover.
+// Tokens de chrome: borderBase (ejes cartesianos).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson, gradOptima (frontera de Pareto).
 // ---------------------------------------------------------------------------
+
+// Scatter plot de riesgo/retorno con frontera de eficiencia y hover en el punto más cercano.
 class RiskReturnScatterPainter extends CustomPainter {
   final Offset? hover;
   RiskReturnScatterPainter({this.hover});
@@ -602,16 +677,18 @@ class RiskReturnScatterPainter extends CustomPainter {
   static const _frontier = [0, 1, 2, 4, 3];
 
   @override
+  // Dibuja ejes, frontera de Pareto y puntos; el más cercano al cursor recibe glow ampliado.
   void paint(Canvas canvas, Size size) {
     const pad = 12.0;
     final w = size.width - pad * 2;
     final h = size.height - pad * 2;
 
+    // Ejes cartesianos: borde estructural → borderBase.
     canvas.drawLine(Offset(pad, pad), Offset(pad, size.height - pad),
-        Paint()..color = Gx.borderPanel..strokeWidth = 0.5);
+        Paint()..color = Gx.borderBase..strokeWidth = 0.5);
     canvas.drawLine(Offset(pad, size.height - pad),
         Offset(size.width - pad, size.height - pad),
-        Paint()..color = Gx.borderPanel..strokeWidth = 0.5);
+        Paint()..color = Gx.borderBase..strokeWidth = 0.5);
 
     // Frontera de Pareto.
     final fp = Path();
@@ -661,8 +738,14 @@ class RiskReturnScatterPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// TradeDistributionPainter — histograma de P&L por trade
+// TradeDistributionPainter — histograma de P&L por trade.
+// Barras positivas en familia óptima, negativas en familia crítica.
+// La barra bajo el cursor crece ligeramente. Recibe: Offset? hover.
+// Tokens de dato (se conservan): optimaCyan, criticalCrimson (señalizan
+//   ganancia vs. pérdida), optimaTeal (línea central separadora).
 // ---------------------------------------------------------------------------
+
+// Histograma de distribución de P&L con barras semánticas positivo/negativo.
 class TradeDistributionPainter extends CustomPainter {
   final Offset? hover;
   TradeDistributionPainter({this.hover});
@@ -673,6 +756,7 @@ class TradeDistributionPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja barras de histograma con la barra hovereada ampliada; línea central separadora.
   void paint(Canvas canvas, Size size) {
     final maxCount = _bins.map((b) => b.$2).reduce(max).toDouble();
     final n = _bins.length;
@@ -699,6 +783,7 @@ class TradeDistributionPainter extends CustomPainter {
           Paint()..color = c.withAlpha(hov ? 220 : 190));
     }
 
+    // Línea central separadora.
     canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height),
         Paint()
           ..color = Gx.optimaTeal.withAlpha(160)
@@ -711,8 +796,16 @@ class TradeDistributionPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// ParameterSensitivityPainter — robustez por parámetro
+// ParameterSensitivityPainter — robustez por parámetro de estrategia.
+// Barras horizontales coloreadas por el nivel de sensibilidad (alto=verde,
+// medio=ámbar, bajo=rojo). La fila bajo el cursor se amplía. Recibe: Offset? hover.
+// Tokens de chrome: gaugeTrack (riel de fondo de la barra, color canónico
+//   del sistema de gauges).
+// Tokens de dato (se conservan): optimaCyan, alertAmber, criticalCrimson
+//   (señalizan robustez alta/media/baja del parámetro).
 // ---------------------------------------------------------------------------
+
+// Barras horizontales de robustez por parámetro con track de fondo.
 class ParameterSensitivityPainter extends CustomPainter {
   final Offset? hover;
   ParameterSensitivityPainter({this.hover});
@@ -725,6 +818,7 @@ class ParameterSensitivityPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja el riel de fondo, la barra de robustez y el glow en la fila hovereada.
   void paint(Canvas canvas, Size size) {
     final n = _params.length;
     final rowH = size.height / n;
@@ -744,6 +838,7 @@ class ParameterSensitivityPainter extends CustomPainter {
       final barH = rowH * 0.44;
       final hov = i == hovRow;
 
+      // Riel de fondo: gaugeTrack es el token canónico del sistema de gauges.
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(barOffset, barY, barMaxW, barH), const Radius.circular(3)),
         Paint()..color = Gx.gaugeTrack,
@@ -761,6 +856,7 @@ class ParameterSensitivityPainter extends CustomPainter {
     }
   }
 
+  // Clasifica el valor de robustez en tres bandas semánticas.
   static Color _colorFor(double v) {
     if (v >= 0.70) return Gx.optimaCyan;
     if (v >= 0.45) return Gx.alertAmber;
@@ -772,8 +868,15 @@ class ParameterSensitivityPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// RegimeTimelinePainter — línea de tiempo de régimen
+// RegimeTimelinePainter — línea de tiempo de régimen de mercado.
+// Segmentos coloreados por tipo de régimen; el segmento bajo el cursor recibe
+// glow ampliado y borde reforzado. Recibe: Offset? hover.
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson (cada color identifica un tipo de régimen distinto).
+// MaskFilter.blur condicionado a hover (no en bucle de AnimationController) → aceptado.
 // ---------------------------------------------------------------------------
+
+// Barra de régimen con segmentos coloreados por tipo; el hovereado se resalta.
 class RegimeTimelinePainter extends CustomPainter {
   final Offset? hover;
   RegimeTimelinePainter({this.hover});
@@ -789,6 +892,7 @@ class RegimeTimelinePainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja cada segmento de régimen con su etiqueta; el hovereado recibe glow y borde reforzado.
   void paint(Canvas canvas, Size size) {
     final barH = size.height * 0.55;
     final barY = (size.height - barH) / 2;
@@ -847,8 +951,16 @@ class RegimeTimelinePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// OptimizationContourPainter — fitness landscape 2D
+// OptimizationContourPainter — fitness landscape 2D (16×16).
+// Grilla de 256 celdas con intensidad de fitness representada por color.
+// El cursor muestra un crosshair y la celda exacta se resalta con borde.
+// Recibe: Offset? hover.
+// Tokens de chrome: textBaseMuted (crosshair de hover).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson (gradiente de fitness: máximo=cian, mínimo=carmesí).
 // ---------------------------------------------------------------------------
+
+// Fitness landscape en grilla 16×16 con crosshair de hover y punto óptimo.
 class OptimizationContourPainter extends CustomPainter {
   final Offset? hover;
   OptimizationContourPainter({this.hover});
@@ -864,6 +976,7 @@ class OptimizationContourPainter extends CustomPainter {
   });
 
   @override
+  // Dibuja las celdas del landscape, el crosshair de hover y el punto óptimo.
   void paint(Canvas canvas, Size size) {
     const n = 16;
     final cellW = size.width / n;
@@ -896,12 +1009,12 @@ class OptimizationContourPainter extends CustomPainter {
       }
     }
 
-    // Crosshair en hover.
+    // Crosshair en hover: textBaseMuted reacciona a la paleta activa.
     if (hover != null) {
       canvas.drawLine(Offset(hover!.dx, 0), Offset(hover!.dx, size.height),
-          Paint()..color = Gx.textMuted.withAlpha(40)..strokeWidth = 0.5);
+          Paint()..color = Gx.textBaseMuted.withAlpha(40)..strokeWidth = 0.5);
       canvas.drawLine(Offset(0, hover!.dy), Offset(size.width, hover!.dy),
-          Paint()..color = Gx.textMuted.withAlpha(40)..strokeWidth = 0.5);
+          Paint()..color = Gx.textBaseMuted.withAlpha(40)..strokeWidth = 0.5);
     }
 
     // Punto óptimo.
@@ -916,6 +1029,7 @@ class OptimizationContourPainter extends CustomPainter {
     canvas.drawCircle(Offset(cx, cy), 4, Paint()..color = Gx.optimaCyan);
   }
 
+  // Mapea el nivel de fitness a un color semántico de 4 bandas.
   static Color _colorFor(double v) {
     if (v > 0.65) return Gx.optimaCyan;
     if (v > 0.35) return Gx.transitionIndigo;

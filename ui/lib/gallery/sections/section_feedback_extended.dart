@@ -1,13 +1,19 @@
 // Sección §9 Feedback extendido — notification-card, popconfirm, snackbar
-// variantes, result/status-page, backdrop, stepper/wizard.
+// variantes, result/status-page, backdrop, stepper/wizard, accordion.
 // Render-only con estado de UI local. Sin lógica de negocio ni FFI.
+// Tokens: superficies via wrappers frosted()/glassEnhanced()/cardSurface(),
+// texto via Gx.textBase*, bordes via Gx.borderBase/accentDynamic.
 
 import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
 import '../gallery_fx.dart';
 
 // ---------------------------------------------------------------------------
-// Notification Card — tarjeta de notificación persistente (leída / no leída)
+// GlowNotificationCard — tarjeta de notificación persistente (leída / no leída)
+// Parámetros: ninguno (estado local _unread).
+// Tokens de chrome: glassEnhanced (superficie), Gx.borderBase (borde reposo),
+//   Gx.textBase/textBaseSecondary/textBaseMuted (texto).
+// Color de estado: Gx.transitionIndigo (señal "no leída" — se conserva).
 // ---------------------------------------------------------------------------
 
 // Tarjeta de notificación con indicador de "no leída" (punto neón lateral).
@@ -23,29 +29,28 @@ class _GlowNotificationCardState extends State<GlowNotificationCard> {
   bool _unread = true;
 
   @override
+  // Renderiza la tarjeta con borde semántico en estado no leído y borde estructural
+  // global en estado leído; texto con tokens dinámicos para paper/bunker.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => setState(() => _unread = false),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard]),
-          borderRadius: BorderRadius.circular(Gx.rPanel),
-          border: Border.all(
-              color: _unread ? Gx.transitionIndigo.withAlpha(80) : Gx.borderPanel),
-          boxShadow: _unread
-              ? Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.15)
-              : null,
-        ),
+      child: glassEnhanced(
+        semanticColor: _unread ? Gx.transitionIndigo : Gx.accentDynamic,
+        padding: const EdgeInsets.all(Gx.space12),
+        glow: _unread
+            ? Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.15)
+            : null,
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Punto de "no leída".
+          // Punto indicador "no leída": semántico (transitionIndigo) — señalización interna.
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            width: 8,
-            height: 8,
-            margin: const EdgeInsets.only(top: 4, right: 10),
+            width: Gx.space8,
+            height: Gx.space8,
+            margin: EdgeInsets.only(
+                top: Gx.space4, right: Gx.space8 + Gx.space4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              // Colors.transparent es el valor invisible del punto; no es chrome.
               color: _unread ? Gx.transitionIndigo : Colors.transparent,
               boxShadow: _unread
                   ? Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.7)
@@ -53,13 +58,19 @@ class _GlowNotificationCardState extends State<GlowNotificationCard> {
             ),
           ),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              // Texto principal con token dinámico — legible en paper y bunker.
               Text('node-07 entró en régimen óptimo',
-                  style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary,
+                  style: Gx.uiSans(
+                      fontSize: 13,
+                      color: Gx.textBase,
                       weight: _unread ? FontWeight.w500 : FontWeight.w400)),
-              const SizedBox(height: 2),
+              SizedBox(height: Gx.space4 / 2),
+              // Timestamp con token muted dinámico.
               Text('hace 3 min',
-                  style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+                  style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
             ]),
           ),
         ]),
@@ -69,7 +80,11 @@ class _GlowNotificationCardState extends State<GlowNotificationCard> {
 }
 
 // ---------------------------------------------------------------------------
-// Popconfirm — confirmación inline con dos acciones
+// GlowPopconfirm — confirmación inline con dos acciones
+// Parámetros: ninguno (estado local _visible, _result).
+// Tokens de chrome: glassEnhanced (panel del confirm), Gx.borderBase (botón ancla),
+//   Gx.textBase*/textBaseLabel (texto), gradCritical + pureWhite (botón destructor).
+// Color de estado: Gx.criticalCrimson (señaliza acción destructiva — se conserva).
 // ---------------------------------------------------------------------------
 
 // Panel compacto de confirmación que aparece inline; tiene dos botones.
@@ -87,6 +102,8 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
   String _result = '';
 
   @override
+  // Renderiza el botón ancla y el panel de confirmación animado.
+  // El panel usa glassEnhanced con color crítico como énfasis semántico interno.
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -94,14 +111,20 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
       children: [
         // Botón ancla que abre el popconfirm.
         GestureDetector(
-          onTap: () => setState(() { _visible = true; _result = ''; }),
+          onTap: () => setState(() {
+            _visible = true;
+            _result = '';
+          }),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: Gx.space12, vertical: Gx.space8),
             decoration: BoxDecoration(
               color: Gx.surfaceFill,
               borderRadius: BorderRadius.circular(Gx.rButton),
-              border: Border.all(color: Gx.borderPanel),
+              // Borde estructural global dinámico para botón secundario.
+              border: Border.all(color: Gx.borderBase),
             ),
+            // El color criticalRed es señalización interna de acción destructiva.
             child: Text('Retirar node-19',
                 style: Gx.uiSans(fontSize: 13, color: Gx.criticalRed)),
           ),
@@ -110,56 +133,74 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
           duration: const Duration(milliseconds: 200),
           child: _visible
               ? Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: frosted(
-                    glow:
-                        Gx.glow(Gx.criticalCrimson, blur: 14, opacity: 0.2),
+                  padding: EdgeInsets.only(top: Gx.space8),
+                  child: glassEnhanced(
+                    semanticColor: Gx.criticalCrimson,
+                    padding: const EdgeInsets.all(Gx.space12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Pregunta con token dinámico base.
                         Text('¿Confirmar retiro?',
                             style: Gx.uiSans(
-                                fontSize: 13, color: Gx.textPrimary,
+                                fontSize: 13,
+                                color: Gx.textBase,
                                 weight: FontWeight.w500)),
-                        const SizedBox(height: 4),
+                        SizedBox(height: Gx.space4),
+                        // Descripción con token dinámico secundario.
                         Text('Esta acción archivará la célula.',
                             style: Gx.uiSans(
-                                fontSize: 12, color: Gx.textSecondary)),
-                        const SizedBox(height: 10),
+                                fontSize: 12,
+                                color: Gx.textBaseSecondary)),
+                        SizedBox(height: Gx.space8 + Gx.space4),
                         Row(children: [
+                          // Botón destructor: gradiente semántico de la familia crítica.
                           GestureDetector(
-                            onTap: () =>
-                                setState(() { _visible = false; _result = 'Retirado'; }),
+                            onTap: () => setState(
+                                () {
+                                  _visible = false;
+                                  _result = 'Retirado';
+                                }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 7),
+                                  horizontal: Gx.space12, vertical: 7),
                               decoration: BoxDecoration(
                                 gradient: Gx.linear(Gx.gradCritical),
-                                borderRadius: BorderRadius.circular(Gx.rButton),
+                                borderRadius:
+                                    BorderRadius.circular(Gx.rButton),
                                 boxShadow: Gx.glow(Gx.criticalCrimson,
                                     blur: 10, opacity: 0.5),
                               ),
+                              // pureWhite: texto sobre gradiente oscuro saturado (legibilidad).
                               child: Text('Retirar',
                                   style: Gx.uiSans(
                                       fontSize: 12, color: Gx.pureWhite)),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: Gx.space8),
+                          // Botón secundario con borde estructural global.
                           GestureDetector(
-                            onTap: () =>
-                                setState(() { _visible = false; _result = 'Cancelado'; }),
+                            onTap: () => setState(
+                                () {
+                                  _visible = false;
+                                  _result = 'Cancelado';
+                                }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 7),
+                                  horizontal: Gx.space12, vertical: 7),
                               decoration: BoxDecoration(
                                 color: Gx.surfaceFill,
-                                borderRadius: BorderRadius.circular(Gx.rButton),
-                                border: Border.all(color: Gx.borderPanel),
+                                borderRadius:
+                                    BorderRadius.circular(Gx.rButton),
+                                border:
+                                    Border.all(color: Gx.borderBase),
                               ),
+                              // textBaseLabel: etiqueta discreta en acción secundaria.
                               child: Text('Cancelar',
                                   style: Gx.uiSans(
-                                      fontSize: 12, color: Gx.textLabel)),
+                                      fontSize: 12,
+                                      color: Gx.textBaseLabel)),
                             ),
                           ),
                         ]),
@@ -170,13 +211,14 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
               : _result.isEmpty
                   ? const SizedBox.shrink()
                   : Padding(
-                      padding: const EdgeInsets.only(top: 6),
+                      padding: EdgeInsets.only(top: Gx.space4 + Gx.space4 / 2),
                       child: Text(_result,
                           style: Gx.uiSans(
                               fontSize: 12,
+                              // Color de resultado: semántico interno del estado final.
                               color: _result == 'Retirado'
                                   ? Gx.criticalCrimson
-                                  : Gx.textMuted)),
+                                  : Gx.textBaseMuted)),
                     ),
         ),
       ],
@@ -185,39 +227,56 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
 }
 
 // ---------------------------------------------------------------------------
-// Snackbar variantes — éxito, alerta, error
+// snackbarVariants() — 3 variantes de snackbar/toast (éxito, alerta, error)
+// Tokens de chrome: glassEnhanced por variante (superficie), Gx.textBase (texto).
+// Colores de dato: optimaCyan/alertAmber/criticalCrimson (señalizan tipo de mensaje).
 // ---------------------------------------------------------------------------
 
-// Muestra 3 variantes de snackbar/toast lado a lado con su color semántico.
+// Muestra 3 variantes de snackbar/toast apiladas con su color semántico.
 Widget snackbarVariants() {
   return Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _snackbar(Gx.iconCheck, 'Backtest completado', Gx.optimaCyan, Gx.optimaChipBg),
-      const SizedBox(height: 8),
-      _snackbar(Gx.iconWarning, 'Drift detectado en SPX', Gx.alertAmber, Gx.alertChipBg),
-      const SizedBox(height: 8),
-      _snackbar(Gx.iconDanger, 'Slippage crítico — retiro', Gx.criticalCrimson,
-          Gx.criticalChipBg),
+      _snackbar(Gx.iconCheck, 'Backtest completado', Gx.optimaCyan,
+          Gx.optimaChipBg),
+      SizedBox(height: Gx.space8),
+      _snackbar(Gx.iconWarning, 'Drift detectado en SPX', Gx.alertAmber,
+          Gx.alertChipBg),
+      SizedBox(height: Gx.space8),
+      _snackbar(Gx.iconDanger, 'Slippage crítico — retiro',
+          Gx.criticalCrimson, Gx.criticalChipBg),
     ],
   );
 }
 
-Widget _snackbar(IconData icon, String msg, Color c, Color bg) => frosted(
-      glow: Gx.glow(c, blur: 12, opacity: 0.25),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+// Snackbar individual: glassEnhanced con el color semántico del evento.
+// El ícono y el texto usan el color semántico (señalización interna del tipo de evento).
+Widget _snackbar(IconData icon, String msg, Color c, Color bg) =>
+    glassEnhanced(
+      semanticColor: c,
+      padding: const EdgeInsets.symmetric(
+          horizontal: Gx.space12, vertical: Gx.space8 + Gx.space4),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: c, shadows: Gx.textGlow(c, 8)),
-        const SizedBox(width: 10),
-        Flexible(child: Text(msg, style: Gx.uiSans(fontSize: 12, color: Gx.textPrimary))),
+        SizedBox(width: Gx.space8 + Gx.space4),
+        // Texto del mensaje con token base dinámico.
+        Flexible(
+            child: Text(msg,
+                style: Gx.uiSans(fontSize: 12, color: Gx.textBase))),
       ]),
     );
 
 // ---------------------------------------------------------------------------
-// Result / Status Page — página de resultado (éxito / error / vacío)
+// resultPage() — página de resultado (éxito / error)
+// Parámetros: [success] bool con default true.
+// Tokens de chrome: glassEnhanced (superficie), Gx.textBaseSecondary (cuerpo).
+// Colores de dato: optimaCyan/criticalCrimson (señalizan resultado — se conservan).
+// pureWhite: obligatorio para que ShaderMask coloree el texto del título correctamente.
 // ---------------------------------------------------------------------------
 
-// Renderiza 2 variantes de página de resultado: éxito y error.
+// Renderiza una variante de página de resultado (éxito o error).
+// [success] determina si se muestra la variante de backtest exitoso (true)
+// o fallo sistémico (false).
 Widget resultPage({bool success = true}) {
   final c = success ? Gx.optimaCyan : Gx.criticalCrimson;
   final grad = success ? Gx.gradOptima : Gx.gradCritical;
@@ -226,70 +285,78 @@ Widget resultPage({bool success = true}) {
       ? 'La estrategia node-07 superó el filtro de calidad.'
       : 'Slippage letal detectado. La célula fue archivada.';
 
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      gradient: Gx.linear([Gx.surfacePanel, Gx.deepSpace]),
-      borderRadius: BorderRadius.circular(Gx.rChrome),
-      border: Border.all(color: c.withAlpha(80)),
-      boxShadow: Gx.glow(c, blur: 20, opacity: 0.15),
-    ),
+  return glassEnhanced(
+    semanticColor: c,
+    padding: const EdgeInsets.all(Gx.space16),
+    glow: Gx.glow(c, blur: 20, opacity: 0.15),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Icono de estado con glow.
+        // Icono de estado con halo radial semántico.
         Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: RadialGradient(colors: [c.withAlpha(80), Colors.transparent]),
+            gradient: RadialGradient(
+                colors: [c.withAlpha(80), Colors.transparent]),
           ),
-          child: Icon(success ? Gx.iconCheck : Gx.iconDanger, size: 20, color: c,
+          child: Icon(success ? Gx.iconCheck : Gx.iconDanger,
+              size: 20,
+              color: c,
               shadows: Gx.textGlow(c, 12)),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: Gx.space8 + Gx.space4),
+        // Título con ShaderMask del gradiente semántico.
+        // pureWhite necesario para que el ShaderMask pinte el gradiente correctamente.
         ShaderMask(
-          shaderCallback: (r) => LinearGradient(colors: grad).createShader(r),
+          shaderCallback: (r) =>
+              LinearGradient(colors: grad).createShader(r),
           child: Text(title,
               style: Gx.displayGrotesque(
-                  fontSize: 18, color: Colors.white, weight: FontWeight.w500)),
+                  fontSize: 18,
+                  color: Gx.pureWhite,
+                  weight: FontWeight.w500)),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: Gx.space4 + Gx.space4 / 2),
+        // Cuerpo con token secundario dinámico — legible en paper/bunker.
         Text(body,
             textAlign: TextAlign.center,
-            style: Gx.uiSans(fontSize: 12, color: Gx.textSecondary)),
+            style:
+                Gx.uiSans(fontSize: 12, color: Gx.textBaseSecondary)),
       ],
     ),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Backdrop / Scrim — velo de fondo oscuro con panel encima
+// backdropExample() — velo de fondo oscuro con panel encima
+// Tokens de chrome: Gx.deepSpace (velo estructural — lienzo base del ZUI),
+//   glassEnhanced (panel flotante), Gx.textBase (texto del modal).
 // ---------------------------------------------------------------------------
 
 // Muestra el velo deepSpace semitransparente con un panel de vidrio encima.
+// deepSpace es el token canónico del lienzo base — su uso como velo es correcto.
 Widget backdropExample() {
   return Stack(
     children: [
-      // Velo de fondo.
+      // Velo de fondo: deepSpace es el lienzo base del ZUI, apropiado para scrim.
       Container(
         height: 80,
         decoration: BoxDecoration(
-          color: Gx.deepSpace.withAlpha(200),
+          color: Gx.canvasBase.withAlpha(200),
           borderRadius: BorderRadius.circular(Gx.rPanel),
         ),
       ),
       // Panel flotante centrado sobre el velo.
       Positioned(
-        left: 20,
-        right: 20,
-        top: 16,
-        child: frosted(
-          padding: const EdgeInsets.all(12),
-          glow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.2),
+        left: Gx.space16 + Gx.space4,
+        right: Gx.space16 + Gx.space4,
+        top: Gx.space16,
+        child: panelSurface(
+          padding: const EdgeInsets.all(Gx.space12),
           child: Text('Modal sobre backdrop',
-              style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary)),
+              style: Gx.uiSans(fontSize: 13, color: Gx.textBase)),
         ),
       ),
     ],
@@ -297,10 +364,15 @@ Widget backdropExample() {
 }
 
 // ---------------------------------------------------------------------------
-// Stepper / Wizard — pasos secuenciales con estados completo/actual/pendiente
+// GlowStepper — stepper de 4 pasos con estados completo/actual/pendiente
+// Parámetros: ninguno (estado local _current).
+// Tokens de chrome: Gx.gaugeTrack (riel de progreso), Gx.textBase* (texto).
+// Colores de estado: optimaCyan (completo), transitionIndigo (activo),
+//   textMuted (pendiente) — señalización interna del paso actual.
 // ---------------------------------------------------------------------------
 
-// Muestra un stepper de 4 pasos: algunos completados, uno activo, el resto pendiente.
+// Stepper de 4 pasos: algunos completados, uno activo, el resto pendiente.
+// Al tocar un círculo de paso se navega a ese paso (demo de interacción).
 class GlowStepper extends StatefulWidget {
   const GlowStepper({super.key});
   @override
@@ -314,29 +386,31 @@ class _GlowStepperState extends State<GlowStepper> {
   static const _steps = ['Datos', 'Backtest', 'Validar', 'Incubar'];
 
   @override
+  // Renderiza la fila de pasos y la barra de progreso; el paso activo recibe glow.
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Fila de pasos.
+        // Fila de círculos de pasos.
         Row(
           children: _steps.asMap().entries.map((e) {
             final completed = e.key < _current;
             final active = e.key == _current;
+            // Colores de estado: semánticos internos del paso.
             final color = completed
                 ? Gx.optimaCyan
                 : active
                     ? Gx.transitionIndigo
-                    : Gx.textMuted;
+                    : Gx.textBaseMuted;
             return Expanded(
               child: Column(children: [
-                // Círculo del paso.
+                // Círculo del paso con glow en completado/activo.
                 GestureDetector(
                   onTap: () => setState(() => _current = e.key),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: 24,
-                    height: 24,
+                    width: Gx.space24,
+                    height: Gx.space24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: completed
@@ -344,33 +418,37 @@ class _GlowStepperState extends State<GlowStepper> {
                           : active
                               ? Gx.transitionIndigo.withAlpha(60)
                               : Gx.gaugeTrack,
-                      border: Border.all(color: color, width: active ? 2 : 1),
+                      border: Border.all(
+                          color: color, width: active ? 2 : 1),
                       boxShadow: (active || completed)
                           ? Gx.glow(color, blur: 10, opacity: 0.5)
                           : null,
                     ),
                     child: Center(
                       child: completed
-                          ? Icon(Gx.iconCheck, size: 12, color: Gx.deepSpace)
+                          ? Icon(Gx.iconCheck,
+                              size: 12, color: Gx.deepSpace)
                           : Text('${e.key + 1}',
-                              style:
-                                  Gx.dataMono(fontSize: 10, color: color)),
+                              style: Gx.dataMono(
+                                  fontSize: 10, color: color)),
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: Gx.space4),
+                // Etiqueta del paso: token de texto según estado.
                 Text(e.value,
                     style: Gx.uiSans(fontSize: 10, color: color)),
               ]),
             );
           }).toList(),
         ),
-        const SizedBox(height: 12),
-        // Barra de progreso.
+        SizedBox(height: Gx.space12),
+        // Barra de progreso con riel de gauge y relleno gradiente óptimo.
         Container(
           height: 3,
           decoration: BoxDecoration(
             color: Gx.gaugeTrack,
+            // barra del stepper (3px alto): radio decorativo
             borderRadius: BorderRadius.circular(2),
           ),
           child: FractionallySizedBox(
@@ -379,8 +457,10 @@ class _GlowStepperState extends State<GlowStepper> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: Gx.linear(Gx.gradOptima),
+                // barra del stepper (3px alto): radio decorativo
                 borderRadius: BorderRadius.circular(2),
-                boxShadow: Gx.glow(Gx.optimaCyan, blur: 8, opacity: 0.5),
+                boxShadow:
+                    Gx.glow(Gx.optimaCyan, blur: 8, opacity: 0.5),
               ),
             ),
           ),
@@ -391,10 +471,15 @@ class _GlowStepperState extends State<GlowStepper> {
 }
 
 // ---------------------------------------------------------------------------
-// Accordion / Collapse — secciones plegables
+// GlowAccordion — secciones plegables con animación
+// Parámetros: ninguno (estado local _open).
+// Tokens de chrome: Gx.surfaceRaised (fondo de cabecera activa — hover de fila),
+//   cardSurface() (cuerpo de sección expandida), Gx.textBase*/borderBase (texto/borde).
+// Color de estado: Gx.transitionIndigo (borde de sección activa — señal interna).
 // ---------------------------------------------------------------------------
 
 // Lista de secciones plegables; cada sección se abre/cierra con animación.
+// Al tocar la cabecera la sección alterna entre abierta y cerrada.
 class GlowAccordion extends StatefulWidget {
   const GlowAccordion({super.key});
   @override
@@ -406,12 +491,16 @@ class _GlowAccordionState extends State<GlowAccordion> {
   int _open = 0;
 
   static const _sections = [
-    ('Parámetros del backtest', 'Ventana 252 días · Capital 1M · Comisión 0.1bps'),
-    ('Filtros de régimen', 'HMM 4 estados · Umbral volatilidad 0.22'),
-    ('Criterios de retiro', 'Drawdown máx. 8% · Slippage letal >15bps'),
+    ('Parámetros del backtest',
+        'Ventana 252 días · Capital 1M · Comisión 0.1bps'),
+    ('Filtros de régimen',
+        'HMM 4 estados · Umbral volatilidad 0.22'),
+    ('Criterios de retiro',
+        'Drawdown máx. 8% · Slippage letal >15bps'),
   ];
 
   @override
+  // Renderiza cada sección con cabecera clicable y contenido expandible.
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -420,19 +509,23 @@ class _GlowAccordionState extends State<GlowAccordion> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Cabecera de la sección.
+            // Cabecera de la sección: fondo surfaceRaised en activa.
             GestureDetector(
               onTap: () =>
                   setState(() => _open = isOpen ? -1 : e.key),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                    horizontal: Gx.space12, vertical: Gx.space8 + Gx.space4),
                 decoration: BoxDecoration(
-                  color: isOpen ? Gx.surfaceRaised : Gx.surfacePanel,
+                  // surfaceRaised es el token de hover de fila — correcto para cabecera activa.
+                  color: isOpen ? Gx.surfaceRaisedDynamic : Gx.surfacePanel,
                   border: Border(
                       bottom: BorderSide(
-                          color: isOpen ? Gx.transitionIndigo : Gx.divider,
-                          width: isOpen ? 1.5 : 1)),
+                          // Borde inferior: semántico interno (activa) vs divider (inactiva).
+                          color: isOpen
+                              ? Gx.transitionIndigo
+                              : Gx.divider,
+                          width: isOpen ? Gx.borderFocus : Gx.borderHairline)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -442,31 +535,37 @@ class _GlowAccordionState extends State<GlowAccordion> {
                           overflow: TextOverflow.ellipsis,
                           style: Gx.uiSans(
                               fontSize: 13,
-                              color: isOpen ? Gx.textPrimary : Gx.textSecondary,
-                              weight: isOpen ? FontWeight.w500 : FontWeight.w400)),
+                              // Texto: base en activa, secundario en inactiva.
+                              color: isOpen
+                                  ? Gx.textBase
+                                  : Gx.textBaseSecondary,
+                              weight: isOpen
+                                  ? FontWeight.w500
+                                  : FontWeight.w400)),
                     ),
                     AnimatedRotation(
                       turns: isOpen ? 0.5 : 0,
                       duration: const Duration(milliseconds: 200),
                       child: Icon(Gx.iconChevronDown,
-                          size: 14, color: Gx.textSecondary),
+                          size: 14, color: Gx.textBaseSecondary),
                     ),
                   ],
                 ),
               ),
             ),
-            // Contenido expandido.
+            // Cuerpo expandido con cardSurface() — reacciona a los modos.
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
               child: isOpen
-                  ? Container(
+                  ? cardSurface(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      color: Gx.surfaceCard,
+                          horizontal: Gx.space12,
+                          vertical: Gx.space8 + Gx.space4),
                       child: Text(e.value.$2,
                           style: Gx.uiSans(
-                              fontSize: 12, color: Gx.textSecondary)),
+                              fontSize: 12,
+                              color: Gx.textBaseSecondary)),
                     )
                   : const SizedBox.shrink(),
             ),

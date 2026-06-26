@@ -1,11 +1,13 @@
 // Sección de animaciones universales de DESIGN.md:
-//   • Acento Primario A/B — elección de variante de accentPrimary
+//   • Acento Primario A/B — comparativa de dos variantes de accentPrimary candidato
 //   • Odómetro numérico — todo número dinámico anima desde 0.0 (regla universal)
 //   • Gauge radial con arco animado — sweepAngle 0→final (regla universal)
 //   • Equity-curve con path drawing + efecto eléctrico (ElectricScanMixin)
 //
 // Todos los widgets manejan estado local de UI (AnimationController, valor
 // numérico interpolado). Sin lógica de negocio ni FFI — Cáscara Delgada.
+// Tokens: superficies via wrappers panelSurface()/cardSurface(),
+//   texto via Gx.textBase*, bordes via Gx.borderBase.
 
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -14,32 +16,50 @@ import '../gallery_tokens.dart';
 import '../../widgets/electric_primitives.dart';
 
 // ---------------------------------------------------------------------------
-// Tarea 2 — Sección "Acento Primario A/B"
+// AccentAbSection — comparativa side-by-side de dos variantes de acento
+// Parámetros: [colorA] y [colorB] con defaults de demostración histórica.
+// Los colores son candidatos de "accentPrimary"; se muestran en Chrome
+// (borde de foco, tab activo, chip) para evaluar legibilidad.
+// Tokens de chrome: deepSpace (fondo del panel), Gx.borderBase (borde panel),
+//   Gx.surfaceFill (fondo input), Gx.textBase*/textBaseMuted (texto).
+// Los colores A/B son PARÁMETROS de demostración — no son chrome genérico.
 // ---------------------------------------------------------------------------
 
-// Muestra dos paneles side-by-side para que el usuario compare la variante A
-// (Rojo Militar) y la variante B (Neutro Frío). Cada panel incluye:
+// Muestra dos paneles side-by-side para que el usuario compare dos variantes
+// de acento primario candidatas. Cada panel incluye:
 //   • Un input simulado con borde de foco en el color de la variante
 //   • Un underline de tab activo en el color de la variante
-//   • Etiqueta y chip con el hex
-// Fondo de ambos paneles: deepSpace.
+//   • Chip con el hex del color
+// [colorA] — primera variante de acento (default: rojo militar #CC2B2B)
+// [colorB] — segunda variante de acento (default: neutro frío #B4BFCE)
 class AccentAbSection extends StatelessWidget {
-  const AccentAbSection({super.key});
+  final Color colorA;
+  final Color colorB;
+
+  const AccentAbSection({
+    super.key,
+    // Valores de demostración histórica de las dos candidatas de acento primario.
+    // Se exponen como parámetros para que el callsite pueda sustituirlos.
+    this.colorA = const Color(0xFFCC2B2B),
+    this.colorB = const Color(0xFFB4BFCE),
+  });
 
   @override
+  // Renderiza las dos columnas de demostración de acento lado a lado.
   Widget build(BuildContext context) {
-    // Muestra las dos variantes de acento primario en columnas iguales.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: _AccentPanel(
-          color: const Color(0xFFCC2B2B),
+        Expanded(
+            child: _AccentPanel(
+          color: colorA,
           label: 'A — Rojo Militar',
           hex: '#CC2B2B',
         )),
-        const SizedBox(width: 12),
-        Expanded(child: _AccentPanel(
-          color: const Color(0xFFB4BFCE),
+        SizedBox(width: Gx.space12),
+        Expanded(
+            child: _AccentPanel(
+          color: colorB,
           label: 'B — Neutro Frío',
           hex: '#B4BFCE',
         )),
@@ -48,12 +68,24 @@ class AccentAbSection extends StatelessWidget {
   }
 }
 
-// Panel individual de comparación A/B. Muestra los usos del token en Chrome:
-// borde de foco, tab activo, chip con el hex.
+// ---------------------------------------------------------------------------
+// _AccentPanel — panel individual de comparación A/B
+// Parámetros: [color] color candidato de acento, [label] nombre, [hex] texto del chip.
+// Tokens de chrome: deepSpace (fondo panel — sin glass para ver el color limpio),
+//   Gx.borderBase (borde del panel), Gx.surfaceFill (fondo input),
+//   Gx.textBaseSecondary (etiqueta), Gx.textBaseMuted (hint input inactivo),
+//   Gx.rInput/rPanel/rChip (radios).
+// [color] es el parámetro de demostración: se usa en borde de foco, tab y chip.
+// ---------------------------------------------------------------------------
+
+// Panel de comparación de una variante de acento.
+// Muestra cómo se vería el token en tres usos de chrome: borde de foco,
+// tab activo y chip de color.
 class _AccentPanel extends StatefulWidget {
   final Color color;
   final String label;
   final String hex;
+
   const _AccentPanel({
     required this.color,
     required this.label,
@@ -69,41 +101,46 @@ class _AccentPanelState extends State<_AccentPanel> {
   bool _focused = false;
 
   @override
+  // Renderiza el panel de demostración del acento con tres usos de chrome.
   Widget build(BuildContext context) {
     // Panel sólido sobre deepSpace — sin glass para que el color destaque limpio.
+    // deepSpace es el fondo idóneo para evaluar el color de acento sin ruido.
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
       decoration: BoxDecoration(
-        color: Gx.deepSpace,
-        border: Border.all(color: Gx.borderPanel),
+        color: Gx.canvasBase,
+        // Borde estructural global dinámico del panel de demostración.
+        border: Border.all(color: Gx.borderBase),
         borderRadius: BorderRadius.circular(Gx.rPanel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Etiqueta de variante.
+          // Etiqueta de la variante con token dinámico secundario.
           Text(widget.label,
               style: Gx.uiSans(
                   fontSize: 12,
-                  color: Gx.textSecondary,
+                  color: Gx.textBaseSecondary,
                   weight: FontWeight.w500)),
-          const SizedBox(height: 10),
+          SizedBox(height: Gx.space8 + Gx.space4),
 
-          // Input con borde de foco en el color de la variante.
+          // Input demo con borde de foco en el color de la variante.
           GestureDetector(
             onTap: () => setState(() => _focused = !_focused),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Gx.space8 + Gx.space4, vertical: 9),
               decoration: BoxDecoration(
                 color: Gx.surfaceFill,
                 borderRadius: BorderRadius.circular(Gx.rInput),
                 border: Border.all(
-                  color: _focused ? widget.color : Gx.borderPanel,
-                  width: _focused ? 1.5 : 1.0,
+                  // Foco activo: usa el color candidato de la variante.
+                  // Reposo: borde estructural global dinámico.
+                  color: _focused ? widget.color : Gx.borderBase,
+                  width: _focused ? Gx.borderFocus : Gx.borderHairline,
                 ),
-                // Glow limpio de foco (sin aberración cromática).
                 boxShadow: _focused
                     ? Gx.glow(widget.color, blur: 18, opacity: 0.40)
                     : null,
@@ -112,22 +149,24 @@ class _AccentPanelState extends State<_AccentPanel> {
                 _focused ? 'Campo en foco' : 'Toca para enfocar',
                 style: Gx.dataMono(
                     fontSize: 12,
-                    color: _focused ? widget.color : Gx.textMuted),
+                    color: _focused ? widget.color : Gx.textBaseMuted),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: Gx.space12),
 
-          // Tab activo: underline de 2px en el color de la variante.
+          // Demo de tab activo con underline en el color de la variante.
           _TabDemo(color: widget.color),
-          const SizedBox(height: 14),
+          SizedBox(height: Gx.space12 + Gx.space4 / 2),
 
-          // Chip con el hex del token.
+          // Chip con el hex del token de acento.
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+                horizontal: Gx.space8 + Gx.space4, vertical: Gx.space4),
             decoration: BoxDecoration(
               color: widget.color.withOpacity(0.12),
-              border: Border.all(color: widget.color.withOpacity(0.50)),
+              border:
+                  Border.all(color: widget.color.withOpacity(0.50)),
               borderRadius: BorderRadius.circular(Gx.rChip),
             ),
             child: Text(widget.hex,
@@ -140,8 +179,15 @@ class _AccentPanelState extends State<_AccentPanel> {
   }
 }
 
-// Demo de tab con underline activo en el color de la variante.
-// Muestra tres pestañas; la primera siempre está activa.
+// ---------------------------------------------------------------------------
+// _TabDemo — demo de tab con underline activo en el color de la variante
+// Parámetros: [color] color candidato de acento para el underline activo.
+// Tokens de chrome: Colors.transparent (borde inactivo — correcto, es invisibilidad),
+//   Gx.textBaseMuted (etiqueta tab inactivo).
+// ---------------------------------------------------------------------------
+
+// Demo de tres pestañas; la activa muestra el underline en el color dado.
+// Al tocar una pestaña se activa.
 class _TabDemo extends StatefulWidget {
   final Color color;
   const _TabDemo({required this.color});
@@ -150,8 +196,11 @@ class _TabDemo extends StatefulWidget {
 }
 
 class _TabDemoState extends State<_TabDemo> {
+  // Índice de la pestaña activa.
   int _active = 0;
+
   @override
+  // Renderiza las tres pestañas con underline animado.
   Widget build(BuildContext context) {
     return Row(
       children: List.generate(3, (i) {
@@ -159,12 +208,13 @@ class _TabDemoState extends State<_TabDemo> {
         return GestureDetector(
           onTap: () => setState(() => _active = i),
           child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.only(bottom: 4),
+            margin: EdgeInsets.only(right: Gx.space12),
+            padding: EdgeInsets.only(bottom: Gx.space4),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  // Filo neón 2px en variante activa, transparente en inactiva.
+                  // Filo neón 2px en variante activa; transparent en inactiva.
+                  // Colors.transparent aquí es el "sin borde" del tab inactivo — correcto.
                   color: isActive ? widget.color : Colors.transparent,
                   width: 2,
                 ),
@@ -173,7 +223,8 @@ class _TabDemoState extends State<_TabDemo> {
             child: Text('Tab ${i + 1}',
                 style: Gx.uiSans(
                     fontSize: 12,
-                    color: isActive ? widget.color : Gx.textMuted)),
+                    // Color del texto: el acento candidato en activa, muted en inactiva.
+                    color: isActive ? widget.color : Gx.textBaseMuted)),
           ),
         );
       }),
@@ -182,23 +233,23 @@ class _TabDemoState extends State<_TabDemo> {
 }
 
 // ---------------------------------------------------------------------------
-// Tarea 3 — Odómetro numérico (stat-card / kpi)
+// OdometerSection — odómetro numérico (stat-card / KPI)
+// Tokens de chrome: superficies via getters dinámicos (surfacePanel/surfaceCard
+//   en gradiente), Gx.borderBase (borde de tarjeta), Gx.textBaseLabel (etiqueta),
+//   Gx.surfaceFill + Gx.borderBase (botón Replay), Gx.textBaseSecondary (botón).
+// Colores de dato: optimaCyan/reactorGreen (señalizan el valor de la KPI).
 // ---------------------------------------------------------------------------
 
-// Widget que anima un número desde 0.0 hasta el valor destino usando
-// AnimationController + Tween<double> + CurvedAnimation(Curves.easeOut).
-// El texto formatea el double interpolado con la misma precisión decimal
-// que el valor destino, nunca salta al valor final.
-// Incluye botón "Replay" para repetir el efecto.
+// Tres ejemplos de tarjeta KPI con odómetro: entero grande, porcentaje, valor con signo.
 class OdometerSection extends StatelessWidget {
   const OdometerSection({super.key});
 
   @override
+  // Renderiza un Wrap de tres tarjetas KPI con odómetro animado.
   Widget build(BuildContext context) {
-    // Tres ejemplos: entero grande, porcentaje, valor con signo.
     return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: Gx.space12,
+      runSpacing: Gx.space12,
       children: const [
         _StatCardOdometer(
           label: 'Operaciones totales',
@@ -229,12 +280,17 @@ class OdometerSection extends StatelessWidget {
   }
 }
 
-// Tarjeta KPI individual con odómetro. Anima al montarse.
-// [label] — etiqueta de la métrica (sans 12px en textLabel)
-// [targetValue] — valor destino de la animación
-// [decimals] — decimales a mostrar durante toda la animación
-// [color] — color semántico del valor (neón con textGlow)
-// [prefix] / [suffix] — texto antes/después del número (signo, unidad)
+// ---------------------------------------------------------------------------
+// _StatCardOdometer — tarjeta KPI individual con odómetro animado
+// Parámetros: [label] etiqueta, [targetValue] valor destino, [decimals] precisión,
+//   [color] color semántico del valor, [prefix]/[suffix] texto adicional.
+// Tokens de chrome: gradiente surfacePanel→surfaceCard (superficie dinámica),
+//   Gx.borderBase (borde de tarjeta), Gx.textBaseLabel (etiqueta),
+//   Gx.surfaceFill + Gx.borderBase + Gx.textBaseSecondary (botón Replay).
+// ---------------------------------------------------------------------------
+
+// Tarjeta KPI con odómetro: anima el número desde 0 al valor destino al montarse.
+// Botón Replay para repetir la animación.
 class _StatCardOdometer extends StatefulWidget {
   final String label;
   final double targetValue;
@@ -284,14 +340,12 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
   void _replay() => _ctrl.forward(from: 0.0);
 
   // Formatea el valor interpolado con la precisión del destino.
-  // Usa separador de miles solo cuando el destino no tiene sufijo de unidad
-  // y la magnitud supera 9999.
+  // Usa separador de miles solo cuando la magnitud supera 9999 y no tiene unidad.
   String _format(double v) {
     if (widget.decimals == 0) {
-      // Entero — separador de miles con espacio fino para legibilidad.
       final n = v.toInt();
       if (n >= 10000) {
-        // Formatea manualmente con puntos como separador de miles.
+        // Formatea con puntos como separador de miles.
         final s = n.toString();
         final buf = StringBuffer();
         var count = 0;
@@ -308,18 +362,20 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
   }
 
   @override
+  // Tarjeta KPI con gradiente dinámico de superficie, borde estructural y odómetro animado.
   Widget build(BuildContext context) {
-    // Tarjeta KPI sólida: panelSolid con hairline y glow tenue del estado.
     return Container(
       width: 180,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
+          // Getters dinámicos: reaccionan al modo glass/tint/solid.
           colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
-        border: Border.all(color: Gx.borderPanel),
+        // Borde estructural global dinámico.
+        border: Border.all(color: Gx.borderBase),
         borderRadius: BorderRadius.circular(Gx.rPanel),
         boxShadow: Gx.glow(widget.color, blur: 20, opacity: 0.10),
       ),
@@ -327,12 +383,12 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Etiqueta de la métrica.
+          // Etiqueta de la métrica con token label dinámico.
           Text(widget.label,
-              style: Gx.uiSans(fontSize: 12, color: Gx.textLabel)),
-          const SizedBox(height: 8),
+              style: Gx.uiSans(fontSize: 12, color: Gx.textBaseLabel)),
+          SizedBox(height: Gx.space8),
 
-          // Número animado con odómetro.
+          // Número animado con odómetro y glow semántico.
           AnimatedBuilder(
             animation: _anim,
             builder: (_, __) {
@@ -347,20 +403,22 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
               );
             },
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: Gx.space8 + Gx.space4),
 
-          // Botón Replay — reinicia el odómetro desde cero.
+          // Botón Replay con borde estructural global.
           GestureDetector(
             onTap: _replay,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Gx.space8 + Gx.space4, vertical: Gx.space4),
               decoration: BoxDecoration(
                 color: Gx.surfaceFill,
-                border: Border.all(color: Gx.borderPanel),
+                border: Border.all(color: Gx.borderBase),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),
               child: Text('Replay',
-                  style: Gx.uiSans(fontSize: 11, color: Gx.textSecondary)),
+                  style: Gx.uiSans(
+                      fontSize: 11, color: Gx.textBaseSecondary)),
             ),
           ),
         ],
@@ -370,21 +428,23 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
 }
 
 // ---------------------------------------------------------------------------
-// Tarea 4 — Gauge radial con arco animado
+// GaugeSection — cuatro gauges radiales animados con colores semánticos
+// Tokens de chrome: superficies vía getters dinámicos, Gx.borderBase,
+//   Gx.textBaseLabel (etiqueta), Gx.textBaseSecondary (botón Replay).
+// Colores de dato: los cuatro pares semánticos (óptimo/trans/alerta/crítico).
 // ---------------------------------------------------------------------------
 
-// Muestra cuatro versiones del gauge radial con colores semánticos:
-// óptimo (optimaCyan), transición (transitionIndigo), alerta (alertAmber),
-// crítico (criticalCrimson). Cada gauge anima su arco y su número central
-// simultáneamente al montarse. Incluye botón Replay.
+// Cuatro versiones del gauge radial con colores semánticos: óptimo, transición,
+// alerta y crítico. Cada uno anima su arco y número central al montarse.
 class GaugeSection extends StatelessWidget {
   const GaugeSection({super.key});
 
   @override
+  // Renderiza un Wrap de cuatro gauges radiales.
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 16,
-      runSpacing: 16,
+      spacing: Gx.space16,
+      runSpacing: Gx.space16,
       children: const [
         _AnimatedGauge(
           label: 'Sharpe Ratio',
@@ -419,11 +479,16 @@ class GaugeSection extends StatelessWidget {
   }
 }
 
-// Gauge radial individual con arco animado y odómetro central simultáneo.
-// [value] — fracción 0.0–1.0 que determina el ángulo final del arco
-// [displayValue] — texto que aparece en el centro (el odómetro usa [value])
-// [color] — color semántico del estado
-// [gradColors] — colores para el degradado del arco
+// ---------------------------------------------------------------------------
+// _AnimatedGauge — gauge radial individual con arco animado y odómetro central
+// Parámetros: [label] etiqueta, [value] fracción 0–1, [displayValue] texto central,
+//   [color] color semántico, [gradColors] colores del gradiente del arco.
+// Tokens de chrome: gradiente dinámico surfacePanel→surfaceCard (superficie),
+//   Gx.borderBase (borde), Gx.textBaseLabel (etiqueta), Gx.textBaseSecondary (Replay).
+// ---------------------------------------------------------------------------
+
+// Gauge radial con arco que barre desde 0 hasta value*totalSweep al montarse.
+// El número central también interpola desde 0% con odómetro simultáneo.
 class _AnimatedGauge extends StatefulWidget {
   final String label;
   final double value;
@@ -466,20 +531,23 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
     super.dispose();
   }
 
+  // Reinicia la animación desde cero.
   void _replay() => _ctrl.forward(from: 0.0);
 
   @override
+  // Tarjeta de gauge con gradiente dinámico, arco CustomPainter y botón Replay.
   Widget build(BuildContext context) {
     return Container(
       width: 150,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
+          // Getters dinámicos: reaccionan al modo global.
           colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
-        border: Border.all(color: Gx.borderPanel),
+        border: Border.all(color: Gx.borderBase),
         borderRadius: BorderRadius.circular(Gx.rPanel),
         boxShadow: Gx.glow(widget.color, blur: 16, opacity: 0.12),
       ),
@@ -505,26 +573,30 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
               );
             },
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: Gx.space8),
 
-          // Etiqueta del gauge.
+          // Etiqueta del gauge con token label dinámico.
           Text(widget.label,
-              style: Gx.uiSans(fontSize: 11, color: Gx.textLabel),
+              style:
+                  Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel),
               textAlign: TextAlign.center),
-          const SizedBox(height: 8),
+          SizedBox(height: Gx.space8),
 
-          // Botón Replay.
+          // Botón Replay con borde estructural global.
           GestureDetector(
             onTap: _replay,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Gx.space8 + Gx.space4, vertical: 3),
               decoration: BoxDecoration(
                 color: Gx.surfaceFill,
-                border: Border.all(color: Gx.borderPanel),
+                border: Border.all(color: Gx.borderBase),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),
               child: Text('Replay',
-                  style: Gx.uiSans(fontSize: 10, color: Gx.textSecondary)),
+                  style: Gx.uiSans(
+                      fontSize: 10,
+                      color: Gx.textBaseSecondary)),
             ),
           ),
         ],
@@ -533,9 +605,17 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
   }
 }
 
-// Painter del arco radial del gauge. Recibe [progress] (0.0–1.0) de la
-// animación y traza el arco hasta (progress × targetFraction × ángulo total).
-// El número central también se interpola desde 0 hasta [targetFraction].
+// ---------------------------------------------------------------------------
+// _GaugePainter — painter del arco radial del gauge
+// Recibe [progress] (0.0–1.0) de la animación y traza el arco hasta
+// (progress × targetFraction × totalSweep). El número central también
+// se interpola desde 0 hasta targetFraction.
+// Tokens de chrome: Gx.divider (riel del gauge).
+// El glow del arco usa MaskFilter.blur — aceptado porque está en CustomPainter
+// accionado por AnimationController (no en bucle de hover perpetuo).
+// ---------------------------------------------------------------------------
+
+// Painter del arco radial animado con riel de fondo y número central interpolado.
 class _GaugePainter extends CustomPainter {
   final double progress; // progreso de la animación (0.0–1.0)
   final double targetFraction; // fracción destino del gauge (0.0–1.0)
@@ -552,15 +632,16 @@ class _GaugePainter extends CustomPainter {
   });
 
   @override
+  // Dibuja el riel del gauge, el arco animado con glow y el número central interpolado.
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.shortestSide / 2 - 8;
 
-    // Ángulo total del arco: de -200° a +20° (240° de barrido).
+    // Ángulo total del arco: de −200° a +20° (240° de barrido).
     const startAngle = -200.0 * pi / 180;
     const totalSweep = 240.0 * pi / 180;
 
-    // Riel del gauge (fondo del arco).
+    // Riel del gauge: divider es el token de separadores — apropiado para el fondo.
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       startAngle,
@@ -576,6 +657,7 @@ class _GaugePainter extends CustomPainter {
     // Arco animado: sweepAngle va de 0 hasta (progress × targetFraction × totalSweep).
     final currentSweep = progress * targetFraction * totalSweep;
     if (currentSweep > 0.01) {
+      // Glow del arco — MaskFilter.blur en CustomPainter accionado por animación: aceptado.
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -585,10 +667,10 @@ class _GaugePainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 8
           ..strokeCap = StrokeCap.round
-          // Glow del arco con color semántico.
           ..color = color.withAlpha(70)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
       );
+      // Arco nítido con degradado semántico.
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -608,7 +690,8 @@ class _GaugePainter extends CustomPainter {
 
     // Número central interpolado con odómetro simultáneo.
     // Interpola el porcentaje de 0 a (progress × targetFraction × 100).
-    final pct = (progress * targetFraction * 100).toStringAsFixed(0);
+    final pct =
+        (progress * targetFraction * 100).toStringAsFixed(0);
     final tp = TextPainter(
       text: TextSpan(
         text: '$pct%',
@@ -622,7 +705,8 @@ class _GaugePainter extends CustomPainter {
     )..layout();
     tp.paint(
       canvas,
-      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+      Offset(
+          center.dx - tp.width / 2, center.dy - tp.height / 2),
     );
   }
 
@@ -632,7 +716,11 @@ class _GaugePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Tarea 5 — Equity-curve con path drawing
+// EquityCurveAnimated — equity-curve con path drawing y efecto eléctrico
+// Tokens de chrome: gradiente dinámico surfacePanel→surfaceCard (superficie),
+//   Gx.borderBase (borde panel), Gx.textBaseSecondary (ícono cabecera),
+//   Gx.surfaceFill + Gx.borderBase + Gx.textBaseSecondary (botón Replay).
+// Colores de dato: optimaCyan (línea de equity — señal alcista, se conserva).
 // ---------------------------------------------------------------------------
 
 // Widget que muestra la curva de equity con animación de path drawing al
@@ -669,21 +757,23 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
     super.dispose();
   }
 
+  // Reinicia la animación desde cero.
   void _replay() => _ctrl.forward(from: 0.0);
 
   @override
+  // Panel con gradiente dinámico que contiene el lienzo de la curva y el botón Replay.
   Widget build(BuildContext context) {
-    // Panel sólido que contiene el lienzo y el botón Replay.
     return Container(
       width: 360,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(Gx.space12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
+          // Getters dinámicos: reaccionan al modo global.
           colors: [Gx.surfacePanel, Gx.surfaceCard],
         ),
-        border: Border.all(color: Gx.borderPanel),
+        border: Border.all(color: Gx.borderBase),
         borderRadius: BorderRadius.circular(Gx.rPanel),
         boxShadow: Gx.glow(Gx.optimaCyan, blur: 20, opacity: 0.08),
       ),
@@ -691,13 +781,16 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Cabecera del panel.
+          // Cabecera del panel con ícono y título.
           Row(children: [
-            Icon(Icons.show_chart, size: 14, color: Gx.textSecondary),
-            const SizedBox(width: 6),
-            Text('Equity Curve', style: Gx.panelTitle),
+            // Icon Material de chart — no tiene token propio; color secundario dinámico.
+            Icon(Icons.show_chart, size: 14, color: Gx.textBaseSecondary),
+            SizedBox(width: Gx.space4 + Gx.space4 / 2),
+            Text('Equity Curve',
+                style: Gx.panelTitle
+                    .copyWith(color: Gx.textBaseSecondary)),
           ]),
-          const SizedBox(height: 8),
+          SizedBox(height: Gx.space8),
 
           // Lienzo del gráfico con path drawing + efecto eléctrico.
           AnimatedBuilder(
@@ -705,13 +798,14 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
             builder: (_, __) {
               const crossFraction = 0.8;
               final p = _ctrl.value;
-              // scanProgress: fracción del cruce del scan.
+              // scanProgress: fracción del cruce del scan (0→1 durante el 80% inicial).
               final scanProgress =
                   p <= crossFraction ? p / crossFraction : 1.0;
-              // scanOpacity: 1.0 durante el cruce, luego fade.
+              // scanOpacity: 1.0 mientras cruza, luego fade hasta 0.
               final scanOpacity = p <= crossFraction
                   ? 1.0
-                  : 1.0 - ((p - crossFraction) / (1.0 - crossFraction));
+                  : 1.0 -
+                      ((p - crossFraction) / (1.0 - crossFraction));
               return SizedBox(
                 height: 120,
                 child: CustomPaint(
@@ -724,20 +818,23 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
               );
             },
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: Gx.space8),
 
-          // Botón Replay para repetir el trazado y el efecto eléctrico.
+          // Botón Replay con borde estructural global.
           GestureDetector(
             onTap: _replay,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Gx.space8 + Gx.space4, vertical: Gx.space4),
               decoration: BoxDecoration(
                 color: Gx.surfaceFill,
-                border: Border.all(color: Gx.borderPanel),
+                border: Border.all(color: Gx.borderBase),
                 borderRadius: BorderRadius.circular(Gx.rChip),
               ),
               child: Text('Replay',
-                  style: Gx.uiSans(fontSize: 11, color: Gx.textSecondary)),
+                  style: Gx.uiSans(
+                      fontSize: 11,
+                      color: Gx.textBaseSecondary)),
             ),
           ),
         ],
@@ -746,13 +843,19 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
   }
 }
 
-// Painter de la equity curve con efecto eléctrico integrado.
+// ---------------------------------------------------------------------------
+// _EquityCurveElectricPainter — painter de equity curve con efecto eléctrico
 // Recibe [scanProgress] (0.0–1.0): el scan avanza y revela la línea mientras
 // la ilumina con ignición eléctrica (intensidad que decae exponencialmente).
-// Tras todas las líneas: comet tail + scan line con [scanOpacity].
+// Tras la línea: comet tail + scan line con [scanOpacity].
+// Tokens de dato: optimaCyan (curva de equity alcista — se conserva).
+// MaskFilter.blur condicionado a intensity > umbral — no en bucle perpetuo; aceptado.
+// ---------------------------------------------------------------------------
+
+// Painter de la equity curve con efecto eléctrico integrado al avance del scan.
 class _EquityCurveElectricPainter extends CustomPainter {
   final double scanProgress; // fracción 0→1 del cruce del scan
-  final double scanOpacity;  // 1.0 mientras cruza, fade a 0 en los últimos 200ms
+  final double scanOpacity; // 1.0 mientras cruza, fade a 0 en los últimos 200ms
 
   // Puntos de la curva de equity (sintéticos, siempre los mismos).
   static const _pts = [
@@ -767,6 +870,8 @@ class _EquityCurveElectricPainter extends CustomPainter {
   });
 
   @override
+  // Dibuja el área de relleno progresiva, los segmentos de línea con ignición eléctrica,
+  // el comet tail y la línea de scan con fade al final.
   void paint(Canvas canvas, Size size) {
     final n = _pts.length;
     final dx = size.width / (n - 1);
@@ -794,17 +899,18 @@ class _EquityCurveElectricPainter extends CustomPainter {
           ..shader = LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            // optimaCyan: color semántico de la curva alcista (dato — se conserva).
             colors: [Gx.optimaCyan.withAlpha(22), Colors.transparent],
           ).createShader(Offset.zero & size),
       );
     }
 
-    // Dibuja cada segmento de la línea con ignición eléctrica.
+    // Dibuja cada segmento de la línea con ignición eléctrica basada en proximidad al scan.
     for (var i = 0; i < n - 1; i++) {
       final x0 = i * dx;
       if (x0 >= scanX) break;
 
-      // Calcula la intensidad de ignición eléctrica para este segmento.
+      // Intensidad de ignición: máxima en el frente del scan, decae exponencialmente.
       final intensity = electricIntensity(x0, scanX, size.width);
       final effectiveOpacity = 0.7 + intensity * 0.3;
       final extraStroke = intensity * 2.0;
@@ -812,29 +918,33 @@ class _EquityCurveElectricPainter extends CustomPainter {
       final y0 = toY(_pts[i]);
       final y1 = toY(_pts[i + 1]);
 
-      // Glow difuso eléctrico.
+      // Glow difuso eléctrico — MaskFilter.blur condicionado a intensity > 0.05: aceptado.
       if (intensity > 0.05) {
         canvas.drawLine(
-          Offset(x0, y0), Offset(x0 + dx, y1),
+          Offset(x0, y0),
+          Offset(x0 + dx, y1),
           Paint()
             ..color = Gx.optimaCyan.withOpacity(intensity * 0.45)
             ..strokeWidth = 1.5 + extraStroke + 4
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5 + intensity * 14),
+            ..maskFilter =
+                MaskFilter.blur(BlurStyle.normal, 5 + intensity * 14),
         );
       }
 
-      // Línea nítida con degradado gradOptima (usando interpolación de color manual).
+      // Línea nítida con color del dato (optimaCyan).
       canvas.drawLine(
-        Offset(x0, y0), Offset(x0 + dx, y1),
+        Offset(x0, y0),
+        Offset(x0 + dx, y1),
         Paint()
           ..color = Gx.optimaCyan.withOpacity(effectiveOpacity)
           ..strokeWidth = 1.5 + extraStroke,
       );
     }
 
-    // Comet tail y scan line con efecto eléctrico.
+    // Comet tail y scan line con efecto eléctrico del mixin compartido.
     paintCometTail(canvas, scanX, size, Gx.optimaCyan);
-    paintScanLine(canvas, scanX, size.height, Gx.optimaCyan, scanOpacity);
+    paintScanLine(
+        canvas, scanX, size.height, Gx.optimaCyan, scanOpacity);
   }
 
   @override

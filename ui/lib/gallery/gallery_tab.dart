@@ -83,7 +83,7 @@ class GalleryTab extends StatelessWidget {
           shaderCallback: (rect) =>
               const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
           child: Text('Drasus Design System',
-              style: Gx.zuiTitle.copyWith(color: Colors.white)),
+              style: Gx.zuiTitle.copyWith(color: Gx.pureWhite)),
         ),
         const SizedBox(height: 8),
         // Texto con propagación de luz: tócalo para ver la "explosión".
@@ -177,9 +177,9 @@ class GalleryTab extends StatelessWidget {
       return Container(
         padding: pad,
         decoration: BoxDecoration(
-          gradient: Gx.linear([Gx.panelSolid, Gx.cardInner],
+          gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard],
               begin: Alignment.topCenter, end: Alignment.bottomCenter),
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
           borderRadius: BorderRadius.circular(Gx.rPanel),
           boxShadow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
         ),
@@ -213,7 +213,7 @@ class GalleryTab extends StatelessWidget {
 
   Widget _panelHeader(IconData icon, String title) {
     return Row(children: [
-      Icon(icon, size: 14, color: Gx.textSecondary),
+      Icon(icon, size: 14, color: Gx.textBaseSecondary),
       const SizedBox(width: 6),
       Flexible(
           child: Text(title,
@@ -303,7 +303,7 @@ class GalleryTab extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Gx.borderPanel),
+                    border: Border.all(color: Gx.borderBase),
                     boxShadow:
                         glow ? Gx.glow(color, blur: 14, opacity: 0.6) : null)),
             const SizedBox(height: 3),
@@ -349,12 +349,12 @@ class GalleryTab extends StatelessWidget {
             ShaderMask(
               shaderCallback: (r) =>
                   const LinearGradient(colors: Gx.gradOptima).createShader(r),
-              child: const Text('1.84',
+              child: Text('1.84',
                   style: TextStyle(
                       fontFamily: Gx.fontMono,
                       fontSize: 28,
                       height: 1.1,
-                      color: Colors.white)),
+                      color: Gx.pureWhite)),
             ),
             Text('óptimo',
                 style: TextStyle(
@@ -381,7 +381,7 @@ class GalleryTab extends StatelessWidget {
             Text(t,
                 style: TextStyle(
                     fontSize: 13,
-                    color: active ? Gx.textPrimary : Gx.textLabel)),
+                    color: active ? Gx.textBase : Gx.textBaseLabel)),
             const SizedBox(height: 6),
             Container(
                 height: 2,
@@ -403,8 +403,8 @@ class GalleryTab extends StatelessWidget {
       Gx.optimaCyan,
       Gx.optimaCyan,
       Gx.transitionIndigo,
-      Gx.textMuted,
-      Gx.textMuted
+      Gx.textBaseMuted,
+      Gx.textBaseMuted
     ];
     return _panelSolid(
       child: Row(
@@ -456,7 +456,7 @@ class GalleryTab extends StatelessWidget {
           child: Wrap(spacing: 6, runSpacing: 6, children: [
             _chip('SPX', Gx.transitionIndigo, Gx.transitionChipBg, Gx.transitionChipBorder),
             _chip('G10', Gx.transitionIndigo, Gx.transitionChipBg, Gx.transitionChipBorder),
-            Icon(Gx.iconAdd, size: 16, color: Gx.textMuted),
+            Icon(Gx.iconAdd, size: 16, color: Gx.textBaseMuted),
           ]),
         )),
       ];
@@ -467,7 +467,7 @@ class GalleryTab extends StatelessWidget {
         decoration: BoxDecoration(
             color: on ? Gx.optimaCyan : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: on ? Gx.optimaCyan : Gx.textMuted),
+            border: Border.all(color: on ? Gx.optimaCyan : Gx.textBaseMuted),
             boxShadow: on ? Gx.glow(Gx.optimaCyan, blur: 10, opacity: 0.6) : null),
         child: on ? Icon(Gx.iconCheck, size: 14, color: Gx.deepSpace) : null,
       );
@@ -477,7 +477,7 @@ class GalleryTab extends StatelessWidget {
         height: 18,
         decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: on ? Gx.optimaCyan : Gx.textMuted),
+            border: Border.all(color: on ? Gx.optimaCyan : Gx.textBaseMuted),
             boxShadow: on ? Gx.glow(Gx.optimaCyan, blur: 10, opacity: 0.5) : null),
         child: on
             ? Center(
@@ -526,8 +526,8 @@ class GalleryTab extends StatelessWidget {
         decoration: BoxDecoration(
             color: Gx.surfaceCard,
             borderRadius: BorderRadius.circular(Gx.rButton),
-            border: Border.all(color: Gx.borderPanel)),
-        child: Icon(icon, size: 18, color: Gx.textPrimary),
+            border: Border.all(color: Gx.borderBase)),
+        child: Icon(icon, size: 18, color: Gx.textBase),
       );
 
   // ---------------------------------------------------------------------------
@@ -547,7 +547,7 @@ class GalleryTab extends StatelessWidget {
           child: Column(children: [
             _kv('Drawdown', '-4.2%', Gx.alertAmber),
             _kv('Sharpe', '1.84', Gx.optimaCyan),
-            _kv('Slippage', '0.03%', Gx.textPrimary),
+            _kv('Slippage', '0.03%', Gx.textBase),
           ]),
         )),
         _frame('Tabla densa', _tableMock(), width: 360),
@@ -590,7 +590,7 @@ class GalleryTab extends StatelessWidget {
           Flexible(
               child: Text(k,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, color: Gx.textLabel))),
+                  style: TextStyle(fontSize: 13, color: Gx.textBaseLabel))),
           Text(v,
               style: TextStyle(
                   fontFamily: Gx.fontMono,
@@ -610,7 +610,7 @@ class GalleryTab extends StatelessWidget {
                   : TextStyle(
                       fontFamily: num ? Gx.fontMono : null,
                       fontSize: 13,
-                      color: c ?? Gx.textPrimary,
+                      color: c ?? Gx.textBase,
                       shadows: c != null ? Gx.textGlow(c, 6) : null)),
         );
     Widget row(List<Widget> cells, {bool header = false, bool hover = false}) =>
@@ -728,10 +728,10 @@ class GalleryTab extends StatelessWidget {
 
   Widget _modalMock() => Container(
         decoration: BoxDecoration(
-            color: Gx.deepSpace.withOpacity(0.6),
+            color: Gx.canvasBase.withOpacity(0.6),
             borderRadius: BorderRadius.circular(Gx.rChrome)),
         padding: const EdgeInsets.all(12),
-        child: frosted(
+        child: panelSurface(
           glow: Gx.glow(Gx.criticalCrimson, blur: 22, opacity: 0.2),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Confirmar retiro', style: Gx.subheading),
@@ -1172,7 +1172,7 @@ class GalleryTab extends StatelessWidget {
   Widget _autopsyHeader() => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            gradient: Gx.linear([Gx.surfacePanel, Gx.deepSpace]),
+            gradient: Gx.linear([Gx.surfacePanel, Gx.canvasBase]),
             borderRadius: BorderRadius.circular(Gx.rChrome),
             border: Border.all(color: Gx.criticalChipBorder),
             boxShadow: Gx.glow(Gx.criticalCrimson, blur: 20, opacity: 0.2)),
@@ -1182,12 +1182,12 @@ class GalleryTab extends StatelessWidget {
           ShaderMask(
             shaderCallback: (rect) =>
                 const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
-            child: const Text('Autopsia',
+            child: Text('Autopsia',
                 style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w500,
                     letterSpacing: -0.6,
-                    color: Colors.white)),
+                    color: Gx.pureWhite)),
           ),
           const SizedBox(height: 4),
           Text('node-19 · slippage letal',

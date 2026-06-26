@@ -3,13 +3,21 @@
 // Todos los datos son sintéticos — sin Rust ni FFI.
 // Usa Timer.periodic + AnimatedList para el scroll de nuevas entradas.
 // El ticker usa AnimationController infinito para el desplazamiento lateral.
+// Tokens: superficies via panelSurface()/Gx.surfacePanel, texto via Gx.textBase*,
+//   bordes via Gx.borderBase, espaciado via Gx.space*.
 
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
+import '../gallery_fx.dart';
 
-// Modelo de una entrada de trade sintética.
+// ---------------------------------------------------------------------------
+// _TradeEntry — modelo de una entrada de trade sintética
+// Todos los campos son datos de visualización; sin lógica de negocio.
+// ---------------------------------------------------------------------------
+
+// Modelo de datos de un trade sintético para la vitrina.
 class _TradeEntry {
   final String symbol;
   final bool isBuy;
@@ -29,7 +37,12 @@ class _TradeEntry {
 // Símbolos ciclando para la generación sintética.
 const _symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'USDCAD'];
 
-// Genera una entrada sintética aleatoria con semilla de tiempo.
+// ---------------------------------------------------------------------------
+// _randomEntry() — generador de entradas sintéticas con semilla de tiempo
+// Produce un _TradeEntry aleatorio usando el cursor de símbolo para el par.
+// ---------------------------------------------------------------------------
+
+// Genera una entrada sintética aleatoria con precio base por símbolo.
 _TradeEntry _randomEntry(Random rnd, int symbolIdx) {
   final symbol = _symbols[symbolIdx % _symbols.length];
   final isBuy = rnd.nextBool();
@@ -42,7 +55,8 @@ _TradeEntry _randomEntry(Random rnd, int symbolIdx) {
   };
   final price = basePrice + (rnd.nextDouble() - 0.5) * 0.002;
   final lots = (rnd.nextDouble() * 4 + 0.1).roundToDouble();
-  final pnl = (rnd.nextDouble() - 0.4) * 300; // ligeramente positivo
+  // PnL ligeramente sesgado al positivo para la demostración.
+  final pnl = (rnd.nextDouble() - 0.4) * 300;
   return _TradeEntry(
     symbol: symbol,
     isBuy: isBuy,
@@ -55,28 +69,29 @@ _TradeEntry _randomEntry(Random rnd, int symbolIdx) {
 // ===========================================================================
 // TradeTapeSection — sección completa de la galería
 // Incluye: header de sección + TradeTapeWidget + TradeTicker
+// Parámetros: ninguno (estado en subwidgets).
+// Tokens de chrome: ver subwidgets.
 // ===========================================================================
 
-// Widget de sección exportable para gallery_tab.dart.
-// Muestra el header con chip LIVE parpadeante, el widget de cinta vertical
-// y el ticker horizontal.
+// Sección exportable para gallery_tab.dart.
+// Muestra el header con chip LIVE parpadeante, la cinta vertical y el ticker.
 class TradeTapeSection extends StatelessWidget {
   const TradeTapeSection({super.key});
 
   @override
+  // Renderiza header, cinta vertical y ticker horizontal.
   Widget build(BuildContext context) {
-    // Columna con header y las dos variantes del trade tape.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         // Header de sección con chip LIVE parpadeante.
         _TapeSectionHeader(),
-        const SizedBox(height: 16),
+        SizedBox(height: Gx.space16),
         // Las dos variantes lado a lado en un Wrap.
         Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: Gx.space16,
+          runSpacing: Gx.space16,
           children: const [
             // Cinta vertical (300px × 350px).
             TradeTapeWidget(),
@@ -84,7 +99,7 @@ class TradeTapeSection extends StatelessWidget {
             _TickerDemo(),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: Gx.space12),
         // Ticker horizontal en ancho completo.
         const TradeTickerBar(),
       ],
@@ -92,7 +107,13 @@ class TradeTapeSection extends StatelessWidget {
   }
 }
 
-// Header con ícono de relámpago + título + chip "LIVE" parpadeante.
+// ---------------------------------------------------------------------------
+// _TapeSectionHeader — header con ícono + título + chip "LIVE" parpadeante
+// Tokens de chrome: Gx.textBase (título panelTitle dinámico).
+// Colores de dato: Gx.reactorGreen (señal LIVE — estado de actividad, se conserva).
+// ---------------------------------------------------------------------------
+
+// Header con ícono de relámpago, título y chip "LIVE" parpadeante en reactorGreen.
 class _TapeSectionHeader extends StatefulWidget {
   @override
   State<_TapeSectionHeader> createState() => _TapeSectionHeaderState();
@@ -119,27 +140,38 @@ class _TapeSectionHeaderState extends State<_TapeSectionHeader>
   }
 
   @override
+  // Renderiza el ícono, el título y el chip LIVE animado con token de texto dinámico.
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.flash_on, size: 14, color: Gx.reactorGreen, shadows: Gx.textGlow(Gx.reactorGreen)),
-        const SizedBox(width: 6),
-        Text('Cinta de Órdenes', style: Gx.panelTitle),
-        const SizedBox(width: 10),
-        // Chip LIVE que parpadea en reactorGreen.
+        // reactorGreen es el color del estado "activo" — señalización interna.
+        Icon(Icons.flash_on,
+            size: 14,
+            color: Gx.reactorGreen,
+            shadows: Gx.textGlow(Gx.reactorGreen)),
+        SizedBox(width: Gx.space4 + Gx.space4 / 2),
+        // Título con token dinámico de panel.
+        Text('Cinta de Órdenes',
+            style: Gx.panelTitle.copyWith(color: Gx.textBaseSecondary)),
+        SizedBox(width: Gx.space8 + Gx.space4),
+        // Chip LIVE que parpadea en reactorGreen (señal de actividad).
         AnimatedBuilder(
           animation: _blinkCtrl,
           builder: (_, __) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(
+                horizontal: Gx.space8, vertical: 3),
             decoration: BoxDecoration(
-              color: Gx.reactorGreen.withOpacity(0.12 + _blinkCtrl.value * 0.10),
+              color: Gx.reactorGreen
+                  .withOpacity(0.12 + _blinkCtrl.value * 0.10),
               border: Border.all(
-                color: Gx.reactorGreen.withOpacity(0.50 + _blinkCtrl.value * 0.30),
+                color: Gx.reactorGreen
+                    .withOpacity(0.50 + _blinkCtrl.value * 0.30),
               ),
               borderRadius: BorderRadius.circular(999),
               boxShadow: Gx.glow(Gx.reactorGreen,
-                  blur: 8, opacity: 0.20 + _blinkCtrl.value * 0.25),
+                  blur: 8,
+                  opacity: 0.20 + _blinkCtrl.value * 0.25),
             ),
             child: Text('LIVE',
                 style: Gx.dataMono(
@@ -155,6 +187,10 @@ class _TapeSectionHeaderState extends State<_TapeSectionHeader>
 
 // ===========================================================================
 // TradeTapeWidget — cinta vertical de órdenes
+// Tokens de chrome: Gx.surfacePanel (fondo del contenedor), Gx.borderBase (borde).
+// Nota ShaderMask: Colors.black y Colors.transparent son la MÁSCARA de opacidad
+//   del BlendMode.dstIn — Colors.black opaco = pixel visible, Colors.transparent =
+//   pixel borrado. NO son colores de chrome; este uso es correcto e inamovible.
 // ===========================================================================
 
 // Cinta vertical de órdenes en vivo. Timer.periodic cada 800ms inserta una
@@ -185,8 +221,8 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
     _timer = Timer.periodic(const Duration(milliseconds: 800), (_) {
       final entry = _randomEntry(_rnd, _symbolCursor++);
       _entries.insert(0, entry);
-      _listKey.currentState?.insertItem(0,
-          duration: const Duration(milliseconds: 350));
+      _listKey.currentState
+          ?.insertItem(0, duration: const Duration(milliseconds: 350));
       // Limita la lista a 40 entradas para no acumular memoria.
       if (_entries.length > 40) {
         _entries.removeAt(_entries.length - 1);
@@ -201,15 +237,17 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
   }
 
   @override
+  // Contenedor de 300×350px con borde estructural global y lista animada con fade.
   Widget build(BuildContext context) {
-    // Contenedor con dimensiones fijas (300×350px) y fondo panelSolid.
     return SizedBox(
       width: 300,
       height: 350,
       child: Container(
         decoration: BoxDecoration(
+          // surfacePanel getter dinámico — reacciona al modo global.
           color: Gx.surfacePanel,
-          border: Border.all(color: Gx.borderPanel),
+          // Borde estructural global dinámico.
+          border: Border.all(color: Gx.borderBase),
           borderRadius: BorderRadius.circular(Gx.rPanel),
         ),
         child: ClipRRect(
@@ -218,23 +256,28 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
             children: [
               // Header interno con conteo de trades.
               _TapeHeader(count: _entries.length),
-              // Lista con fade en los bordes (ShaderMask).
+              // Lista con fade en los bordes (ShaderMask con BlendMode.dstIn).
               Expanded(
                 child: ShaderMask(
                   blendMode: BlendMode.dstIn,
                   shaderCallback: (bounds) => LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,        // fade superior 32px
+                    colors: const [
+                      // NOTA: Colors.transparent y Colors.black son la MÁSCARA de opacidad
+                      // del BlendMode.dstIn — NO son colores de chrome de la UI.
+                      // Colors.black opaco = preserva el pixel (visible).
+                      // Colors.transparent = borra el pixel (fade a nada).
+                      // Este patrón es estándar e invariante de Flutter para ShaderMask.
+                      Colors.transparent, // fade superior 32px
                       Colors.black,
                       Colors.black,
-                      Colors.transparent,        // fade inferior 32px
+                      Colors.transparent, // fade inferior 32px
                     ],
                     stops: [
                       0.0,
-                      32 / bounds.height,
-                      1.0 - 32 / bounds.height,
+                      32 / 318, // aproximación de bounds.height (350 - header ~32)
+                      1.0 - 32 / 318,
                       1.0,
                     ],
                   ).createShader(bounds),
@@ -242,7 +285,8 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
                     key: _listKey,
                     initialItemCount: _entries.length,
                     itemBuilder: (ctx, index, animation) {
-                      if (index >= _entries.length) return const SizedBox.shrink();
+                      if (index >= _entries.length)
+                        return const SizedBox.shrink();
                       return _TradeEntryRow(
                         entry: _entries[index],
                         animation: animation,
@@ -259,32 +303,48 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
   }
 }
 
-// Header interno de la cinta con "LIVE TRADE TAPE" + conteo.
+// ---------------------------------------------------------------------------
+// _TapeHeader — header interno de la cinta con "LIVE TRADE TAPE" + conteo
+// Tokens de chrome: Gx.borderBase (borde inferior), Gx.textBaseSecondary (título),
+//   Gx.textBaseMuted (contador).
+// ---------------------------------------------------------------------------
+
+// Header interno: etiqueta "LIVE TRADE TAPE" y contador de trades.
 class _TapeHeader extends StatelessWidget {
   final int count;
   const _TapeHeader({required this.count});
 
   @override
+  // Renderiza la barra de cabecera con borde inferior estructural global.
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Gx.borderPanel)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Gx.space8 + Gx.space4, vertical: Gx.space8),
+      decoration: BoxDecoration(
+        // Borde inferior estructural global dinámico — reacciona al énfasis activo.
+        border: Border(
+            bottom: BorderSide(color: Gx.borderBase, width: Gx.borderHairline)),
       ),
       child: Row(
         children: [
           Text('LIVE TRADE TAPE',
-              style: Gx.dataMono(fontSize: 11, color: Gx.textSecondary)),
+              style:
+                  Gx.dataMono(fontSize: 11, color: Gx.textBaseSecondary)),
           const Spacer(),
           Text('${count > 40 ? "5.737" : count} trades',
-              style: Gx.dataMono(fontSize: 10, color: Gx.textMuted)),
+              style: Gx.dataMono(fontSize: 10, color: Gx.textBaseMuted)),
         ],
       ),
     );
   }
 }
 
-// Fila individual de una entrada de trade con animación de slide entrada.
+// ---------------------------------------------------------------------------
+// _TradeEntryRow — fila individual con animación de slide entrada
+// Envuelve _TradeRowContent en SizeTransition + FadeTransition al insertarse.
+// ---------------------------------------------------------------------------
+
+// Fila con animación de deslizamiento desde arriba al insertarse en la lista.
 class _TradeEntryRow extends StatelessWidget {
   final _TradeEntry entry;
   final Animation<double> animation;
@@ -295,10 +355,11 @@ class _TradeEntryRow extends StatelessWidget {
   });
 
   @override
+  // Aplica SizeTransition y FadeTransition al contenido de la fila.
   Widget build(BuildContext context) {
-    // Slide desde arriba con SizeTransition + FadeTransition.
     return SizeTransition(
-      sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      sizeFactor:
+          CurvedAnimation(parent: animation, curve: Curves.easeOut),
       child: FadeTransition(
         opacity: animation,
         child: _TradeRowContent(entry: entry),
@@ -307,51 +368,66 @@ class _TradeEntryRow extends StatelessWidget {
   }
 }
 
-// Contenido de la fila: símbolo, dirección, precio, lotes, PnL.
+// ---------------------------------------------------------------------------
+// _TradeRowContent — contenido de la fila: símbolo, dirección, precio, lotes, PnL
+// Tokens de chrome: Gx.divider (borde inferior de fila), Gx.textBase (símbolo),
+//   Gx.textBaseSecondary (precio), Gx.textBaseMuted (lotes).
+// Colores de dato: optimaCyan (BUY/PnL positivo), criticalRed (SELL/PnL negativo)
+//   — señalizan la dirección y el resultado del trade, se conservan.
+// ---------------------------------------------------------------------------
+
+// Contenido visual de una entrada de trade: símbolo, dirección, precio, lotes y PnL.
 class _TradeRowContent extends StatelessWidget {
   final _TradeEntry entry;
   const _TradeRowContent({required this.entry});
 
   @override
+  // Fila con columnas fijas para símbolo, dirección, precio, lotes y PnL.
   Widget build(BuildContext context) {
+    // Colores de dato: señalizan la dirección y el resultado del trade.
     final dirColor = entry.isBuy ? Gx.optimaCyan : Gx.criticalRed;
     final pnlColor = entry.pnl >= 0 ? Gx.optimaCyan : Gx.criticalRed;
     final pnlSign = entry.pnl >= 0 ? '+' : '';
     final dirLabel = entry.isBuy ? 'BUY' : 'SELL';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Gx.divider, width: 0.5)),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Gx.space8 + Gx.space4, vertical: Gx.space4),
+      decoration: BoxDecoration(
+        border: Border(
+            bottom:
+                BorderSide(color: Gx.divider, width: Gx.borderHairline / 2)),
       ),
       child: Row(
         children: [
-          // Símbolo del par.
+          // Símbolo del par con token base dinámico.
           SizedBox(
             width: 60,
             child: Text(entry.symbol,
-                style: Gx.dataMono(fontSize: 12, color: Gx.textPrimary)),
+                style: Gx.dataMono(fontSize: 12, color: Gx.textBase)),
           ),
-          // Dirección BUY/SELL.
+          // Dirección BUY/SELL: color semántico de dato (señalización interna).
           SizedBox(
             width: 36,
             child: Text(dirLabel,
                 style: Gx.dataMono(fontSize: 11, color: dirColor)),
           ),
-          // Precio.
+          // Precio con token secundario dinámico.
           Expanded(
             child: Text(entry.price.toStringAsFixed(5),
-                style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+                style: Gx.dataMono(
+                    fontSize: 12, color: Gx.textBaseSecondary)),
           ),
-          // Lotes.
+          // Lotes con token muted dinámico.
           SizedBox(
             width: 30,
             child: Text(entry.lots.toStringAsFixed(1),
                 textAlign: TextAlign.right,
-                style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+                style:
+                    Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
           ),
-          const SizedBox(width: 6),
-          // PnL.
+          SizedBox(width: Gx.space4 + Gx.space4 / 2),
+          // PnL: color semántico de dato (positivo/negativo).
           SizedBox(
             width: 48,
             child: Text(
@@ -366,36 +442,43 @@ class _TradeRowContent extends StatelessWidget {
   }
 }
 
-// Demo panel que explica la variante ticker horizontal.
+// ---------------------------------------------------------------------------
+// _TickerDemo — panel de información sobre la variante ticker horizontal
+// Tokens de chrome: panelSurface() (superficie), Gx.textBaseSecondary (descripción),
+//   Gx.textBaseMuted (nota).
+// ---------------------------------------------------------------------------
+
+// Panel explicativo de la variante ticker horizontal con superficie dinámica.
 class _TickerDemo extends StatelessWidget {
   const _TickerDemo();
 
   @override
+  // Muestra el nombre del componente, descripción y referencia visual al ticker.
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 260,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Gx.surfacePanel,
-        border: Border.all(color: Gx.borderPanel),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('trade-ticker-bar', style: Gx.panelTitle),
-          const SizedBox(height: 8),
-          Text(
-            'Variante horizontal: texto de trades scrolleando de derecha '
-            'a izquierda en una línea de 28px. Se ubica en el footer '
-            'o status bar. Muestra símbolo, dirección y precio en loop infinito.',
-            style: Gx.uiSans(fontSize: 12, color: Gx.textSecondary),
-          ),
-          const SizedBox(height: 8),
-          Text('Ver ticker abajo ↓',
-              style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
-        ],
+      child: panelSurface(
+        padding: const EdgeInsets.all(Gx.space12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('trade-ticker-bar',
+                style: Gx.panelTitle
+                    .copyWith(color: Gx.textBaseSecondary)),
+            SizedBox(height: Gx.space8),
+            Text(
+              'Variante horizontal: texto de trades scrolleando de derecha '
+              'a izquierda en una línea de 28px. Se ubica en el footer '
+              'o status bar. Muestra símbolo, dirección y precio en loop infinito.',
+              style: Gx.uiSans(
+                  fontSize: 12, color: Gx.textBaseSecondary),
+            ),
+            SizedBox(height: Gx.space8),
+            Text('Ver ticker abajo ↓',
+                style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
+          ],
+        ),
       ),
     );
   }
@@ -403,11 +486,16 @@ class _TickerDemo extends StatelessWidget {
 
 // ===========================================================================
 // TradeTickerBar — variante horizontal scrolleante
+// Tokens de chrome: Gx.navRail (fondo del ticker — token de estructura del riel),
+//   Gx.borderBase (borde superior).
+// Colores de dato: optimaCyan (BUY), criticalRed (SELL), textBaseMuted (separador)
+//   — señalizan la dirección del trade en el ticker.
+// NOTA sobre Colors.black / Colors.transparent: NO aparecen en este widget.
+//   El ShaderMask con esas constantes está en TradeTapeWidget (explicado allá).
 // ===========================================================================
 
 // Línea única de 28px que scrollea de derecha a izquierda indefinidamente.
-// Texto: trades BUY/SELL alternando optimaCyan y criticalRed.
-// Fondo navRail con borde superior borderPanel.
+// Fondo navRail con borde superior borderBase.
 class TradeTickerBar extends StatefulWidget {
   const TradeTickerBar({super.key});
 
@@ -447,12 +535,18 @@ class _TradeTickerBarState extends State<TradeTickerBar>
   }
 
   @override
+  // Contenedor de 28px de alto con fondo navRail y borde superior estructural.
+  // Desplaza el texto con Transform.translate animado.
   Widget build(BuildContext context) {
     return Container(
       height: 28,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        // navRail: token de estructura del riel de navegación — fondo correcto para el ticker.
         color: Gx.navRail,
-        border: Border(top: BorderSide(color: Gx.borderPanel, width: 1)),
+        // Borde superior estructural global dinámico.
+        border: Border(
+            top: BorderSide(
+                color: Gx.borderBase, width: Gx.borderHairline)),
       ),
       child: ClipRect(
         child: AnimatedBuilder(
@@ -461,12 +555,12 @@ class _TradeTickerBarState extends State<TradeTickerBar>
             return LayoutBuilder(builder: (ctx, constraints) {
               final w = constraints.maxWidth;
               // El texto se desplaza desde x=w hasta x=-textWidth en cada ciclo.
-              // Usamos Transform.translate para el desplazamiento.
               return OverflowBox(
                 alignment: Alignment.centerLeft,
                 maxWidth: double.infinity,
                 child: Transform.translate(
-                  offset: Offset(w - _scrollCtrl.value * (w + 900), 0),
+                  offset: Offset(
+                      w - _scrollCtrl.value * (w + 900), 0),
                   child: _TickerTextRow(text: _tickerText),
                 ),
               );
@@ -478,16 +572,24 @@ class _TradeTickerBarState extends State<TradeTickerBar>
   }
 }
 
-// Texto del ticker con colores alternados por segmento BUY/SELL.
+// ---------------------------------------------------------------------------
+// _TickerTextRow — texto del ticker con colores alternados por segmento BUY/SELL
+// Tokens de chrome: Gx.textBaseMuted (separador y texto neutro).
+// Colores de dato: optimaCyan (BUY), criticalRed (SELL) — señalizan dirección.
+// ---------------------------------------------------------------------------
+
+// Fila de texto con segmentos coloreados por dirección BUY/SELL.
 // Divide el texto por '·' y colorea cada segmento según su dirección.
 class _TickerTextRow extends StatelessWidget {
   final String text;
   const _TickerTextRow({required this.text});
 
   @override
+  // Renderiza los segmentos del ticker con su color de dato y separadores neutros.
   Widget build(BuildContext context) {
     // Separa los segmentos por el separador '·'.
-    final segments = text.split('·').where((s) => s.trim().isNotEmpty).toList();
+    final segments =
+        text.split('·').where((s) => s.trim().isNotEmpty).toList();
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -495,21 +597,23 @@ class _TickerTextRow extends StatelessWidget {
       children: segments.map((seg) {
         final isBuy = seg.contains('BUY');
         final isSell = seg.contains('SELL');
+        // Color de dato: señaliza la dirección del trade.
         final color = isBuy
             ? Gx.optimaCyan
             : isSell
                 ? Gx.criticalRed
-                : Gx.textMuted;
+                : Gx.textBaseMuted;
         return Row(mainAxisSize: MainAxisSize.min, children: [
           Text(
             seg.trim(),
             style: Gx.dataMono(fontSize: 12, color: color),
           ),
-          // Separador entre segmentos.
+          // Separador con token muted dinámico.
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: Gx.space8),
             child: Text('·',
-                style: Gx.dataMono(fontSize: 12, color: Gx.textMuted)),
+                style:
+                    Gx.dataMono(fontSize: 12, color: Gx.textBaseMuted)),
           ),
         ]);
       }).toList(),

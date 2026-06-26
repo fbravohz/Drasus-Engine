@@ -1,5 +1,7 @@
-// Sección §7 Botones extendidos — toggle, loading, group, FAB.
+// Sección §7 Botones extendidos — toggle, loading, group, FAB, segmented.
 // Render-only con estado de UI local y animación. Sin lógica de negocio ni FFI.
+// Tokens globales: Gx.rButton, Gx.rChip, Gx.surfaceFill, Gx.borderBase,
+// Gx.borderBase, Gx.accentDynamic, Gx.glowStrong, Gx.gradTransition/gradReactor.
 
 import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
@@ -39,14 +41,14 @@ class _GlowToggleButtonState extends State<GlowToggleButton> {
           color: _on ? null : Gx.surfaceFill,
           borderRadius: BorderRadius.circular(Gx.rButton),
           border: Border.all(
-              color: _on ? Gx.transitionIndigo : Gx.borderPanel),
+              color: _on ? Gx.transitionIndigo : Gx.borderBase),
           boxShadow: _on ? Gx.glow(Gx.transitionIndigo, blur: 16, opacity: 0.5) : null,
         ),
         child: Text(
           _on ? widget.label : widget.labelOff,
           style: Gx.uiSans(
             fontSize: 13,
-            color: _on ? Gx.pureWhite : Gx.textLabel,
+            color: _on ? Gx.pureWhite : Gx.textBaseLabel,
             weight: FontWeight.w500,
           ),
         ),
@@ -118,7 +120,8 @@ class _GlowLoadingButtonState extends State<GlowLoadingButton>
               width: 14,
               height: 14,
               child: CircularProgressIndicator(
-                  strokeWidth: 1.5, color: Colors.white),
+                  // Token dinámico: spinner siempre blanco puro (legible sobre gradiente oscuro).
+                  strokeWidth: 1.5, color: Gx.pureWhite),
             ),
             const SizedBox(width: 8),
           ],
@@ -175,7 +178,7 @@ class _GlowButtonGroupState extends State<GlowButtonGroup> {
                 topRight: Radius.circular(isLast ? Gx.rButton : 0),
                 bottomRight: Radius.circular(isLast ? Gx.rButton : 0),
               ),
-              border: Border.all(color: Gx.borderPanel),
+              border: Border.all(color: Gx.borderBase),
               boxShadow: isActive
                   ? Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.4)
                   : null,
@@ -184,7 +187,7 @@ class _GlowButtonGroupState extends State<GlowButtonGroup> {
               e.value,
               style: Gx.dataMono(
                   fontSize: 12,
-                  color: isActive ? Gx.pureWhite : Gx.textLabel),
+                  color: isActive ? Gx.pureWhite : Gx.textBaseLabel),
             ),
           ),
         );
@@ -237,7 +240,7 @@ class _GlowSegmentedState extends State<GlowSegmented> {
 
   @override
   Widget build(BuildContext context) {
-    return frosted(
+    return panelSurface(
       padding: const EdgeInsets.all(4),
       radius: 999,
       child: Row(
@@ -263,7 +266,7 @@ class _GlowSegmentedState extends State<GlowSegmented> {
                 e.value,
                 style: Gx.uiSans(
                   fontSize: 12,
-                  color: isActive ? Gx.transitionIndigo : Gx.textLabel,
+                  color: isActive ? Gx.transitionIndigo : Gx.textBaseLabel,
                 ),
               ),
             ),

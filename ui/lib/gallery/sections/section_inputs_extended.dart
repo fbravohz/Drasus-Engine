@@ -48,20 +48,19 @@ class _GlowComboboxState extends State<GlowCombobox> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Campo de texto con glow en foco.
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        panelSurface(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Gx.surfaceFill,
-            borderRadius: BorderRadius.circular(Gx.rInput),
-            border: Border.all(
-                color: _open ? Gx.transitionIndigo : Gx.borderPanel,
-                width: _open ? 1.5 : 1),
-            boxShadow: _open
-                ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.4)
-                : null,
-          ),
-          child: TextField(
+          radius: Gx.rInput,
+          glow: _open ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.4) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Gx.rInput),
+              border: Border.all(
+                  color: _open ? Gx.transitionIndigo : Colors.transparent,
+                  width: _open ? 1.5 : 0),
+            ),
+            child: TextField(
             controller: _ctrl,
             focusNode: _focus,
             onChanged: (_) => setState(() {}),
@@ -69,18 +68,19 @@ class _GlowComboboxState extends State<GlowCombobox> {
             cursorColor: Gx.transitionIndigo,
             decoration: InputDecoration.collapsed(
               hintText: 'Símbolo…',
-              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textMuted),
+              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted),
             ),
           ),
         ),
-        // Lista de sugerencias animada.
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: (_open && _filtered.isNotEmpty)
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: frosted(
+      ),
+      // Lista de sugerencias animada.
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        child: (_open && _filtered.isNotEmpty)
+            ? Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: panelSurface(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,7 +93,7 @@ class _GlowComboboxState extends State<GlowCombobox> {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
-                                  child: Text(o, style: Gx.dataMono(fontSize: 13)),
+                                  child: Text(o, style: Gx.dataMono(fontSize: 13, color: Gx.textBase)),
                                 ),
                               ))
                           .toList(),
@@ -125,7 +125,8 @@ class _GlowMultiSelectState extends State<GlowMultiSelect> {
 
   @override
   Widget build(BuildContext context) {
-    return frosted(
+    return panelSurface(
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,11 +173,11 @@ class _GlowMultiSelectState extends State<GlowMultiSelect> {
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(Gx.rChip),
-                          border: Border.all(color: Gx.borderPanel),
+                          border: Border.all(color: Gx.borderBase),
                         ),
                         child: Text(o,
                             style: Gx.uiSans(
-                                fontSize: 12, color: Gx.textLabel)),
+                                fontSize: 12, color: Gx.textBaseLabel)),
                       ),
                     ))
                 .toList(),
@@ -206,7 +207,7 @@ class _GlowNumberInputState extends State<GlowNumberInput> {
 
   @override
   Widget build(BuildContext context) {
-    return frosted(
+    return panelSurface(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         _btn(Gx.iconChevronDown, () {
@@ -217,7 +218,7 @@ class _GlowNumberInputState extends State<GlowNumberInput> {
           child: Text(
             '$_value',
             textAlign: TextAlign.center,
-            style: Gx.dataMono(fontSize: 14, color: Gx.textPrimary),
+            style: Gx.dataMono(fontSize: 14, color: Gx.textBase),
           ),
         ),
         _btn(Gx.iconChevronDown, () {
@@ -236,11 +237,11 @@ class _GlowNumberInputState extends State<GlowNumberInput> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Gx.surfaceFill,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(Gx.rChip),
           ),
           child: Transform.rotate(
             angle: rotate ? 3.14159 : 0,
-            child: Icon(icon, size: 14, color: Gx.textSecondary),
+            child: Icon(icon, size: 14, color: Gx.textBaseSecondary),
           ),
         ),
       );
@@ -275,26 +276,27 @@ class _GlowTextareaState extends State<GlowTextarea> {
   @override
   Widget build(BuildContext context) {
     final focused = _focus.hasFocus;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+    return panelSurface(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(
-            color: focused ? Gx.transitionIndigo : Gx.borderPanel,
-            width: focused ? 1.5 : 1),
-        boxShadow:
-            focused ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.4) : null,
-      ),
-      child: TextField(
-        focusNode: _focus,
-        maxLines: 3,
-        style: Gx.body,
-        cursorColor: Gx.transitionIndigo,
-        decoration: InputDecoration.collapsed(
-          hintText: 'Descripción de la estrategia…',
-          hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textMuted),
+      radius: Gx.rInput,
+      glow: focused ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.4) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(Gx.rInput),
+          border: focused
+              ? Border.all(color: Gx.transitionIndigo, width: 1.5)
+              : null,
+        ),
+        child: TextField(
+          focusNode: _focus,
+          maxLines: 3,
+          style: Gx.body,
+          cursorColor: Gx.transitionIndigo,
+          decoration: InputDecoration.collapsed(
+            hintText: 'Descripción de la estrategia…',
+            hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted),
+          ),
         ),
       ),
     );
@@ -320,40 +322,40 @@ class _GlowOtpInputState extends State<GlowOtpInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 4,
-      children: List.generate(6, (i) {
-        final isActive = i == _active;
-        final hasVal = _digits[i].isNotEmpty;
-        return GestureDetector(
-          onTap: () => setState(() => _active = i),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 34,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Gx.surfaceFill,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isActive ? Gx.transitionIndigo : Gx.borderPanel,
-                width: isActive ? 1.5 : 1,
+    return panelSurface(
+      child: Wrap(
+        spacing: 4,
+        children: List.generate(6, (i) {
+          final isActive = i == _active;
+          final hasVal = _digits[i].isNotEmpty;
+          return GestureDetector(
+            onTap: () => setState(() => _active = i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 34,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isActive ? Gx.surfaceFill : Colors.transparent,
+                borderRadius: BorderRadius.circular(Gx.rChip),
+                border: Border.all(
+                  color: isActive ? Gx.transitionIndigo : Colors.transparent,
+                  width: isActive ? 1.5 : 0,
+                ),
+                boxShadow: isActive
+                    ? Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.5)
+                    : null,
               ),
-              boxShadow: isActive
-                  ? Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.5)
-                  : null,
-            ),
             child: Text(
               hasVal ? _digits[i] : (isActive ? '|' : ''),
               style: Gx.dataMono(
                 fontSize: 16,
-                color: isActive ? Gx.transitionIndigo : Gx.textPrimary,
+                color: isActive ? Gx.transitionIndigo : Gx.textBase,
               ),
             ),
           ),
         );
-      }),
-    );
+      })));
   }
 }
 
@@ -389,7 +391,7 @@ class _GlowRatingState extends State<GlowRating> {
               shape: BoxShape.circle,
               color: active ? Gx.alertAmber.withAlpha(40) : Colors.transparent,
               border: Border.all(
-                color: active ? Gx.alertAmber : Gx.borderPanel,
+                color: active ? Gx.alertAmber : Gx.borderBase,
               ),
               boxShadow: active
                   ? Gx.glow(Gx.alertAmber, blur: 10, opacity: 0.6)
@@ -414,7 +416,7 @@ Widget richTextEditorPlaceholder() {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       // Barra de formato simplificada.
-      frosted(
+      panelSurface(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         radius: Gx.rPanel,
         child: Row(
@@ -423,7 +425,7 @@ Widget richTextEditorPlaceholder() {
             _fmtBtn('B'),
             _fmtBtn('I'),
             _fmtBtn('U'),
-            Container(width: 1, height: 14, color: Gx.borderPanel,
+            Container(width: 1, height: 14, color: Gx.divider,
                 margin: const EdgeInsets.symmetric(horizontal: 6)),
             _fmtBtn('H1'),
             _fmtBtn('H2'),
@@ -437,11 +439,11 @@ Widget richTextEditorPlaceholder() {
         decoration: BoxDecoration(
           color: Gx.surfacePanel,
           borderRadius: BorderRadius.circular(Gx.rPanel),
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
         ),
         child: Text(
           'Notas de la estrategia node-07…',
-          style: Gx.uiSans(fontSize: 13, color: Gx.textMuted),
+          style: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted),
         ),
       ),
     ],
@@ -453,13 +455,13 @@ Widget _fmtBtn(String label) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(Gx.rChip),
         color: label == 'B' ? Gx.transitionIndigo.withAlpha(40) : Colors.transparent,
       ),
       child: Text(label,
           style: Gx.dataMono(
               fontSize: 11,
-              color: label == 'B' ? Gx.transitionIndigo : Gx.textLabel)),
+              color: label == 'B' ? Gx.transitionIndigo : Gx.textBaseLabel)),
     );
 
 // ---------------------------------------------------------------------------
@@ -500,37 +502,37 @@ class _GlowFormFieldState extends State<GlowFormField> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('Símbolo de activo',
-            style: Gx.uiSans(fontSize: 12, color: Gx.textLabel)),
+            style: Gx.uiSans(fontSize: 12, color: Gx.textBaseLabel)),
         const SizedBox(height: 4),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        panelSurface(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Gx.surfaceFill,
-            borderRadius: BorderRadius.circular(Gx.rInput),
-            border: Border.all(
-                color: (focused || widget.error) ? activeColor : Gx.borderPanel,
-                width: focused ? 1.5 : 1),
-            boxShadow: focused
-                ? Gx.glow(activeColor, blur: 16, opacity: 0.4)
-                : null,
-          ),
-          child: TextField(
+          radius: Gx.rInput,
+          glow: focused ? Gx.glow(activeColor, blur: 16, opacity: 0.4) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Gx.rInput),
+              border: (focused || widget.error)
+                  ? Border.all(color: activeColor, width: 1.5)
+                  : null,
+            ),
+            child: TextField(
             focusNode: _focus,
             style: Gx.body,
             cursorColor: activeColor,
             decoration: InputDecoration.collapsed(
               hintText: 'SPX',
-              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textMuted),
+              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted),
             ),
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          widget.error ? 'Símbolo no reconocido.' : 'Cualquier ticker de futuros.',
+      ),
+      const SizedBox(height: 4),
+      Text(
+        widget.error ? 'Símbolo no reconocido.' : 'Cualquier ticker de futuros.',
           style: Gx.uiSans(
               fontSize: 11,
-              color: widget.error ? errorColor : Gx.textMuted),
+              color: widget.error ? errorColor : Gx.textBaseMuted),
         ),
       ],
     );

@@ -38,14 +38,10 @@ class _GlowCascaderState extends State<GlowCascader> {
     final children = _tree[keys[_sel1]] ?? [];
 
     // Contenedor vidrio con dos columnas separadas por hairline.
-    return Container(
+    return panelSurface(
+      padding: const EdgeInsets.all(0),
+      child: SizedBox(
       height: 130,
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(color: Gx.borderPanel),
-        boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.2),
-      ),
       child: Row(
         children: [
           // Columna 1 — categorías principales.
@@ -74,6 +70,7 @@ class _GlowCascaderState extends State<GlowCascader> {
                       children: [
                         // Flexible evita desbordamiento cuando el texto
                         // es largo en un Expanded con espacio limitado.
+                        // Texto de categoría: activo → semántico (estado). Inactivo → dinámico.
                         Flexible(
                           child: Text(
                             e.value,
@@ -82,16 +79,16 @@ class _GlowCascaderState extends State<GlowCascader> {
                               fontSize: 13,
                               color: isActive
                                   ? Gx.transitionIndigo
-                                  : Gx.textSecondary,
+                                  : Gx.textBaseSecondary,
                             ),
                           ),
                         ),
-                        // Flecha indicando que hay subnivel.
+                        // Flecha indicando subnivel: activo → semántico. Inactivo → dinámico muted.
                         Icon(Gx.iconChevronDown,
                             size: 10,
                             color: isActive
                                 ? Gx.transitionIndigo
-                                : Gx.textMuted),
+                                : Gx.textBaseMuted),
                       ],
                     ),
                   ),
@@ -99,8 +96,8 @@ class _GlowCascaderState extends State<GlowCascader> {
               }).toList(),
             ),
           ),
-          // Separador vertical entre columnas.
-          Container(width: 1, color: Gx.borderPanel),
+          // Separador vertical: borde estructural global dinámico.
+          Container(width: Gx.borderHairline, color: Gx.borderBase),
           // Columna 2 — opciones de nivel 2 del ítem seleccionado.
           Expanded(
             child: Column(
@@ -108,14 +105,16 @@ class _GlowCascaderState extends State<GlowCascader> {
               children: children
                   .map((c) => Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                        child: Text(c, style: Gx.dataMono(fontSize: 13)),
+                            horizontal: Gx.space12, vertical: Gx.space8 + 2),
+                        // Texto de subnivel: token dinámico base.
+                        child: Text(c, style: Gx.dataMono(fontSize: 13, color: Gx.textBase)),
                       ))
                   .toList(),
             ),
           ),
         ],
       ),
+        ),
     );
   }
 }
@@ -160,26 +159,28 @@ class _GlowTransferListState extends State<GlowTransferList> {
     });
   }
 
-  // Construye una columna de lista con checkboxes.
+  // Construye una columna de lista con checkboxes; pasa por PanelFromDecoration para
+  // reaccionar a todos los modos de superficie. Borde estructural global dinámico.
   Widget _list(List<String> items, Set<String> checked, String header) {
     return Expanded(
-      child: Container(
+      child: PanelFromDecoration(
         decoration: BoxDecoration(
           color: Gx.surfacePanel,
           borderRadius: BorderRadius.circular(Gx.rPanel),
-          border: Border.all(color: Gx.borderPanel),
+          border: Border.all(color: Gx.borderBase),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabecera de la lista.
+            // Cabecera de la lista con borde inferior dinámico (no const — reacciona al énfasis).
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Gx.borderPanel)),
+              padding: const EdgeInsets.symmetric(horizontal: Gx.space8 + 2, vertical: Gx.space4 + 2),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Gx.borderBase)),
               ),
-              child: Text(header, style: Gx.microLabel),
+              // Etiqueta de cabecera con token dinámico label.
+              child: Text(header,
+                  style: Gx.microLabel.copyWith(color: Gx.textBaseLabel)),
             ),
             // Ítems con checkbox.
             ...items.map((item) {
@@ -190,12 +191,12 @@ class _GlowTransferListState extends State<GlowTransferList> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 140),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 7),
+                      horizontal: Gx.space8 + 2, vertical: 7),
                   color: isChecked
                       ? Gx.transitionIndigo.withOpacity(0.10)
                       : Colors.transparent,
                   child: Row(children: [
-                    // Checkbox mínimo con color de estado.
+                    // Checkbox con borde semántico (estado) o dinámico muted (reposo).
                     Container(
                       width: 14,
                       height: 14,
@@ -203,11 +204,12 @@ class _GlowTransferListState extends State<GlowTransferList> {
                         color: isChecked
                             ? Gx.transitionIndigo
                             : Colors.transparent,
+                        // checkbox pequeño (14px): radio decorativo sin token a esta escala
                         borderRadius: BorderRadius.circular(3),
                         border: Border.all(
                           color: isChecked
                               ? Gx.transitionIndigo
-                              : Gx.textMuted,
+                              : Gx.textBaseMuted,
                         ),
                         boxShadow: isChecked
                             ? Gx.glow(Gx.transitionIndigo,
@@ -215,13 +217,14 @@ class _GlowTransferListState extends State<GlowTransferList> {
                             : null,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: Gx.space8),
+                    // Texto del ítem: seleccionado → dinámico base. Reposo → dinámico secundario.
                     Text(item,
                         style: Gx.dataMono(
                             fontSize: 13,
                             color: isChecked
-                                ? Gx.textPrimary
-                                : Gx.textSecondary)),
+                                ? Gx.textBase
+                                : Gx.textBaseSecondary)),
                   ]),
                 ),
               );
@@ -270,7 +273,7 @@ class _GlowTransferListState extends State<GlowTransferList> {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: c.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(Gx.rChip),
           border: Border.all(color: c.withOpacity(0.5)),
           boxShadow: Gx.glow(c, blur: 8, opacity: 0.3),
         ),
@@ -304,29 +307,25 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return panelSurface(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(color: Gx.borderPanel),
-        boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
-      ),
+      glow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Fila de campos inicio / fin.
           Row(children: [
             Expanded(child: _dateField('Inicio', _startDay)),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, size: 14, color: Gx.textMuted),
+            const SizedBox(width: Gx.space8),
+            // Icono flecha: token dinámico muted.
+            Icon(Icons.arrow_forward, size: 14, color: Gx.textBaseMuted),
             const SizedBox(width: 8),
             Expanded(child: _dateField('Fin', _endDay)),
           ]),
           const SizedBox(height: 10),
           // Etiqueta del mes.
           Text(_monthLabel,
-              style: Gx.microLabel.copyWith(color: Gx.textSecondary)),
+              style: Gx.microLabel.copyWith(color: Gx.textBaseSecondary)),
           const SizedBox(height: 6),
           // Mini-cuadrícula de días del mes.
           _miniCalendar(),
@@ -335,22 +334,26 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
     );
   }
 
-  // Campo de fecha con borde neón.
+  // Campo de fecha: panel dinámico con borde semántico de foco (transitionIndigo).
   Widget _dateField(String label, int day) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: Gx.space8 + 2, vertical: Gx.space8),
       decoration: BoxDecoration(
         color: Gx.surfacePanel,
         borderRadius: BorderRadius.circular(Gx.rInput),
+        // Borde semántico del campo de fecha (estado foco activo — no borde global).
         border: Border.all(color: Gx.transitionIndigo.withOpacity(0.6)),
         boxShadow: Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.2),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: Gx.microLabel),
+        // Etiqueta con token dinámico label.
+        Text(label,
+            style: Gx.microLabel.copyWith(color: Gx.textBaseLabel)),
         const SizedBox(height: 2),
+        // Fecha con token dinámico base — legible en paper y bunker.
         Text(
           '$day/06/2026',
-          style: Gx.dataMono(fontSize: 13, color: Gx.textPrimary),
+          style: Gx.dataMono(fontSize: 13, color: Gx.textBase),
         ),
       ]),
     );
@@ -399,6 +402,7 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
                   : inRange
                       ? Gx.transitionIndigo.withOpacity(0.18)
                       : Colors.transparent,
+              // celda de calendario 22px: radio decorativo intencional
               borderRadius: BorderRadius.circular(4),
               boxShadow: isEdge
                   ? Gx.glow(Gx.transitionIndigo, blur: 6, opacity: 0.6)
@@ -413,7 +417,7 @@ class _GlowDateRangePickerState extends State<GlowDateRangePicker> {
                       ? Gx.pureWhite
                       : inRange
                           ? Gx.transitionIndigo
-                          : Gx.textMuted,
+                          : Gx.textBaseMuted,
                 ),
               ),
             ),
@@ -444,15 +448,11 @@ class _GlowTimePickerState extends State<GlowTimePicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(color: Gx.borderPanel),
-        boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
-      ),
-      child: Row(
+    return panelSurface(
+      glow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.15),
+      child: SizedBox(
+        height: 120,
+        child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Columna de horas.
@@ -478,7 +478,7 @@ class _GlowTimePickerState extends State<GlowTimePicker> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // Columna tipo rueda: muestra 3 ítems, el central resaltado.
@@ -494,24 +494,25 @@ class _GlowTimePickerState extends State<GlowTimePicker> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Ítem anterior (atenuado).
+        // Ítem anterior: token dinámico muted (atenuado).
         GestureDetector(
           onTap: () => onSelect(prev),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: Gx.space4),
             child: Text(values[prev],
-                style: Gx.dataMono(fontSize: 16, color: Gx.textMuted)),
+                style: Gx.dataMono(fontSize: 16, color: Gx.textBaseMuted)),
           ),
         ),
-        // Ítem central (seleccionado, con glow).
+        // Ítem central (seleccionado): borde semántico de estado de selección + glow.
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: Gx.space12, vertical: Gx.space4 + 2),
           decoration: BoxDecoration(
             color: Gx.transitionIndigo.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(Gx.rInput),
             border: Border.all(color: Gx.transitionIndigo.withOpacity(0.6)),
             boxShadow: Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.4),
           ),
+          // Valor seleccionado: color semántico del estado activo.
           child: Text(
             values[selected],
             style: Gx.dataMono(
@@ -520,13 +521,13 @@ class _GlowTimePickerState extends State<GlowTimePicker> {
                 weight: FontWeight.w500),
           ),
         ),
-        // Ítem siguiente (atenuado).
+        // Ítem siguiente: token dinámico muted (atenuado).
         GestureDetector(
           onTap: () => onSelect(next),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: Gx.space4),
             child: Text(values[next],
-                style: Gx.dataMono(fontSize: 16, color: Gx.textMuted)),
+                style: Gx.dataMono(fontSize: 16, color: Gx.textBaseMuted)),
           ),
         ),
       ],
@@ -567,14 +568,10 @@ class _GlowColorPickerState extends State<GlowColorPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(color: Gx.borderPanel),
-        boxShadow: Gx.glow(_selected, blur: 12, opacity: 0.2),
-      ),
+    // Color picker con superficie dinámica y borde global dinámico.
+    return panelSurface(
+      padding: const EdgeInsets.all(Gx.space12),
+      glow: Gx.glow(_selected, blur: 12, opacity: 0.2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -586,22 +583,22 @@ class _GlowColorPickerState extends State<GlowColorPicker> {
               height: 36,
               decoration: BoxDecoration(
                 color: _selected,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(Gx.rChip),
                 boxShadow: Gx.glowStrong(_selected),
               ),
             ),
-            const SizedBox(width: 10),
-            // Etiqueta del token o valor.
+            const SizedBox(width: Gx.space8 + 2),
+            // Nombre del token activo con token dinámico secundario.
             Text(
               _tokenName(_selected),
-              style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary),
+              style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary),
             ),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: Gx.space8 + 2),
           // Grilla de swatches de la paleta semántica.
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: Gx.space4 + 2,
+            runSpacing: Gx.space4 + 2,
             children: _palette.map((c) {
               final isSelected = c == _selected;
               return GestureDetector(
@@ -612,8 +609,10 @@ class _GlowColorPickerState extends State<GlowColorPicker> {
                   height: 24,
                   decoration: BoxDecoration(
                     color: c,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(Gx.rChip - 2),
                     border: Border.all(
+                      // Anillo de selección: pureWhite garantiza contraste con
+                      // cualquier color semántico del espectro — uso justificado.
                       color: isSelected ? Gx.pureWhite : Colors.transparent,
                       width: 2,
                     ),
@@ -668,12 +667,12 @@ class _GlowDropzoneState extends State<GlowDropzone> {
 
   @override
   Widget build(BuildContext context) {
-    // Color del estado activo.
+    // Color del estado activo: semánticos en hover/carga; dinámico muted en reposo.
     final stateColor = _state == _DropState.loading
         ? Gx.optimaCyan
         : _state == _DropState.hover
             ? Gx.transitionIndigo
-            : Gx.textMuted;
+            : Gx.textBaseMuted;
 
     return MouseRegion(
       onEnter: (_) {
@@ -693,22 +692,25 @@ class _GlowDropzoneState extends State<GlowDropzone> {
           await Future.delayed(const Duration(seconds: 2));
           if (mounted) setState(() => _state = _DropState.idle);
         },
+        // Dropzone: AnimatedContainer que cambia de color según el estado.
+        // En reposo: surfaceFill (dinámico). Hover/carga: color semántico tenue.
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(Gx.space24),
           decoration: BoxDecoration(
-            // Borde discontinuo simulado con border coloreado.
+            // Reposo: surfaceFill reacciona a glass/tint/solid. Hover/carga: semántico tenue.
             color: _state == _DropState.hover
                 ? Gx.transitionIndigo.withOpacity(0.08)
                 : _state == _DropState.loading
                     ? Gx.optimaCyan.withOpacity(0.06)
-                    : Gx.surfacePanel,
+                    : Gx.surfaceFill,
             borderRadius: BorderRadius.circular(Gx.rPanel),
             border: Border.all(
+              // Borde de estado: color semántico con opacidad variable por estado.
               color: stateColor.withOpacity(
                   _state == _DropState.idle ? 0.4 : 0.8),
-              // Ancho ligeramente mayor en estados activos.
-              width: _state == _DropState.idle ? 1.0 : 1.5,
+              // Grosor: hairline en reposo, focus en estados activos.
+              width: _state == _DropState.idle ? Gx.borderHairline : Gx.borderFocus,
             ),
             boxShadow: _state != _DropState.idle
                 ? Gx.glow(stateColor, blur: 14, opacity: 0.25)
@@ -717,7 +719,7 @@ class _GlowDropzoneState extends State<GlowDropzone> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icono central con glow del estado.
+              // Icono central con glow del estado semántico activo.
               Icon(
                 _state == _DropState.loading
                     ? Gx.iconRefresh
@@ -728,7 +730,7 @@ class _GlowDropzoneState extends State<GlowDropzone> {
                     ? Gx.textGlow(stateColor, 12)
                     : null,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Gx.space8),
               // Mensaje según estado.
               Text(
                 _state == _DropState.loading
@@ -815,39 +817,39 @@ class _GlowMentionInputState extends State<GlowMentionInput> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Campo de texto con glow en foco.
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        panelSurface(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Gx.surfaceFill,
-            borderRadius: BorderRadius.circular(Gx.rInput),
-            border: Border.all(
-              color: hasFocus ? Gx.transitionIndigo : Gx.borderPanel,
-              width: hasFocus ? 1.5 : 1,
+          radius: Gx.rInput,
+          glow: hasFocus ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.35) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Gx.rInput),
+              border: hasFocus
+                  ? Border.all(color: Gx.transitionIndigo, width: Gx.borderFocus)
+                  : null,
             ),
-            boxShadow: hasFocus
-                ? Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.35)
-                : null,
-          ),
-          child: TextField(
-            controller: _ctrl,
-            focusNode: _focus,
-            style: Gx.body,
+            child: TextField(
+              controller: _ctrl,
+              focusNode: _focus,
+              style: Gx.body,
             cursorColor: Gx.transitionIndigo,
             decoration: const InputDecoration.collapsed(hintText: ''),
           ),
         ),
-        // Lista de sugerencias animada que aparece al detectar "@".
-        AnimatedSize(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          child: _showSuggestions
+      ),
+      // Lista de sugerencias animada que aparece al detectar "@".
+      AnimatedSize(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        child: _showSuggestions
               ? Container(
                   margin: const EdgeInsets.only(top: 4),
+                  // Panel de sugerencias: superficie dinámica, borde estructural global.
                   decoration: BoxDecoration(
                     color: Gx.surfaceFill,
                     borderRadius: BorderRadius.circular(Gx.rPanel),
-                    border: Border.all(color: Gx.borderPanel),
+                    border: Border.all(color: Gx.borderBase),
                     boxShadow: Gx.glow(Gx.transitionIndigo,
                         blur: 12, opacity: 0.25),
                   ),
@@ -859,16 +861,17 @@ class _GlowMentionInputState extends State<GlowMentionInput> {
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 9),
+                                    horizontal: Gx.space12, vertical: 9),
                                 child: Row(children: [
                                   Icon(Gx.iconAudit,
                                       size: 14,
                                       color: Gx.transitionIndigo),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: Gx.space8),
+                                  // Texto de usuario: token dinámico secundario.
                                   Text(u,
                                       style: Gx.uiSans(
                                           fontSize: 13,
-                                          color: Gx.textSecondary)),
+                                          color: Gx.textBaseSecondary)),
                                 ]),
                               ),
                             ))
@@ -969,16 +972,12 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: _open
-              ? Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  decoration: BoxDecoration(
-                    color: Gx.surfaceFill,
-                    borderRadius: BorderRadius.circular(Gx.rPanel),
-                    border: Border.all(color: Gx.borderPanel),
-                    boxShadow:
-                        Gx.glow(Gx.reactorGreen, blur: 10, opacity: 0.2),
-                  ),
-                  child: Column(
+              // Dropdown: superficie dinámica con borde estructural global.
+              ? Padding(
+                  padding: const EdgeInsets.only(top: Gx.space4),
+                  child: panelSurface(
+                    glow: Gx.glow(Gx.reactorGreen, blur: 10, opacity: 0.2),
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: _options
                         .map((opt) => GestureDetector(
@@ -987,16 +986,18 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 10),
+                                    horizontal: Gx.space16 - 2, vertical: Gx.space8 + 2),
+                                // Texto de opción con token dinámico secundario.
                                 child: Text(opt,
                                     style: Gx.uiSans(
                                         fontSize: 13,
-                                        color: Gx.textSecondary)),
+                                          color: Gx.textBaseSecondary)),
                               ),
                             ))
                         .toList(),
                   ),
-                )
+                ),
+              )
               : const SizedBox.shrink(),
         ),
       ],
@@ -1014,22 +1015,28 @@ class GlowBackToTop extends StatelessWidget {
   const GlowBackToTop({super.key});
 
   @override
+  // Botón circular "Back to top": ClipOval + frosted() para reaccionar a los N modos.
+  // El radio 999 en frosted() produce la forma circular que pide BoxShape.circle.
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomRight,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Gx.surfaceFill,
-          shape: BoxShape.circle,
-          border: Border.all(color: Gx.borderPanel),
-          boxShadow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.35),
-        ),
-        child: const Icon(
-          Icons.keyboard_arrow_up,
-          size: 20,
-          color: Gx.textSecondary,
+      child: ClipOval(
+        child: panelSurface(
+          radius: 999,
+          padding: const EdgeInsets.all(Gx.space4),
+          glow: Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.35),
+          child: SizedBox(
+            width: 34, // 42px total − 2×4px padding
+            height: 34,
+            child: Center(
+              // Icono con token dinámico secundario — legible en paper y bunker.
+              child: Icon(
+                Icons.keyboard_arrow_up,
+                size: 20,
+                color: Gx.textBaseSecondary,
+              ),
+            ),
+          ),
         ),
       ),
     );

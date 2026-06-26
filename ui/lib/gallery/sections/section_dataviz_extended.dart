@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
 
 // ---------------------------------------------------------------------------
-// Heatmap — mapa de calor 7×7 con gradiente semántico
+// HeatmapPainter — mapa de calor 7×7 con gradiente semántico.
+// Cuadrícula estática de 7×7 celdas; el valor de cada celda (-1…1) determina
+// su color semántico (óptimo/transición/crítico). Sin parámetros de entrada.
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, criticalCrimson.
 // ---------------------------------------------------------------------------
 
 // Cuadrícula de 7×7 celdas. El valor de cada celda determina su color:
@@ -21,6 +24,7 @@ class HeatmapPainter extends CustomPainter {
       49, (_) => (_rng.nextDouble() * 2 - 1));
 
   @override
+  // Renderiza la grilla de 49 celdas con color semántico según el valor de cada celda.
   void paint(Canvas canvas, Size size) {
     const cols = 7;
     const rows = 7;
@@ -55,7 +59,11 @@ class HeatmapPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Scatter UMAP / PCA — dispersión de clústeres 2D
+// ScatterPainter — dispersión UMAP/PCA de clústeres 2D.
+// Simula la proyección de estrategias en 2D con 30 puntos semánticos.
+// Sin parámetros de entrada (datos y semilla hardcodeados para demo).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson. MaskFilter.blur fuera de bucle de animación → aceptado.
 // ---------------------------------------------------------------------------
 
 // Nube de puntos coloreados por estado semántico, sobre fondo deepSpace.
@@ -78,12 +86,14 @@ class ScatterPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja 30 puntos con halo de glow semántico y punto central nítido.
   void paint(Canvas canvas, Size size) {
     for (final pt in _pts) {
       final c = _colors[pt.$3];
       final paint = Paint()
         ..color = c.withAlpha(200)
         ..style = PaintingStyle.fill;
+      // Halo de glow: painter estático (no animado) → MaskFilter.blur aceptado.
       final glowPaint = Paint()
         ..color = c.withAlpha(80)
         ..style = PaintingStyle.fill
@@ -101,7 +111,11 @@ class ScatterPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Regime Map — mapa de régimen (no línea de tiempo; bloques de estado)
+// RegimeMapPainter — mapa de régimen de mercado en franjas horizontales.
+// Cada franja es proporcional a su duración; el color es semántico (estado).
+// Sin parámetros de entrada (datos hardcodeados para demo).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson. MaskFilter.blur fuera de bucle de animación → aceptado.
 // ---------------------------------------------------------------------------
 
 // Muestra franjas horizontales de régimen a lo largo del tiempo.
@@ -117,6 +131,7 @@ class RegimeMapPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja franjas de régimen con glow bajo cada segmento.
   void paint(Canvas canvas, Size size) {
     double x = 0;
     for (final seg in _segments) {
@@ -126,7 +141,7 @@ class RegimeMapPainter extends CustomPainter {
       canvas.drawRRect(
           RRect.fromRectAndRadius(rect, const Radius.circular(3)), paint);
 
-      // Glow bajo cada franja.
+      // Glow bajo cada franja: painter estático (no animado) → MaskFilter.blur aceptado.
       final glowPaint = Paint()
         ..color = seg.$2.withAlpha(80)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -141,7 +156,13 @@ class RegimeMapPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Parallel Coordinates — ejes paralelos de métricas
+// ParallelCoordPainter — coordenadas paralelas de métricas de estrategia.
+// Renderiza 3 ejes verticales (Sharpe, DD, Slip) con 4 series coloreadas
+// por estado semántico. Sin parámetros de entrada.
+// Tokens de chrome: borderBase (ejes estructurales), textBaseLabel (etiquetas
+//   de eje), fontMono (tipografía de datos).
+// Tokens de dato (se conservan): optimaCyan, alertAmber, criticalCrimson,
+//   transitionIndigo.
 // ---------------------------------------------------------------------------
 
 // Renderiza 3 ejes verticales con líneas de datos por encima,
@@ -157,16 +178,19 @@ class ParallelCoordPainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja los ejes, etiquetas y líneas de cada serie con halo de glow.
   void paint(Canvas canvas, Size size) {
     final axisCount = _axes.length;
     final step = size.width / (axisCount - 1);
+    // Borde estructural del eje → borderBase (énfasis dinámico al 35% de opacidad).
     final axisPaint = Paint()
-      ..color = Gx.borderPanel
+      ..color = Gx.borderBase
       ..strokeWidth = 1;
+    // Etiqueta del eje: textBaseLabel reacciona a la paleta activa (paper/bunker).
     final labelStyle = TextStyle(
-      color: Gx.textLabel,
+      color: Gx.textBaseLabel,
       fontSize: 10,
-      fontFamily: 'monospace',
+      fontFamily: Gx.fontMono,
     );
 
     // Dibuja los ejes verticales.
@@ -182,7 +206,7 @@ class ParallelCoordPainter extends CustomPainter {
       tp.paint(canvas, Offset(x - tp.width / 2, 4));
     }
 
-    // Dibuja las líneas de cada serie.
+    // Dibuja las líneas de cada serie con halo de glow.
     for (final s in _series) {
       final values = [s.$1, s.$2, s.$3];
       final path = Path();
@@ -199,7 +223,7 @@ class ParallelCoordPainter extends CustomPainter {
         ..color = s.$4.withAlpha(160)
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
-      // Halo de glow.
+      // Halo de glow: painter estático (no animado) → MaskFilter.blur aceptado.
       final glowPaint = Paint()
         ..color = s.$4.withAlpha(60)
         ..strokeWidth = 4
@@ -215,7 +239,12 @@ class ParallelCoordPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Correlation Matrix — matriz 4×4 con intensidad de color por correlación
+// CorrelationMatrixPainter — matriz de correlación 4×4 (SPX/QQQ/GLD/DXY).
+// El color de cada celda representa la correlación entre el par (rango -1…1).
+// Sin parámetros de entrada (datos hardcodeados para demo).
+// Tokens de chrome: textBaseLabel (etiquetas), fontMono (tipografía de datos).
+// Tokens de dato (se conservan): optimaCyan, transitionIndigo, alertAmber,
+//   criticalCrimson.
 // ---------------------------------------------------------------------------
 
 // Cuadrícula 4×4 de activos; el color de cada celda representa la
@@ -231,14 +260,16 @@ class CorrelationMatrixPainter extends CustomPainter {
   ];
 
   @override
+  // Renderiza etiquetas de fila/columna y celdas de la matriz con color semántico.
   void paint(Canvas canvas, Size size) {
     final n = _labels.length;
     final cell = min(size.width, size.height) / (n + 1);
     final offset = cell; // primera fila/columna para etiquetas
+    // Etiqueta de eje: textBaseLabel reacciona a la paleta activa (paper/bunker).
     final labelStyle = TextStyle(
-      color: Gx.textLabel,
+      color: Gx.textBaseLabel,
       fontSize: 10,
-      fontFamily: 'monospace',
+      fontFamily: Gx.fontMono,
     );
     final paint = Paint();
 
@@ -285,7 +316,14 @@ class CorrelationMatrixPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Drawdown Curve — curva de drawdown con coloración por severidad
+// DrawdownCurvePainter — curva de drawdown (%) con coloración semántica.
+// Línea de drawdown a lo largo del tiempo; la zona bajo la curva se colorea
+// con el gradiente de la familia crítica. Recibe: Offset? hover (posición
+// del cursor; null si no hay hover).
+// Tokens de chrome: borderBase (eje cero), textBaseMuted (cursor vertical),
+//   textBase (dot de hover).
+// Tokens de dato (se conservan): criticalCrimson, criticalRed (familia
+//   crítica — codifican severidad del drawdown).
 // ---------------------------------------------------------------------------
 
 // Línea de drawdown (%) a lo largo del tiempo; la zona bajo la curva se
@@ -300,6 +338,8 @@ class DrawdownCurvePainter extends CustomPainter {
   ];
 
   @override
+  // Dibuja curva de drawdown con relleno semántico y cursor de hover dinámico.
+  // MaskFilter.blur condicionado a hover (no en bucle de AnimationController) → aceptado.
   void paint(Canvas canvas, Size size) {
     final n = _pts.length;
     final stepX = size.width / (n - 1);
@@ -307,8 +347,9 @@ class DrawdownCurvePainter extends CustomPainter {
     final h = size.height - zeroY - 4;
     final isHov = hover != null;
 
+    // Eje cero: borde estructural → borderBase (énfasis dinámico al 35% de opacidad).
     canvas.drawLine(Offset(0, zeroY), Offset(size.width, zeroY),
-        Paint()..color = Gx.borderPanel..strokeWidth = 1);
+        Paint()..color = Gx.borderBase..strokeWidth = 1);
 
     final path = Path()..moveTo(0, zeroY);
     for (var i = 0; i < n; i++) {
@@ -335,12 +376,14 @@ class DrawdownCurvePainter extends CustomPainter {
     if (hover != null) {
       final idx = (hover!.dx / stepX).round().clamp(0, n - 1);
       final cy = zeroY + _pts[idx] * h;
+      // Cursor vertical: textBaseMuted reacciona a la paleta activa.
       canvas.drawLine(Offset(hover!.dx, 0), Offset(hover!.dx, size.height),
-          Paint()..color = Gx.textMuted.withAlpha(50)..strokeWidth = 0.5);
+          Paint()..color = Gx.textBaseMuted.withAlpha(50)..strokeWidth = 0.5);
       canvas.drawCircle(Offset(idx * stepX, cy), 6, Paint()
         ..color = Gx.criticalCrimson.withAlpha(70)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
-      canvas.drawCircle(Offset(idx * stepX, cy), 3, Paint()..color = Gx.textPrimary.withAlpha(220));
+      // Dot central: textBase reacciona a la paleta activa.
+      canvas.drawCircle(Offset(idx * stepX, cy), 3, Paint()..color = Gx.textBase.withAlpha(220));
     }
   }
 
