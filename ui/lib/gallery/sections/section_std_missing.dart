@@ -692,56 +692,54 @@ class _GlowDropzoneState extends State<GlowDropzone> {
           await Future.delayed(const Duration(seconds: 2));
           if (mounted) setState(() => _state = _DropState.idle);
         },
-        // Dropzone: AnimatedContainer que cambia de color según el estado.
-        // En reposo: surfaceFill (dinámico). Hover/carga: color semántico tenue.
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(Gx.space24),
-          decoration: BoxDecoration(
-            // Reposo: surfaceFill reacciona a glass/tint/solid. Hover/carga: semántico tenue.
-            color: _state == _DropState.hover
-                ? Gx.transitionIndigo.withOpacity(0.08)
-                : _state == _DropState.loading
-                    ? Gx.optimaCyan.withOpacity(0.06)
-                    : Gx.surfaceFill,
-            borderRadius: BorderRadius.circular(Gx.rPanel),
-            border: Border.all(
-              // Borde de estado: color semántico con opacidad variable por estado.
-              color: stateColor.withOpacity(
-                  _state == _DropState.idle ? 0.4 : 0.8),
-              // Grosor: hairline en reposo, focus en estados activos.
-              width: _state == _DropState.idle ? Gx.borderHairline : Gx.borderFocus,
+        // Dropzone: frosted() wrapper que aplica la superficie dinámica (glass/tint/solid).
+        // El AnimatedContainer interior solo controla borde/glow semánticos según estado.
+        child: frosted(
+          radius: Gx.rPanel,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(Gx.space24),
+            decoration: BoxDecoration(
+              // Sin color de fondo — frosted() maneja la superficie.
+              borderRadius: BorderRadius.circular(Gx.rPanel),
+              border: Border.all(
+                // Borde de estado: color semántico con opacidad variable por estado.
+                color: stateColor.withOpacity(
+                    _state == _DropState.idle ? 0.4 : 0.8),
+                // Grosor: hairline en reposo, focus en estados activos.
+                width: _state == _DropState.idle ? Gx.borderHairline : Gx.borderFocus,
+              ),
+              boxShadow: _state != _DropState.idle
+                  ? Gx.glow(stateColor, blur: 14, opacity: 0.25)
+                  : null,
             ),
-            boxShadow: _state != _DropState.idle
-                ? Gx.glow(stateColor, blur: 14, opacity: 0.25)
-                : null,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icono central con glow del estado semántico activo.
-              Icon(
-                _state == _DropState.loading
-                    ? Gx.iconRefresh
-                    : Gx.iconAdd,
-                size: 28,
-                color: stateColor,
-                shadows: _state != _DropState.idle
-                    ? Gx.textGlow(stateColor, 12)
-                    : null,
-              ),
-              const SizedBox(height: Gx.space8),
-              // Mensaje según estado.
-              Text(
-                _state == _DropState.loading
-                    ? 'Cargando…'
-                    : _state == _DropState.hover
-                        ? 'Suelta aquí'
-                        : 'Arrastra o toca para cargar',
-                style:
-                    Gx.uiSans(fontSize: 13, color: stateColor),
-              ),
-            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono central con glow del estado semántico activo.
+                Icon(
+                  _state == _DropState.loading
+                      ? Gx.iconRefresh
+                      : Gx.iconAdd,
+                  size: 28,
+                  color: stateColor,
+                  shadows: _state != _DropState.idle
+                      ? Gx.textGlow(stateColor, 12)
+                      : null,
+                ),
+                const SizedBox(height: Gx.space8),
+                // Mensaje según estado.
+                Text(
+                  _state == _DropState.loading
+                      ? 'Cargando…'
+                      : _state == _DropState.hover
+                          ? 'Suelta aquí'
+                          : 'Arrastra o toca para cargar',
+                  style:
+                      Gx.uiSans(fontSize: 13, color: stateColor),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -934,7 +932,7 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
                 'EJECUTAR',
                 style: Gx.uiSans(
                     fontSize: 13,
-                    color: Gx.deepSpace,
+                    color: Gx.canvasBase,
                     weight: FontWeight.w500),
               ),
             ),
@@ -942,7 +940,7 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
             Container(
                 width: 1,
                 height: 38,
-                color: Gx.deepSpace.withOpacity(0.4)),
+                color: Gx.canvasBase.withOpacity(0.4)),
             // Botón chevron que abre el dropdown.
             GestureDetector(
               onTap: () => setState(() => _open = !_open),
@@ -960,8 +958,8 @@ class _GlowSplitButtonState extends State<GlowSplitButton> {
                 child: AnimatedRotation(
                   duration: const Duration(milliseconds: 200),
                   turns: _open ? -0.5 : 0,
-                  child: const Icon(Icons.keyboard_arrow_down,
-                      size: 16, color: Gx.deepSpace),
+                  child: Icon(Icons.keyboard_arrow_down,
+                      size: 16, color: Gx.canvasBase),
                 ),
               ),
             ),

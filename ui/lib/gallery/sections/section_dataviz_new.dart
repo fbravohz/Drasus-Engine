@@ -342,7 +342,6 @@ class _MonteCarloLinesWidgetState extends State<MonteCarloLinesWidget>
                 borderRadius: BorderRadius.circular(Gx.rChip),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Gx.deepSpace,
                     borderRadius: BorderRadius.circular(Gx.rChip),
                   ),
                   child: AnimatedBuilder(
@@ -956,12 +955,12 @@ class _StrategyCluster3dWidgetState extends State<StrategyCluster3dWidget>
             ),
           ),
 
-          // Canvas 3D: deepSpace como lienzo negro para el scatter 3D (color funcional del fondo
-          // del lienzo, no superficie de panel — no pasa por frosted para no distorsionar el render).
+          // Canvas 3D: fondo transparente para que herede la superficie dinámica del contenedor
+          // panelSurface() que envuelve esta sección. La separación visual vertical se mantiene
+          // con el borde izquierdo.
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Gx.deepSpace,
                 border: Border(left: BorderSide(color: Gx.borderBase)),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(Gx.rPanel),

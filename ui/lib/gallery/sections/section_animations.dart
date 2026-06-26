@@ -12,6 +12,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../gallery_tokens.dart';
+import '../gallery_fx.dart';
 // Primitivos eléctricos compartidos (migrados a lib/widgets/ — ADR-0138).
 import '../../widgets/electric_primitives.dart';
 
@@ -364,22 +365,23 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
   @override
   // Tarjeta KPI con gradiente dinámico de superficie, borde estructural y odómetro animado.
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 180,
-      padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          // Getters dinámicos: reaccionan al modo glass/tint/solid.
-          colors: [Gx.surfacePanel, Gx.surfaceCard],
+      child: PanelFromDecoration(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            // Getters dinámicos: reaccionan al modo glass/tint/solid.
+            colors: [Gx.surfacePanel, Gx.surfaceCard],
+          ),
+          // Borde estructural global dinámico.
+          border: Border.all(color: Gx.borderBase),
+          borderRadius: BorderRadius.circular(Gx.rPanel),
+          boxShadow: Gx.glow(widget.color, blur: 20, opacity: 0.10),
         ),
-        // Borde estructural global dinámico.
-        border: Border.all(color: Gx.borderBase),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        boxShadow: Gx.glow(widget.color, blur: 20, opacity: 0.10),
-      ),
-      child: Column(
+        padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -422,6 +424,7 @@ class _StatCardOdometerState extends State<_StatCardOdometer>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -537,20 +540,21 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
   @override
   // Tarjeta de gauge con gradiente dinámico, arco CustomPainter y botón Replay.
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 150,
-      padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          // Getters dinámicos: reaccionan al modo global.
-          colors: [Gx.surfacePanel, Gx.surfaceCard],
+      child: PanelFromDecoration(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            // Getters dinámicos: reaccionan al modo global.
+            colors: [Gx.surfacePanel, Gx.surfaceCard],
+          ),
+          border: Border.all(color: Gx.borderBase),
+          borderRadius: BorderRadius.circular(Gx.rPanel),
+          boxShadow: Gx.glow(widget.color, blur: 16, opacity: 0.12),
         ),
-        border: Border.all(color: Gx.borderBase),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        boxShadow: Gx.glow(widget.color, blur: 16, opacity: 0.12),
-      ),
+        padding: const EdgeInsets.all(Gx.space12 + Gx.space4 / 2),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -600,6 +604,7 @@ class _AnimatedGaugeState extends State<_AnimatedGauge>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -763,20 +768,21 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
   @override
   // Panel con gradiente dinámico que contiene el lienzo de la curva y el botón Replay.
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 360,
-      padding: const EdgeInsets.all(Gx.space12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          // Getters dinámicos: reaccionan al modo global.
-          colors: [Gx.surfacePanel, Gx.surfaceCard],
+      child: PanelFromDecoration(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            // Getters dinámicos: reaccionan al modo global.
+            colors: [Gx.surfacePanel, Gx.surfaceCard],
+          ),
+          border: Border.all(color: Gx.borderBase),
+          borderRadius: BorderRadius.circular(Gx.rPanel),
+          boxShadow: Gx.glow(Gx.optimaCyan, blur: 20, opacity: 0.08),
         ),
-        border: Border.all(color: Gx.borderBase),
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        boxShadow: Gx.glow(Gx.optimaCyan, blur: 20, opacity: 0.08),
-      ),
+        padding: const EdgeInsets.all(Gx.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -838,6 +844,7 @@ class _EquityCurveAnimatedState extends State<EquityCurveAnimated>
             ),
           ),
         ],
+      ),
       ),
     );
   }

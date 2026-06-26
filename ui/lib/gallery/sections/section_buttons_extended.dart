@@ -129,7 +129,7 @@ class _GlowLoadingButtonState extends State<GlowLoadingButton>
             _loading ? 'Cargando…' : 'LANZAR',
             style: Gx.uiSans(
               fontSize: 13,
-              color: Gx.deepSpace,
+              color: Gx.canvasBase,
               weight: FontWeight.w600,
             ),
           ),
@@ -217,7 +217,7 @@ class GlowFab extends StatelessWidget {
           gradient: Gx.linear(Gx.gradReactor),
           boxShadow: Gx.glowStrong(Gx.reactorGreen),
         ),
-        child: Icon(Gx.iconAdd, size: 22, color: Gx.deepSpace),
+        child: Icon(Gx.iconAdd, size: 22, color: Gx.canvasBase),
       ),
     );
   }

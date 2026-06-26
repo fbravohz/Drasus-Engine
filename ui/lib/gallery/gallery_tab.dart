@@ -469,7 +469,7 @@ class GalleryTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: on ? Gx.optimaCyan : Gx.textBaseMuted),
             boxShadow: on ? Gx.glow(Gx.optimaCyan, blur: 10, opacity: 0.6) : null),
-        child: on ? Icon(Gx.iconCheck, size: 14, color: Gx.deepSpace) : null,
+        child: on ? Icon(Gx.iconCheck, size: 14, color: Gx.canvasBase) : null,
       );
 
   Widget _radio(bool on) => Container(
@@ -617,7 +617,7 @@ class GalleryTab extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
           decoration: BoxDecoration(
-              color: hover ? Gx.surfaceRaised : Colors.transparent,
+              color: hover ? Gx.surfaceRaisedDynamic : Colors.transparent,
               border: const Border(bottom: BorderSide(color: Gx.divider))),
           child: Row(children: cells),
         );
@@ -678,7 +678,7 @@ class GalleryTab extends StatelessWidget {
         child: Container(
             height: 10,
             decoration: BoxDecoration(
-                color: Gx.surfaceRaised,
+                color: Gx.surfaceRaisedDynamic,
                 borderRadius: BorderRadius.circular(4))),
       );
 

@@ -1198,13 +1198,9 @@ class _FullDagCanvas extends StatelessWidget {
         SizedBox(
           width: 700,
           height: 400,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Gx.deepSpace,
-              border: Border.all(color: Gx.borderBase),
-              borderRadius: BorderRadius.circular(Gx.rPanel),
-              boxShadow: Gx.glow(Gx.transitionIndigo, blur: 20, opacity: 0.10),
-            ),
+          child: panelSurface(
+            radius: Gx.rPanel,
+            glow: Gx.glow(Gx.transitionIndigo, blur: 20, opacity: 0.10),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(Gx.rPanel),
               // InteractiveDag implementa el canvas nodal completo con

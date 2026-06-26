@@ -434,13 +434,8 @@ Widget richTextEditorPlaceholder() {
       ),
       const SizedBox(height: 6),
       // Área de contenido editable (placeholder estático).
-      Container(
+      cardSurface(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Gx.surfacePanel,
-          borderRadius: BorderRadius.circular(Gx.rPanel),
-          border: Border.all(color: Gx.borderBase),
-        ),
         child: Text(
           'Notas de la estrategia node-07…',
           style: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted),

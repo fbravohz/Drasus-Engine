@@ -242,17 +242,10 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
     return SizedBox(
       width: 300,
       height: 350,
-      child: Container(
-        decoration: BoxDecoration(
-          // surfacePanel getter dinámico — reacciona al modo global.
-          color: Gx.surfacePanel,
-          // Borde estructural global dinámico.
-          border: Border.all(color: Gx.borderBase),
-          borderRadius: BorderRadius.circular(Gx.rPanel),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(Gx.rPanel),
-          child: Column(
+      child: panelSurface(
+        padding: EdgeInsets.zero,
+        radius: Gx.rPanel,
+        child: Column(
             children: [
               // Header interno con conteo de trades.
               _TapeHeader(count: _entries.length),
@@ -298,7 +291,6 @@ class _TradeTapeWidgetState extends State<TradeTapeWidget> {
             ],
           ),
         ),
-      ),
     );
   }
 }

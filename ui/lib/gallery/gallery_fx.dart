@@ -330,13 +330,13 @@ class GlowButton extends StatefulWidget {
   final String label;
   final List<Color> gradient;
   final Color glowColor;
-  final Color textColor;
+  final Color? textColor;
   const GlowButton(
       {super.key,
       required this.label,
       required this.gradient,
       required this.glowColor,
-      this.textColor = Gx.deepSpace});
+      this.textColor});
 
   @override
   State<GlowButton> createState() => _GlowButtonState();
@@ -396,7 +396,7 @@ class _GlowButtonState extends State<GlowButton>
                 style: Gx.uiSans(
                   fontSize: 13,
                   weight: FontWeight.w600,
-                  color: widget.textColor,
+                  color: widget.textColor ?? Gx.canvasBase,
                 ).copyWith(letterSpacing: 0.3)),
           ),
         ),
@@ -771,7 +771,7 @@ class _LightBurstTextState extends State<LightBurstText>
           return ShaderMask(
             shaderCallback: (rect) => RadialGradient(
               radius: 0.1 + v * 1.4,
-              colors: const [Gx.optimaCyan, Gx.transitionIndigo, Gx.textSecondary],
+              colors: [Gx.optimaCyan, Gx.transitionIndigo, Gx.textBaseSecondary],
               stops: const [0.0, 0.5, 1.0],
             ).createShader(rect),
             // Gx.pureWhite es el token canónico para blanco puro; necesario

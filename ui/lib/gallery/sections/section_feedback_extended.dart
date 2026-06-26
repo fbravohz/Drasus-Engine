@@ -427,7 +427,7 @@ class _GlowStepperState extends State<GlowStepper> {
                     child: Center(
                       child: completed
                           ? Icon(Gx.iconCheck,
-                              size: 12, color: Gx.deepSpace)
+                               size: 12, color: Gx.canvasBase)
                           : Text('${e.key + 1}',
                               style: Gx.dataMono(
                                   fontSize: 10, color: color)),
