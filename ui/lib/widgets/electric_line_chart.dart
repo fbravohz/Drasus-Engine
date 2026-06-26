@@ -102,7 +102,7 @@ class _ElectricLineChartState extends State<ElectricLineChart>
             Icon(Icons.show_chart, size: 12, color: widget.color),
             const SizedBox(width: 6),
             Text(widget.label ?? 'Rolling Metric (eléctrico)',
-                style: Gx.uiSans(fontSize: 11, color: Gx.textSecondary)),
+                style: Gx.uiSans(fontSize: 11, color: Gx.textBaseSecondary)),
             const Spacer(),
             GestureDetector(
               onTap: replay,
@@ -115,7 +115,7 @@ class _ElectricLineChartState extends State<ElectricLineChart>
                   borderRadius: BorderRadius.circular(Gx.rChip),
                 ),
                 child: Text('Replay',
-                    style: Gx.uiSans(fontSize: 10, color: Gx.textSecondary)),
+                    style: Gx.uiSans(fontSize: 10, color: Gx.textBaseSecondary)),
               ),
             ),
           ]),

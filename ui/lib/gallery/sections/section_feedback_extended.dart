@@ -29,51 +29,55 @@ class _GlowNotificationCardState extends State<GlowNotificationCard> {
   bool _unread = true;
 
   @override
-  // Renderiza la tarjeta con borde semántico en estado no leído y borde estructural
-  // global en estado leído; texto con tokens dinámicos para paper/bunker.
+  // Renderiza la tarjeta sobre superficie dinámica estándar con borde semántico.
   Widget build(BuildContext context) {
+    final semColor = _unread ? Gx.transitionIndigo : Gx.accentDynamic;
     return GestureDetector(
       onTap: () => setState(() => _unread = false),
-      child: glassEnhanced(
-        semanticColor: _unread ? Gx.transitionIndigo : Gx.accentDynamic,
+      child: panelSurface(
         padding: const EdgeInsets.all(Gx.space12),
         glow: _unread
             ? Gx.glow(Gx.transitionIndigo, blur: 14, opacity: 0.15)
             : null,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Punto indicador "no leída": semántico (transitionIndigo) — señalización interna.
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: Gx.space8,
-            height: Gx.space8,
-            margin: EdgeInsets.only(
-                top: Gx.space4, right: Gx.space8 + Gx.space4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              // Colors.transparent es el valor invisible del punto; no es chrome.
-              color: _unread ? Gx.transitionIndigo : Colors.transparent,
-              boxShadow: _unread
-                  ? Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.7)
-                  : null,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: semColor, width: 3)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Punto indicador "no leída": semántico (transitionIndigo) — señalización interna.
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: Gx.space8,
+              height: Gx.space8,
+              margin: EdgeInsets.only(
+                  top: Gx.space4, right: Gx.space8 + Gx.space4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // Colors.transparent es el valor invisible del punto; no es chrome.
+                color: _unread ? Gx.transitionIndigo : Colors.transparent,
+                boxShadow: _unread
+                    ? Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.7)
+                    : null,
+              ),
             ),
-          ),
-          Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-              // Texto principal con token dinámico — legible en paper y bunker.
-              Text('node-07 entró en régimen óptimo',
-                  style: Gx.uiSans(
-                      fontSize: 13,
-                      color: Gx.textBase,
-                      weight: _unread ? FontWeight.w500 : FontWeight.w400)),
-              SizedBox(height: Gx.space4 / 2),
-              // Timestamp con token muted dinámico.
-              Text('hace 3 min',
-                  style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
-            ]),
-          ),
-        ]),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                // Texto principal con token dinámico — legible en paper y bunker.
+                Text('node-07 entró en régimen óptimo',
+                    style: Gx.uiSans(
+                        fontSize: 13,
+                        color: Gx.textBase,
+                        weight: _unread ? FontWeight.w500 : FontWeight.w400)),
+                SizedBox(height: Gx.space4 / 2),
+                // Timestamp con token muted dinámico.
+                Text('hace 3 min',
+                    style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
+              ]),
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -134,10 +138,14 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
           child: _visible
               ? Padding(
                   padding: EdgeInsets.only(top: Gx.space8),
-                  child: glassEnhanced(
-                    semanticColor: Gx.criticalCrimson,
+                  child: panelSurface(
                     padding: const EdgeInsets.all(Gx.space12),
-                    child: Column(
+                    glow: Gx.glow(Gx.criticalCrimson, blur: 14, opacity: 0.15),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(left: BorderSide(color: Gx.criticalCrimson, width: 3)),
+                      ),
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -207,6 +215,7 @@ class _GlowPopconfirmState extends State<GlowPopconfirm> {
                       ],
                     ),
                   ),
+                  ),
                 )
               : _result.isEmpty
                   ? const SizedBox.shrink()
@@ -249,21 +258,24 @@ Widget snackbarVariants() {
   );
 }
 
-// Snackbar individual: glassEnhanced con el color semántico del evento.
-// El ícono y el texto usan el color semántico (señalización interna del tipo de evento).
+// Snackbar individual: superficie dinámica estándar con borde semántico.
 Widget _snackbar(IconData icon, String msg, Color c, Color bg) =>
-    glassEnhanced(
-      semanticColor: c,
+    panelSurface(
+      glow: Gx.glow(c, blur: 14, opacity: 0.15),
       padding: const EdgeInsets.symmetric(
           horizontal: Gx.space12, vertical: Gx.space8 + Gx.space4),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14, color: c, shadows: Gx.textGlow(c, 8)),
-        SizedBox(width: Gx.space8 + Gx.space4),
-        // Texto del mensaje con token base dinámico.
-        Flexible(
-            child: Text(msg,
-                style: Gx.uiSans(fontSize: 12, color: Gx.textBase))),
-      ]),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: c, width: 3)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 14, color: c, shadows: Gx.textGlow(c, 8)),
+          SizedBox(width: Gx.space8 + Gx.space4),
+          Flexible(
+              child: Text(msg,
+                  style: Gx.uiSans(fontSize: 12, color: Gx.textBase))),
+        ]),
+      ),
     );
 
 // ---------------------------------------------------------------------------
@@ -285,11 +297,14 @@ Widget resultPage({bool success = true}) {
       ? 'La estrategia node-07 superó el filtro de calidad.'
       : 'Slippage letal detectado. La célula fue archivada.';
 
-  return glassEnhanced(
-    semanticColor: c,
+  return panelSurface(
     padding: const EdgeInsets.all(Gx.space16),
     glow: Gx.glow(c, blur: 20, opacity: 0.15),
-    child: Column(
+    child: Container(
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: c, width: 3)),
+      ),
+      child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Icono de estado con halo radial semántico.
@@ -325,6 +340,7 @@ Widget resultPage({bool success = true}) {
             style:
                 Gx.uiSans(fontSize: 12, color: Gx.textBaseSecondary)),
       ],
+      ),
     ),
   );
 }
@@ -524,7 +540,7 @@ class _GlowAccordionState extends State<GlowAccordion> {
                           // Borde inferior: semántico interno (activa) vs divider (inactiva).
                           color: isOpen
                               ? Gx.transitionIndigo
-                              : Gx.divider,
+                              : Gx.borderBase,
                           width: isOpen ? Gx.borderFocus : Gx.borderHairline)),
                 ),
                 child: Row(

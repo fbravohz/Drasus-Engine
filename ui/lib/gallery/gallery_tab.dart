@@ -368,7 +368,7 @@ class GalleryTab extends StatelessWidget {
         _frame('Divider', _panelSolid(
           child: Column(children: [
             Text('Arriba', style: Gx.body),
-            const Divider(color: Gx.divider, height: 16),
+            Divider(color: Gx.borderBase, height: 16),
             Text('Abajo', style: Gx.body),
           ]),
         )),
@@ -584,8 +584,8 @@ class GalleryTab extends StatelessWidget {
 
   Widget _kv(String k, String v, Color vc) => Container(
         padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Gx.divider))),
+        decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Gx.borderBase))),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Flexible(
               child: Text(k,
@@ -618,7 +618,7 @@ class GalleryTab extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
           decoration: BoxDecoration(
               color: hover ? Gx.surfaceRaisedDynamic : Colors.transparent,
-              border: const Border(bottom: BorderSide(color: Gx.divider))),
+              border: Border(bottom: BorderSide(color: Gx.borderBase))),
           child: Row(children: cells),
         );
     return _panelSolid(
@@ -712,18 +712,20 @@ class GalleryTab extends StatelessWidget {
         )),
       ];
 
-  Widget _alert(IconData icon, String msg, Color c, Color bg) => Container(
+  Widget _alert(IconData icon, String msg, Color c, Color bg) => frosted(
+        radius: Gx.rPanel,
         padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-            gradient: Gx.linear([bg, Gx.surfacePanel]),
-            borderRadius: BorderRadius.circular(Gx.rPanel),
+        glow: Gx.glow(c, blur: 14, opacity: 0.2),
+        child: Container(
+          decoration: BoxDecoration(
             border: Border(left: BorderSide(color: c, width: 3)),
-            boxShadow: Gx.glow(c, blur: 14, opacity: 0.2)),
-        child: Row(children: [
-          Icon(icon, size: 16, color: c, shadows: Gx.textGlow(c)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(msg, style: Gx.bodySecondary)),
-        ]),
+          ),
+          child: Row(children: [
+            Icon(icon, size: 16, color: c, shadows: Gx.textGlow(c)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(msg, style: Gx.bodySecondary)),
+          ]),
+        ),
       );
 
   Widget _modalMock() => Container(

@@ -182,6 +182,15 @@ La profundidad y el "poder" Reflect vienen del **glow de color**, no de sombras 
 > **Regla de Envoltorio (2026-06-25):** un componente NO debe auto-envolverse en una superficie. La superficie la aplica el llamante. El componente expone solo su contenido; el llamante (ej. `gallery_tab.dart`) lo envuelve en `panelSurface(child: componente)`. Excepciones: componentes autocontenidos que requieren un fondo propio (ZuiNavPill, GlowInput) usan `panelSurface()` — no `frosted()` ni `glassEnhanced()` — para ser dinámicos al modo.
 >
 > **Regla de Migración (2026-06-25):** para envolver un `Container` existente sin reescribir su decoración, usar `PanelFromDecoration(decoration: ...)`. Este wrapper respeta la decoración original en modo `solid` y aplica `frosted()` sobre el contenido en los modos glass/tint/enhancedGlass.
+>
+> **Regla 2026-06-26 — unicidad de wrapper superficial:** ningún componente puede usar un wrapper de superficie diferente al estándar `panelSurface`/`cardSurface`/`frosted`. `glassEnhanced` está PROHIBIDO para nuevos componentes; los existentes deben migrarse a `panelSurface()` + overlay de borde semántico. Aunque dos wrappers usen los mismos tokens dinámicos, si aplican gradientes distintos (`[componentBgBase, canvasBase]` vs `[componentBgBase(18%), transparent]`) el usuario percibe una diferencia visual al cambiar el color de fondo de componentes. El color semántico (acento, severidad) va como overlay decorativo, nunca como parte del gradiente de fondo.
+>
+> **Checklist de verificación para el agente (2026-06-26):** al revisar un componente existente o al crear uno nuevo, el agente DEBE verificar:
+> 1. ¿El fondo del componente usa `panelSurface()`, `cardSurface()`, o `frosted()`? Si usa `Container(decoration: BoxDecoration(color: ...))` o `glassEnhanced()` → **violación**.
+> 2. ¿El componente define su propio gradiente de fondo (ej. `LinearGradient([color1, color2])` directamente en el Container)? → **violación**.
+> 3. Si el componente necesita un borde semántico de estado (ej. izquierda rojo para crítico), ¿está overlay como `Container(decoration: Border(left: ...))` DENTRO del wrapper, no reemplazando al wrapper? → si el borde semántico está en el mismo `BoxDecoration` que el fondo → **violación**.
+> 4. ¿El color de fondo viene de un token dinámico (`Gx.componentBgBase`, `Gx.surfacePanel`, `Gx.surfaceCard`) y no de un `static const`? → si usa `Gx.panelSolid`, `Gx.cardInner`, `Gx.surfaceRaised` (raw) → **violación**.
+> 5. Probar con paleta clara (paper) + modo sólido: ¿el fondo del componente se aclara? Si se queda oscuro → **violación**.
 
 ### Panel de Datos (Sólido)
 **Role:** Contenedor de zonas densas — tablas, rejillas, métricas con números

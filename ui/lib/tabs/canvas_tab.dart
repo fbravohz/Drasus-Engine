@@ -248,7 +248,7 @@ class _FeatureNodeCard extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary, weight: FontWeight.w500),
+              style: Gx.uiSans(fontSize: 13, color: Gx.textBase, weight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -263,7 +263,7 @@ class _FeatureNodeCard extends StatelessWidget {
             ),
             child: Text(
               'Vacío',
-              style: Gx.dataMono(fontSize: 10, color: Gx.textMuted),
+              style: Gx.dataMono(fontSize: 10, color: Gx.textBaseMuted),
             ),
           ),
         ],
@@ -300,7 +300,7 @@ class _FeatureSidePanel extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
             child: Text(
               'Features',
-              style: Gx.displayGrotesque(fontSize: 14, color: Gx.textSecondary),
+              style: Gx.displayGrotesque(fontSize: 14, color: Gx.textBaseSecondary),
             ),
           ),
           // Lista de features draggables.
@@ -400,7 +400,7 @@ class _FeatureListItem extends StatelessWidget {
               height: 6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: feature.active ? Gx.optimaCyan : Gx.textMuted,
+                color: feature.active ? Gx.optimaCyan : Gx.textBaseMuted,
                 boxShadow: feature.active
                     ? Gx.glow(Gx.optimaCyan, blur: 6, opacity: 0.6)
                     : null,
@@ -412,14 +412,14 @@ class _FeatureListItem extends StatelessWidget {
                 feature.name,
                 style: Gx.uiSans(
                   fontSize: 12,
-                  color: feature.active ? Gx.optimaCyan : Gx.textMuted,
+                  color: feature.active ? Gx.optimaCyan : Gx.textBaseMuted,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             // Candado para las features bloqueadas.
             if (!feature.active)
-              const Icon(Icons.lock_outline, size: 12, color: Gx.textMuted),
+              Icon(Icons.lock_outline, size: 12, color: Gx.textBaseMuted),
           ],
         ),
       ),
@@ -448,7 +448,7 @@ class _BreadcrumbPill extends StatelessWidget {
           ),
           child: Text(
             'Canvas · Forge',
-            style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary),
+            style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary),
           ),
         ),
       ),
@@ -534,7 +534,7 @@ class _ToolbarBtnState extends State<_ToolbarBtn> {
               color: _hover ? Gx.surfaceRaised.withOpacity(0.5) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(widget.icon, size: 16, color: _hover ? Gx.textPrimary : Gx.textLabel),
+            child: Icon(widget.icon, size: 16, color: _hover ? Gx.textBase : Gx.textBaseLabel),
           ),
         ),
       ),

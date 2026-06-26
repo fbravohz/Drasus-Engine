@@ -183,6 +183,8 @@ const _kKeyTextColor = 'text_color_override';
 const _kNoTextOverride = -1;
 // Clave de persistencia para el color de fondo de componentes (ARGB32).
 const _kKeyComponentBg = 'component_bg_color';
+// Clave de persistencia para el modo automático de paleta (1 = auto, 0 = manual).
+const _kKeyAutoPalette = 'auto_palette';
 // Claves de persistencia para familias tipográficas.
 const _kKeyFontDisplay = 'font_display';
 const _kKeyFontSans = 'font_sans';
@@ -219,6 +221,36 @@ const Map<DrasusBackgroundPalette, Color> kTextDefaults = {
 };
 
 // ---------------------------------------------------------------------------
+// Color de fondo de componentes automático por paleta.
+// ---------------------------------------------------------------------------
+const Map<DrasusBackgroundPalette, Color> kAutoComponentBgDefaults = {
+  DrasusBackgroundPalette.bunker: Color(0xFF090D1F),
+  DrasusBackgroundPalette.ash:    Color(0xFF0D0D0D),
+  DrasusBackgroundPalette.crimson: Color(0xFF1A080B),
+  DrasusBackgroundPalette.forest: Color(0xFF091A0B),
+  DrasusBackgroundPalette.navy:   Color(0xFF090F1F),
+  DrasusBackgroundPalette.void_:  Color(0xFF0D091F),
+  DrasusBackgroundPalette.slate:  Color(0xFFC2C8D6), // claro para fondo claro
+  DrasusBackgroundPalette.paper:  Color(0xFFDADEE8), // claro para fondo claro
+};
+
+// ---------------------------------------------------------------------------
+// Color de énfasis automático por paleta.
+// Oscuros → mantiene el default transitionIndigo. Claros → variante más
+// oscura para mantener contraste sobre fondo blanco.
+// ---------------------------------------------------------------------------
+const Map<DrasusBackgroundPalette, Color> kAutoAccentDefaults = {
+  DrasusBackgroundPalette.bunker:  Color(0xFF9A8CFF), // transitionIndigo
+  DrasusBackgroundPalette.ash:     Color(0xFF9A8CFF),
+  DrasusBackgroundPalette.crimson: Color(0xFFCC2B2B), // criticalCrimson oscuro
+  DrasusBackgroundPalette.forest:  Color(0xFF54E8D0), // optimaCyan
+  DrasusBackgroundPalette.navy:    Color(0xFF56A8FF), // transitionBlue
+  DrasusBackgroundPalette.void_:   Color(0xFF9A8CFF),
+  DrasusBackgroundPalette.slate:   Color(0xFF6C5CE7), // indigo más oscuro para fondo claro
+  DrasusBackgroundPalette.paper:   Color(0xFF6C5CE7), // indigo más oscuro para fondo claro
+};
+
+// ---------------------------------------------------------------------------
 // Espejos estáticos globales — leídos por Gx helpers sin BuildContext.
 // Se sincronizan en load() y en cada mutador (setAccent, setPalette, etc.).
 // ---------------------------------------------------------------------------
@@ -249,6 +281,8 @@ class DrasusThemeState extends ChangeNotifier {
   Color? _textOverride;
   // Color de fondo de componentes: base para solid, tinte para glass/tint.
   Color _componentBgColor = _kDefaultComponentBg;
+  // Modo automático de paleta: true = acento/componente/texto se auto-seleccionan.
+  bool _autoPalette = true;
   // Familias tipográficas activas.
   String _fontDisplay = _kDefaultFontDisplay;
   String _fontSans = _kDefaultFontSans;
@@ -259,6 +293,9 @@ class DrasusThemeState extends ChangeNotifier {
 
   // Devuelve la paleta de fondo activa.
   DrasusBackgroundPalette get backgroundPalette => _palette;
+
+  // Devuelve true si el modo automático de paleta está activo.
+  bool get isAutoPalette => _autoPalette;
 
   // Devuelve los 5 colores de superficie para la paleta activa.
   DrasusSurfacePalette get surfaces => kPalettes[_palette]!;
@@ -306,11 +343,34 @@ class DrasusThemeState extends ChangeNotifier {
   static Color get globalSurfaceRaised => _globalSurfaceRaised;
 
   // Construye el ThemeData unificado con las cuatro ThemeExtension de
-  // ADR-0138. Es la única fuente de verdad del tema: el MaterialApp la
-  // consume y se reconstruye cuando este notifier dispara.
+  // ADR-0138. La textTheme se mapea explícitamente para que cualquier widget
+  // Text() que use Theme.of(context).textTheme.* obtenga nuestras familias
+  // tipográficas sin depender de los helpers Gx en cada callsite.
   ThemeData buildThemeData() {
     final pal = kPalettes[_palette]!;
+    final tColor = effectiveTextColor;
+    final baseTextStyle = TextStyle(
+      fontFamily: _fontSans,
+      color: tColor,
+    );
     return ThemeData.dark(useMaterial3: true).copyWith(
+      textTheme: TextTheme(
+        displayLarge: baseTextStyle.copyWith(fontSize: 40, fontWeight: FontWeight.w500, letterSpacing: -0.8, fontFamily: _fontDisplay),
+        displayMedium: baseTextStyle.copyWith(fontSize: 32, fontWeight: FontWeight.w500, fontFamily: _fontDisplay),
+        displaySmall: baseTextStyle.copyWith(fontSize: 22, fontWeight: FontWeight.w500, fontFamily: _fontDisplay, letterSpacing: -0.4),
+        headlineLarge: baseTextStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w500),
+        headlineMedium: baseTextStyle.copyWith(fontSize: 18, fontWeight: FontWeight.w500),
+        headlineSmall: baseTextStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+        titleLarge: baseTextStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+        titleMedium: baseTextStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w500),
+        titleSmall: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+        bodyLarge: baseTextStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5),
+        bodyMedium: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w400, height: 1.5),
+        bodySmall: baseTextStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, height: 1.4),
+        labelLarge: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: _fontMono),
+        labelMedium: baseTextStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: _fontMono),
+        labelSmall: baseTextStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: _fontMono),
+      ),
       extensions: [
         DrasusGlass.defaults,
         DrasusMotion.defaults,
@@ -360,6 +420,10 @@ class DrasusThemeState extends ChangeNotifier {
       _componentBgColor = Color(compBgInt);
     }
 
+    // Leer modo automático de paleta (default true).
+    final autoPaletteVal = prefs.getInt(_kKeyAutoPalette);
+    _autoPalette = autoPaletteVal == null || autoPaletteVal == 1;
+
     // Leer familias tipográficas (string).
     final fontDisplayStr = prefs.getString(_kKeyFontDisplay);
     if (fontDisplayStr != null) _fontDisplay = fontDisplayStr;
@@ -404,13 +468,24 @@ class DrasusThemeState extends ChangeNotifier {
   }
 
   // Cambia la paleta de fondo y la persiste. Notifica a los widgets.
-  // En modo automático de texto, recalcula _globalTextColor para la nueva paleta.
+  // En modo automático de paleta, recalcula texto, acento y fondo de componentes.
   Future<void> setPalette(DrasusBackgroundPalette palette) async {
     _palette = palette;
     final palSurface = kPalettes[_palette]!;
-    // En modo automático, el color de texto se recalcula al cambiar de paleta.
-    if (_textOverride == null) {
+
+    if (_autoPalette) {
+      // Auto: texto, acento y fondo de componentes según la paleta.
+      _textOverride = null;
       _globalTextColor = kTextDefaults[_palette]!;
+      _accentColor = kAutoAccentDefaults[_palette]!;
+      _globalAccent = _accentColor;
+      _componentBgColor = kAutoComponentBgDefaults[_palette]!;
+      _globalComponentBgColor = _componentBgColor;
+    } else {
+      // Manual: solo recalcula texto si no hay override.
+      if (_textOverride == null) {
+        _globalTextColor = kTextDefaults[_palette]!;
+      }
     }
     // Sincronizar espejos de paleta.
     _globalCanvasBase = palSurface.deepSpace;
@@ -449,6 +524,28 @@ class DrasusThemeState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kKeyComponentBg, color.toARGB32());
+  }
+
+  // Activa/desactiva el modo automático de paleta.
+  // ON → al cambiar de paleta se auto-ajustan acento, texto y fondo de componentes.
+  // OFF → los controles manuales se muestran; los valores actuales se congelan.
+  Future<void> setAutoPalette(bool value) async {
+    _autoPalette = value;
+    if (value) {
+      // Auto: aplicar defaults, liberar override de texto.
+      _textOverride = null;
+      _globalTextColor = kTextDefaults[_palette]!;
+      _accentColor = kAutoAccentDefaults[_palette]!;
+      _globalAccent = _accentColor;
+      _componentBgColor = kAutoComponentBgDefaults[_palette]!;
+      _globalComponentBgColor = _componentBgColor;
+    } else {
+      // Manual: congelar valores actuales como overrides.
+      _textOverride = _globalTextColor;
+    }
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kKeyAutoPalette, value ? 1 : 0);
   }
 
   // ---------------------------------------------------------------------------

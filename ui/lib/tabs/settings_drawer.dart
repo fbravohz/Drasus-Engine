@@ -94,10 +94,10 @@ class SettingsDrawer extends StatelessWidget {
     final palette = theme?.backgroundPalette ?? DrasusBackgroundPalette.bunker;
     // Color de texto base efectivo (override manual o auto por paleta).
     final textColor = theme?.effectiveTextColor ?? DrasusThemeState.globalTextColor;
-    // Indica si el color de texto está en modo automático.
-    final isTextColorAuto = theme?.isTextColorAuto ?? true;
     // Color de fondo de componentes activo (tinte de glass / fondo de solid).
     final componentBgColor = theme?.componentBgColor ?? DrasusThemeState.globalComponentBgColor;
+    // Modo automático de paleta (true = acento/texto/componente se auto-seleccionan).
+    final isAutoPalette = theme?.isAutoPalette ?? true;
 
     return Drawer(
       width: 320,
@@ -133,9 +133,9 @@ class SettingsDrawer extends StatelessWidget {
                     accent: accent,
                     palette: palette,
                     textColor: textColor,
-                    isTextColorAuto: isTextColorAuto,
                     componentBgColor: componentBgColor,
                     theme: theme,
+                    isAutoPalette: isAutoPalette,
                   ),
                   const SizedBox(height: 28),
                   _Divider(),
@@ -204,11 +204,11 @@ class _SectionCuenta extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Felipe Bravo', style: Gx.displayGrotesque(fontSize: 16, color: Gx.textPrimary)),
+              Text('Felipe Bravo', style: Gx.displayGrotesque(fontSize: 16, color: Gx.textBase)),
               const SizedBox(height: 2),
-              Text('fbravo.hz@gmail.com', style: Gx.dataMono(fontSize: 12, color: Gx.textSecondary)),
+              Text('fbravo.hz@gmail.com', style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
               const SizedBox(height: 1),
-              Text('Drasus Engine v0.1.0-α', style: Gx.dataMono(fontSize: 11, color: Gx.textMuted)),
+              Text('Drasus Engine v0.1.0-α', style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
             ],
           ),
         ),
@@ -225,89 +225,110 @@ class _SectionApariencia extends StatelessWidget {
   final Color accent;
   final DrasusBackgroundPalette palette;
   final Color textColor;
-  final bool isTextColorAuto;
   final Color componentBgColor;
   final DrasusThemeState? theme;
+  final bool isAutoPalette;
 
   const _SectionApariencia({
     required this.accent,
     required this.palette,
     required this.textColor,
-    required this.isTextColorAuto,
     required this.componentBgColor,
     required this.theme,
+    required this.isAutoPalette,
   });
 
   @override
-  // Muestra selector de énfasis híbrido, control de color de fuente y chips de paleta.
+  // Muestra toggle único de paleta automática + selectores manuales condicionales.
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Etiqueta de subsección énfasis.
-        Text(
-          'COLOR DE ÉNFASIS',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
-              .copyWith(letterSpacing: 1.5),
-        ),
-        const SizedBox(height: 12),
-
-        // Selector híbrido: swatches curados + rueda HSV expandible.
-        // Reemplaza la antigua grid estática de 12 swatches.
-        ColorPickerWidget(
-          swatches: _kAccentPresets,
-          selectedColor: accent,
-          onColorChanged: (color) => theme?.setAccent(color),
-        ),
-        const SizedBox(height: 24),
-
-        // Etiqueta de subsección color de fuente.
-        Text(
-          'COLOR DE FUENTE',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
-              .copyWith(letterSpacing: 1.5),
-        ),
-        const SizedBox(height: 12),
-
-        // Control de color de fuente: toggle automático + selector manual.
-        _TextColorControl(
-          textColor: textColor,
-          isAuto: isTextColorAuto,
-          theme: theme,
+        // ---- Toggle ÚNICO de paleta automática ----
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Paleta automática',
+                    style: Gx.uiSans(fontSize: 13, color: Gx.textBase),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isAutoPalette
+                        ? 'Acento / texto / fondo según paleta'
+                        : 'Controles manuales activos',
+                    style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted),
+                  ),
+                ],
+              ),
+            ),
+            _SimpleToggle(
+              value: isAutoPalette,
+              onToggle: () => theme?.setAutoPalette(!isAutoPalette),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
 
-        // Etiqueta de subsección color de fondo de componentes.
-        Text(
-          'FONDO DE COMPONENTES',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
-              .copyWith(letterSpacing: 1.5),
-        ),
-        const SizedBox(height: 12),
+        // ---- Selectores manuales (ocultos cuando auto-paleta está activa) ----
+        if (!isAutoPalette) ...[
+          // Aceler: selector de énfasis.
+          Text(
+            'COLOR DE ÉNFASIS',
+            style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
+                .copyWith(letterSpacing: 1.5),
+          ),
+          const SizedBox(height: 12),
+          ColorPickerWidget(
+            swatches: _kAccentPresets,
+            selectedColor: accent,
+            onColorChanged: (color) => theme?.setAccent(color),
+          ),
+          const SizedBox(height: 24),
 
-        // Selector de color de fondo de componentes: swatches curados + rueda HSV.
-        // Controla el tinte/fondo que usan todos los componentes en los 4 modos.
-        ColorPickerWidget(
-          swatches: _kComponentBgPresets,
-          selectedColor: componentBgColor,
-          onColorChanged: (color) => theme?.setComponentBgColor(color),
-        ),
-        const SizedBox(height: 24),
+          // Color de fuente: selector directo (sin toggle interno).
+          Text(
+            'COLOR DE FUENTE',
+            style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
+                .copyWith(letterSpacing: 1.5),
+          ),
+          const SizedBox(height: 12),
+          ColorPickerWidget(
+            swatches: _kTextPresets,
+            selectedColor: textColor,
+            onColorChanged: (color) => theme?.setTextColor(color),
+          ),
+          const SizedBox(height: 24),
 
-        // Etiqueta de subsección de paletas.
+          // Fondo de componentes.
+          Text(
+            'FONDO DE COMPONENTES',
+            style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
+                .copyWith(letterSpacing: 1.5),
+          ),
+          const SizedBox(height: 12),
+          ColorPickerWidget(
+            swatches: _kComponentBgPresets,
+            selectedColor: componentBgColor,
+            onColorChanged: (color) => theme?.setComponentBgColor(color),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        // ---- Paletas de fondo (siempre visibles) ----
         Text(
           'PALETA DE FONDO',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+          style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
               .copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 12),
-
-        // Grid 4 × 2 de chips de paleta: muestra el deepSpace de cada una.
         Wrap(
           spacing: 8,
           runSpacing: 10,
           children: DrasusBackgroundPalette.values.map((p) {
-            // Lee el mapa canónico público de drasus_theme.dart (única fuente de verdad).
             final surfaces = kPalettes[p]!;
             final isSelected = p == palette;
             return _PaletteChip(
@@ -320,80 +341,6 @@ class _SectionApariencia extends StatelessWidget {
             );
           }).toList(),
         ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _TextColorControl — toggle "Automático por paleta" + selector manual.
-// ---------------------------------------------------------------------------
-
-// Control de color de fuente base del panel.
-// Cuando isAuto=true: muestra solo el toggle activado.
-// Cuando isAuto=false: muestra el toggle desactivado + ColorPickerWidget manual.
-class _TextColorControl extends StatelessWidget {
-  final Color textColor;
-  final bool isAuto;
-  final DrasusThemeState? theme;
-
-  const _TextColorControl({
-    required this.textColor,
-    required this.isAuto,
-    required this.theme,
-  });
-
-  @override
-  // Toggle de modo automático + selector manual condicionado al estado.
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Fila de toggle: etiqueta a la izquierda, switch a la derecha.
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Automático por paleta',
-                    style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isAuto
-                        ? 'Claro/oscuro según el fondo activo'
-                        : 'Color personalizado activo',
-                    style: Gx.uiSans(fontSize: 11, color: Gx.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            // Toggle simple reactivo: llama al mutador del tema al tocar.
-            _SimpleToggle(
-              value: isAuto,
-              onToggle: () {
-                if (isAuto) {
-                  // Desactivar auto: fijar el color automático actual como manual.
-                  theme?.setTextColor(textColor);
-                } else {
-                  // Activar auto: volver a determinación por paleta.
-                  theme?.setTextColorAuto();
-                }
-              },
-            ),
-          ],
-        ),
-        // Selector manual: solo visible cuando el modo automático está desactivado.
-        if (!isAuto) ...[
-          const SizedBox(height: 12),
-          ColorPickerWidget(
-            swatches: _kTextPresets,
-            selectedColor: textColor,
-            onColorChanged: (color) => theme?.setTextColor(color),
-          ),
-        ],
       ],
     );
   }
@@ -449,7 +396,7 @@ class _SimpleToggle extends StatelessWidget {
             height: 16,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: value ? activeColor : Gx.textMuted,
+              color: value ? activeColor : Gx.textBaseMuted,
             ),
           ),
         ),
@@ -502,7 +449,7 @@ class _PaletteChip extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: Gx.dataMono(fontSize: 9, color: Gx.textMuted),
+            style: Gx.dataMono(fontSize: 9, color: Gx.textBaseMuted),
           ),
         ],
       ),
@@ -531,7 +478,7 @@ class _SectionSuperficie extends StatelessWidget {
       children: [
         Text(
           'MODO DE SUPERFICIE',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+          style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
               .copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 12),
@@ -593,7 +540,7 @@ class _SurfaceModeOption extends StatelessWidget {
             Icon(
               isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
               size: 16,
-              color: isSelected ? Gx.transitionIndigo : Gx.textMuted,
+              color: isSelected ? Gx.transitionIndigo : Gx.textBaseMuted,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -605,13 +552,13 @@ class _SurfaceModeOption extends StatelessWidget {
                     recipe.label,
                     style: Gx.uiSans(
                       fontSize: 13,
-                      color: isSelected ? Gx.textPrimary : Gx.textSecondary,
+                      color: isSelected ? Gx.textBase : Gx.textBaseSecondary,
                     ),
                   ),
                   // Descripción breve del efecto visual.
                   Text(
                     recipe.description,
-                    style: Gx.uiSans(fontSize: 11, color: Gx.textMuted),
+                    style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted),
                   ),
                 ],
               ),
@@ -636,13 +583,13 @@ class _SectionSistema extends StatelessWidget {
       children: [
         Text(
           'SISTEMA',
-          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+          style: Gx.uiSans(fontSize: 11, color: Gx.textBaseLabel)
               .copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Text('Rust core', style: Gx.uiSans(fontSize: 13, color: Gx.textSecondary)),
+            Text('Rust core', style: Gx.uiSans(fontSize: 13, color: Gx.textBaseSecondary)),
             const SizedBox(width: 8),
             // Chip de estado: siempre "conectado" por ahora (el bridge está activo).
             Container(
@@ -676,7 +623,7 @@ class _SectionSistema extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Build 2026-06-24',
-          style: Gx.dataMono(fontSize: 11, color: Gx.textMuted),
+          style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted),
         ),
       ],
     );

@@ -39,11 +39,11 @@ class DashboardTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ---- Header ----
-                Text('Dashboard', style: Gx.displayGrotesque(fontSize: 22, color: Gx.textPrimary)),
+                Text('Dashboard', style: Gx.displayGrotesque(fontSize: 22, color: Gx.textBase)),
                 const SizedBox(height: 4),
                 Text(
                   'Sin widgets activos — próximamente',
-                  style: Gx.uiSans(fontSize: 13, color: Gx.textMuted),
+                  style: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted),
                 ),
                 const SizedBox(height: 24),
 
@@ -137,7 +137,7 @@ class GlassBentoCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 22, color: Gx.textSecondary),
+                  Icon(icon, size: 22, color: Gx.textBaseSecondary),
                   const SizedBox(height: 10),
                   Text(
                     title,
@@ -152,7 +152,7 @@ class GlassBentoCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     'Sin datos — próximamente',
-                    style: Gx.uiSans(fontSize: 11, color: Gx.textMuted),
+                    style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted),
                   ),
                 ],
               ),
@@ -262,9 +262,9 @@ class _PlaceholderCell extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(IconsaxPlusLinear.add, size: 24, color: Gx.textMuted),
+              Icon(IconsaxPlusLinear.add, size: 24, color: Gx.textBaseMuted),
               const SizedBox(height: 6),
-              Text('Sin widget', style: Gx.uiSans(fontSize: 12, color: Gx.textMuted)),
+              Text('Sin widget', style: Gx.uiSans(fontSize: 12, color: Gx.textBaseMuted)),
             ],
           ),
         ),
@@ -351,7 +351,7 @@ class _WidgetCatalogSheet extends StatelessWidget {
             color: Gx.surfaceFill,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: Border(
-              top: BorderSide(color: Gx.textPrimary.withOpacity(Gx.glassEdgeOpacity), width: 1),
+              top: BorderSide(color: Gx.textBase.withOpacity(Gx.glassEdgeOpacity), width: 1),
             ),
           ),
           child: Column(
@@ -375,7 +375,7 @@ class _WidgetCatalogSheet extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
                   'Agregar Widget',
-                  style: Gx.displayGrotesque(fontSize: 18, color: Gx.textPrimary),
+                  style: Gx.displayGrotesque(fontSize: 18, color: Gx.textBase),
                 ),
               ),
               // Lista scrolleable de entradas del catálogo.
@@ -421,7 +421,7 @@ class _GlowWidgetCatalogItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(Gx.rChip),
               border: Border.all(color: Gx.borderPanel),
             ),
-            child: Icon(meta.icon, size: 18, color: Gx.textSecondary),
+            child: Icon(meta.icon, size: 18, color: Gx.textBaseSecondary),
           ),
           const SizedBox(width: 12),
           // Nombre + descripción del widget.
@@ -429,9 +429,9 @@ class _GlowWidgetCatalogItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(meta.name, style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary, weight: FontWeight.w500)),
+                Text(meta.name, style: Gx.uiSans(fontSize: 13, color: Gx.textBase, weight: FontWeight.w500)),
                 const SizedBox(height: 2),
-                Text(meta.description, style: Gx.uiSans(fontSize: 11, color: Gx.textMuted)),
+                Text(meta.description, style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted)),
               ],
             ),
           ),
@@ -446,7 +446,7 @@ class _GlowWidgetCatalogItem extends StatelessWidget {
             ),
             child: Text(
               'Próximamente',
-              style: Gx.dataMono(fontSize: 10, color: Gx.textMuted),
+              style: Gx.dataMono(fontSize: 10, color: Gx.textBaseMuted),
             ),
           ),
         ],

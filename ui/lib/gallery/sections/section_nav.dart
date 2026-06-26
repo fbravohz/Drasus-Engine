@@ -251,7 +251,7 @@ class _CommandPaletteState extends State<CommandPalette> {
             ]),
           ),
           // Separador.
-          const Divider(color: Gx.divider, height: 1),
+          Divider(color: Gx.borderBase, height: 1),
           // Lista de sugerencias.
           ..._suggestions.asMap().entries.map((e) {
             final isSelected = e.key == _sel;
