@@ -107,6 +107,23 @@ Después, el detalle técnico.
 - No vuelvas a leer archivos a menos que hayan cambiado.
 - Prueba tu razonamiento antes de declarar la tarea terminada.
 
+## Búsqueda en Dot-Directories (Crítico — limitación de `glob`)
+
+La herramienta `glob` **NO encuentra archivos dentro de directorios que empiezan con `.`** (dot-directories). Esto afecta a `.claude/`, `.opencode/`, `.git/`, `.github/`, `.config/` y cualquier otro. El resultado es "No files found" aunque el archivo exista.
+
+**Regla:** para localizar archivos dentro de dot-directories, NUNCA uses `glob`. En su lugar:
+1. **Ruta conocida:** usa `read` directamente con la ruta completa (ej. `read .claude/state/tech-lead/PROGRESS.md`).
+2. **Listar contenido:** usa `read` sobre el directorio (ej. `read .opencode/agents/`) o `bash ls`.
+3. **Buscar por nombre:** usa `bash find .claude -name "patrón"` o `bash ls -R .opencode/`.
+4. **Buscar por contenido:** `grep` SÍ funciona en dot-directories — úsalo sin problema.
+
+**Archivos comunes afectados (referencia rápida):**
+- `.claude/state/tech-lead/PROGRESS.md` — bitácora del Tech Lead
+- `.claude/skills/*/SKILL.md` — skills de cada rol
+- `.claude/plans/*.md` — planes de trabajo
+- `.claude/memory/*` — memoria entre sesiones
+- `.opencode/agents/*.md` — agentes configurados de opencode
+
 ## Protocolo de Lectura Progresiva (Archivos Extensos)
 
 Cuando se solicite lectura completa de un archivo que exceda el límite de una sola llamada (>2000 líneas / >50KB), sigue este procedimiento:

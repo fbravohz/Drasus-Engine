@@ -60,6 +60,22 @@ El principio universal de comentarios está en `base/SKILL.md`. Aquí solo la si
 
 **QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado por el Tech-Lead. El QA leerá el código, no solo correrá `flutter test`.
 
+### 2c. Biblioteca de Componentes — Contrato de Tokens (estandarización OBLIGATORIA)
+
+Todo componente de la galería (`ui/lib/gallery/`) es **biblioteca reutilizable de producción**. Al crear o EDITAR cualquier componente, lo construyes contra el contrato de tokens dinámico (ADR-0138 + enmienda "Tema Extensible"). Reglas FIJO:
+
+- **Superficie:** usa los wrappers (`frosted()/panelSurface()/cardSurface()/glassEnhanced()/PanelFromDecoration`) o `GlassSurface`. NUNCA un `Color` sólido suelto en `BoxDecoration`. NUNCA `const` en un widget de superficie (impide reconstruir al cambiar de modo). Reacciona a los N modos del registro (`kSurfaceModeRegistry`), sin ramificar por nombre de modo fuera de los wrappers.
+- **Fondo:** getters dinámicos `Gx.surfaceFill/surfacePanel/surfaceCard`. Prohibido los raws `Gx.glassFill/panelSolid/cardInner` en widgets.
+- **Texto normal (chrome):** `Gx.textBase/textBaseSecondary/textBaseLabel/textBaseMuted`. PROHIBIDO `Colors.white/black`, hex, o los estáticos `Gx.textPrimary/textSecondary/textLabel/textMuted` para texto de chrome (no se ven sobre fondo claro `paper`).
+- **Énfasis:** bordes estructurales globales y títulos/subtítulos usan `Gx.borderBase`/`Gx.accentDynamic`. Los colores semánticos (óptimo/alerta/crítico, y colores de dato/estado) SOLO para señalizar estado DENTRO del componente, vía parámetro — nunca como borde global.
+- **Radios:** `Gx.rPanel/rButton/rInput/rChip`. Único literal permitido: `999` (pills). Radios ≤3px decorativos (barras finas, conectores) se permiten como literal SOLO con comentario que lo justifique.
+- **Espaciado/grosor:** escala `Gx.space4..space64`; `Gx.borderHairline`/`Gx.borderFocus`.
+- **Parametrizable:** cada componente expone props con defaults y permite override interno de estilo (como child elements en CSS).
+- **Interacción probada y sin bugs:** antes de entregar, ejerces clic/hover/foco/gestos del componente. Corriges estados que no se resetean, gestos que disparan de más o no responden, hover/foco pegados, animaciones cortadas, áreas de tap mal puestas. Lo que dependa de lógica de negocio futura se anota como pendiente, no se inventa.
+- **Cobertura 100%, prohibido muestrear:** cuando estandarices un archivo, recorres TODOS sus componentes/clases (checklist nominal); ninguno se da por cerrado sin marca. Un componente omitido es defecto.
+
+Extender el sistema (nuevo modo de superficie, nueva propiedad de tema) se hace en UN solo lugar (el registro/tokens), nunca duplicando lógica por componente.
+
 ### 3. Consumo de la Capa de Enlace
 * Consume exclusivamente las funciones, streams y eventos expuestos por el Bridge (FFI/gRPC), estructurando reactivamente el estado.
 * Respeta el throttling de telemetría (refresco máx. cada 100ms) y renderiza datos ya reducidos (downsampling servidor); nunca pidas datasets crudos masivos.

@@ -80,6 +80,17 @@ Antes de correr un solo comando, lees los archivos que el ingeniero creó o modi
 - Solo los hallazgos BLOQUEANTES impiden el veredicto APTO.
 - Reportas todo al Tech-Lead (nunca directamente al ingeniero ni al Architect).
 
+### 1d. Gate de UI — Biblioteca de Componentes (estandarización contra tokens)
+
+Cuando la Story toque componentes de la galería (`ui/lib/gallery/`), además de la revisión de lógica aplicas este gate de estandarización (contrato ADR-0138 + enmienda "Tema Extensible"). Es revisión de CÓDIGO, no basta con que compile:
+
+- **Cobertura 100% (sin muestreo):** recorre CADA componente/clase de cada archivo tocado y confronta contra la checklist nominal que entregó el ingeniero. Un componente omitido es BLOQUEANTE (el usuario exige cobertura total; no se cierra con muestreo).
+- **Hardcodes de chrome = cero.** Corre tú mismo: `grep -rnE "Colors\.(white|black)|Color\(0x" ui/lib/gallery/sections/` y `grep -rnE "BorderRadius.circular\(" ui/lib/gallery/sections/ | grep -vE "circular\(99|circular\(Gx\."`. Además revisa los TOKENS ESTÁTICOS de chrome que el grep de literales NO atrapa: `Gx.borderPanel` en bordes estructurales (debe ser `Gx.borderBase`), y `Gx.textPrimary/textSecondary/textLabel/textMuted` en texto de chrome (debe ser `Gx.textBase*`). Excepciones válidas: `Colors.black` en máscaras `BlendMode.dstIn`, defaults parametrizados de demos, y radios ≤3px decorativos — SOLO si tienen comentario que lo justifique. Distingue "color de dato/estado semántico" (se queda) de "chrome" (va a token).
+- **Reactividad a los N modos sobre fondo claro y oscuro:** superficies por wrapper (sin `Color` suelto, sin `const`); texto de chrome en `Gx.textBase*` (legible sobre paleta `paper`); bordes/títulos globales en énfasis. Verifica que cambiar de modo/énfasis/paleta se propague.
+- **Comentarios de bloque en español** por widget/clase (política base/SKILL.md).
+- **Bugs de interacción:** revisa por código patrones de bug (setState sin reset, Timers huérfanos sin `dispose`/guarda `mounted`, gestos mal acotados, hover/foco pegados). Repórtalos.
+- **Entrega accionable:** si NO APTO, lista por `archivo:línea` cada defecto separando "debe tokenizarse / corregirse" de "excepción aceptable con comentario", para que el ingeniero remate en una sola pasada.
+
 ### 2. Criterios de Validación (Tolerancia Cero — SLAs por ruta, ROADMAP §6)
 * **Latencia diferenciada por ruta:** pre-trade <1ms; wrapper de reglas <10ms; orden end-to-end ≤100ms; kill switch ≤5s; backtest ≥100K bars/sec; recuperación post-crash <10s. Rechaza el entregable que viole el SLA de SU ruta (no apliques 1ms a todo).
 * **Determinismo bit-a-bit:** dos corridas del mismo backtest con la misma semilla deben producir hash de resultados idéntico. Si difieren, es defecto crítico (ADR-0002/0004).
