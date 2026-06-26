@@ -71,31 +71,118 @@ class Gx {
   // -------------------------------------------------------------------------
   // GxSurface — getters dinámicos que reflejan el modo global de superficie.
   //
-  // glass:  glassFill (0x40F0F2FF) — translúcido uniforme en TODOS los niveles.
-  //         El BackdropFilter + rim-light lo añaden frosted() y GlassSurface.
-  // tint:   glassFill — mismo fill, sin blur ni rim.
-  // solid:  panelSolid / cardInner — colores oscuros tradicionales.
+  // solid → variantes del color de fondo de componentes (globalComponentBgColor)
+  //   con ligeros ajustes de ligereza vía HSLColor para diferenciar fill/panel/card.
+  // glass/tint/enhancedGlass → color de fondo de componentes como tinte del glass
+  //   (la translucidez la manejan frosted() / GlassSurface al renderizar).
   //
-  // Cambiar el modo en SettingsDrawer → TODO pixel de la UI reacciona.
+  // Cambiar el color de componentes en SettingsDrawer → TODO pixel reacciona.
   // -------------------------------------------------------------------------
 
-  /// glass/tint → glassFill, solid → panelSolid
-  static Color get surfaceFill {
-    final mode = DrasusThemeState.globalSurfaceMode;
-    return mode == DrasusSurfaceMode.solid ? Gx.panelSolid : Gx.glassFill;
+  // Color de fondo de componentes sin procesar (raw, sin opacidad ni ajustes).
+  // Lo usan los wrappers (frosted, GlassSurface) para construir gradientes y
+  // tintes con la opacidad adecuada a cada modo de superficie.
+  // Público dentro del paquete: gallery_fx.dart lo consume directamente.
+  static Color get componentBgBase => DrasusThemeState.globalComponentBgColor;
+
+  // Verdadero si el modo activo es sólido (sin translucidez).
+  static bool get _isSolidMode =>
+      DrasusThemeState.globalSurfaceMode == DrasusSurfaceMode.solid;
+
+  // Ajusta la ligereza de un color en un delta porcentual (positivo = más claro).
+  // Usa HSLColor para preservar tono y saturación al variar solo la luminosidad.
+  static Color _adjustLightness(Color c, double deltaPercent) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl
+        .withLightness((hsl.lightness + deltaPercent / 100).clamp(0.0, 1.0))
+        .toColor();
   }
 
-  /// glass/tint → glassFill, solid → panelSolid
-  static Color get surfacePanel {
-    final mode = DrasusThemeState.globalSurfaceMode;
-    return mode == DrasusSurfaceMode.solid ? Gx.panelSolid : Gx.glassFill;
-  }
+  /// Relleno base de superficie.
+  /// solid → color de componentes tal cual; glass/tint/enhancedGlass → mismo color.
+  /// Los wrappers aplican la opacidad adecuada según el modo al renderizar.
+  static Color get surfaceFill => componentBgBase;
 
-  /// glass/tint → glassFill, solid → cardInner
-  static Color get surfaceCard {
-    final mode = DrasusThemeState.globalSurfaceMode;
-    return mode == DrasusSurfaceMode.solid ? Gx.cardInner : Gx.glassFill;
-  }
+  /// Panel: ligeramente más claro que fill (+4% de ligereza en solid).
+  /// En glass/tint/enhancedGlass se comporta igual que surfaceFill (los wrappers
+  /// deciden la opacidad según el modo).
+  static Color get surfacePanel =>
+      _isSolidMode ? _adjustLightness(componentBgBase, 4) : componentBgBase;
+
+  /// Card: un poco más claro que panel (+4% adicional en solid).
+  /// En glass/tint/enhancedGlass se comporta igual que surfaceFill.
+  static Color get surfaceCard =>
+      _isSolidMode ? _adjustLightness(componentBgBase, 8) : componentBgBase;
+
+  // -------------------------------------------------------------------------
+  // Tokens dinámicos de texto — leen el espejo estático _globalTextColor.
+  // Uso: Gx.textBase donde antes se usaba Gx.textPrimary (hardcoded).
+  // Los const textPrimary/etc. siguen disponibles como referencia raw interna.
+  // -------------------------------------------------------------------------
+
+  // Color de texto base efectivo (override manual o auto por paleta activa).
+  static Color get textBase => DrasusThemeState.globalTextColor;
+
+  // Texto secundario: mismo color base a 75% de opacidad.
+  static Color get textBaseSecondary =>
+      DrasusThemeState.globalTextColor.withOpacity(0.75);
+
+  // Etiqueta: mismo color base a 55% de opacidad.
+  static Color get textBaseLabel =>
+      DrasusThemeState.globalTextColor.withOpacity(0.55);
+
+  // Texto inactivo/muted: mismo color base a 37% de opacidad.
+  static Color get textBaseMuted =>
+      DrasusThemeState.globalTextColor.withOpacity(0.37);
+
+  // -------------------------------------------------------------------------
+  // Tokens dinámicos de paleta — leen el espejo estático _globalCanvasBase.
+  // Uso: Gx.canvasBase donde antes se usaba Gx.deepSpace (hardcoded) como
+  // fondo de lienzo en secciones que no tienen acceso a Theme.of(context).
+
+  // Color del lienzo base (deepSpace de la paleta activa).
+  static Color get canvasBase => DrasusThemeState.globalCanvasBase;
+
+  // Color raised/hover (surfaceRaised de la paleta activa).
+  static Color get surfaceRaisedDynamic => DrasusThemeState.globalSurfaceRaised;
+
+  // -------------------------------------------------------------------------
+  // Tokens dinámicos de borde y énfasis.
+  // Regla: borde estructural global = énfasis; los colores semánticos
+  // (optimaCyan, alertAmber, criticalCrimson) se usan solo como señalización
+  // interna del componente, nunca como borde global.
+  // -------------------------------------------------------------------------
+
+  // Color de énfasis dinámico (lee el espejo estático _globalAccent).
+  static Color get accentDynamic => DrasusThemeState.globalAccent;
+
+  // Borde estructural global tintado con el énfasis activo al 35% de opacidad.
+  // Úsalo donde antes se usaba Gx.borderPanel como borde genérico.
+  static Color get borderBase =>
+      DrasusThemeState.globalAccent.withOpacity(0.35);
+
+  // -------------------------------------------------------------------------
+  // Grosor de borde — valores canónicos usados en toda la UI.
+  // -------------------------------------------------------------------------
+
+  // Hairline: borde estructural mínimo (paneles, chips, separadores).
+  static const double borderHairline = 1.0;
+
+  // Focus: borde de foco activo (inputs, controles seleccionados).
+  static const double borderFocus = 1.5;
+
+  // -------------------------------------------------------------------------
+  // Escala de espaciado base 4px — tokens Dart de DESIGN.md §Spacing.
+  // Úsalos en lugar de literales numéricos en padding/margin/gaps.
+  // -------------------------------------------------------------------------
+  static const double space4  = 4.0;
+  static const double space8  = 8.0;
+  static const double space12 = 12.0;
+  static const double space16 = 16.0;
+  static const double space24 = 24.0;
+  static const double space32 = 32.0;
+  static const double space48 = 48.0;
+  static const double space64 = 64.0;
 
   // --- Vidrio Apple ---
   static const glassEdgeOpacity = 0.28;
@@ -116,20 +203,24 @@ class Gx {
   //
   // displayGrotesque → SpaceGrotesk (sabor técnico/terminal, w500)
   // uiSans           → Inter (fuerza de trabajo, w400/500)
-  // dataMono         → JetBrainsMono (números e IDs, w400/500)
+  // dataMono         -> JetBrainsMono (números e IDs, w400/500)
   //
   // Las firmas de los helpers son idénticas a las anteriores (con GoogleFonts)
   // para no tener que tocar ningún callsite en el resto de la galería.
-  static const fontDisplay = 'SpaceGrotesk'; // nombre de familia en pubspec.yaml
-  static const fontSans = 'Inter'; // nombre de familia en pubspec.yaml
-  static const fontMono = 'JetBrainsMono'; // nombre de familia en pubspec.yaml
+  // NOTA: getters dinámicos, leen el espejo estático de DrasusThemeState.
+  // Cambiar la fuente en SettingsDrawer → TODO texto de la galería reacciona.
+  static String get fontDisplay => DrasusThemeState.globalFontDisplay;
+  static String get fontSans => DrasusThemeState.globalFontSans;
+  static String get fontMono => DrasusThemeState.globalFontMono;
 
   // Helper: retorna un TextStyle con Space Grotesk (display grotesco).
   // Usa la familia embebida en assets/fonts/SpaceGrotesk-Medium.ttf.
+  // NOTA: SIN default de color — el llamante DEBE elegir explícitamente
+  // entre textBase / textBaseLabel / textBaseSecondary / textBaseMuted.
   static TextStyle displayGrotesque({
     double fontSize = 14,
     double height = 1.3,
-    Color color = textPrimary,
+    required Color color,
     FontWeight weight = FontWeight.w500,
     double letterSpacing = 0,
   }) =>
@@ -144,10 +235,11 @@ class Gx {
 
   // Helper: retorna un TextStyle con Inter (sans de UI).
   // Usa las familias embebidas en assets/fonts/Inter-Regular.ttf y Inter-Medium.ttf.
+  // NOTA: SIN default de color — el llamante DEBE elegir explícitamente.
   static TextStyle uiSans({
     double fontSize = 14,
     double height = 1.5,
-    Color color = textPrimary,
+    required Color color,
     FontWeight weight = FontWeight.w400,
   }) =>
       TextStyle(
@@ -160,10 +252,11 @@ class Gx {
 
   // Helper: retorna un TextStyle con JetBrains Mono (datos y números).
   // Usa las familias embebidas en assets/fonts/JetBrainsMono-Regular.ttf y -Medium.ttf.
+  // NOTA: SIN default de color — el llamante DEBE elegir explícitamente.
   static TextStyle dataMono({
     double fontSize = 13,
     double height = 1.4,
-    Color color = textPrimary,
+    required Color color,
     FontWeight weight = FontWeight.w400,
   }) =>
       TextStyle(
@@ -178,35 +271,35 @@ class Gx {
   // Las constantes que usan google_fonts no pueden ser 'const' porque los
   // TextStyle devueltos incluyen referencias a FontLoader, que no es const.
   static TextStyle get microLabel =>
-      uiSans(fontSize: 13, height: 1.3, color: textLabel);
+      uiSans(fontSize: 13, height: 1.3, color: textBaseLabel);
   static TextStyle get label =>
-      uiSans(fontSize: 14, height: 1.4, color: textLabel);
+      uiSans(fontSize: 14, height: 1.4, color: textBaseLabel);
   static TextStyle get body =>
-      uiSans(fontSize: 14, height: 1.5, color: textPrimary);
+      uiSans(fontSize: 14, height: 1.5, color: textBase);
   static TextStyle get bodySecondary =>
-      uiSans(fontSize: 14, height: 1.5, color: textSecondary);
+      uiSans(fontSize: 14, height: 1.5, color: textBaseSecondary);
   static TextStyle get subheading =>
-      uiSans(fontSize: 16, height: 1.5, color: textPrimary);
+      uiSans(fontSize: 16, height: 1.5, color: textBase);
   static TextStyle get panelTitle => displayGrotesque(
-      fontSize: 16, height: 1.3, color: textSecondary, weight: FontWeight.w500);
+      fontSize: 16, height: 1.3, color: textBaseSecondary, weight: FontWeight.w500);
   static TextStyle get sectionHeading => displayGrotesque(
       fontSize: 22,
       height: 1.15,
-      color: textPrimary,
+      color: textBase,
       weight: FontWeight.w500,
       letterSpacing: -0.4);
   static TextStyle get zuiTitle => displayGrotesque(
       fontSize: 40,
       height: 1.1,
-      color: textPrimary,
+      color: textBase,
       weight: FontWeight.w500,
       letterSpacing: -0.8);
 
   // Datos en JetBrains Mono (numStyle de DESIGN.md).
   static TextStyle get dataSmall =>
-      dataMono(fontSize: 14, height: 1.4, color: textPrimary);
+      dataMono(fontSize: 14, height: 1.4, color: textBase);
   static TextStyle get dataHero =>
-      dataMono(fontSize: 28, height: 1.1, color: textPrimary);
+      dataMono(fontSize: 28, height: 1.1, color: textBase);
 
   // --- Gradientes (compatibles entre los colores del sistema) ---
   // Cada gradiente se queda DENTRO de una familia semántica, así el color sigue

@@ -21,7 +21,10 @@ class GlassSurface extends StatelessWidget {
   final double borderRadius;
   final EdgeInsetsGeometry? padding;
 
-  const GlassSurface({
+  // No es const: GlassSurface lee el modo global estático y debe poder
+  // reconstruirse al cambiar el modo. Un constructor const permitiría
+  // instanciación const que congelaría el modo (regla DESIGN.md §Superficie).
+  GlassSurface({
     super.key,
     required this.child,
     this.borderRadius = Gx.rPanel,
@@ -49,13 +52,43 @@ class GlassSurface extends StatelessWidget {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
-          color: Gx.surfaceFill,
+          // Color de componentes al 65%: translúcido visible, sin blur.
+          color: Gx.surfaceFill.withOpacity(0.65),
           borderRadius: radius,
           border: Border.all(
             color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
           ),
         ),
         child: child,
+      );
+    }
+
+    // mode == enhancedGlass: gradiente profundo + borde del énfasis dinámico + glow amplio.
+    // Replica la receta de glassEnhanced() con Gx.accentDynamic como color de borde,
+    // sin importar gallery_fx.dart (evita acoplamiento entre capas de la biblioteca).
+    if (mode == DrasusSurfaceMode.enhancedGlass) {
+      final accentColor = Gx.accentDynamic;
+      final content = Container(
+        padding: padding,
+        decoration: BoxDecoration(
+          // Gradiente desde el color de componentes hasta deepSpace (profundidad tonal).
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Gx.componentBgBase, Gx.deepSpace],
+          ),
+          borderRadius: radius,
+          border: Border.all(color: accentColor.withAlpha(80)),
+          boxShadow: Gx.glow(accentColor, blur: 20, opacity: 0.15),
+        ),
+        child: child,
+      );
+      return ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: Gx.glassBlur, sigmaY: Gx.glassBlur),
+          child: content,
+        ),
       );
     }
 
@@ -75,12 +108,13 @@ class GlassSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: glass.fill,
             borderRadius: radius,
-            // Tinte interior (milk glass) como capa superpuesta.
+            // Tinte interior con el color de componentes (sutil, 0.18 de opacidad).
+            // Tiñe el vidrio con el tono elegido sin bloquear el BackdropFilter.
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                glass.tint,
+                Gx.componentBgBase.withOpacity(0.18),
                 Colors.transparent,
               ],
             ),

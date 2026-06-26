@@ -29,9 +29,10 @@ Widget frosted({
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: solidColor ?? Gx.panelSolid,
+        // Gx.surfacePanel deriva del color de fondo de componentes (solid: tal cual).
+        color: solidColor ?? Gx.surfacePanel,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Gx.borderPanel),
+        border: Border.all(color: Gx.borderBase),
         boxShadow: glow,
       ),
       child: child,
@@ -42,14 +43,27 @@ Widget frosted({
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Gx.surfaceFill,
+        // Color de componentes al 65%: translúcido pero visible, sin blur.
+        color: Gx.surfaceFill.withOpacity(0.65),
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
-          color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
+          color: Gx.accentDynamic.withOpacity(0.035),
         ),
         boxShadow: glow,
       ),
       child: child,
+    );
+  }
+
+  // mode == enhancedGlass: gradiente profundo + borde del énfasis dinámico + glow amplio.
+  // Usa el énfasis dinámico como color de borde (la regla "borde global = énfasis").
+  if (mode == DrasusSurfaceMode.enhancedGlass) {
+    return glassEnhanced(
+      child: child,
+      semanticColor: Gx.accentDynamic,
+      padding: padding,
+      radius: radius,
+      glow: glow,
     );
   }
 
@@ -61,18 +75,20 @@ Widget frosted({
       child: Container(
         padding: padding,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          // Gradiente sutil tintado con el color de componentes (0.18 de opacidad).
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0x14AAAAFF),
+              Gx.componentBgBase.withOpacity(0.18),
               Colors.transparent,
             ],
           ),
-          color: Gx.surfaceFill,
+          // Base del glass: color de componentes al 25% (translúcido sobre el blur).
+          color: Gx.surfaceFill.withOpacity(0.25),
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(
-            color: const Color(0x20A096FF).withOpacity(Gx.glassEdgeOpacity),
+            color: Gx.accentDynamic.withOpacity(0.035),
           ),
           boxShadow: glow,
         ),
@@ -94,6 +110,7 @@ Widget frosted({
 //   Container(decoration: BoxDecoration(color: Gx.surfacePanel, ...), child: x)
 //   → panelFromDecoration(decoration: BoxDecoration(color: Gx.surfacePanel, ...), padding: ..., child: x)
 
+// Panel con efecto glass/tint/solid según el modo global. Wrapper sobre frosted() con surfacePanel.
 Widget panelSurface({
   required Widget child,
   double radius = Gx.rPanel,
@@ -104,11 +121,13 @@ Widget panelSurface({
     child: child,
     padding: padding ?? const EdgeInsets.all(12),
     radius: radius,
-    solidColor: Gx.panelSolid,
+    // surfacePanel deriva del color de componentes (+4% ligereza en solid).
+    solidColor: Gx.surfacePanel,
     glow: glow,
   );
 }
 
+// Card con efecto glass/tint/solid según el modo global. Wrapper sobre frosted() con surfaceCard.
 Widget cardSurface({
   required Widget child,
   double radius = Gx.rPanel,
@@ -119,13 +138,14 @@ Widget cardSurface({
     child: child,
     padding: padding ?? const EdgeInsets.all(10),
     radius: radius,
-    solidColor: Gx.cardInner,
+    // surfaceCard deriva del color de componentes (+8% ligereza en solid).
+    solidColor: Gx.surfaceCard,
     glow: glow,
   );
 }
 
-/// Drop-in wrapper para reemplazar Container(decoration: BoxDecoration(color: Gx.surfacePanel/Card), ...)
-/// sin reescribir toda la decoration existente.
+// Drop-in wrapper para reemplazar Container(decoration: BoxDecoration(color: Gx.surfacePanel/Card), ...)
+// sin reescribir toda la decoration existente.
 class PanelFromDecoration extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -137,7 +157,10 @@ class PanelFromDecoration extends StatelessWidget {
   final BoxDecoration decoration;
   final Color? solidColor;
 
-  const PanelFromDecoration({
+  // No es const: lee el modo global estático y debe poder reconstruirse al
+  // cambiar el modo. Un constructor const congelaría el modo de superficie
+  // (regla DESIGN.md §Superficie: ningún widget de superficie en const).
+  PanelFromDecoration({
     super.key,
     required this.child,
     this.padding,
@@ -151,6 +174,8 @@ class PanelFromDecoration extends StatelessWidget {
   });
 
   @override
+  // Envuelve el Container original en frosted() si el modo no es solid; en solid usa la
+  // decoration original sin modificar. Toma el borde y sombras de la decoration original.
   Widget build(BuildContext context) {
     final mode = DrasusThemeState.globalSurfaceMode;
 
@@ -167,7 +192,7 @@ class PanelFromDecoration extends StatelessWidget {
       );
     }
 
-    // glass / tint: vidrio Apple o relleno translúcido
+    // glass / tint / enhancedGlass: frosted() aplica la receta correcta de cada modo.
     final radiusGeom = decoration.borderRadius;
     double r = Gx.rPanel;
     if (radiusGeom != null) {
@@ -200,6 +225,61 @@ class PanelFromDecoration extends StatelessWidget {
   }
 }
 
+// ─── Vidrio Premium (Receta Result) ───
+// Basado en los componentes Result (success/error) de section_feedback_extended.dart,
+// que son el gold standard. A diferencia de frosted() que usa un gradiente uniforme
+// [0x14AAAAFF, transparent] + BackdropFilter, este wrapper usa:
+//   1. Gradiente [surfacePanel → deepSpace] — profundidad tonal dramática
+//   2. Borde semántico coloreado — emphasis, no borderPanel neutro
+//   3. Glow amplio del color semántico — blur 20, opacidad baja
+//   4. BackdropFilter solo en glass mode, no en tint/solid
+
+// Panel/card con gradiente profundo, borde semántico y glow amplio.
+// glass:  BackdropFilter blur 36 + gradiente glassFill→deepSpace + borde semántico
+// tint:   gradiente glassFill→deepSpace + borde semántico (sin blur)
+// solid:  gradiente panelSolid→deepSpace + borde semántico (sin blur)
+Widget glassEnhanced({
+  required Widget child,
+  required Color semanticColor,
+  EdgeInsets padding = const EdgeInsets.all(16),
+  double radius = Gx.rChrome,
+  double blur = 36,
+  List<BoxShadow>? glow,
+}) {
+  final mode = DrasusThemeState.globalSurfaceMode;
+
+  // En solid: color de componentes directo; en glass/tint/enhancedGlass: mismo color
+  // (los wrappers aplican la opacidad adecuada al renderizar).
+  final fill = mode == DrasusSurfaceMode.solid ? Gx.surfacePanel : Gx.componentBgBase;
+
+  final shadows = glow ?? Gx.glow(semanticColor, blur: 20, opacity: 0.15);
+
+  Widget content = Container(
+    padding: padding,
+    decoration: BoxDecoration(
+      gradient: Gx.linear([fill, Gx.canvasBase],
+          begin: Alignment.topCenter, end: Alignment.bottomCenter),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: semanticColor.withAlpha(80)),
+      boxShadow: shadows,
+    ),
+    child: child,
+  );
+
+  // glass y enhancedGlass aplican BackdropFilter; tint y solid solo el Container.
+  if (mode == DrasusSurfaceMode.glass || mode == DrasusSurfaceMode.enhancedGlass) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: content,
+      ),
+    );
+  }
+
+  return content;
+}
+
 // ─── Interacción ───
 class HoverGlow extends StatefulWidget {
   final Widget child;
@@ -220,6 +300,7 @@ class HoverGlow extends StatefulWidget {
 class _HoverGlowState extends State<HoverGlow> {
   bool _h = false;
   @override
+  // Renderiza el hijo con escala animada al hover y sombra glow; estado local _h.
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _h = true),
@@ -275,6 +356,8 @@ class _GlowButtonState extends State<GlowButton>
   }
 
   @override
+  // Botón con gradiente y glow progresivo (_hover), escala al presionar (_down) y pulso de
+  // luz (_burst) al soltar. Animaciones locales de UI, no dependen del Bridge.
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -307,12 +390,14 @@ class _GlowButtonState extends State<GlowButton>
                 child: child,
               );
             },
+            // Estilo del texto del botón: usa el helper uiSans (familia Inter)
+            // en lugar de TextStyle suelto para respetar la voz tipográfica del sistema.
             child: Text(widget.label,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                    color: widget.textColor)),
+                style: Gx.uiSans(
+                  fontSize: 13,
+                  weight: FontWeight.w600,
+                  color: widget.textColor,
+                ).copyWith(letterSpacing: 0.3)),
           ),
         ),
       ),
@@ -320,7 +405,8 @@ class _GlowButtonState extends State<GlowButton>
   }
 }
 
-// Switch funcional: alterna al tocar, con knob deslizante y glow encendido.
+// Switch funcional de palanca: alterna estado al tocar, con knob deslizante animado, gradiente y
+// glow en ON. Estado local (_on) sin dependencia del Bridge.
 class GlowSwitch extends StatefulWidget {
   final bool initial;
   final Color color;
@@ -332,6 +418,7 @@ class GlowSwitch extends StatefulWidget {
 class _GlowSwitchState extends State<GlowSwitch> {
   late bool _on = widget.initial;
   @override
+  // Switch de palanca con knob deslizante animado, gradiente y glow en ON; estado local _on.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => setState(() => _on = !_on),
@@ -350,7 +437,8 @@ class _GlowSwitchState extends State<GlowSwitch> {
               : null,
           color: _on ? null : Gx.gaugeTrack,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: _on ? widget.color : Gx.borderPanel),
+          // OFF: borde estructural global (dinámico con el énfasis activo).
+          border: Border.all(color: _on ? widget.color : Gx.borderBase),
           boxShadow: _on ? Gx.glow(widget.color, blur: 16, opacity: 0.5) : null,
         ),
         child: AnimatedAlign(
@@ -362,7 +450,8 @@ class _GlowSwitchState extends State<GlowSwitch> {
             height: 18,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _on ? widget.color : Gx.textMuted,
+              // OFF: color de knob usando token dinámico de texto muted.
+              color: _on ? widget.color : Gx.textBaseMuted,
               boxShadow:
                   _on ? Gx.glow(widget.color, blur: 12, opacity: 0.8) : null,
             ),
@@ -392,6 +481,7 @@ class _GlowSliderState extends State<GlowSlider> {
   void _set(double dx, double w) =>
       setState(() => _v = (dx / w).clamp(0.0, 1.0));
   @override
+  // Slider con relleno degradado, glow en el track y manija circular; estado local _v.
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (ctx, box) {
       final w = box.maxWidth;
@@ -423,7 +513,8 @@ class _GlowSliderState extends State<GlowSlider> {
                   height: 16,
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Gx.textPrimary,
+                      // Token dinámico para el knob del slider — legible en paper y bunker.
+                      color: Gx.textBase,
                       boxShadow: Gx.glowStrong(widget.glowColor))),
             ),
           ]),
@@ -468,28 +559,31 @@ class _GlowInputState extends State<GlowInput> {
   }
 
   @override
+  // Input con glow en el borde al recibir foco (_f.hasFocus); sin lógica de negocio,
+  // solo estado local de FocusNode.
   Widget build(BuildContext context) {
     final focused = _f.hasFocus;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+    return panelSurface(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      decoration: BoxDecoration(
-        color: Gx.surfaceFill,
-        borderRadius: BorderRadius.circular(Gx.rInput),
-        border: Border.all(
-            color: focused ? widget.color : Gx.borderPanel,
-            width: focused ? 1.5 : 1),
-        boxShadow:
-            focused ? Gx.glow(widget.color, blur: 18, opacity: 0.45) : null,
-      ),
-      child: TextField(
-        focusNode: _f,
-        controller: _ctrl,
-        cursorColor: widget.color,
-        style: Gx.body,
-        decoration: InputDecoration.collapsed(
-            hintText: widget.hint,
-            hintStyle: const TextStyle(color: Gx.textMuted, fontSize: 14)),
+      radius: Gx.rInput,
+      glow: focused ? Gx.glow(widget.color, blur: 18, opacity: 0.45) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(Gx.rInput),
+          border: focused
+              ? Border.all(color: widget.color, width: Gx.borderFocus)
+              : null,
+        ),
+        child: TextField(
+          focusNode: _f,
+          controller: _ctrl,
+          cursorColor: widget.color,
+          style: Gx.uiSans(fontSize: 14, color: Gx.textBase),
+          decoration: InputDecoration.collapsed(
+              hintText: widget.hint,
+              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted)),
+        ),
       ),
     );
   }
@@ -508,6 +602,7 @@ class _GlowDropdownState extends State<GlowDropdown> {
   bool _open = false;
   late String _sel = widget.label;
   @override
+  // Desplegable con panel semántico expandible/contraíble (_open) y opción seleccionada (_sel).
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -515,22 +610,25 @@ class _GlowDropdownState extends State<GlowDropdown> {
       children: [
         GestureDetector(
           onTap: () => setState(() => _open = !_open),
-          child: frosted(
+          child: panelSurface(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             glow: _open
                 ? Gx.glow(Gx.transitionIndigo, blur: 16, opacity: 0.45)
                 : null,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Flexible(
+                  // Texto seleccionado con token dinámico de texto base.
                   child: Text(_sel,
-                      style: Gx.body, overflow: TextOverflow.ellipsis)),
+                      style: Gx.uiSans(fontSize: 14, color: Gx.textBase),
+                      overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 8),
               AnimatedRotation(
                 turns: _open ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
                 // Phosphor caretDown: estética terminal más limpia que el chevron Material.
                 child: Icon(Gx.iconChevronDown,
-                    size: 18, color: Gx.textSecondary),
+                    // Token dinámico de texto secundario — se adapta a la paleta activa.
+                    size: 18, color: Gx.textBaseSecondary),
               ),
             ]),
           ),
@@ -541,7 +639,7 @@ class _GlowDropdownState extends State<GlowDropdown> {
           child: _open
               ? Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: frosted(
+                  child: panelSurface(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -553,7 +651,8 @@ class _GlowDropdownState extends State<GlowDropdown> {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
-                                  child: Text(o, style: Gx.bodySecondary),
+                                  // Texto de opción con token dinámico secundario.
+                                  child: Text(o, style: Gx.uiSans(fontSize: 14, color: Gx.textBaseSecondary)),
                                 ),
                               ))
                           .toList(),
@@ -567,7 +666,8 @@ class _GlowDropdownState extends State<GlowDropdown> {
   }
 }
 
-// Calendario funcional: toca un día y se enciende con un anillo de glow.
+// Calendario funcional en grilla: toca un día y se enciende con un anillo de glow. Muestra
+// marcadores de evento. Estado local (_sel) de UI, sin datos del Bridge.
 class GlowCalendar extends StatefulWidget {
   const GlowCalendar({super.key});
   @override
@@ -577,13 +677,15 @@ class GlowCalendar extends StatefulWidget {
 class _GlowCalendarState extends State<GlowCalendar> {
   int _sel = 14;
   @override
+  // Grilla de 28 días con día seleccionado (_sel) y marcadores de evento; estado local de UI.
   Widget build(BuildContext context) {
-    return frosted(
+    return panelSurface(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Junio 2026', style: Gx.panelTitle),
+          // Título del calendario: énfasis dinámico para cabeceras de panel.
+          Text('Junio 2026', style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
@@ -610,12 +712,11 @@ class _GlowCalendarState extends State<GlowCalendar> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Día seleccionado: color semántico (estado). No seleccionado: token dinámico.
                       Text('$day',
-                          style: TextStyle(
-                              fontFamily: Gx.fontMono,
+                          style: Gx.dataMono(
                               fontSize: 11,
-                              color:
-                                  sel ? Gx.optimaCyan : Gx.textSecondary)),
+                              color: sel ? Gx.optimaCyan : Gx.textBaseSecondary)),
                       if (hasEvent)
                         Positioned(
                           bottom: 3,
@@ -659,6 +760,7 @@ class _LightBurstTextState extends State<LightBurstText>
   }
 
   @override
+  // Texto con ShaderMask animado que propaga luz del centro al tocar; animación local _c.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _c.forward(from: 0),
@@ -672,8 +774,10 @@ class _LightBurstTextState extends State<LightBurstText>
               colors: const [Gx.optimaCyan, Gx.transitionIndigo, Gx.textSecondary],
               stops: const [0.0, 0.5, 1.0],
             ).createShader(rect),
+            // Gx.pureWhite es el token canónico para blanco puro; necesario
+            // para que el ShaderMask pinte los colores del gradiente correctamente.
             child: Text(widget.text,
-                style: Gx.body.copyWith(color: Colors.white)),
+                style: Gx.body.copyWith(color: Gx.pureWhite)),
           );
         },
       ),
@@ -702,6 +806,7 @@ class HoverableChart extends StatefulWidget {
 class _HoverableChartState extends State<HoverableChart> {
   Offset? _hover;
   @override
+  // Pasa la posición local del cursor (_hover) al builder del CustomPainter; sin FFI.
   Widget build(BuildContext context) {
     return MouseRegion(
       onHover: (e) => setState(() => _hover = e.localPosition),
@@ -752,6 +857,7 @@ class _SonarPulseWidgetState extends State<SonarPulseWidget>
   }
 
   @override
+  // Anillo sonar que se expande al tocar, centrado debajo del hijo; animación local _ctrl.
   Widget build(BuildContext context) {
     // opaque: los taps en el área vacía alrededor del orbe también disparan el pulso.
     return GestureDetector(
@@ -791,18 +897,25 @@ class _SonarRingPainter extends CustomPainter {
       {required this.progress, required this.color, required this.maxRadius});
 
   @override
+  // Dibuja un anillo de sonar que se expande con halo blando y anillo nítido, alpha decreciente.
+  // Sin MaskFilter.blur: se simula el suavizado con círculos de radio ampliado y opacidad baja
+  // (DESIGN.md §Performance: sin blur en animaciones — aplica también a one-shot de 750ms).
   void paint(Canvas canvas, Size size) {
     if (progress == 0) return;
     final center = Offset(size.width / 2, size.height / 2);
     final r = maxRadius * progress;
     // Alpha alto al inicio, cae hasta cero al final.
     final alpha = ((1 - progress) * 220).round().clamp(0, 220);
-    // Halo blando (blur amplio, alpha bajo).
+    // Halo exterior difuso (sin blur — círculo más ancho con opacidad baja).
+    canvas.drawCircle(center, r + 5, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..color = color.withAlpha((alpha * 0.18).round()));
+    // Halo intermedio.
     canvas.drawCircle(center, r, Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..color = color.withAlpha((alpha * 0.35).round())
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+      ..strokeWidth = 4
+      ..color = color.withAlpha((alpha * 0.28).round()));
     // Anillo nítido principal.
     canvas.drawCircle(center, r, Paint()
       ..style = PaintingStyle.stroke
@@ -867,6 +980,7 @@ class _ScanRingWidgetState extends State<ScanRingWidget>
   }
 
   @override
+  // Apila el lienzo de anillos de scan (SizedBox dedicado) y el widget hijo encima; ambos centrados.
   Widget build(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
@@ -900,19 +1014,26 @@ class _ScanRingsPainter extends CustomPainter {
       {required this.progress, required this.color, required this.maxRadius});
 
   @override
+  // Dibuja dos anillos concéntricos en secuencia infinita, cada uno con halo suave y anillo nítido.
+  // Sin MaskFilter.blur: animación continua — se simula el suavizado con círculos concéntricos
+  // de radio/opacidad decreciente (DESIGN.md §Performance: sin blur en animación).
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     for (var ring = 0; ring < 2; ring++) {
       final p = (progress + ring * 0.45) % 1.0;
       final r = maxRadius * p;
       final alpha = ((1 - p) * 190).round().clamp(0, 190);
-      // Halo suave.
+      // Halo exterior difuso (sin blur — círculo más ancho con opacidad baja).
+      canvas.drawCircle(center, r + 4, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..color = color.withAlpha((alpha * 0.12).round()));
+      // Halo intermedio (radio normal, opacidad media).
       canvas.drawCircle(center, r, Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..color = color.withAlpha((alpha * 0.30).round())
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7));
-      // Anillo nítido.
+        ..strokeWidth = 4
+        ..color = color.withAlpha((alpha * 0.22).round()));
+      // Anillo nítido principal.
       canvas.drawCircle(center, r, Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0
@@ -935,6 +1056,7 @@ class InteractiveDag extends StatefulWidget {
 class _InteractiveDagState extends State<InteractiveDag> {
   int? _hover;
   @override
+  // Grafo DAG con nodos que se iluminan al hover; geometría local de dagNodes().
   Widget build(BuildContext context) {
     return SizedBox(
       height: 140,

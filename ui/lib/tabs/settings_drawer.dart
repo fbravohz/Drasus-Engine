@@ -7,9 +7,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../drasus_theme.dart';
 import '../gallery/gallery_tokens.dart';
+import '../widgets/color_picker.dart';
 
 // ---------------------------------------------------------------------------
-// Colores de énfasis predefinidos — los 12 swatches del selector.
+// Swatches curados para el selector de color de énfasis (12 opciones).
+// Todos respetan el espectro de vitalidad del sistema de tokens.
 // ---------------------------------------------------------------------------
 const List<Color> _kAccentPresets = [
   Color(0xFF54E8D0), // optimaCyan
@@ -24,6 +26,41 @@ const List<Color> _kAccentPresets = [
   Color(0xFFFF4FD8), // magenta neón
   Color(0xFFFFD700), // dorado
   Color(0xFF00FFFF), // cian
+];
+
+// ---------------------------------------------------------------------------
+// Swatches curados para el selector de color de texto base (9 opciones).
+// Incluye variantes claras (para fondos oscuros) y oscuras (para fondos claros).
+// ---------------------------------------------------------------------------
+const List<Color> _kTextPresets = [
+  Color(0xFFE6ECF8), // textPrimary — claro standard
+  Color(0xFFFFFFFF), // blanco puro
+  Color(0xFFAEBBD6), // textSecondary — azul-grisáceo claro
+  Color(0xFF8492B0), // textLabel — gris-azul suave
+  Color(0xFF54E8D0), // optimaCyan (texto tintado)
+  Color(0xFF9A8CFF), // transitionIndigo (texto tintado)
+  Color(0xFF1A1E2E), // oscuro estándar (para paletas claras)
+  Color(0xFF080A18), // deepSpace (casi-negro)
+  Color(0xFF2A2E40), // gris-azul oscuro
+];
+
+// ---------------------------------------------------------------------------
+// Swatches curados para el selector de color de fondo de componentes (12 opciones).
+// Tonos oscuros y sofisticados apropiados para componentes financieros.
+// ---------------------------------------------------------------------------
+const List<Color> _kComponentBgPresets = [
+  Color(0xFF1A1A2E), // Midnight blue (default)
+  Color(0xFF16213E), // Deep navy
+  Color(0xFF0F3460), // Ocean blue
+  Color(0xFF1B1B2F), // Dark indigo
+  Color(0xFF1A1A1A), // Near black
+  Color(0xFF2D2D3F), // Dark slate purple
+  Color(0xFF1E272E), // Dark teal gray
+  Color(0xFF2C3E50), // Wet asphalt
+  Color(0xFF1C1C2E), // Dark violet gray
+  Color(0xFF0D1B2A), // Deep ocean
+  Color(0xFF2B2D42), // Gunmetal
+  Color(0xFF1F1F3A), // Deep purple gray
 ];
 
 // Nombre corto de cada paleta para mostrarlo bajo el chip.
@@ -55,6 +92,12 @@ class SettingsDrawer extends StatelessWidget {
     final theme = DrasusTheme.of(context);
     final accent = theme?.accentColor ?? Gx.transitionIndigo;
     final palette = theme?.backgroundPalette ?? DrasusBackgroundPalette.bunker;
+    // Color de texto base efectivo (override manual o auto por paleta).
+    final textColor = theme?.effectiveTextColor ?? DrasusThemeState.globalTextColor;
+    // Indica si el color de texto está en modo automático.
+    final isTextColorAuto = theme?.isTextColorAuto ?? true;
+    // Color de fondo de componentes activo (tinte de glass / fondo de solid).
+    final componentBgColor = theme?.componentBgColor ?? DrasusThemeState.globalComponentBgColor;
 
     return Drawer(
       width: 320,
@@ -68,9 +111,11 @@ class SettingsDrawer extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: Gx.surfaceFill,
-              border: const Border(
-                // Borde izquierdo tintado de índigo: separa visualmente el drawer.
-                left: BorderSide(color: Color(0x380E2AFF), width: 1),
+              // Borde izquierdo tintado con el énfasis dinámico: separa el drawer
+              // y reacciona al cambio de color de énfasis. No es const para
+              // reconstruirse cuando el énfasis cambia.
+              border: Border(
+                left: BorderSide(color: Gx.borderBase, width: Gx.borderHairline),
               ),
             ),
             child: SafeArea(
@@ -87,6 +132,9 @@ class SettingsDrawer extends StatelessWidget {
                   _SectionApariencia(
                     accent: accent,
                     palette: palette,
+                    textColor: textColor,
+                    isTextColorAuto: isTextColorAuto,
+                    componentBgColor: componentBgColor,
                     theme: theme,
                   ),
                   const SizedBox(height: 28),
@@ -170,25 +218,33 @@ class _SectionCuenta extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Sección APARIENCIA — swatches de acento + strip de preview + paletas de fondo.
+// Sección APARIENCIA — selector de énfasis (híbrido), color de fuente,
+// y strip de paletas de fondo.
 // ---------------------------------------------------------------------------
 class _SectionApariencia extends StatelessWidget {
   final Color accent;
   final DrasusBackgroundPalette palette;
+  final Color textColor;
+  final bool isTextColorAuto;
+  final Color componentBgColor;
   final DrasusThemeState? theme;
 
   const _SectionApariencia({
     required this.accent,
     required this.palette,
+    required this.textColor,
+    required this.isTextColorAuto,
+    required this.componentBgColor,
     required this.theme,
   });
 
   @override
+  // Muestra selector de énfasis híbrido, control de color de fuente y chips de paleta.
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Etiqueta de subsección: letras espaciadas en mayúsculas.
+        // Etiqueta de subsección énfasis.
         Text(
           'COLOR DE ÉNFASIS',
           style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
@@ -196,31 +252,45 @@ class _SectionApariencia extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Grid 6 × 2 de swatches: 12 colores predefinidos en cuadros 24×24.
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _kAccentPresets.map((color) {
-            // Comparamos el entero ARGB32 para verificar si este swatch es el activo.
-            // toARGB32() reemplaza .value (no-deprecated en Flutter 3.44+).
-            final isSelected = color.toARGB32() == accent.toARGB32();
-            return _AccentSwatch(
-              color: color,
-              isSelected: isSelected,
-              onTap: () => theme?.setAccent(color),
-            );
-          }).toList(),
+        // Selector híbrido: swatches curados + rueda HSV expandible.
+        // Reemplaza la antigua grid estática de 12 swatches.
+        ColorPickerWidget(
+          swatches: _kAccentPresets,
+          selectedColor: accent,
+          onColorChanged: (color) => theme?.setAccent(color),
+        ),
+        const SizedBox(height: 24),
+
+        // Etiqueta de subsección color de fuente.
+        Text(
+          'COLOR DE FUENTE',
+          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+              .copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 12),
 
-        // Strip de preview del acento actual: 100% ancho, 4px alto.
-        Container(
-          height: 4,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: accent,
-            borderRadius: BorderRadius.circular(2),
-          ),
+        // Control de color de fuente: toggle automático + selector manual.
+        _TextColorControl(
+          textColor: textColor,
+          isAuto: isTextColorAuto,
+          theme: theme,
+        ),
+        const SizedBox(height: 24),
+
+        // Etiqueta de subsección color de fondo de componentes.
+        Text(
+          'FONDO DE COMPONENTES',
+          style: Gx.uiSans(fontSize: 11, color: Gx.textLabel)
+              .copyWith(letterSpacing: 1.5),
+        ),
+        const SizedBox(height: 12),
+
+        // Selector de color de fondo de componentes: swatches curados + rueda HSV.
+        // Controla el tinte/fondo que usan todos los componentes en los 4 modos.
+        ColorPickerWidget(
+          swatches: _kComponentBgPresets,
+          selectedColor: componentBgColor,
+          onColorChanged: (color) => theme?.setComponentBgColor(color),
         ),
         const SizedBox(height: 24),
 
@@ -237,7 +307,8 @@ class _SectionApariencia extends StatelessWidget {
           spacing: 8,
           runSpacing: 10,
           children: DrasusBackgroundPalette.values.map((p) {
-            final surfaces = _kPalettesPublic[p]!;
+            // Lee el mapa canónico público de drasus_theme.dart (única fuente de verdad).
+            final surfaces = kPalettes[p]!;
             final isSelected = p == palette;
             return _PaletteChip(
               palette: p,
@@ -254,98 +325,133 @@ class _SectionApariencia extends StatelessWidget {
   }
 }
 
-// Mapa público de paletas para consultar desde dentro del archivo.
-// Duplica la referencia que en drasus_theme.dart es _kPalettes (privado).
-const Map<DrasusBackgroundPalette, DrasusSurfacePalette> _kPalettesPublic = {
-  DrasusBackgroundPalette.bunker: DrasusSurfacePalette(
-    deepSpace: Color(0xFF04050E),
-    navRail: Color(0xFF060819),
-    panelSolid: Color(0xFF090D1F),
-    cardInner: Color(0xFF0C1228),
-    surfaceRaised: Color(0xFF111833),
-  ),
-  DrasusBackgroundPalette.ash: DrasusSurfacePalette(
-    deepSpace: Color(0xFF070707),
-    navRail: Color(0xFF0A0A0A),
-    panelSolid: Color(0xFF0D0D0D),
-    cardInner: Color(0xFF111111),
-    surfaceRaised: Color(0xFF161616),
-  ),
-  DrasusBackgroundPalette.crimson: DrasusSurfacePalette(
-    deepSpace: Color(0xFF0E0406),
-    navRail: Color(0xFF160608),
-    panelSolid: Color(0xFF1A080B),
-    cardInner: Color(0xFF1E0B0F),
-    surfaceRaised: Color(0xFF231215),
-  ),
-  DrasusBackgroundPalette.forest: DrasusSurfacePalette(
-    deepSpace: Color(0xFF040E06),
-    navRail: Color(0xFF061508),
-    panelSolid: Color(0xFF091A0B),
-    cardInner: Color(0xFF0C1E0E),
-    surfaceRaised: Color(0xFF112414),
-  ),
-  DrasusBackgroundPalette.navy: DrasusSurfacePalette(
-    deepSpace: Color(0xFF04080E),
-    navRail: Color(0xFF060C18),
-    panelSolid: Color(0xFF090F1F),
-    cardInner: Color(0xFF0C1428),
-    surfaceRaised: Color(0xFF111B33),
-  ),
-  DrasusBackgroundPalette.void_: DrasusSurfacePalette(
-    deepSpace: Color(0xFF07040E),
-    navRail: Color(0xFF0A0619),
-    panelSolid: Color(0xFF0D091F),
-    cardInner: Color(0xFF110D28),
-    surfaceRaised: Color(0xFF161233),
-  ),
-  DrasusBackgroundPalette.slate: DrasusSurfacePalette(
-    deepSpace: Color(0xFFD8DCE8),
-    navRail: Color(0xFFCDD2DF),
-    panelSolid: Color(0xFFC2C8D6),
-    cardInner: Color(0xFFB7BECD),
-    surfaceRaised: Color(0xFFACB4C4),
-  ),
-  DrasusBackgroundPalette.paper: DrasusSurfacePalette(
-    deepSpace: Color(0xFFF0F2F8),
-    navRail: Color(0xFFE5E8F0),
-    panelSolid: Color(0xFFDADEE8),
-    cardInner: Color(0xFFCFD4E0),
-    surfaceRaised: Color(0xFFC4CAD8),
-  ),
-};
-
 // ---------------------------------------------------------------------------
-// _AccentSwatch — chip cuadrado 24×24 de un color de énfasis predefinido.
+// _TextColorControl — toggle "Automático por paleta" + selector manual.
 // ---------------------------------------------------------------------------
 
-// Muestra borde blanco 2px + glow cuando está seleccionado.
-class _AccentSwatch extends StatelessWidget {
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
+// Control de color de fuente base del panel.
+// Cuando isAuto=true: muestra solo el toggle activado.
+// Cuando isAuto=false: muestra el toggle desactivado + ColorPickerWidget manual.
+class _TextColorControl extends StatelessWidget {
+  final Color textColor;
+  final bool isAuto;
+  final DrasusThemeState? theme;
 
-  const _AccentSwatch({
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
+  const _TextColorControl({
+    required this.textColor,
+    required this.isAuto,
+    required this.theme,
   });
 
   @override
+  // Toggle de modo automático + selector manual condicionado al estado.
   Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Fila de toggle: etiqueta a la izquierda, switch a la derecha.
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Automático por paleta',
+                    style: Gx.uiSans(fontSize: 13, color: Gx.textPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isAuto
+                        ? 'Claro/oscuro según el fondo activo'
+                        : 'Color personalizado activo',
+                    style: Gx.uiSans(fontSize: 11, color: Gx.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            // Toggle simple reactivo: llama al mutador del tema al tocar.
+            _SimpleToggle(
+              value: isAuto,
+              onToggle: () {
+                if (isAuto) {
+                  // Desactivar auto: fijar el color automático actual como manual.
+                  theme?.setTextColor(textColor);
+                } else {
+                  // Activar auto: volver a determinación por paleta.
+                  theme?.setTextColorAuto();
+                }
+              },
+            ),
+          ],
+        ),
+        // Selector manual: solo visible cuando el modo automático está desactivado.
+        if (!isAuto) ...[
+          const SizedBox(height: 12),
+          ColorPickerWidget(
+            swatches: _kTextPresets,
+            selectedColor: textColor,
+            onColorChanged: (color) => theme?.setTextColor(color),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _SimpleToggle — switch visual controlado desde fuera.
+// ---------------------------------------------------------------------------
+
+// Toggle de palanca reactivo (no mantiene estado propio).
+// Llama a onToggle cuando el usuario lo toca; el padre decide el estado.
+// Usa reactorGreen como color activo (alineado con el sistema de tokens).
+class _SimpleToggle extends StatelessWidget {
+  final bool value;
+  final VoidCallback onToggle;
+
+  const _SimpleToggle({
+    required this.value,
+    required this.onToggle,
+  });
+
+  @override
+  // Switch de palanca sin estado propio; animado con AnimatedContainer.
+  // El color activo es Gx.reactorGreen (token canónico de "encendido").
+  Widget build(BuildContext context) {
+    const activeColor = Gx.reactorGreen;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onToggle,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 24,
+        duration: const Duration(milliseconds: 200),
+        width: 44,
         height: 24,
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(6),
-          border: isSelected
-              ? Border.all(color: Colors.white, width: 2)
-              : Border.all(color: Colors.transparent, width: 2),
-          boxShadow: isSelected ? Gx.glow(color, blur: 12, opacity: 0.7) : null,
+          gradient: value
+              ? LinearGradient(colors: [
+                  activeColor.withOpacity(0.4),
+                  activeColor.withOpacity(0.15),
+                ])
+              : null,
+          color: value ? null : Gx.gaugeTrack,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: value ? activeColor : Gx.borderPanel,
+          ),
+          boxShadow: value ? Gx.glow(activeColor, blur: 10, opacity: 0.4) : null,
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: value ? activeColor : Gx.textMuted,
+            ),
+          ),
         ),
       ),
     );
@@ -417,6 +523,8 @@ class _SectionSuperficie extends StatelessWidget {
   });
 
   @override
+  // Itera kSurfaceModeRegistry (no DrasusSurfaceMode.values directamente)
+  // para que los modos nuevos aparezcan solos al añadirse al registro.
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,10 +535,15 @@ class _SectionSuperficie extends StatelessWidget {
               .copyWith(letterSpacing: 1.5),
         ),
         const SizedBox(height: 12),
-        ...DrasusSurfaceMode.values.map((mode) {
+        // La iteración es sobre el registro: kSurfaceModeRegistry.entries.
+        // Al añadir un 5º modo al registro, aparece aquí automáticamente.
+        ...kSurfaceModeRegistry.entries.map((entry) {
+          final mode = entry.key;
+          final recipe = entry.value;
           final isSelected = mode == surfaceMode;
           return _SurfaceModeOption(
             mode: mode,
+            recipe: recipe,
             isSelected: isSelected,
             onTap: () => theme?.setSurfaceMode(mode),
           );
@@ -440,29 +553,24 @@ class _SectionSuperficie extends StatelessWidget {
   }
 }
 
+// Opción de modo de superficie.
+// Recibe la recipe del registro kSurfaceModeRegistry para mostrar
+// etiqueta y descripción sin switch hardcodeado: N-extensible por diseño.
 class _SurfaceModeOption extends StatelessWidget {
   final DrasusSurfaceMode mode;
+  final SurfaceModeRecipe recipe;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _SurfaceModeOption({
     required this.mode,
+    required this.recipe,
     required this.isSelected,
     required this.onTap,
   });
 
-  String get _label {
-    switch (mode) {
-      case DrasusSurfaceMode.glass:
-        return 'Vidrio Apple (blur + rim)';
-      case DrasusSurfaceMode.tint:
-        return 'Translúcido (solo color)';
-      case DrasusSurfaceMode.solid:
-        return 'Sólido oscuro (datos)';
-    }
-  }
-
   @override
+  // Fila con radio + label + descripción breve; borde de énfasis cuando está seleccionado.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
@@ -489,12 +597,23 @@ class _SurfaceModeOption extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                _label,
-                style: Gx.uiSans(
-                  fontSize: 13,
-                  color: isSelected ? Gx.textPrimary : Gx.textSecondary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Label principal del modo (viene del registro, no hardcodeado).
+                  Text(
+                    recipe.label,
+                    style: Gx.uiSans(
+                      fontSize: 13,
+                      color: isSelected ? Gx.textPrimary : Gx.textSecondary,
+                    ),
+                  ),
+                  // Descripción breve del efecto visual.
+                  Text(
+                    recipe.description,
+                    style: Gx.uiSans(fontSize: 11, color: Gx.textMuted),
+                  ),
+                ],
               ),
             ),
           ],

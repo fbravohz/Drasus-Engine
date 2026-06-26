@@ -42,16 +42,20 @@ class _GalleryPreviewApp extends StatefulWidget {
   State<_GalleryPreviewApp> createState() => _GalleryPreviewAppState();
 }
 
+// Estado reactivo de la app preview: escucha cambios de tema y reconstruye el árbol.
 class _GalleryPreviewAppState extends State<_GalleryPreviewApp> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
+  // Suscribe al listener del tema para triggerear setState al cambiar acento o modo de fondo.
   void initState() {
     super.initState();
     widget.state.addListener(() => setState(() {}));
   }
 
   @override
+  // Monta DrasusTheme → MaterialApp con AppBar + SettingsDrawer + GalleryTab.
+  // Los datos de tema vienen de DrasusThemeState (cargado en main()); GalleryTab no usa FFI.
   Widget build(BuildContext context) {
     return DrasusTheme(
       state: widget.state,
@@ -62,8 +66,8 @@ class _GalleryPreviewAppState extends State<_GalleryPreviewApp> {
         home: Scaffold(
           key: _scaffoldKey,
           appBar: AppBar(
-            title: const Text('Galería de Componentes',
-                style: TextStyle(fontFamily: 'SpaceGrotesk', fontSize: 16)),
+            title: Text('Galería de Componentes',
+                style: TextStyle(fontFamily: Gx.fontDisplay, fontSize: 16)),
             backgroundColor: Gx.deepSpace,
             actions: [
               IconButton(
