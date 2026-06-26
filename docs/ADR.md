@@ -141,3 +141,5 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0135](./adr/ADR-0135.md) | Sección `## Cáscara Visual` Obligatoria en Features con Superficie — Skill UI-Designer como Etapa 0.5 del Tech Lead |
 | [ADR-0136](./adr/ADR-0136.md) | Arquitectura Visual Unificada — Dashboard + Canvas [Forge/Reactor — TBD] · supersede ADR-0028 (ZUI 3 niveles nominados) |
 | [ADR-0137](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset · enmienda ADR-0002 + ADR-0118 · enmienda 2026-06-23: infra crosscutting vive en `crates/shared` (excepción acotada) |
+| [ADR-0138](./adr/ADR-0138.md) | Design System Centralization en UI (Flutter) — ThemeExtension + Widgets Primitivos · enmienda 2026-06-25: Tema Extensible (registro abierto de N propiedades — modos de superficie, color de fuente configurable, borde global = énfasis, selector híbrido) |
+| [ADR-0139](./adr/ADR-0139.md) | Principio Rector General — Single Source of Truth para Contratos Reusables |

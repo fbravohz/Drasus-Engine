@@ -23,6 +23,14 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 | Vidrio (chrome) | `0x40F0F2FF` @ 25% | `glassFill` | Vidrio **Apple**: tinte claro sobre fondo oscuro. `BackdropFilter` blur 36 + tinte superior `0x14AAAAFF` + rim-light `0x20A096FF @ 28%`. NUNCA se multiplica la opacidad con `.withOpacity()` — el alpha ya es el correcto. Para nav, menús, botones, inputs, dropdowns, modales, tooltips. El fill es un blanco frío translúcido (~25%), NO un color oscuro — sobre fondo oscuro el tinte claro crea el contraste de vidrio real |
 | Borde Panel | `#1B2440` | `borderPanel` | Hairline tintado del Panel de Datos sólido — la "rayita fina" limpia. Jamás gris neutro |
 | Separador | `#141C32` | `divider` | Separador interno sutil: cabeceras, filas de tabla, key-value rows |
+| **Borde Estructural Global** | énfasis @ 35% | `Gx.borderBase` | **Regla irrompible:** el borde neutro de los componentes usa el énfasis dinámico, no `borderPanel`. Los colores semánticos (óptimo/alerta/crítico) solo señalizan internamente el estado del componente, nunca como borde global |
+| Borde Hairline | `1.0px` | `Gx.borderHairline` | Grosor canónico para bordes estructurales (paneles, chips, separadores) |
+| Borde Foco | `1.5px` | `Gx.borderFocus` | Grosor para foco activo (inputs, controles seleccionados) |
+| **Texto Base Dinámico** | auto por paleta | `Gx.textBase` | Color de texto base efectivo: claro (`#E6ECF8`) sobre fondos oscuros, oscuro (`#1A1E2E`) sobre `slate`/`paper`. Override manual disponible. Ningún componente hardcodea el color de texto base |
+| Texto Base Secundario | textBase @ 75% | `Gx.textBaseSecondary` | Opacidad escalada del texto base — reemplaza `textSecondary` en contextos dinámicos |
+| Texto Base Etiqueta | textBase @ 55% | `Gx.textBaseLabel` | Opacidad escalada del texto base — reemplaza `textLabel` en contextos dinámicos |
+| Texto Base Inactivo | textBase @ 37% | `Gx.textBaseMuted` | Opacidad escalada del texto base — reemplaza `textMuted` en contextos dinámicos |
+| **Énfasis Dinámico** | elegido por usuario | `Gx.accentDynamic` | Espejo estático de `DrasusThemeState.globalAccent`; legible sin `BuildContext` por los helpers `Gx` |
 | Texto Principal | `#E6ECF8` | `textPrimary` | Títulos, cuerpo de alto contraste, valores destacados — blanco azulado, nunca blanco puro |
 | Texto Secundario | `#AEBBD6` | `textSecondary` | Descripciones, cabeceras de panel, texto legible de apoyo |
 | Etiqueta | `#8492B0` | `textLabel` | Labels de métricas y columnas, lado izquierdo de las key-value rows |
@@ -49,12 +57,25 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 | Orbe de Cristal | `RadialGradient(cian → índigo → púrpura)` + `glowStrong` | crystal orb | Cristal LIMPIO que **sustituye** la aberración cromática RGB (los tres filos desfasados rojo/verde/azul quedaban mal). Gradiente radial + glow potente. Vive en focos, vista MICRO y acentos |
 | Gradiente Cósmico | `#E59CFF → #B79CFF → #56A8FF` | `gradCosmic` | Gradiente decorativo para texto ceremonial (splash, onboarding, portada de autopsia, número-héroe KPI vía `ShaderMask`). Nunca como relleno de superficie/botón |
 | Star-field | `#E6ECF8` @ 2–5% | `starField` | Puntos de 1–2px del campo de estrellas del telón cósmico |
+| **Canvas Base** | deepSpace de paleta activa | `Gx.canvasBase` | Espejo estático del `deepSpace` de la paleta activa (`DrasusThemeState.globalCanvasBase`). Reemplaza `Gx.deepSpace` en secciones/gradientes que deben reaccionar al cambiar la paleta de fondo |
+| **Superficie Raised Dinámica** | surfaceRaised de paleta activa | `Gx.surfaceRaisedDynamic` | Espejo estático del `surfaceRaised` de la paleta activa (`DrasusThemeState.globalSurfaceRaised`). Reemplaza `Gx.surfaceRaised` en hover/filas activas que deben reaccionar a la paleta |
+| **Rim-Light Dinámico** | énfasis @ ~3.5% | `rimLight` | Color del borde luminoso (rim-light) del vidrio Apple. Ahora deriva del énfasis dinámico (`Gx.accentDynamic.withOpacity(0.035)`) en vez del hardcoded `#20A096FF`. Cambiar el acento en SettingsDrawer → el rim-light de todo el chrome reacciona |
+
+> **Patrón de Token Dinámico (2026-06-25):** todo token que deba reaccionar al tema sigue este patrón:
+> 1. Se añade un **espejo estático** en `drasus_theme.dart` (variable `_global*` sincronizada en `load()` y en cada `set*()`)
+> 2. Se expone como `static` getter en `DrasusThemeState` (ej. `static Color get globalTextColor => _globalTextColor`)
+> 3. Se declara un **getter dinámico** en `Gx` (ej. `static Color get textBase => DrasusThemeState.globalTextColor`)
+> 4. Los componentes llaman al getter de `Gx`, NUNCA usan el `static const` raw (ej. prohibido `Gx.textPrimary` en contexto de tema; usar `Gx.textBase`)
+>
+> **Regla irrompible (2026-06-25):** en cualquier componente cuyos colores de fondo/borde/texto deban reaccionar al tema, los tokens estáticos raw (`deepSpace`, `panelSolid`, `cardInner`, `surfaceRaised`, `borderPanel`, `textPrimary`, `textSecondary`, `textLabel`, `textMuted`) están PROHIBIDOS. Usar sus contrapartes dinámicas: `canvasBase`, `surfacePanel`, `surfaceCard`, `surfaceRaisedDynamic`, `borderBase`, `textBase`, `textBaseSecondary`, `textBaseLabel`, `textBaseMuted`.
 
 ## Tokens — Typography
 
 Tres voces, servidas por **`google_fonts` en runtime** (cachea en disco; plan de migración a `assets/fonts` cuando se estabilice el set final). La familia exacta la fija Naming/Flutter-Engineer; aquí se fija el rol y el carácter (ADR-0121: identificadores en inglés, prosa en español).
 
-> **Instalado (2026-06-22):** `google_fonts ^8.1.0` (Flutter 3.44.2). Familias asignadas: `displayGrotesque` → **Space Grotesk** · `uiSans` → **Inter** · `dataMono` → **JetBrains Mono**. Implementadas como helpers estáticos en `gallery_tokens.dart` (clase `Gx`): `Gx.displayGrotesque(...)`, `Gx.uiSans(...)`, `Gx.dataMono(...)`.
+> **Instalado (2026-06-22):** `google_fonts ^8.1.0` (Flutter 3.44.2). Familias asignadas: `displayGrotesque` → **Space Grotesk** · `uiSans` → **Inter** · `dataMono` → **JetBrains Mono**. Implementadas como helpers en `gallery_tokens.dart` (clase `Gx`): `Gx.displayGrotesque(...)`, `Gx.uiSans(...)`, `Gx.dataMono(...)`.
+>
+> **Actualización 2026-06-25 — familias dinámicas:** `Gx.fontDisplay`, `Gx.fontSans` y `Gx.fontMono` son ahora getters dinámicos que leen `DrasusThemeState.globalFontDisplay/Sans/Mono`. El usuario puede cambiar la fuente desde el panel de configuración y todo texto de la galería reacciona. Los helpers `displayGrotesque/uiSans/dataMono` usan estos getters internamente. **Los helpers NO tienen default de color** — el llamante DEBE pasar `color:` explícitamente con un token dinámico (`Gx.textBase`, `Gx.textBaseLabel`, etc.).
 >
 > **Embebido (2026-06-22):** Los `.ttf` (w400/w500 de las tres familias) están en `ui/assets/fonts/` y declarados en `pubspec.yaml`. Los helpers `Gx` usan `TextStyle(fontFamily: ...)` — **la galería es 100% offline**, sin descarga de google_fonts en runtime. `google_fonts` permanece en el pubspec para el resto del proyecto. **Pendiente:** `JetBrainsMono-Medium.ttf` es la versión NerdFont (2.4MB); reemplazar con el .ttf limpio de [fonts.google.com/specimen/JetBrains+Mono](https://fonts.google.com/specimen/JetBrains+Mono) (pesos w400/w500, ~110KB c/u).
 
@@ -111,17 +132,19 @@ La voz de los datos: señala "esto es un número real", no metáfora. Toda cifra
 
 ### Spacing Scale
 
+> **Dart:** los 8 valores canónicos existen como `const double` en `gallery_tokens.dart` (clase `Gx`): `Gx.space4 … Gx.space64`. Úsalos en lugar de literales numéricos en todo padding/margin/gap.
+
 | Name | Value | Token |
 |------|-------|-------|
-| 4 | 4px | `space4` |
-| 8 | 8px | `space8` |
-| 9 | 9px | `space9` |
-| 12 | 12px | `space12` |
-| 16 | 16px | `space16` |
-| 24 | 24px | `space24` |
-| 32 | 32px | `space32` |
-| 48 | 48px | `space48` |
-| 64 | 64px | `space64` |
+| 4 | 4px | `space4` · `Gx.space4` |
+| 8 | 8px | `space8` · `Gx.space8` |
+| 9 | 9px | `space9` (gap denso MACRO/MESO, solo como literal) |
+| 12 | 12px | `space12` · `Gx.space12` |
+| 16 | 16px | `space16` · `Gx.space16` |
+| 24 | 24px | `space24` · `Gx.space24` |
+| 32 | 32px | `space32` · `Gx.space32` |
+| 48 | 48px | `space48` · `Gx.space48` |
+| 64 | 64px | `space64` · `Gx.space64` |
 
 ### Border Radius
 
@@ -154,6 +177,12 @@ La profundidad y el "poder" Reflect vienen del **glow de color**, no de sombras 
 
 ## Components
 
+> **Regla General de Superficie (2026-06-25):** todo componente que ocupe un área de fondo debe usar uno de los wrappers de superficie (`panelSurface`, `cardSurface`, `frosted`) en lugar de `Container(color: Gx.surfaceFill)`. Estos wrappers leen el modo global de superficie (`DrasusThemeState.globalSurfaceMode`) y renderizan la receta correcta (glass = BackdropFilter + blur, tint = translúcido, solid = sólido, enhancedGlass = gradiente profundo + borde semántico). Un componente que use un `Container` con `color: Gx.surfaceFill` se verá como un rectángulo sólido en todos los modos, perdiendo el efecto vidrio/blur.
+>
+> **Regla de Envoltorio (2026-06-25):** un componente NO debe auto-envolverse en una superficie. La superficie la aplica el llamante. El componente expone solo su contenido; el llamante (ej. `gallery_tab.dart`) lo envuelve en `panelSurface(child: componente)`. Excepciones: componentes autocontenidos que requieren un fondo propio (ZuiNavPill, GlowInput) usan `panelSurface()` — no `frosted()` ni `glassEnhanced()` — para ser dinámicos al modo.
+>
+> **Regla de Migración (2026-06-25):** para envolver un `Container` existente sin reescribir su decoración, usar `PanelFromDecoration(decoration: ...)`. Este wrapper respeta la decoración original en modo `solid` y aplica `frosted()` sobre el contenido en los modos glass/tint/enhancedGlass.
+
 ### Panel de Datos (Sólido)
 **Role:** Contenedor de zonas densas — tablas, rejillas, métricas con números
 
@@ -162,7 +191,7 @@ Relleno sólido `#0E1426`, borde de 1px tintado `#1B2440` (sin gloss, sin sombra
 ### Panel / Control de Cristal (Vidrio Apple)
 **Role:** Todo el chrome — nav ZUI, menús, dropdowns, modales, tooltips, botón secundario
 
-Vidrio **Apple**: translúcido pero opaco. `BackdropFilter` blur 36 + relleno `glassFill` `0x40F0F2FF` + tinte superior `0x14AAAAFF` (milk glass) + rim-light `0x20A096FF @ 28%`. Radio 14–16px. El fill es blanco frío al ~25%: sobre fondo oscuro crea el contraste que define el vidrio. NUNCA aplicar `.withOpacity()` sobre `glassFill` — el alpha ya es el correcto.
+Vidrio **Apple**: translúcido pero opaco. `BackdropFilter` blur 36 + relleno `glassFill` `0x40F0F2FF` + tinte superior `0x14AAAAFF` (milk glass) + rim-light derivado del énfasis dinámico (`Gx.accentDynamic.withOpacity(0.035)`). Radio 14–16px. El fill es blanco frío al ~25%: sobre fondo oscuro crea el contraste que define el vidrio. NUNCA aplicar `.withOpacity()` sobre `glassFill` — el alpha ya es el correcto.
 
 ### Chip / Badge de Estado
 **Role:** Píldora que indica régimen o estado del pipeline
@@ -486,6 +515,8 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 
 ### §0 — Sistema de Superficie (cross-cutting, aplica a TODO)
 
+> **Jerarquía de wrappers (2026-06-25):** `frosted()` es el nivel más bajo — lee el modo global y renderiza glass/tint/solid/enhancedGlass. `panelSurface()` y `cardSurface()` son wrappers sobre `frosted()` que preseleccionan `solidColor: Gx.surfacePanel` o `Gx.surfaceCard`. Todo componente DEBE usar `panelSurface()` o `cardSurface()` como su superficie, no `frosted()` directamente ni `Container(color: Gx.surfaceFill)`.
+
 | Id | Widget Dart / Helper | Archivo |
 |---|---|---|
 | `frosted` | `frosted({child, radius, padding, solidColor?, glow?})` | `gallery/gallery_fx.dart` |
@@ -493,17 +524,23 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 | `card-surface` | `cardSurface({child, radius, padding, glow?})` | `gallery/gallery_fx.dart` |
 | `panel-from-decoration` | `PanelFromDecoration({child, decoration, padding, solidColor?})` | `gallery/gallery_fx.dart` |
 | `glass-surface` | `GlassSurface({child, borderRadius, tint?, rimOpacity?})` | `widgets/glass_surface.dart` |
-| `surface-fill` | `Gx.surfaceFill` (getter dinámico) | `gallery/gallery_tokens.dart` |
-| `surface-panel` | `Gx.surfacePanel` (getter dinámico) | `gallery/gallery_tokens.dart` |
-| `surface-card` | `Gx.surfaceCard` (getter dinámico) | `gallery/gallery_tokens.dart` |
+| `surface-fill` | `Gx.surfaceFill` (getter dinámico → `DrasusThemeState.globalComponentBgColor`) | `gallery/gallery_tokens.dart` |
+| `surface-panel` | `Gx.surfacePanel` (getter dinámico → +4% ligereza en solid) | `gallery/gallery_tokens.dart` |
+| `surface-card` | `Gx.surfaceCard` (getter dinámico → +8% ligereza en solid) | `gallery/gallery_tokens.dart` |
+| `canvas-base` | `Gx.canvasBase` (getter dinámico → deepSpace de la paleta activa) | `gallery/gallery_tokens.dart` |
+| `surface-raised-dynamic` | `Gx.surfaceRaisedDynamic` (getter dinámico → surfaceRaised de la paleta activa) | `gallery/gallery_tokens.dart` |
+| `border-base` | `Gx.borderBase` (getter dinámico → énfasis @ 35%) | `gallery/gallery_tokens.dart` |
+| `rim-light` | derivado de `Gx.accentDynamic.withOpacity(0.035)` | `gallery/gallery_fx.dart` (interno de `frosted()`) |
+
+> **Espejos estáticos involucrados (en `DrasusThemeState`):** `globalSurfaceMode` (modo activo), `globalAccent` (énfasis), `globalTextColor` (texto base), `globalComponentBgColor` (fondo de componentes), `globalCanvasBase` (deepSpace de paleta), `globalSurfaceRaised` (surfaceRaised de paleta), `globalFontDisplay/Sans/Mono` (familias tipográficas). Todos se sincronizan en `load()` y en cada `set*()` y son legibles sin `BuildContext`.
 
 ### §1 — Tokens, Tipografía y Efectos
 
 | Id | Widget Dart / Helper | Archivo |
 |---|---|---|
-| `display-grotesque` | `Gx.displayGrotesque({fontSize, height})` → Space Grotesk w500 | `gallery/gallery_tokens.dart` |
-| `ui-sans` | `Gx.uiSans({fontSize, height, weight})` → Inter w400/w500 | `gallery/gallery_tokens.dart` |
-| `data-mono` | `Gx.dataMono({fontSize, height})` → JetBrains Mono w400/w500 | `gallery/gallery_tokens.dart` |
+| `display-grotesque` | `Gx.displayGrotesque({fontSize, height, required color})` → Space Grotesk w500 | `gallery/gallery_tokens.dart` |
+| `ui-sans` | `Gx.uiSans({fontSize, height, required color, weight})` → Inter w400/w500 | `gallery/gallery_tokens.dart` |
+| `data-mono` | `Gx.dataMono({fontSize, height, required color})` → JetBrains Mono w400/w500 | `gallery/gallery_tokens.dart` |
 | `glow` | `Gx.glow(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
 | `glow-strong` | `Gx.glowStrong(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
 | `text-glow` | `Gx.textGlow(color)` → `List<Shadow>` | `gallery/gallery_tokens.dart` |
@@ -935,21 +972,31 @@ const glassRim = BoxShadow(color: Color(0x0DA096FF), blurRadius: 24); // interno
 
 Toda la superficie de la UI se controla desde un solo enum global, sincronizado con `SharedPreferences` desde el `SettingsDrawer`. El cambio es instantáneo en todos los componentes — sin tocar componente por componente.
 
+**Sistema N-extensible (STORY-020):** los modos NO son una lista fija. Viven en un **registro de recetas** (`kSurfaceModeRegistry: Map<DrasusSurfaceMode, SurfaceModeRecipe>`) en `drasus_theme.dart`. El panel itera el registro — nunca una lista hardcodeada. Añadir un 5º modo = 1 valor al enum + 1 entrada al registro + su lógica en `frosted()`/`GlassSurface`. Cero cambios en componentes.
+
 | Modo | Comportamiento | Uso |
 |------|---|-----|
 | `glass` (default) | Vidrio Apple completo: `BackdropFilter` blur 36 + `glassFill` `0x40F0F2FF` + rim-light `0x20A096FF @ 28%` | Experiencia premium completa |
 | `tint` | Solo relleno `glassFill` sin blur ni rim-light — translúcido ligero | Transición rápida, fondos con poco contenido detrás |
 | `solid` | `panelSolid` `#0E1426` sólido oscuro | Datos densos, contextos donde el vidrio distrae |
+| `enhancedGlass` | Gradiente profundo (`glassFill → deepSpace`) + borde del énfasis dinámico (`@80α`) + glow amplio + `BackdropFilter` blur 36 | Chrome de alta jerarquía, paneles de alerta/resultado, componentes que deben destacar |
 
 **Implementación:** `DrasusThemeState.globalSurfaceMode` (estático, accesible sin `BuildContext`). La decisión de superficie se toma en dos niveles:
 
-1. **Color dinámico** (via getters en `gallery_tokens.dart`): `Gx.surfaceFill`, `Gx.surfacePanel`, `Gx.surfaceCard` — todos retornan `glassFill` `0x40F0F2FF` en modo glass/tint, y los colores sólidos tradicionales (`panelSolid` / `cardInner`) solo en modo solid.
+1. **Color dinámico** (via getters en `gallery_tokens.dart`): `Gx.surfaceFill`, `Gx.surfacePanel`, `Gx.surfaceCard` — todos retornan `glassFill` en modo glass/tint/enhancedGlass, y los sólidos (`panelSolid` / `cardInner`) en modo solid.
 
-2. **Efecto completo** (via wrappers en `gallery_fx.dart`): `panelSurface()`, `cardSurface()`, `PanelFromDecoration` — envuelven el contenido con `frosted()` (BackdropFilter blur 36 + rim-light) en modo glass, y solo Color en tint/solid. El helper `_panelSolid()` en `gallery_tab.dart` (69+ callsites) usa estos wrappers, cubriendo toda sección de la galería.
+2. **Efecto completo** (via wrappers en `gallery_fx.dart`): `frosted()`, `glassEnhanced()`, `panelSurface()`, `cardSurface()`, `PanelFromDecoration`, y `GlassSurface` — cada wrapper lee el modo y aplica su receta completa. El helper `_panelSolid()` en `gallery_tab.dart` usa estos wrappers, cubriendo toda sección de la galería.
+
+**Color de texto base configurable:** `Gx.textBase` (y sus variantes `textBaseSecondary/Label/Muted`) reflejan el token dinámico de texto. El provider `DrasusThemeState` ofrece:
+- **Modo auto** (`setTextColorAuto()`): texto claro sobre fondos oscuros, oscuro sobre `slate`/`paper`. Recalcula al cambiar de paleta.
+- **Override manual** (`setTextColor(Color)`): fija un color de texto persistido en `SharedPreferences`. El `SettingsDrawer` expone el toggle "Automático por paleta" + el selector híbrido de color.
+
+**Selector de color híbrido canónico:** todos los controles de color del panel usan `ColorPickerWidget` (`lib/widgets/color_picker.dart`): swatches curados + rueda HSV con deslizador de brillo. Prohibido selectores ad-hoc.
 
 **Regla de estandarización (irrompible):**
 - todo contenedor visible usa `frosted()`, `GlassSurface`, `panelSurface()`, `cardSurface()`, `PanelFromDecoration` o `_panelSolid()` — **nunca** un `Color` sólido suelto en `BoxDecoration`
 - los getters `Gx.surfaceFill/Panel/Card` son la única fuente de color — prohibido `Gx.glassFill`, `Gx.panelSolid`, `Gx.cardInner` fuera de `gallery_tokens.dart`
+- `Gx.borderBase` es el borde estructural global (énfasis @ 35%); `borderPanel` queda para el Panel de Datos sólido específicamente
 - ningún widget de superficie se construye con `const` — el `const` impide que Flutter reconstruya el widget al cambiar el modo, porque la referencia es la misma y el framework reúsa la instancia sin llamar a `build()` (los colores quedan congelados)
 ```
 
