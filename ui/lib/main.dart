@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'src/rust/frb_generated.dart';
 import 'drasus_theme.dart';
-import 'panel_operativo.dart';
+import 'operational_panel.dart';
 
 // main() es el punto de entrada de toda aplicación Dart.
 // Es async porque debemos esperar a que la librería nativa de Rust cargue
@@ -36,7 +36,7 @@ class DrasusApp extends StatelessWidget {
         title: 'Drasus Engine',
         debugShowCheckedModeBanner: false,
         theme: state.buildThemeData(),
-        home: const PanelOperativo(),
+        home: const OperationalPanel(),
       ),
     );
   }

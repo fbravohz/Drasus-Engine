@@ -1,6 +1,6 @@
-// Panel principal del Drasus Engine.
-// Contiene las pestañas del observable de EPIC-0 + galería de componentes
-// + drawer de configuración de temas (acento y paleta de fondo).
+// Main panel of Drasus Engine.
+// Contains EPIC-0 observable tabs + component gallery
+// + theme config drawer (accent and background palette).
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
@@ -12,8 +12,8 @@ import 'tabs/canvas_tab.dart';
 import 'tabs/settings_drawer.dart';
 import 'gallery/gallery_tab.dart';
 
-class PanelOperativo extends StatelessWidget {
-  const PanelOperativo({super.key});
+class OperationalPanel extends StatelessWidget {
+  const OperationalPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +21,16 @@ class PanelOperativo extends StatelessWidget {
       length: 6,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Drasus Engine — Panel Operativo',
-            style: TextStyle(fontFamily: 'JetBrainsMono', fontSize: 16),
+          title: Text(
+            'Drasus Engine — Operational Panel',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(icon: Icon(Icons.access_time), text: 'Reloj'),
-              Tab(icon: Icon(Icons.queue), text: 'Trabajos'),
-              Tab(icon: Icon(Icons.security), text: 'Auditoría'),
+              Tab(icon: Icon(Icons.access_time), text: 'Clock'),
+              Tab(icon: Icon(Icons.queue), text: 'Jobs'),
+              Tab(icon: Icon(Icons.security), text: 'Audit'),
               Tab(icon: Icon(IconsaxPlusLinear.element_plus), text: 'Components'),
               Tab(icon: Icon(IconsaxPlusLinear.element), text: 'Dashboard'),
               Tab(icon: Icon(IconsaxPlusLinear.bezier), text: 'Canvas'),
@@ -40,7 +40,7 @@ class PanelOperativo extends StatelessWidget {
             Builder(
               builder: (ctx) => IconButton(
                 icon: const Icon(Icons.settings),
-                tooltip: 'Temas',
+                tooltip: 'Themes',
                 onPressed: () => Scaffold.of(ctx).openEndDrawer(),
               ),
             ),

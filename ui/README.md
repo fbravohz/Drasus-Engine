@@ -296,7 +296,7 @@ ui/
 │                                              JetBrains+Mono para reducir a ~110 KB)
 ├── lib/
 │   ├── main.dart                  # Punto de entrada principal (con bridge)
-│   ├── panel_operativo.dart       # Shell del Panel: tabs reloj/trabajos/auditoría/galería
+│   ├── operational_panel.dart     # Shell del Panel: tabs clock/jobs/audit/gallery
 │   ├── tabs/                      # Una pestaña por archivo (clock, jobs, audit)
 │   ├── src/
 │   │   └── rust/                  # Bindings generados por flutter_rust_bridge (NO editar)
