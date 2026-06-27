@@ -63,9 +63,12 @@ void main() {
   setUpAll(_loadEmbeddedFonts);
 
   testWidgets('gallery_full_scroll', (WidgetTester tester) async {
-    // Viewport amplio: 1440px de ancho, 5000px de alto para cubrir el
-    // scroll completo de la galería sin recorte.
-    tester.view.physicalSize = const Size(1440, 5000);
+    // Viewport para el layout maestro-detalle (STORY-022):
+    // 1440px de ancho captura el panel lateral de 260px + el panel de detalle.
+    // 1200px de alto es suficiente para ver la categoría inicial completa;
+    // ya no se necesitan 5000px porque el contenido no es un scroll único —
+    // cada categoría tiene su propio SingleChildScrollView en el panel de detalle.
+    tester.view.physicalSize = const Size(1440, 1200);
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(

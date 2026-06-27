@@ -202,30 +202,41 @@ class _TabDemoState extends State<_TabDemo> {
 
   @override
   // Renderiza las tres pestañas con underline animado.
+  // El Row usa mainAxisSize.min para no pedir más ancho del que tienen sus hijos
+  // y cada pestaña está envuelta en Flexible para que el Row se adapte al espacio
+  // disponible sin desbordar cuando el panel es angosto (p.ej. 380px o menos).
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(3, (i) {
         final isActive = i == _active;
-        return GestureDetector(
-          onTap: () => setState(() => _active = i),
-          child: Container(
-            margin: EdgeInsets.only(right: Gx.space12),
-            padding: EdgeInsets.only(bottom: Gx.space4),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  // Filo neón 2px en variante activa; transparent en inactiva.
-                  // Colors.transparent aquí es el "sin borde" del tab inactivo — correcto.
-                  color: isActive ? widget.color : Colors.transparent,
-                  width: 2,
+        // El último tab no lleva margen derecho para no desperdiciar espacio.
+        final isLast = i == 2;
+        return Flexible(
+          child: GestureDetector(
+            onTap: () => setState(() => _active = i),
+            child: Container(
+              margin: EdgeInsets.only(right: isLast ? 0 : Gx.space8),
+              padding: EdgeInsets.only(bottom: Gx.space4),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    // Filo neón 2px en variante activa; transparent en inactiva.
+                    // Colors.transparent aquí es el "sin borde" del tab inactivo — correcto.
+                    color: isActive ? widget.color : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
               ),
-            ),
-            child: Text('Tab ${i + 1}',
+              child: Text(
+                'Tab ${i + 1}',
+                overflow: TextOverflow.ellipsis,
                 style: Gx.uiSans(
                     fontSize: 12,
                     // Color del texto: el acento candidato en activa, muted en inactiva.
-                    color: isActive ? widget.color : Gx.textBaseMuted)),
+                    color: isActive ? widget.color : Gx.textBaseMuted),
+              ),
+            ),
           ),
         );
       }),

@@ -1,32 +1,37 @@
 // Galería de Componentes de Drasus Engine — pestaña "Components".
-// Vitrina del sistema de diseño (docs/DESIGN.md + docs/DESIGN-COMPONENTS-GALLERY.md).
-// Los componentes son cáscaras visuales con datos hardcodeados; lo único que
-// manejan es estado de UI local (hover, foco, valor de slider) para las
-// micro-animaciones. Sin lógica de negocio ni FFI. Glow, gradientes y vidrio
-// Apple a lo largo de TODOS los componentes (inspiración Reflect/galaxia/cristal).
+//
+// Cáscara maestro-detalle navegable: panel lateral con búsqueda + lista de
+// categorías/entradas, panel de detalle que muestra el componente seleccionado
+// bajo demanda. Todo el contenido (builders y helpers) vive en gallery_registry.dart.
+//
+// Restricción: la clase GalleryTab mantiene su nombre y constructor const
+// GalleryTab({super.key}) para no romper operational_panel.dart.
 
 import 'package:flutter/material.dart';
 import 'gallery_tokens.dart';
-import 'gallery_fx.dart';
-import 'gallery_painters.dart';
 import '../drasus_theme.dart';
-import 'sections/section_nav.dart';
-import 'sections/section_inputs_extended.dart';
-import 'sections/section_buttons_extended.dart';
-import 'sections/section_data_display_extended.dart';
-import 'sections/section_feedback_extended.dart';
-import 'sections/section_dataviz_extended.dart';
-import 'sections/section_drasus_core_extended.dart';
-import 'sections/section_std_missing.dart';
-import 'sections/section_dataviz_quant.dart';
-import 'sections/section_dataviz_new.dart';
-import 'sections/section_dag_nodes.dart';
-import 'sections/section_animations.dart';
-import 'sections/section_trade_tape.dart';
+import 'gallery_registry.dart';
 
-// Widget raíz de la pestaña. Telón cósmico estático + catálogo en scroll.
-class GalleryTab extends StatelessWidget {
+// Widget raíz de la pestaña. Ahora es StatefulWidget para manejar la selección
+// de categoría, entrada y el texto del buscador.
+class GalleryTab extends StatefulWidget {
   const GalleryTab({super.key});
+
+  @override
+  State<GalleryTab> createState() => _GalleryTabState();
+}
+
+class _GalleryTabState extends State<GalleryTab> {
+  // Índice de la categoría seleccionada (0 = primera categoría al abrir).
+  int _selectedCategoryIndex = 0;
+  // Índice de la entrada seleccionada dentro de la categoría (-1 = vista panorámica).
+  int _selectedEntryIndex = -1;
+  // Texto del buscador; vacío = sin filtro.
+  String _searchText = '';
+
+  // ---------------------------------------------------------------------------
+  // Build raíz
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -34,1167 +39,355 @@ class GalleryTab extends StatelessWidget {
     final surfaces = theme?.surfaces;
     final ds = surfaces?.deepSpace ?? Gx.deepSpace;
 
+    // Construye el catálogo completo una vez por build; buildGalleryCatalog
+    // solo crea las listas de metadatos — los widgets concretos NO se instancian
+    // hasta que el usuario navega a ellos (builder bajo demanda).
+    final catalog = buildGalleryCatalog(context);
+
     return Container(
       color: ds,
-      child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _hero(),
-              const SizedBox(height: 32),
-              _section(context, 'Fundamentos', _foundations()),
-              _section(context, 'Layout y estructura', _layout()),
-              _section(context, 'Navegación', _navigation()),
-              _section(context, 'Inputs y formularios', _inputs()),
-              _section(context, 'Inputs extendidos', _inputsExtended()),
-              _section(context, 'Botones y acciones', _buttons()),
-              _section(context, 'Botones extendidos', _buttonsExtended()),
-              _section(context, 'Data display', _dataDisplay()),
-              _section(context, 'Data display extendido', _dataDisplayExtended()),
-              _section(context, 'Feedback y overlays', _feedback()),
-              _section(context, 'Feedback extendido', _feedbackExtended()),
-              _section(context, 'Data-viz (dominio Drasus)', _dataviz()),
-              _section(context, 'Data-viz extendida', _datavizExtended()),
-              _section(context, 'Data-viz cuantitativa', _datavizQuant()),
-              _sectionFull(context, 'Monte Carlo + Cluster 3D', _datavizNew()),
-              _sectionFull(context, 'Nodos y Conexiones DAG', _dagNodes()),
-              _sectionFull(context, 'Trade Tape + Ticker', _tradeTape()),
-              _section(context, 'Núcleo Drasus', _drasusCore()),
-              _section(context, 'Núcleo Drasus extendido', _drasusCoreExtended()),
-              _section(context, 'Animaciones de Vitalidad', _vitalityAnimations()),
-              _sectionFull(context, 'Odómetro + Gauge + Path Drawing', _animationsNew()),
-              const SizedBox(height: 48),
-            ],
+      child: Row(
+        children: [
+          // Panel lateral fijo de 260 px.
+          SizedBox(
+            width: 260,
+            child: _buildSidebar(context, catalog),
           ),
+          // Divisor vertical de 1 px.
+          VerticalDivider(width: 1, thickness: 1, color: Gx.borderBase),
+          // Panel de detalle ocupa el espacio restante.
+          Expanded(child: _buildDetail(context, catalog)),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Panel lateral — búsqueda + lista navegable
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSidebar(
+      BuildContext context, List<GalleryCategory> catalog) {
+    // Calcula la lista filtrada según el texto de búsqueda.
+    final filtered = _filterCatalog(catalog);
+
+    return Container(
+      color: Gx.navRail,
+      child: Column(
+        children: [
+          // Hero compacto del sistema de diseño.
+          _buildSidebarHero(),
+          // Campo de búsqueda.
+          _buildSearchField(),
+          const SizedBox(height: 4),
+          // Lista de categorías y entradas filtradas.
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 24),
+              itemCount: filtered.length,
+              itemBuilder: (ctx, i) => _buildSidebarCategory(
+                  ctx, filtered[i], catalog),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hero compacto: título con ShaderMask y subtítulo en texto pequeño.
+  Widget _buildSidebarHero() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShaderMask(
+            shaderCallback: (rect) =>
+                const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
+            child: Text('Drasus',
+                style: TextStyle(
+                    fontFamily: Gx.fontDisplay,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.4,
+                    color: Gx.pureWhite)),
+          ),
+          Text('Design System',
+              style: Gx.microLabel.copyWith(color: Gx.textBaseMuted)),
+        ],
+      ),
+    );
+  }
+
+  /// Campo de búsqueda con decoración Gx coherente con el panel lateral.
+  Widget _buildSearchField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Container(
+        height: 34,
+        decoration: BoxDecoration(
+          color: Gx.surfaceCard,
+          borderRadius: BorderRadius.circular(Gx.rChip),
+          border: Border.all(color: Gx.borderBase),
         ),
-      );
-    }
+        child: Row(
+          children: [
+            const SizedBox(width: 10),
+            // Icons.search es nativo de Material — Gx no define un token de búsqueda.
+            Icon(Icons.search, size: 14, color: Gx.textBaseMuted),
+            const SizedBox(width: 6),
+            Expanded(
+              child: TextField(
+                style: TextStyle(
+                    fontFamily: Gx.fontSans, fontSize: 13, color: Gx.textBase),
+                decoration: InputDecoration(
+                  hintText: 'Buscar componente…',
+                  hintStyle: TextStyle(
+                      fontFamily: Gx.fontSans,
+                      fontSize: 13,
+                      color: Gx.textBaseMuted),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                // Actualiza el estado del buscador y reinicia la selección al filtrar.
+                onChanged: (v) => setState(() {
+                  _searchText = v;
+                  _selectedCategoryIndex = 0;
+                  _selectedEntryIndex = -1;
+                }),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  // ---------------------------------------------------------------------------
-  // Estructura
-  // ---------------------------------------------------------------------------
+  /// Elemento de la lista lateral para una categoría y sus entradas filtradas.
+  Widget _buildSidebarCategory(BuildContext context,
+      _FilteredCategory filtered, List<GalleryCategory> fullCatalog) {
+    // Índice real de la categoría en el catálogo completo (para la selección).
+    final catIndex = fullCatalog.indexOf(filtered.category);
 
-  Widget _hero() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ShaderMask(
-          shaderCallback: (rect) =>
-              const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
-          child: Text('Drasus Design System',
-              style: Gx.zuiTitle.copyWith(color: Gx.pureWhite)),
+        // Encabezado de categoría — clic → modo panorámica de esa categoría.
+        InkWell(
+          onTap: () => setState(() {
+            _selectedCategoryIndex = catIndex;
+            _selectedEntryIndex = -1;
+          }),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+            color: _selectedCategoryIndex == catIndex &&
+                    _selectedEntryIndex == -1
+                ? Gx.surfaceRaisedDynamic
+                : Colors.transparent,
+            child: Row(children: [
+              // Barra de acento cuando la categoría está seleccionada.
+              if (_selectedCategoryIndex == catIndex &&
+                  _selectedEntryIndex == -1)
+                Container(
+                    width: 2,
+                    height: 14,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                        gradient: Gx.linear(Gx.gradAurora,
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter),
+                        boxShadow:
+                            Gx.glow(Gx.transitionIndigo, blur: 6, opacity: 0.7))),
+              Expanded(
+                child: Text(filtered.category.title,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontFamily: Gx.fontSans,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
+                        color: _selectedCategoryIndex == catIndex
+                            ? Gx.textBase
+                            : Gx.textBaseLabel)),
+              ),
+            ]),
+          ),
         ),
-        const SizedBox(height: 8),
-        // Texto con propagación de luz: tócalo para ver la "explosión".
-        LightBurstText(
-            'Terminal futurista en GPU — toca este texto, pasa el mouse, arrastra.'),
+        // Entradas filtradas de la categoría — indentadas.
+        ...filtered.entries.map((entry) {
+          final entryIndex =
+              filtered.category.entries.indexOf(entry);
+          final isSelected = _selectedCategoryIndex == catIndex &&
+              _selectedEntryIndex == entryIndex;
+          return InkWell(
+            onTap: () => setState(() {
+              _selectedCategoryIndex = catIndex;
+              _selectedEntryIndex = entryIndex;
+            }),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(28, 5, 16, 5),
+              color: isSelected
+                  ? Gx.surfaceRaisedDynamic
+                  : Colors.transparent,
+              child: Row(children: [
+                // Punto de acento cuando la entrada está seleccionada.
+                if (isSelected)
+                  Container(
+                      width: 5,
+                      height: 5,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Gx.optimaCyan,
+                          boxShadow: Gx.glow(Gx.optimaCyan,
+                              blur: 6, opacity: 0.8)))
+                else
+                  const SizedBox(width: 13),
+                Expanded(
+                  child: Text(entry.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontFamily: Gx.fontSans,
+                          fontSize: 12,
+                          color: isSelected
+                              ? Gx.optimaCyan
+                              : Gx.textBaseMuted)),
+                ),
+              ]),
+            ),
+          );
+        }),
       ],
     );
   }
 
-  Widget _section(BuildContext context, String title, List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            // Barra de acento con gradiente y glow.
-            Container(
-                width: 3,
-                height: 20,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(
-                    gradient: Gx.linear(Gx.gradAurora,
-                        begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                    boxShadow: Gx.glow(Gx.transitionIndigo, blur: 10, opacity: 0.7))),
-            Text(title, style: Gx.sectionHeading),
-          ]),
-          const SizedBox(height: 16),
-          Wrap(spacing: 16, runSpacing: 16, children: children),
-        ],
-      ),
-    );
-  }
-
-  // Variante de _section que usa Column en vez de Wrap — para widgets
-  // de ancho completo como Monte Carlo y Cluster 3D.
-  Widget _sectionFull(BuildContext context, String title, List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Container(
-                width: 3,
-                height: 20,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(
-                    gradient: Gx.linear(Gx.gradAurora,
-                        begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                    boxShadow: Gx.glow(Gx.transitionIndigo, blur: 10, opacity: 0.7))),
-            Text(title, style: Gx.sectionHeading),
-          ]),
-          const SizedBox(height: 16),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _frame(String label, Widget child, {double width = 280}) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Gx.microLabel),
-          const SizedBox(height: 6),
-          child,
-        ],
-      ),
-    );
-  }
-
   // ---------------------------------------------------------------------------
-  // Helpers
+  // Panel de detalle — componente individual o panorámica de categoría
   // ---------------------------------------------------------------------------
 
-  // Panel que respeta el modo global de superficie (ADR-0137 §Superficies).
-  //   glass:  vidrio Apple — BackdropFilter blur 36 + rim-light
-  //   tint:   relleno glassFill translúcido, sin blur
-  //   solid:  gradiente vertical panelSolid → cardInner tradicional
-  Widget _panelSolid(
-      {required Widget child,
-      EdgeInsets? padding,
-      Color glowColor = Gx.transitionIndigo}) {
-    final mode = DrasusThemeState.globalSurfaceMode;
-    final pad = padding ?? const EdgeInsets.all(12);
+  Widget _buildDetail(BuildContext context, List<GalleryCategory> catalog) {
+    // Guarda de índice fuera de rango (puede ocurrir al filtrar).
+    if (_selectedCategoryIndex >= catalog.length) {
+      return const SizedBox.shrink();
+    }
+    final category = catalog[_selectedCategoryIndex];
 
-    if (mode == DrasusSurfaceMode.solid) {
-      return Container(
-        padding: pad,
-        decoration: BoxDecoration(
-          gradient: Gx.linear([Gx.surfacePanel, Gx.surfaceCard],
-              begin: Alignment.topCenter, end: Alignment.bottomCenter),
-          border: Border.all(color: Gx.borderBase),
-          borderRadius: BorderRadius.circular(Gx.rPanel),
-          boxShadow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
+    // Modo entrada individual: el usuario seleccionó un componente concreto.
+    if (_selectedEntryIndex >= 0 &&
+        _selectedEntryIndex < category.entries.length) {
+      final entry = category.entries[_selectedEntryIndex];
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Encabezado de sección con barra de acento.
+            _sectionHeader(category.title),
+            const SizedBox(height: 16),
+            // El builder se invoca aquí: construcción bajo demanda.
+            entry.fullWidth
+                ? entry.builder(context)
+                : galleryFrame(entry.title, entry.builder(context)),
+            const SizedBox(height: 48),
+          ],
         ),
-        child: child,
       );
     }
 
-    return panelSurface(
-      padding: pad,
-      radius: Gx.rPanel,
-      glow: Gx.glow(glowColor, blur: 20, opacity: 0.10),
-      child: child,
-    );
-  }
+    // Modo panorámica de categoría: muestra todos los componentes en Wrap / Column.
+    final hasFullWidth = category.entries.any((e) => e.fullWidth);
 
-  // Chip de estado con glow en el borde y en el texto (neón encendido).
-  Widget _chip(String text, Color fg, Color bg, Color border,
-      {bool pill = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(pill ? 999 : Gx.rChip),
-        boxShadow: Gx.glow(fg, blur: 12, opacity: 0.30),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(category.title),
+          const SizedBox(height: 16),
+          // fullWidth → Column; el resto → Wrap.
+          hasFullWidth
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: category.entries
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: e.builder(context),
+                          ))
+                      .toList(),
+                )
+              : Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: category.entries
+                      .map((e) =>
+                          galleryFrame(e.title, e.builder(context)))
+                      .toList(),
+                ),
+          const SizedBox(height: 48),
+        ],
       ),
-      child: Text(text,
-          style: Gx.uiSans(fontSize: 12, color: fg, height: 1.2).copyWith(shadows: Gx.textGlow(fg))),
     );
   }
 
-  Widget _panelHeader(IconData icon, String title) {
+  // ---------------------------------------------------------------------------
+  // Encabezado de sección — barra de acento + título (idéntico al original)
+  // ---------------------------------------------------------------------------
+
+  /// Encabezado de sección con barra de acento y gradiente aurora.
+  Widget _sectionHeader(String title) {
     return Row(children: [
-      Icon(icon, size: 14, color: Gx.textBaseSecondary),
-      const SizedBox(width: 6),
-      Flexible(
-          child: Text(title,
-              style: Gx.panelTitle, overflow: TextOverflow.ellipsis)),
+      Container(
+          width: 3,
+          height: 20,
+          margin: const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+              gradient: Gx.linear(Gx.gradAurora,
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter),
+              boxShadow:
+                  Gx.glow(Gx.transitionIndigo, blur: 10, opacity: 0.7))),
+      Text(title, style: Gx.sectionHeading),
     ]);
   }
 
   // ---------------------------------------------------------------------------
-  // §3 Fundamentos
+  // Filtrado del catálogo — case-insensitive por título de entrada
   // ---------------------------------------------------------------------------
 
-  List<Widget> _foundations() => [
-        _frame('Paleta — superficies', _swatches([
-          ['deepSpace', Gx.deepSpace],
-          ['navRail', Gx.navRail],
-          ['panelSolid', Gx.surfacePanel],
-          ['cardInner', Gx.surfaceCard],
-          ['surfaceRaised', Gx.surfaceRaised],
-        ])),
-        _frame('Paleta — vitalidad (con glow)', _swatches(const [
-          ['optimaCyan', Gx.optimaCyan],
-          ['reactorGreen', Gx.reactorGreen],
-          ['transitionIndigo', Gx.transitionIndigo],
-          ['transitionBlue', Gx.transitionBlue],
-          ['alertAmber', Gx.alertAmber],
-          ['criticalCrimson', Gx.criticalCrimson],
-        ], glow: true)),
-        _frame('Gradientes', _panelSolid(
-          child: Column(children: [
-            _gradBar(Gx.gradReactor),
-            const SizedBox(height: 6),
-            _gradBar(Gx.gradAurora),
-            const SizedBox(height: 6),
-            _gradBar(Gx.gradAlert),
-            const SizedBox(height: 6),
-            _gradBar(Gx.gradCritical),
-            const SizedBox(height: 6),
-            _gradBar(Gx.gradCosmic),
-          ]),
-        )),
-        _frame('Tipografía — escala', _panelSolid(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ZUI title 40', style: Gx.zuiTitle),
-              const SizedBox(height: 4),
-              Text('Section 22', style: Gx.sectionHeading),
-              const SizedBox(height: 4),
-              Text('Body 14 — texto de interfaz', style: Gx.body),
-              const SizedBox(height: 4),
-              Text('1.847  SPX  node-07', style: Gx.dataSmall),
-            ],
-          ),
-        )),
-        _frame('Iconografía (con glow)', _panelSolid(
-          child: Wrap(spacing: 14, runSpacing: 12, children: [
-            _glowIcon(Gx.iconHub, Gx.transitionIndigo),
-            _glowIcon(Gx.iconBolt, Gx.optimaCyan),
-            _glowIcon(Gx.iconWarning, Gx.alertAmber),
-            _glowIcon(Gx.iconDanger, Gx.criticalCrimson),
-            _glowIcon(Gx.iconScience, Gx.transitionBlue),
-            _glowIcon(Gx.iconChart, Gx.optimaTeal),
-          ]),
-        )),
-        _frame('Superficie — vidrio Apple', frosted(
-          glow: Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.25),
-          child: _panelHeader(Gx.iconBlurOn, 'Frosted translúcido'),
-        )),
-        _frame('Acento dinámico', _panelSolid(
-          padding: const EdgeInsets.all(8),
-        child: AccentAbSection(),
-        ), width: 380),
-      ];
+  /// Filtra el catálogo por [_searchText] (case-insensitive).
+  /// Sin texto → devuelve todas las categorías con todas sus entradas.
+  /// Con texto → devuelve solo las categorías que tengan al menos una entrada
+  /// cuyo título contenga el texto, mostrando únicamente las que coinciden.
+  List<_FilteredCategory> _filterCatalog(List<GalleryCategory> catalog) {
+    if (_searchText.isEmpty) {
+      // Sin filtro: todas las categorías con todas sus entradas.
+      return catalog
+          .map((c) => _FilteredCategory(c, c.entries))
+          .toList();
+    }
 
-  Widget _swatches(List<List<Object>> entries, {bool glow = false}) {
-    return _panelSolid(
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: entries.map((e) {
-          final name = e[0] as String;
-          final color = e[1] as Color;
-          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-                width: 64,
-                height: 28,
-                decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Gx.borderBase),
-                    boxShadow:
-                        glow ? Gx.glow(color, blur: 14, opacity: 0.6) : null)),
-            const SizedBox(height: 3),
-            SizedBox(width: 64, child: Text(name, style: Gx.microLabel)),
-          ]);
-        }).toList(),
-      ),
-    );
+    final query = _searchText.toLowerCase();
+    final result = <_FilteredCategory>[];
+    for (final category in catalog) {
+      final matching = category.entries
+          .where((e) => e.title.toLowerCase().contains(query))
+          .toList();
+      if (matching.isNotEmpty) {
+        result.add(_FilteredCategory(category, matching));
+      }
+    }
+    return result;
   }
+}
 
-  Widget _gradBar(List<Color> colors) => Container(
-        height: 14,
-        decoration: BoxDecoration(
-            gradient: Gx.linear(colors),
-            borderRadius: BorderRadius.circular(7),
-            boxShadow: Gx.glow(colors.first, blur: 12, opacity: 0.4)),
-      );
+// ---------------------------------------------------------------------------
+// Modelo interno de filtrado — solo visible en este archivo
+// ---------------------------------------------------------------------------
 
-  Widget _glowIcon(IconData icon, Color c) =>
-      Icon(icon, size: 20, color: c, shadows: Gx.textGlow(c, 10));
-
-  // ---------------------------------------------------------------------------
-  // §4 Layout
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _layout() => [
-        _frame('Panel de datos (hover)', HoverGlow(
-          color: Gx.transitionIndigo,
-          child: _panelSolid(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _panelHeader(Gx.iconDashboard, 'Comando de Flota'),
-              const SizedBox(height: 8),
-              Text('Pasa el mouse: la tarjeta se enciende.',
-                  style: Gx.bodySecondary),
-            ]),
-          ),
-        )),
-        _frame('Stat / KPI', _panelSolid(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('SHARPE', style: Gx.microLabel),
-            const SizedBox(height: 4),
-            // Número con gradiente + glow.
-            ShaderMask(
-              shaderCallback: (r) =>
-                  const LinearGradient(colors: Gx.gradOptima).createShader(r),
-              child: Text('1.84',
-                  style: TextStyle(
-                      fontFamily: Gx.fontMono,
-                      fontSize: 28,
-                      height: 1.1,
-                      color: Gx.pureWhite)),
-            ),
-            Text('óptimo',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Gx.optimaCyan,
-                    shadows: Gx.textGlow(Gx.optimaCyan))),
-          ]),
-        )),
-        _frame('Tabs', _tabsMock()),
-        _frame('Pipeline de 8 pasos', _pipelineMock()),
-        _frame('Divider', _panelSolid(
-          child: Column(children: [
-            Text('Arriba', style: Gx.body),
-            Divider(color: Gx.borderBase, height: 16),
-            Text('Abajo', style: Gx.body),
-          ]),
-        )),
-      ];
-
-  Widget _tabsMock() {
-    Widget tab(String t, bool active) => Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Column(children: [
-            Text(t,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: active ? Gx.textBase : Gx.textBaseLabel)),
-            const SizedBox(height: 6),
-            Container(
-                height: 2,
-                width: 28,
-                decoration: BoxDecoration(
-                    gradient: active ? Gx.linear(Gx.gradTransition) : null,
-                    boxShadow: active
-                        ? Gx.glow(Gx.transitionIndigo, blur: 8, opacity: 0.8)
-                        : null)),
-          ]),
-        );
-    return _panelSolid(
-        child: Row(children: [tab('MACRO', true), tab('MESO', false), tab('MICRO', false)]));
-  }
-
-  Widget _pipelineMock() {
-    final steps = ['Ingest', 'Genera', 'Valida', 'Incuba', 'Ejecuta'];
-    final colors = [
-      Gx.optimaCyan,
-      Gx.optimaCyan,
-      Gx.transitionIndigo,
-      Gx.textBaseMuted,
-      Gx.textBaseMuted
-    ];
-    return _panelSolid(
-      child: Row(
-        children: List.generate(steps.length, (i) {
-          return Expanded(
-            child: Column(children: [
-              Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colors[i],
-                      boxShadow: Gx.glow(colors[i], blur: 8, opacity: 0.7))),
-              const SizedBox(height: 4),
-              Text(steps[i], style: TextStyle(fontSize: 10, color: colors[i])),
-            ]),
-          );
-        }),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // §6 Inputs (funcionales)
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _inputs() => [
-        _frame('Text field (foco con glow)',
-            GlowInput(hint: 'Símbolo…', initial: 'SPX')),
-        _frame('Search', GlowInput(hint: 'Buscar estrategia…', color: Gx.optimaCyan)),
-        _frame('Dropdown (abre)', GlowDropdown(
-            label: 'Régimen…', options: ['Tendencia', 'Rango', 'Volátil', 'Calmo'])),
-        _frame('Switch (toca)', Row(children: const [
-          GlowSwitch(initial: true),
-          SizedBox(width: 12),
-          GlowSwitch(initial: false, color: Gx.transitionIndigo),
-        ])),
-        _frame('Slider (arrastra)', GlowSlider()),
-        _frame('Checkbox / Radio', Row(children: [
-          _checkbox(true),
-          const SizedBox(width: 10),
-          _checkbox(false),
-          const SizedBox(width: 16),
-          _radio(true),
-          const SizedBox(width: 10),
-          _radio(false),
-        ])), // checkbox y radio usan iconos Phosphor internamente vía _checkbox/_radio
-        _frame('Tags', _panelSolid(
-          child: Wrap(spacing: 6, runSpacing: 6, children: [
-            _chip('SPX', Gx.transitionIndigo, Gx.transitionChipBg, Gx.transitionChipBorder),
-            _chip('G10', Gx.transitionIndigo, Gx.transitionChipBg, Gx.transitionChipBorder),
-            Icon(Gx.iconAdd, size: 16, color: Gx.textBaseMuted),
-          ]),
-        )),
-      ];
-
-  Widget _checkbox(bool on) => Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-            color: on ? Gx.optimaCyan : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: on ? Gx.optimaCyan : Gx.textBaseMuted),
-            boxShadow: on ? Gx.glow(Gx.optimaCyan, blur: 10, opacity: 0.6) : null),
-        child: on ? Icon(Gx.iconCheck, size: 14, color: Gx.canvasBase) : null,
-      );
-
-  Widget _radio(bool on) => Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: on ? Gx.optimaCyan : Gx.textBaseMuted),
-            boxShadow: on ? Gx.glow(Gx.optimaCyan, blur: 10, opacity: 0.5) : null),
-        child: on
-            ? Center(
-                child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle, color: Gx.optimaCyan)))
-            : null,
-      );
-
-  // ---------------------------------------------------------------------------
-  // §7 Botones (funcionales: hover + propagación de luz al clic)
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _buttons() => [
-        _frame('Acción viva (clic)', GlowButton(
-            label: 'EJECUTAR', gradient: Gx.gradReactor, glowColor: Gx.reactorGreen)),
-        _frame('Primario — cian', GlowButton(
-            label: 'CONFIRMAR', gradient: Gx.gradOptima, glowColor: Gx.optimaCyan)),
-        _frame('Transición', GlowButton(
-            label: 'INCUBAR',
-            gradient: Gx.gradTransition,
-            glowColor: Gx.transitionIndigo,
-            textColor: Gx.pureWhite)),
-        _frame('Peligro', GlowButton(
-            label: 'RETIRAR',
-            gradient: Gx.gradCritical,
-            glowColor: Gx.criticalCrimson,
-            textColor: Gx.pureWhite)),
-        _frame('Cristal (secundario)', frosted(
-          glow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.2),
-          child: Text('Detalles', style: Gx.body),
-        )),
-        _frame('Icon buttons (hover)', Row(children: [
-          HoverGlow(color: Gx.optimaCyan, radius: Gx.rButton, child: _iconBtn(Gx.iconPlay)),
-          const SizedBox(width: 10),
-          HoverGlow(color: Gx.transitionIndigo, radius: Gx.rButton, child: _iconBtn(Gx.iconPause)),
-          const SizedBox(width: 10),
-          HoverGlow(color: Gx.transitionBlue, radius: Gx.rButton, child: _iconBtn(Gx.iconRefresh)),
-        ])),
-      ];
-
-  Widget _iconBtn(IconData icon) => Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-            color: Gx.surfaceCard,
-            borderRadius: BorderRadius.circular(Gx.rButton),
-            border: Border.all(color: Gx.borderBase)),
-        child: Icon(icon, size: 18, color: Gx.textBase),
-      );
-
-  // ---------------------------------------------------------------------------
-  // §8 Data display
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _dataDisplay() => [
-        _frame('Chips de estado', _panelSolid(
-          child: Wrap(spacing: 6, runSpacing: 6, children: [
-            _chip('ÓPTIMO', Gx.optimaCyan, Gx.optimaChipBg, Gx.optimaChipBorder, pill: true),
-            _chip('INCUBA', Gx.transitionIndigo, Gx.transitionChipBg, Gx.transitionChipBorder, pill: true),
-            _chip('VOLÁTIL', Gx.alertAmber, Gx.alertChipBg, Gx.alertChipBorder, pill: true),
-            _chip('FALLO', Gx.criticalCrimson, Gx.criticalChipBg, Gx.criticalChipBorder, pill: true),
-          ]),
-        )),
-        _frame('Key-value rows', _panelSolid(
-          child: Column(children: [
-            _kv('Drawdown', '-4.2%', Gx.alertAmber),
-            _kv('Sharpe', '1.84', Gx.optimaCyan),
-            _kv('Slippage', '0.03%', Gx.textBase),
-          ]),
-        )),
-        _frame('Tabla densa', _tableMock(), width: 360),
-        _frame('Micro-gauge', _panelSolid(
-          child: Column(children: [
-            _gauge('Salud', 0.82, Gx.gradOptima, Gx.optimaCyan),
-            const SizedBox(height: 8),
-            _gauge('Riesgo', 0.41, Gx.gradAlert, Gx.alertAmber),
-          ]),
-        )),
-        _frame('Progress', _panelSolid(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Escaneo 68%', style: Gx.microLabel),
-            const SizedBox(height: 6),
-            _progress(0.68, Gx.gradTransition, Gx.transitionIndigo),
-          ]),
-        )),
-        _frame('Calendario (toca un día)', GlowCalendar()),
-        _frame('Tooltip', frosted(
-          glow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.25),
-          radius: Gx.rTooltip,
-          child: Text('Sharpe ajustado por régimen', style: Gx.dataSmall),
-        )),
-        _frame('Skeleton', _panelSolid(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _skeletonLine(0.8),
-            const SizedBox(height: 6),
-            _skeletonLine(0.55),
-            const SizedBox(height: 6),
-            _skeletonLine(0.65),
-          ]),
-        )),
-      ];
-
-  Widget _kv(String k, String v, Color vc) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Gx.borderBase))),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Flexible(
-              child: Text(k,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: Gx.textBaseLabel))),
-          Text(v,
-              style: TextStyle(
-                  fontFamily: Gx.fontMono,
-                  fontSize: 13,
-                  color: vc,
-                  shadows: Gx.textGlow(vc, 6))),
-        ]),
-      );
-
-  Widget _tableMock() {
-    Widget cell(String t, {bool num = false, Color? c, bool header = false}) =>
-        Expanded(
-          child: Text(t,
-              textAlign: num ? TextAlign.right : TextAlign.left,
-              style: header
-                  ? Gx.microLabel
-                  : TextStyle(
-                      fontFamily: num ? Gx.fontMono : null,
-                      fontSize: 13,
-                      color: c ?? Gx.textBase,
-                      shadows: c != null ? Gx.textGlow(c, 6) : null)),
-        );
-    Widget row(List<Widget> cells, {bool header = false, bool hover = false}) =>
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
-          decoration: BoxDecoration(
-              color: hover ? Gx.surfaceRaisedDynamic : Colors.transparent,
-              border: Border(bottom: BorderSide(color: Gx.borderBase))),
-          child: Row(children: cells),
-        );
-    return _panelSolid(
-      padding: EdgeInsets.zero,
-      child: Column(children: [
-        row([cell('ID', header: true), cell('RÉGIMEN', header: true), cell('SHARPE', num: true, header: true)], header: true),
-        row([cell('node-07'), cell('Tendencia', c: Gx.optimaCyan), cell('1.84', num: true, c: Gx.optimaCyan)]),
-        row([cell('node-12'), cell('Volátil', c: Gx.alertAmber), cell('0.42', num: true, c: Gx.alertAmber)], hover: true),
-        row([cell('node-19'), cell('Fallo', c: Gx.criticalCrimson), cell('-0.9', num: true, c: Gx.criticalCrimson)]),
-      ]),
-    );
-  }
-
-  Widget _gauge(String label, double v, List<Color> grad, Color glow) =>
-      Row(children: [
-        SizedBox(width: 48, child: Text(label, style: Gx.microLabel)),
-        Expanded(
-          child: Container(
-            height: 6,
-            decoration: BoxDecoration(
-                color: Gx.gaugeTrack, borderRadius: BorderRadius.circular(3)),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: v,
-              child: Container(
-                  decoration: BoxDecoration(
-                      gradient: Gx.linear(grad),
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: Gx.glow(glow, blur: 8, opacity: 0.6))),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(v.toStringAsFixed(2),
-            style: TextStyle(
-                fontFamily: Gx.fontMono, fontSize: 12, color: glow)),
-      ]);
-
-  Widget _progress(double v, List<Color> grad, Color glow) => Container(
-        height: 6,
-        decoration: BoxDecoration(
-            color: Gx.gaugeTrack, borderRadius: BorderRadius.circular(3)),
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: v,
-          child: Container(
-              decoration: BoxDecoration(
-                  gradient: Gx.linear(grad),
-                  borderRadius: BorderRadius.circular(3),
-                  boxShadow: Gx.glow(glow, blur: 8, opacity: 0.6))),
-        ),
-      );
-
-  Widget _skeletonLine(double w) => FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: w,
-        child: Container(
-            height: 10,
-            decoration: BoxDecoration(
-                color: Gx.surfaceRaisedDynamic,
-                borderRadius: BorderRadius.circular(4))),
-      );
-
-  // ---------------------------------------------------------------------------
-  // §9 Feedback
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _feedback() => [
-        _frame('Alert — óptimo', _alert(Gx.iconCheck, 'Estrategia dentro del sobre.', Gx.optimaCyan, Gx.optimaChipBg)),
-        _frame('Alert — alerta', _alert(Gx.iconWarning, 'SPX pasó a Volátil.', Gx.alertAmber, Gx.alertChipBg)),
-        _frame('Alert — crítico', _alert(Gx.iconDanger, 'Slippage letal: retiro.', Gx.criticalCrimson, Gx.criticalChipBg)),
-        _frame('Toast', frosted(
-          glow: Gx.glow(Gx.optimaCyan, blur: 14, opacity: 0.3),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Gx.iconBolt, size: 16, color: Gx.optimaCyan, shadows: Gx.textGlow(Gx.optimaCyan)),
-            const SizedBox(width: 8),
-            Text('Job encolado', style: Gx.body),
-          ]),
-        )),
-        _frame('Modal / dialog', _modalMock(), width: 320),
-        _frame('Spinner', _panelSolid(
-          child: Row(children: [
-            const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Gx.transitionIndigo)),
-            const SizedBox(width: 10),
-            Flexible(child: Text('Incubando…', overflow: TextOverflow.ellipsis, style: Gx.bodySecondary)),
-          ]),
-        )),
-      ];
-
-  Widget _alert(IconData icon, String msg, Color c, Color bg) => frosted(
-        radius: Gx.rPanel,
-        padding: const EdgeInsets.all(10),
-        glow: Gx.glow(c, blur: 14, opacity: 0.2),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: c, width: 3)),
-          ),
-          child: Row(children: [
-            Icon(icon, size: 16, color: c, shadows: Gx.textGlow(c)),
-            const SizedBox(width: 8),
-            Expanded(child: Text(msg, style: Gx.bodySecondary)),
-          ]),
-        ),
-      );
-
-  Widget _modalMock() => Container(
-        decoration: BoxDecoration(
-            color: Gx.canvasBase.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(Gx.rChrome)),
-        padding: const EdgeInsets.all(12),
-        child: panelSurface(
-          glow: Gx.glow(Gx.criticalCrimson, blur: 22, opacity: 0.2),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Confirmar retiro', style: Gx.subheading),
-            const SizedBox(height: 6),
-            Text('La célula node-19 será archivada.', style: Gx.bodySecondary),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: const [
-              GlowButton(label: 'RETIRAR', gradient: Gx.gradCritical, glowColor: Gx.criticalCrimson, textColor: Gx.pureWhite),
-            ]),
-          ]),
-        ),
-      );
-
-  // ---------------------------------------------------------------------------
-  // §10 Data-viz
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _dataviz() => [
-        _frame('DAG (hover en nodos)', _panelSolid(child: InteractiveDag()), width: 360),
-        _frame('Cono de Monte Carlo (hover)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => MonteCarloPainter(hover: h), height: 120),
-        ), width: 360),
-        _frame('Sparkline (hover)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => MonteCarloPainter(hover: h), height: 42),
-        )),
-      ];
-
-  // ---------------------------------------------------------------------------
-  // §11 Núcleo Drasus
-  // ---------------------------------------------------------------------------
-
-  List<Widget> _drasusCore() => [
-        _frame('Célula / organismo (hover)', HoverGlow(
-          color: Gx.alertAmber,
-          child: _organismCard(),
-        )),
-        _frame('Orbe de cristal', _crystalOrb()),
-        _frame('Leyenda de vitalidad', _panelSolid(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _legend('Óptimo / tendencia', Gx.optimaCyan),
-            _legend('Transición / incubación', Gx.transitionIndigo),
-            _legend('Alerta / volátil', Gx.alertAmber),
-            _legend('Crítico / muerte', Gx.criticalCrimson),
-          ]),
-        )),
-        _frame('Portada de autopsia', _autopsyHeader(), width: 300),
-      ];
-
-  Widget _organismCard() => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-            gradient: Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
-            borderRadius: BorderRadius.circular(Gx.rPanel),
-            border: Border.all(color: Gx.alertAmber.withOpacity(0.5)),
-            boxShadow: Gx.glow(Gx.alertAmber, blur: 16, opacity: 0.18)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('node-12', style: Gx.dataSmall),
-            _chip('VOLÁTIL', Gx.alertAmber, Gx.alertChipBg, Gx.alertChipBorder),
-          ]),
-          const SizedBox(height: 10),
-          _gauge('Salud', 0.46, Gx.gradAlert, Gx.alertAmber),
-          const SizedBox(height: 6),
-          _gauge('Sharpe', 0.42, Gx.gradAlert, Gx.alertAmber),
-        ]),
-      );
-
-  // Orbe de cristal: gradiente radial + glow potente (sustituye la aberración
-  // cromática que quedaba mal). Limpio, estilo reactor/Apple.
-  Widget _crystalOrb() => _panelSolid(
-        child: Center(
-          child: Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const RadialGradient(
-                colors: [Gx.optimaCyan, Gx.transitionIndigo, Gx.transitionPurple],
-                stops: [0.0, 0.6, 1.0],
-              ),
-              boxShadow: Gx.glowStrong(Gx.transitionIndigo, 1.4),
-            ),
-          ),
-        ),
-      );
-
-  Widget _legend(String t, Color c) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(children: [
-          Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: c,
-                  boxShadow: Gx.glow(c, blur: 8, opacity: 0.8))),
-          const SizedBox(width: 8),
-          Flexible(child: Text(t, style: Gx.bodySecondary, overflow: TextOverflow.ellipsis)),
-        ]),
-      );
-
-  // ---------------------------------------------------------------------------
-  // Secciones extendidas (delegan a archivos en sections/)
-  // ---------------------------------------------------------------------------
-
-  // §5 Navegación: ZUI pill, breadcrumbs, pagination, command palette, tree.
-  List<Widget> _navigation() => [
-        _frame('ZUI Nav Pill', ZuiNavPill()),
-        _frame('Breadcrumbs', _panelSolid(child: breadcrumbs())),
-        _frame('Pagination', _panelSolid(child: GlowPagination())),
-        _frame('Command Palette', const CommandPalette(), width: 320),
-        _frame('Tree View', _panelSolid(child: GlowTreeView()), width: 240),
-        // back-to-top: botón flotante vidrio Apple — §5 STD.
-        _frame('Back to Top', _panelSolid(
-          child: SizedBox(height: 60, child: GlowBackToTop()),
-        )),
-        _frame('Anchor / Scrollspy', GlowScrollspy(), width: 200),
-      ];
-
-  // §6 Inputs extendidos: combobox, multiselect, number, textarea, OTP, rating, rich-text, form-field.
-  List<Widget> _inputsExtended() => [
-        _frame('Combobox / Autocomplete', GlowCombobox()),
-        _frame('Multiselect', GlowMultiSelect()),
-        _frame('Number Input', _panelSolid(child: GlowNumberInput())),
-        _frame('Textarea', GlowTextarea()),
-        _frame('OTP / PIN Input', _panelSolid(child: GlowOtpInput())),
-        _frame('Rating', _panelSolid(child: GlowRating())),
-        _frame('Rich Text (placeholder)', richTextEditorPlaceholder()),
-        _frame('Form Field (normal)', GlowFormField()),
-        _frame('Form Field (error)', GlowFormField(error: true)),
-        // Piezas STD §6 faltantes — cascader, transfer, date-range,
-        // time-picker, color-picker, dropzone, mention.
-        _frame('Cascader', GlowCascader(), width: 300),
-        _frame('Transfer / Dual-list', GlowTransferList(), width: 380),
-        _frame('Date-range Picker', GlowDateRangePicker(), width: 340),
-        _frame('Time Picker', GlowTimePicker(), width: 200),
-        _frame('Color Picker', GlowColorPicker(), width: 260),
-        _frame('File Upload / Dropzone', GlowDropzone(), width: 280),
-        _frame('Mention Input', GlowMentionInput(), width: 280),
-      ];
-
-  // §7 Botones extendidos: toggle, loading, group, FAB, segmented.
-  List<Widget> _buttonsExtended() => [
-        _frame('Toggle Button', _panelSolid(
-            child: Row(children: const [
-          GlowToggleButton(label: 'AUTO', labelOff: 'MANUAL', initial: true),
-          SizedBox(width: 10),
-          GlowToggleButton(label: 'AUTO', labelOff: 'MANUAL', initial: false),
-        ]))),
-        _frame('Loading Button', _panelSolid(child: GlowLoadingButton())),
-        _frame('Button Group', _panelSolid(child: GlowButtonGroup())),
-        _frame('FAB', _panelSolid(child: GlowFab())),
-        _frame('Segmented Control', GlowSegmented()),
-        // Split-button — botón con acción principal + dropdown de variantes. §7 STD.
-        _frame('Split Button', GlowSplitButton(), width: 200),
-      ];
-
-  // §8 Data display extendido: avatar, timeline, code-block, kbd, desc-list,
-  // empty-state, image, progress-circular, popover, tree-table, carousel.
-  List<Widget> _dataDisplayExtended() => [
-        _frame('Avatar Group', _panelSolid(child: avatarGroup())),
-        _frame('Timeline', _panelSolid(child: timeline())),
-        _frame('Code Block', codeBlock(), width: 300),
-        _frame('Kbd', _panelSolid(child: kbdRow())),
-        _frame('Description List', _panelSolid(child: descriptionList())),
-        _frame('Empty State', _panelSolid(child: emptyState())),
-        _frame('Image / Thumbnail', imageThumbnail()),
-        _frame('Progress Circular', _panelSolid(
-          child: Row(children: const [
-            GlowProgressCircular(value: 0.68, color: Gx.transitionIndigo),
-            SizedBox(width: 12),
-            GlowProgressCircular(value: 0.82, color: Gx.optimaCyan),
-            SizedBox(width: 12),
-            GlowProgressCircular(value: 0.35, color: Gx.alertAmber),
-          ]),
-        )),
-        _frame('Popover', popoverExample()),
-        _frame('Tree Table', _panelSolid(child: GlowTreeTable()), width: 340),
-        _frame('Carousel', _panelSolid(child: GlowCarousel()), width: 280),
-      ];
-
-  // §9 Feedback extendido: notification, popconfirm, snackbars, result, backdrop, stepper, accordion.
-  List<Widget> _feedbackExtended() => [
-        _frame('Notification Card', GlowNotificationCard()),
-        _frame('Popconfirm', GlowPopconfirm()),
-        _frame('Snackbar variantes', snackbarVariants(), width: 320),
-        _frame('Result — éxito', resultPage(success: true), width: 260),
-        _frame('Result — error', resultPage(success: false), width: 260),
-        _frame('Backdrop / Scrim', backdropExample(), width: 280),
-        _frame('Stepper / Wizard', _panelSolid(child: GlowStepper()), width: 340),
-        _frame('Accordion / Collapse', GlowAccordion(), width: 300),
-      ];
-
-  // §10 Data-viz extendida: heatmap, scatter, regime-map, parallel-coords,
-  // correlation matrix, drawdown curve.
-  List<Widget> _datavizExtended() => [
-        _frame('Heatmap', _panelSolid(
-          child: SizedBox(height: 120, child: CustomPaint(painter: HeatmapPainter(), size: Size.infinite)),
-        )),
-        _frame('Scatter UMAP/PCA', _panelSolid(
-          child: SizedBox(height: 120, child: CustomPaint(painter: ScatterPainter(), size: Size.infinite)),
-        )),
-        _frame('Regime Map', _panelSolid(
-          child: SizedBox(height: 20, child: CustomPaint(painter: RegimeMapPainter(), size: Size.infinite)),
-        ), width: 360),
-        _frame('Parallel Coordinates', _panelSolid(
-          child: SizedBox(height: 120, child: CustomPaint(painter: ParallelCoordPainter(), size: Size.infinite)),
-        ), width: 360),
-        _frame('Correlation Matrix', _panelSolid(
-          child: SizedBox(height: 140, child: CustomPaint(painter: CorrelationMatrixPainter(), size: Size.infinite)),
-        ), width: 200),
-        _frame('Drawdown Curve (hover)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => DrawdownCurvePainter(hover: h), height: 82),
-        ), width: 360),
-      ];
-
-  // §11 Núcleo Drasus extendido: fleet-command-panel, zui-zoom-frame,
-  // expectation-badge, pipeline-8-steps completo.
-  List<Widget> _drasusCoreExtended() => [
-        _frame('Fleet Command Panel', FleetCommandPanel(), width: 480),
-        _frame('ZUI Zoom Frame', ZuiZoomFrame()),
-        _frame('Expectation Envelope', ExpectationEnvelopeBadge()),
-        _frame('Pipeline 8 pasos', _panelSolid(child: Pipeline8Steps()), width: 400),
-      ];
-
-  // ---------------------------------------------------------------------------
-  // §10 Data-viz cuantitativa (13 gráficos financieros nuevos)
-  // ---------------------------------------------------------------------------
-
-  // Gráficos típicos de plataformas quant con hover interactivo (HoverableChart).
-  // En hover: línea más gruesa, glow intensificado, cursor vertical, punto de datos.
-  List<Widget> _datavizQuant() => [
-        _frame('Equity Curve (hover)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => EquityCurvePainter(hover: h), height: 100),
-        ), width: 360),
-        _frame('Multi-Equity (áreas apiladas)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => MultiEquityOverlayPainter(hover: h), height: 110),
-        ), width: 360),
-        _frame('Walk Forward Analysis', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => WfaChartPainter(hover: h), height: 72),
-        ), width: 380),
-        _frame('Trade Timeline (hover marcas)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => TradeTimelinePainter(hover: h), height: 58),
-        ), width: 360),
-        _frame('Returns Calendar', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => ReturnsCalendarPainter(hover: h), height: 84),
-        ), width: 260),
-        _frame('Fitness Evolution (AG)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => FitnessEvolutionPainter(hover: h), height: 96),
-        ), width: 320),
-        _frame('Rolling Metrics', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => RollingMetricPainter(hover: h), height: 96),
-        ), width: 360),
-        _frame('Underwater Plot', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => UnderwaterPlotPainter(hover: h), height: 82),
-        ), width: 360),
-        _frame('Risk-Return Scatter', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => RiskReturnScatterPainter(hover: h), height: 124),
-        ), width: 260),
-        _frame('Trade Distribution', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => TradeDistributionPainter(hover: h), height: 94),
-        ), width: 320),
-        _frame('Parameter Sensitivity', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => ParameterSensitivityPainter(hover: h), height: 84),
-        ), width: 280),
-        _frame('Regime Timeline', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => RegimeTimelinePainter(hover: h), height: 44),
-        ), width: 380),
-        _frame('Optimization Contour (crosshair)', _panelSolid(
-          padding: EdgeInsets.zero,
-          child: HoverableChart(builder: (h) => OptimizationContourPainter(hover: h), height: 114),
-        ), width: 220),
-      ];
-
-  // §10 Data-viz nuevos: Monte Carlo scanInit eléctrico + Cluster 3D nebulosa.
-  List<Widget> _datavizNew() => [
-        MonteCarloLinesWidget(),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-           child: StrategyCluster3dWidget(),
-        ),
-      ];
-
-  // §10 Data-viz — nodos y conexiones DAG.
-  List<Widget> _dagNodes() => [
-        DagNodesSection(),
-      ];
-
-  // §10 Data-viz — trade tape + ticker bar.
-  List<Widget> _tradeTape() => [
-        TradeTapeSection(),
-      ];
-
-  // Animaciones universales: odómetro, gauge radial, path drawing eléctrico.
-  List<Widget> _animationsNew() => [
-        OdometerSection(),
-        const SizedBox(height: 16),
-        GaugeSection(),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: _panelSolid(
-            padding: EdgeInsets.zero,
-            child: EquityCurveAnimated(),
-          ),
-        ),
-      ];
-
-  // ---------------------------------------------------------------------------
-  // Animaciones de Vitalidad — sonarPulse y scanRing
-  // ---------------------------------------------------------------------------
-
-  // Muestra los dos primitivos de animación de vida definidos en Motion Philosophy
-  // de DESIGN.md: sonarPulse (evento discreto) y scanRing (monitoreo sostenido).
-  List<Widget> _vitalityAnimations() => [
-        _frame('Sonar Pulse (toca)', _panelSolid(
-          child: SizedBox(
-            height: 100,
-            child: Center(
-              child: SonarPulseWidget(
-                color: Gx.optimaCyan,
-                maxRadius: 44,
-                // El orbe de cristal es el subject que emite el pulso al activarse.
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const RadialGradient(
-                      colors: [Gx.optimaCyan, Gx.transitionIndigo, Gx.transitionPurple],
-                      stops: [0.0, 0.6, 1.0],
-                    ),
-                    boxShadow: Gx.glowStrong(Gx.transitionIndigo),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        )),
-        _frame('Scan Ring — activo (2.8s)', _panelSolid(
-          child: SizedBox(
-            height: 100,
-            child: Center(
-              child: ScanRingWidget(
-                color: Gx.optimaCyan,
-                maxRadius: 44,
-                // La célula organismo emite scan rings mientras está en live.
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Gx.surfaceCard,
-                    borderRadius: BorderRadius.circular(Gx.rChip),
-                    border: Border.all(color: Gx.optimaCyan.withOpacity(0.5)),
-                    boxShadow: Gx.glow(Gx.optimaCyan, blur: 12, opacity: 0.2),
-                  ),
-                  child: Text('LIVE', style: TextStyle(
-                      fontFamily: Gx.fontMono,
-                      fontSize: 11,
-                      color: Gx.optimaCyan,
-                      shadows: Gx.textGlow(Gx.optimaCyan))),
-                ),
-              ),
-            ),
-          ),
-        )),
-        _frame('Scan Ring — alerta (1.4s)', _panelSolid(
-          child: SizedBox(
-            height: 100,
-            child: Center(
-              child: ScanRingWidget(
-                color: Gx.alertAmber,
-                maxRadius: 44,
-                // Período más rápido expresa urgencia del estado de alerta.
-                period: const Duration(milliseconds: 1400),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Gx.alertChipBg,
-                    borderRadius: BorderRadius.circular(Gx.rChip),
-                    border: Border.all(color: Gx.alertAmber.withOpacity(0.5)),
-                    boxShadow: Gx.glow(Gx.alertAmber, blur: 12, opacity: 0.25),
-                  ),
-                  child: Text('ALERTA', style: TextStyle(
-                      fontFamily: Gx.fontMono,
-                      fontSize: 11,
-                      color: Gx.alertAmber,
-                      shadows: Gx.textGlow(Gx.alertAmber))),
-                ),
-              ),
-            ),
-          ),
-        )),
-        _frame('Scan Ring — incubando (5s)', _panelSolid(
-          child: SizedBox(
-            height: 100,
-            child: Center(
-              child: ScanRingWidget(
-                color: Gx.transitionIndigo,
-                maxRadius: 44,
-                // Período lento expresa calma de la incubación.
-                period: const Duration(milliseconds: 5000),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Gx.transitionChipBg,
-                    borderRadius: BorderRadius.circular(Gx.rChip),
-                    border: Border.all(color: Gx.transitionIndigo.withOpacity(0.5)),
-                    boxShadow: Gx.glow(Gx.transitionIndigo, blur: 12, opacity: 0.2),
-                  ),
-                  child: Text('INCUBA', style: TextStyle(
-                      fontFamily: Gx.fontMono,
-                      fontSize: 11,
-                      color: Gx.transitionIndigo,
-                      shadows: Gx.textGlow(Gx.transitionIndigo))),
-                ),
-              ),
-            ),
-          ),
-        )),
-      ];
-
-  Widget _autopsyHeader() => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            gradient: Gx.linear([Gx.surfacePanel, Gx.canvasBase]),
-            borderRadius: BorderRadius.circular(Gx.rChrome),
-            border: Border.all(color: Gx.criticalChipBorder),
-            boxShadow: Gx.glow(Gx.criticalCrimson, blur: 20, opacity: 0.2)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('REPORTE FUNERARIO', style: Gx.microLabel),
-          const SizedBox(height: 4),
-          ShaderMask(
-            shaderCallback: (rect) =>
-                const LinearGradient(colors: Gx.gradCosmic).createShader(rect),
-            child: Text('Autopsia',
-                style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.6,
-                    color: Gx.pureWhite)),
-          ),
-          const SizedBox(height: 4),
-          Text('node-19 · slippage letal',
-              style: Gx.dataSmall.copyWith(
-                  color: Gx.criticalRed, shadows: Gx.textGlow(Gx.criticalRed, 6))),
-        ]),
-      );
+/// Representa una categoría con las entradas que pasaron el filtro de búsqueda.
+class _FilteredCategory {
+  final GalleryCategory category;
+  final List<GalleryEntry> entries;
+  const _FilteredCategory(this.category, this.entries);
 }
