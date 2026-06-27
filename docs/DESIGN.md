@@ -124,6 +124,14 @@ La voz de los datos: señala "esto es un número real", no metáfora. Toda cifra
 | zui-title | 32–44px | 1.1 | -0.02em | `textZuiTitle` (display 500) |
 | ceremonial | 56–72px | 1.05 | -0.02em | `textCeremonial` (display 500) |
 
+> **Regla irrompible (2026-06-26) — TODO texto DEBE consumir el theme provider.** Ningún `TextStyle` puede llevar fontSize, fontWeight, fontFamily o color literales en el callsite. Todo texto debe obtenerse de:
+> 1. `Theme.of(context).textTheme.*` (para widgets con acceso al árbol)
+> 2. Los helpers nombrados de Gx (`Gx.body`, `Gx.sectionHeading`, etc.) que DELEGAN a `DrasusThemeState` (para código sin `BuildContext`)
+>
+> Los helpers raw (`Gx.uiSans()`, `Gx.displayGrotesque()`, `Gx.dataMono()`) SOLO se usan para casos excepcionales donde ningún slot del TextTheme ni de la escala Gx cubre el tamaño/rol exacto. En ese caso, se documenta con un comentario que explique por qué se bypassea el provider.
+>
+> **Patrón de detección para el agente:** si un `TextStyle` usa `fontSize:` o `color:` con un literal numérico o `Color(0xFF…)` en cualquier lugar que no sea la definición del tema (`buildThemeData()` o `_syncStyleScale()`), es una **violación**. El agente debe reportarlo como deuda técnica.
+
 ## Tokens — Spacing & Shapes
 
 **Base unit:** 4px
