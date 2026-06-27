@@ -292,6 +292,34 @@ Límite (no lo conviertas en pretexto): esto resuelve dudas **dentro** del marco
 
 ---
 
+## Detección de Bypass del Provider / Deuda Técnica Arquitectónica
+
+**Regla universal:** cualquier capa de código que defina valores de diseño (fontSize, color, spacing, fontWeight) con literales, en paralelo al theme/provider del sistema, es deuda técnica. Detectarla es responsabilidad del agente.
+
+### Patrón a buscar
+
+1. **Escala tipográfica paralela:** helpers estáticos que devuelven `TextStyle` con `fontSize:` literal, sin delegar al `TextTheme` del provider.
+2. **Colores hardcodeados en widgets:** `Colors.*`, `Color(0xFF…` en widgets que deberían usar tokens dinámicos del tema.
+3. **Constantes de espaciado/radio duplicadas:** si un componente usa un literal numérico donde existe un token del sistema (ej. `Gx.space8`, `Gx.rPanel`), es deuda.
+4. **Lógica de estado replicada en la UI:** cálculos financieros o de estado que deberían vivir en Rust y llegan por el Bridge, pero se reimplementan en Dart.
+
+### Qué hacer al detectarlo
+
+1. **Reportarlo** al usuario como deuda técnica, citando archivo y línea exactos.
+2. **Clasificarlo:**
+   - 🟡 **Bypass del provider** (el valor debería venir del tema pero no lo hace) → corregir de inmediato.
+   - 🟠 **Duplicación de constantes** (existe token pero no se usa) → migrar al token.
+   - 🔴 **Lógica de negocio en Dart** (viola FCIS / Cáscara Delgada) → escalar al Tech Lead.
+3. **Proponer corrección** con el patrón correcto (delegar al provider, usar token existente, mover a Rust).
+
+### Dónde aplicar
+Esta regla aplica a TODOS los ingenieros. Cada uno conoce los tokens/providers de su capa:
+- **Flutter**: `Theme.of(context).textTheme`, `DrasusThemeState.*`, `Gx.*`
+- **Rust**: constantes compartidas en `shared/`, config del módulo
+- **Bridge**: contratos tipados, no re-derivar tipos en Dart
+
+---
+
 ## Checkpoint Protocol y Guardas de Calidad
 
 1. **Procesamiento Atómico:** Si la tarea es muy extensa, **DEBES** procesarla en sub-bloques. PROHIBIDO el procesamiento masivo que degrade el rigor del análisis individual.

@@ -94,6 +94,8 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-019 — Centralización del Design System (ADR-0138) | 🟡 parcial (migración → STORY-021) | [Orden](./execution/STORY-019-design-system.md) |
 | STORY-020 — Contrato de tokens extensible (modos N, color de fuente, borde=énfasis, espaciado) | ✅ terminado (QA APTO, contrato congelado) | [Orden](./execution/STORY-020-token-contract.md) |
 | STORY-021 — Estandarización total de la biblioteca de componentes (4 lotes + bugs de interacción) | ✅ terminado (QA APTO, build verde, cobertura 100%) | [Orden](./execution/STORY-021-component-standardization.md) |
+| STORY-022 — Galería navegable maestro-detalle (catálogo bajo demanda, buscador, aislamiento por componente) | ✅ terminado (QA APTO, 3/3 tests verdes, build verde) | [Orden](./execution/STORY-022-gallery-isolation.md) |
+| STORY-023 — Tipografía unificada Rajdhani; escala tipográfica y tabs vía provider (registro retroactivo) | ✅ terminado (build verde, escala dinámica activa) | [Orden](./execution/STORY-023-rajdhani-typography.md) |
 
 > **Biblioteca de Componentes UI + Sistema de Tema (registro retroactivo, 2026-06-25):** el tema dinámico, las cáscaras de Tablero/Lienzo, el design system y la galería de ~160 componentes se construyeron de forma ad-hoc entre commits **sin Story ni Orden de Trabajo** (deuda de gobernanza). STORY-016 a 019 los registran retroactivamente con su estado real; STORY-020 extiende el contrato de tokens (tema extensible, ADR-0138 enmienda 2026-06-25) y STORY-021 estandariza toda la biblioteca y corrige bugs de interacción. La galería es biblioteca de producción: piezas reutilizables hoy sin lógica; la lógica se enchufa por épica.
 
