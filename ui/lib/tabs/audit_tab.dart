@@ -3,8 +3,8 @@
 // y los últimos 8 caracteres del hash de cadena para verificación visual.
 
 import 'package:flutter/material.dart';
-// Importa AuditEventSummary y getRecentAuditEvents() del Bridge.
 import '../src/rust/api/audit.dart';
+import '../gallery/gallery_tokens.dart';
 
 // Ruta a la base de datos SQLite de Drasus. La misma constante que jobs_tab.dart.
 // Si en el futuro se configura dinámicamente, se pasa como parámetro al widget.
@@ -71,9 +71,9 @@ class _AuditTabState extends State<AuditTab> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Últimos 50 eventos de auditoría',
-                style: TextStyle(fontFamily: 'monospace', color: Colors.grey),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Gx.textBaseMuted),
               ),
               IconButton(
                 icon: const Icon(Icons.refresh),
@@ -98,10 +98,7 @@ class _AuditTabState extends State<AuditTab> {
                 return Center(
                   child: Text(
                     'Error al consultar bitácora:\n${snapshot.error}',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      color: Colors.red,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Gx.criticalRed),
                     textAlign: TextAlign.center,
                   ),
                 );
@@ -109,10 +106,10 @@ class _AuditTabState extends State<AuditTab> {
               // Datos listos — snapshot.data es la List<AuditEventSummary>.
               final eventos = snapshot.data ?? [];
               if (eventos.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
                     'Sin eventos de auditoría registrados.',
-                    style: TextStyle(fontFamily: 'monospace', color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Gx.textBaseMuted),
                   ),
                 );
               }
@@ -133,27 +130,18 @@ class _AuditTabState extends State<AuditTab> {
                     // Tipo de acción (ORDER_STATE_CHANGE, USER_VETO, etc.)
                     title: Text(
                       evento.actionType,
-                      style: const TextStyle(fontFamily: 'monospace'),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                     // Tipo de entidad afectada por la acción.
                     subtitle: Text(
                       '${evento.entityType}  ·  $fecha',
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        color: Colors.white38,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Gx.textBaseMuted),
                     ),
                     // Últimos 8 chars del hash de cadena en verde — convención
                     // de terminal para datos de integridad criptográfica.
                     trailing: Text(
                       hashVis,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        // Verde fosforescente: señal visual de "dato de integridad".
-                        color: Color(0xFF80FF80),
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Gx.reactorGreen),
                     ),
                   );
                 },

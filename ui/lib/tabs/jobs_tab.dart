@@ -3,8 +3,8 @@
 // Consulta el Bridge al montar y permite refrescar manualmente.
 
 import 'package:flutter/material.dart';
-// Importa JobSummary y getJobsSummary() del Bridge.
 import '../src/rust/api/jobs.dart';
+import '../gallery/gallery_tokens.dart';
 
 // Ruta a la base de datos SQLite de Drasus en el sistema de archivos local.
 // Esta constante centraliza la ruta para que sea fácil de cambiar si el
@@ -59,21 +59,16 @@ class _JobsTabState extends State<JobsTab> {
   Color _colorPorEstado(String estado) {
     switch (estado) {
       case 'QUEUED':
-        // Amarillo: esperando su turno en la cola.
-        return Colors.amber;
+        return Gx.alertAmber;
       case 'RUNNING':
-        // Azul: ejecutándose ahora mismo.
-        return Colors.blue;
+        return Gx.transitionIndigo;
       case 'COMPLETED':
-        // Verde: terminado con éxito.
-        return Colors.green;
+        return Gx.reactorGreen;
       case 'FAILED':
       case 'CANCELLED':
-        // Rojo: falló o fue cancelado.
-        return Colors.red;
+        return Gx.criticalCrimson;
       default:
-        // Gris: estado desconocido o futuro no contemplado.
-        return Colors.grey;
+        return Gx.textBaseMuted;
     }
   }
 
@@ -89,9 +84,9 @@ class _JobsTabState extends State<JobsTab> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Últimos 20 trabajos',
-                style: TextStyle(fontFamily: 'monospace', color: Colors.grey),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Gx.textBaseMuted),
               ),
               // Botón de refresco: lanza una nueva consulta al Bridge.
               IconButton(
@@ -119,10 +114,7 @@ class _JobsTabState extends State<JobsTab> {
                 return Center(
                   child: Text(
                     'Error al consultar trabajos:\n${snapshot.error}',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      color: Colors.red,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Gx.criticalRed),
                     textAlign: TextAlign.center,
                   ),
                 );
@@ -130,10 +122,10 @@ class _JobsTabState extends State<JobsTab> {
               // datos listos — snapshot.data es la List<JobSummary> del Bridge.
               final jobs = snapshot.data ?? [];
               if (jobs.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
                     'Sin trabajos registrados.',
-                    style: TextStyle(fontFamily: 'monospace', color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Gx.textBaseMuted),
                   ),
                 );
               }
@@ -157,25 +149,17 @@ class _JobsTabState extends State<JobsTab> {
                     // ID truncado del trabajo — suficiente para identificarlo visualmente.
                     leading: Text(
                       idCorto,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: Colors.white54,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Gx.textBaseSecondary),
                     ),
                     // Tipo de trabajo (BACKTEST, INGEST, etc.)
                     title: Text(
                       job.jobType,
-                      style: const TextStyle(fontFamily: 'monospace'),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                     // Fecha de creación del trabajo.
                     subtitle: Text(
                       fecha,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        color: Colors.white38,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Gx.textBaseMuted),
                     ),
                     // Chip de estado con color según el valor del campo.
                     trailing: Container(
@@ -192,9 +176,7 @@ class _JobsTabState extends State<JobsTab> {
                       ),
                       child: Text(
                         job.state,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 11,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: _colorPorEstado(job.state),
                         ),
                       ),

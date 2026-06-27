@@ -4,8 +4,8 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-// Importa la función getClockTimestampNs() expuesta por el Bridge Rust.
 import '../src/rust/api/clock.dart';
+import '../gallery/gallery_tokens.dart';
 
 // ClockTab es un StatefulWidget porque necesita actualizar lo que muestra
 // en pantalla cada segundo. Un StatelessWidget no puede cambiar por sí solo.
@@ -89,24 +89,15 @@ class _ClockTabState extends State<ClockTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Etiqueta descriptiva — no cambia entre frames.
-          const Text(
+          Text(
             'Reloj determinista Drasus',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 14,
-              color: Colors.grey,
-            ),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Gx.textBaseMuted),
           ),
           const SizedBox(height: 12),
           // Timestamp en nanosegundos — valor bruto del Bridge.
           Text(
             _timestampNs > 0 ? '$_timestampNs ns' : 'cargando...',
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 22,
-              // Verde claro para datos "vivos" — convención de terminales.
-              color: Color(0xFF80FF80),
-            ),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Gx.reactorGreen),
           ),
           const SizedBox(height: 8),
           // Fecha y hora legible en UTC.
@@ -114,11 +105,7 @@ class _ClockTabState extends State<ClockTab> {
             fechaHora != null
                 ? fechaHora.toIso8601String()
                 : '—',
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 16,
-              color: Colors.white70,
-            ),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Gx.textBaseSecondary),
           ),
         ],
       ),

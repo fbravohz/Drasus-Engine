@@ -79,7 +79,7 @@ const Map<DrasusBackgroundPalette, String> _kPaletteNames = {
 // SettingsDrawer — panel lateral de 320px de ancho con vidrio Apple.
 // ---------------------------------------------------------------------------
 
-// Se monta como endDrawer del Scaffold en PanelOperativo.
+// Se monta como endDrawer del Scaffold en OperationalPanel.
 // Al abrirlo, Flutter anima la entrada desde la derecha de forma nativa.
 class SettingsDrawer extends StatelessWidget {
   const SettingsDrawer({super.key});

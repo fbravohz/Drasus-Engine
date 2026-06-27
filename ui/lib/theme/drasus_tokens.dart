@@ -2,12 +2,12 @@
 // Cuatro ThemeExtension<T>: vidrio, motion, superficies y paleta.
 // Ningún token de estas familias vive como constante suelta fuera de aquí.
 //
-// Los defaults se tomaron de gallery_tokens.dart y drasus_theme.dart
+// Los defaults se tomaron de gallery_tokens.dart y drasus_palettes.dart
 // (no se inventó ningún valor). Flutter exige copyWith + lerp para que
 // las transiciones animadas entre temas funcionen.
 
 import 'package:flutter/material.dart';
-import '../drasus_theme.dart';
+import 'drasus_palettes.dart';
 
 // ---------------------------------------------------------------------------
 // DrasusGlass — vidrio Apple (chrome translúcido + rim-light).
@@ -181,7 +181,7 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
     required this.panelBorder,
   });
 
-  // Defaults del bunker nocturno (drasus_theme.dart _kPalettes[bunker] + Gx).
+  // Defaults del bunker nocturno (drasus_palettes.dart kPalettes[bunker] + Gx).
   static const defaults = DrasusSurfaces(
     deepSpace: Color(0xFF04050E),
     navRail: Color(0xFF060819),
@@ -247,7 +247,7 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
 class DrasusPalette extends ThemeExtension<DrasusPalette> {
   // Acento elegido por el usuario (chrome interactivo). Default: transitionIndigo.
   final Color accentColor;
-  // Paleta de fondo activa (enum existente en drasus_theme.dart).
+  // Paleta de fondo activa (enum existente en drasus_palettes.dart).
   final DrasusBackgroundPalette backgroundPalette;
 
   const DrasusPalette({

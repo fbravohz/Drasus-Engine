@@ -141,13 +141,7 @@ class GlassBentoCard extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFE6ECF8),
-                      letterSpacing: 0.5,
-                    ),
+                  style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const Spacer(),
                   Text(

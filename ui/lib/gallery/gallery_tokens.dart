@@ -6,8 +6,7 @@
 // Tipografía: los helpers displayGrotesque / uiSans / dataMono usan los .ttf
 // embebidos en assets/fonts/ (declarados en pubspec.yaml). Google Fonts ya NO
 // se usa para servir las familias en runtime: las fuentes son 100% offline.
-// google_fonts sigue presente en pubspec.yaml por si otras partes del proyecto
-// lo necesitan, pero los helpers de la galería NO lo invocan.
+// google_fonts se eliminó de pubspec.yaml; toda la tipografía es offline.
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
@@ -201,9 +200,9 @@ class Gx {
   // assets/fonts/ (declarados en pubspec.yaml). 100% offline, sin google_fonts
   // en runtime. Los nombres de familia deben coincidir con los de pubspec.yaml.
   //
-  // displayGrotesque → SpaceGrotesk (sabor técnico/terminal, w500)
-  // uiSans           → Inter (fuerza de trabajo, w400/500)
-  // dataMono         -> JetBrainsMono (números e IDs, w400/500)
+  // displayGrotesque → Rajdhani (títulos)
+  // uiSans           → Rajdhani (UI general)
+  // dataMono         → Rajdhani (datos/números)
   //
   // Las firmas de los helpers son idénticas a las anteriores (con GoogleFonts)
   // para no tener que tocar ningún callsite en el resto de la galería.
@@ -213,8 +212,7 @@ class Gx {
   static String get fontSans => DrasusThemeState.globalFontSans;
   static String get fontMono => DrasusThemeState.globalFontMono;
 
-  // Helper: retorna un TextStyle con Space Grotesk (display grotesco).
-  // Usa la familia embebida en assets/fonts/SpaceGrotesk-Medium.ttf.
+  // Helper: retorna un TextStyle con Rajdhani (display grotesco).
   // NOTA: SIN default de color — el llamante DEBE elegir explícitamente
   // entre textBase / textBaseLabel / textBaseSecondary / textBaseMuted.
   static TextStyle displayGrotesque({
@@ -233,8 +231,7 @@ class Gx {
         letterSpacing: letterSpacing,
       );
 
-  // Helper: retorna un TextStyle con Inter (sans de UI).
-  // Usa las familias embebidas en assets/fonts/Inter-Regular.ttf y Inter-Medium.ttf.
+  // Helper: retorna un TextStyle con Rajdhani (sans de UI).
   // NOTA: SIN default de color — el llamante DEBE elegir explícitamente.
   static TextStyle uiSans({
     double fontSize = 14,
@@ -250,8 +247,7 @@ class Gx {
         fontWeight: weight,
       );
 
-  // Helper: retorna un TextStyle con JetBrains Mono (datos y números).
-  // Usa las familias embebidas en assets/fonts/JetBrainsMono-Regular.ttf y -Medium.ttf.
+  // Helper: retorna un TextStyle con Rajdhani (datos y números).
   // NOTA: SIN default de color — el llamante DEBE elegir explícitamente.
   static TextStyle dataMono({
     double fontSize = 13,
@@ -267,39 +263,19 @@ class Gx {
         fontWeight: weight,
       );
 
-  // Type Scale de DESIGN.md — se usan los helpers arriba para asignar familias.
-  // Las constantes que usan google_fonts no pueden ser 'const' porque los
-  // TextStyle devueltos incluyen referencias a FontLoader, que no es const.
-  static TextStyle get microLabel =>
-      uiSans(fontSize: 13, height: 1.3, color: textBaseLabel);
-  static TextStyle get label =>
-      uiSans(fontSize: 14, height: 1.4, color: textBaseLabel);
-  static TextStyle get body =>
-      uiSans(fontSize: 14, height: 1.5, color: textBase);
-  static TextStyle get bodySecondary =>
-      uiSans(fontSize: 14, height: 1.5, color: textBaseSecondary);
-  static TextStyle get subheading =>
-      uiSans(fontSize: 16, height: 1.5, color: textBase);
-  static TextStyle get panelTitle => displayGrotesque(
-      fontSize: 16, height: 1.3, color: textBaseSecondary, weight: FontWeight.w500);
-  static TextStyle get sectionHeading => displayGrotesque(
-      fontSize: 22,
-      height: 1.15,
-      color: textBase,
-      weight: FontWeight.w500,
-      letterSpacing: -0.4);
-  static TextStyle get zuiTitle => displayGrotesque(
-      fontSize: 40,
-      height: 1.1,
-      color: textBase,
-      weight: FontWeight.w500,
-      letterSpacing: -0.8);
-
-  // Datos en JetBrains Mono (numStyle de DESIGN.md).
-  static TextStyle get dataSmall =>
-      dataMono(fontSize: 14, height: 1.4, color: textBase);
-  static TextStyle get dataHero =>
-      dataMono(fontSize: 28, height: 1.1, color: textBase);
+  // Type Scale de DESIGN.md — DELEGAN al theme provider vía DrasusThemeState.
+  // Prohibido hardcodear fontSize/color aquí: todo viene de _syncStyleScale()
+  // en DrasusThemeState, que a su vez deriva del TextTheme de buildThemeData().
+  static TextStyle get microLabel => DrasusThemeState.globalMicroLabel;
+  static TextStyle get label => DrasusThemeState.globalLabel;
+  static TextStyle get body => DrasusThemeState.globalBody;
+  static TextStyle get bodySecondary => DrasusThemeState.globalBodySecondary;
+  static TextStyle get subheading => DrasusThemeState.globalSubheading;
+  static TextStyle get panelTitle => DrasusThemeState.globalPanelTitle;
+  static TextStyle get sectionHeading => DrasusThemeState.globalSectionHeading;
+  static TextStyle get zuiTitle => DrasusThemeState.globalZuiTitle;
+  static TextStyle get dataSmall => DrasusThemeState.globalDataSmall;
+  static TextStyle get dataHero => DrasusThemeState.globalDataHero;
 
   // --- Gradientes (compatibles entre los colores del sistema) ---
   // Cada gradiente se queda DENTRO de una familia semántica, así el color sigue

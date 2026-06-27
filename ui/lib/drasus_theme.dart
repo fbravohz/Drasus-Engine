@@ -1,174 +1,25 @@
 // Sistema de temas dinámico de Drasus Engine.
-// Provee el color de énfasis (accentColor) y la paleta de fondo activa
-// a todo el árbol de widgets sin pasar parámetros a mano.
+// Gestiona el estado mutable del tema (acento, paleta, modo de superficie,
+// fuentes) y lo expone al árbol de widgets vía InheritedNotifier.
 //
 // Patrón: InheritedWidget + ChangeNotifier + SharedPreferences.
 // InheritedWidget → lectura O(1) desde cualquier widget del árbol.
 // ChangeNotifier  → rebuilds reactivos cuando cambia el tema.
 // SharedPreferences → el tema elegido sobrevive reinicios de la app.
+//
+// Tipos de datos puros (enums, paletas, defaults) → theme/drasus_palettes.dart
+// ThemeExtension (vidrio, movimiento, superficies) → theme/drasus_tokens.dart
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'theme/drasus_palettes.dart';
 import 'theme/drasus_tokens.dart';
+// Re-exporta los tipos públicos de paletas para que los consumidores existentes
+// no necesiten cambiar su import de 'drasus_theme.dart'.
+export 'theme/drasus_palettes.dart';
 
 // ---------------------------------------------------------------------------
-// Paleta de fondo — los 8 modos de ambientación disponibles.
-// ---------------------------------------------------------------------------
-
-// Cada valor representa un esquema de color completo para las 5 capas
-// de superficie (deepSpace → surfaceRaised). El nombre "void_" lleva
-// guión bajo para evitar colisión con la palabra reservada "void" de Dart.
-enum DrasusBackgroundPalette {
-  bunker,
-  ash,
-  crimson,
-  forest,
-  navy,
-  void_,
-  slate,
-  paper,
-}
-
-// ---------------------------------------------------------------------------
-// Modo global de superficie — controla qué receta visual usan TODOS los
-// componentes que dibujan superficies (frosted, GlassSurface, inputs, paneles).
-// Cambiar aquí = cambia en toda la app sin tocar componente por componente.
-// Para añadir un nuevo modo: (1) añade el valor aquí y (2) añade su entrada
-// en kSurfaceModeRegistry. Los componentes NO necesitan actualizarse.
-// ---------------------------------------------------------------------------
-enum DrasusSurfaceMode {
-  glass,         // BackdropFilter + blur 36 + rim-light (vidrio Apple completo)
-  tint,          // Solo glassFill sin blur (panel translúcido ligero)
-  solid,         // panelSolid/cardInner (sólido oscuro, sin translucidez)
-  enhancedGlass, // Gradiente profundo + borde de énfasis dinámico + glow amplio
-}
-
-// ---------------------------------------------------------------------------
-// Receta de metadatos por modo de superficie.
-// label:       etiqueta que el panel de configuración muestra al usuario.
-// description: descripción breve del efecto visual (tooltip / subtítulo).
-// ---------------------------------------------------------------------------
-class SurfaceModeRecipe {
-  final String label;
-  final String description;
-  const SurfaceModeRecipe({required this.label, required this.description});
-}
-
-// Registro completo de modos de superficie.
-// EL PANEL ITERA ESTE MAPA — nunca una lista hardcodeada.
-// Añadir un 5º/6º modo = una entrada aquí + su lógica en frosted()/GlassSurface.
-// Cero cambios en componentes.
-const Map<DrasusSurfaceMode, SurfaceModeRecipe> kSurfaceModeRegistry = {
-  DrasusSurfaceMode.glass: SurfaceModeRecipe(
-    label: 'Vidrio Apple',
-    description: 'BackdropFilter blur 36 + rim-light',
-  ),
-  DrasusSurfaceMode.tint: SurfaceModeRecipe(
-    label: 'Translúcido',
-    description: 'Solo glassFill sin blur ni rim',
-  ),
-  DrasusSurfaceMode.solid: SurfaceModeRecipe(
-    label: 'Sólido oscuro',
-    description: 'panelSolid sin translucidez, para datos densos',
-  ),
-  DrasusSurfaceMode.enhancedGlass: SurfaceModeRecipe(
-    label: 'Vidrio Premium',
-    description: 'Gradiente profundo + borde de énfasis + glow amplio',
-  ),
-};
-
-// ---------------------------------------------------------------------------
-// Paleta de superficie — los 5 colores que componen una paleta de fondo.
-// ---------------------------------------------------------------------------
-
-// deepSpace: el lienzo base más oscuro (fondo del canvas/ZUI).
-// navRail: superficie del riel de navegación lateral.
-// panelSolid: panel de datos con borde.
-// cardInner: tarjeta interna dentro del panel.
-// surfaceRaised: hover de fila, celda activa, superficie elevada.
-class DrasusSurfacePalette {
-  final Color deepSpace;
-  final Color navRail;
-  final Color panelSolid;
-  final Color cardInner;
-  final Color surfaceRaised;
-
-  const DrasusSurfacePalette({
-    required this.deepSpace,
-    required this.navRail,
-    required this.panelSolid,
-    required this.cardInner,
-    required this.surfaceRaised,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Mapa canónico de paletas: DrasusBackgroundPalette → DrasusSurfacePalette.
-// Hexadecimales spec de DESIGN.md (2026-06-24).
-// ÚNICA fuente de verdad de los colores de paleta. Público para que el
-// SettingsDrawer y cualquier otro consumidor lo lea sin duplicarlo (ADR-0139).
-// ---------------------------------------------------------------------------
-const Map<DrasusBackgroundPalette, DrasusSurfacePalette> kPalettes = {
-  DrasusBackgroundPalette.bunker: DrasusSurfacePalette(
-    deepSpace: Color(0xFF04050E),
-    navRail: Color(0xFF060819),
-    panelSolid: Color(0xFF090D1F),
-    cardInner: Color(0xFF0C1228),
-    surfaceRaised: Color(0xFF111833),
-  ),
-  DrasusBackgroundPalette.ash: DrasusSurfacePalette(
-    deepSpace: Color(0xFF070707),
-    navRail: Color(0xFF0A0A0A),
-    panelSolid: Color(0xFF0D0D0D),
-    cardInner: Color(0xFF111111),
-    surfaceRaised: Color(0xFF161616),
-  ),
-  DrasusBackgroundPalette.crimson: DrasusSurfacePalette(
-    deepSpace: Color(0xFF0E0406),
-    navRail: Color(0xFF160608),
-    panelSolid: Color(0xFF1A080B),
-    cardInner: Color(0xFF1E0B0F),
-    surfaceRaised: Color(0xFF231215),
-  ),
-  DrasusBackgroundPalette.forest: DrasusSurfacePalette(
-    deepSpace: Color(0xFF040E06),
-    navRail: Color(0xFF061508),
-    panelSolid: Color(0xFF091A0B),
-    cardInner: Color(0xFF0C1E0E),
-    surfaceRaised: Color(0xFF112414),
-  ),
-  DrasusBackgroundPalette.navy: DrasusSurfacePalette(
-    deepSpace: Color(0xFF04080E),
-    navRail: Color(0xFF060C18),
-    panelSolid: Color(0xFF090F1F),
-    cardInner: Color(0xFF0C1428),
-    surfaceRaised: Color(0xFF111B33),
-  ),
-  DrasusBackgroundPalette.void_: DrasusSurfacePalette(
-    deepSpace: Color(0xFF07040E),
-    navRail: Color(0xFF0A0619),
-    panelSolid: Color(0xFF0D091F),
-    cardInner: Color(0xFF110D28),
-    surfaceRaised: Color(0xFF161233),
-  ),
-  DrasusBackgroundPalette.slate: DrasusSurfacePalette(
-    deepSpace: Color(0xFFD8DCE8),
-    navRail: Color(0xFFCDD2DF),
-    panelSolid: Color(0xFFC2C8D6),
-    cardInner: Color(0xFFB7BECD),
-    surfaceRaised: Color(0xFFACB4C4),
-  ),
-  DrasusBackgroundPalette.paper: DrasusSurfacePalette(
-    deepSpace: Color(0xFFF0F2F8),
-    navRail: Color(0xFFE5E8F0),
-    panelSolid: Color(0xFFDADEE8),
-    cardInner: Color(0xFFCFD4E0),
-    surfaceRaised: Color(0xFFC4CAD8),
-  ),
-};
-
-// ---------------------------------------------------------------------------
-// DrasusThemeState — el estado mutable del tema, persiste en SharedPreferences.
+// Claves y defaults de SharedPreferences.
 // ---------------------------------------------------------------------------
 
 // Clave de persistencia para el color de énfasis (entero ARGB serializado).
@@ -199,56 +50,10 @@ const _kDefaultSurfaceMode = DrasusSurfaceMode.glass;
 // Color de fondo de componentes por defecto: midnight blue sutil.
 // Base neutra oscura que funciona como tinte en glass y fondo en solid.
 const _kDefaultComponentBg = Color(0xFF1A1A2E);
-// Familias tipográficas por defecto.
-const _kDefaultFontDisplay = 'SpaceGrotesk';
-const _kDefaultFontSans = 'Inter';
-const _kDefaultFontMono = 'JetBrainsMono';
-
-// ---------------------------------------------------------------------------
-// Color de texto base por paleta.
-// Claro (0xFFE6ECF8) sobre fondos oscuros; oscuro (0xFF1A1E2E) sobre fondos
-// claros (slate y paper). Ningún componente hardcodea el color del texto base.
-// ---------------------------------------------------------------------------
-const Map<DrasusBackgroundPalette, Color> kTextDefaults = {
-  DrasusBackgroundPalette.bunker: Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.ash:    Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.crimson: Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.forest: Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.navy:   Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.void_:  Color(0xFFE6ECF8),
-  DrasusBackgroundPalette.slate:  Color(0xFF1A1E2E), // oscuro sobre fondo claro
-  DrasusBackgroundPalette.paper:  Color(0xFF1A1E2E), // oscuro sobre fondo claro
-};
-
-// ---------------------------------------------------------------------------
-// Color de fondo de componentes automático por paleta.
-// ---------------------------------------------------------------------------
-const Map<DrasusBackgroundPalette, Color> kAutoComponentBgDefaults = {
-  DrasusBackgroundPalette.bunker: Color(0xFF090D1F),
-  DrasusBackgroundPalette.ash:    Color(0xFF0D0D0D),
-  DrasusBackgroundPalette.crimson: Color(0xFF1A080B),
-  DrasusBackgroundPalette.forest: Color(0xFF091A0B),
-  DrasusBackgroundPalette.navy:   Color(0xFF090F1F),
-  DrasusBackgroundPalette.void_:  Color(0xFF0D091F),
-  DrasusBackgroundPalette.slate:  Color(0xFFC2C8D6), // claro para fondo claro
-  DrasusBackgroundPalette.paper:  Color(0xFFDADEE8), // claro para fondo claro
-};
-
-// ---------------------------------------------------------------------------
-// Color de énfasis automático por paleta.
-// Oscuros → mantiene el default transitionIndigo. Claros → variante más
-// oscura para mantener contraste sobre fondo blanco.
-// ---------------------------------------------------------------------------
-const Map<DrasusBackgroundPalette, Color> kAutoAccentDefaults = {
-  DrasusBackgroundPalette.bunker:  Color(0xFF9A8CFF), // transitionIndigo
-  DrasusBackgroundPalette.ash:     Color(0xFF9A8CFF),
-  DrasusBackgroundPalette.crimson: Color(0xFFCC2B2B), // criticalCrimson oscuro
-  DrasusBackgroundPalette.forest:  Color(0xFF54E8D0), // optimaCyan
-  DrasusBackgroundPalette.navy:    Color(0xFF56A8FF), // transitionBlue
-  DrasusBackgroundPalette.void_:   Color(0xFF9A8CFF),
-  DrasusBackgroundPalette.slate:   Color(0xFF6C5CE7), // indigo más oscuro para fondo claro
-  DrasusBackgroundPalette.paper:   Color(0xFF6C5CE7), // indigo más oscuro para fondo claro
-};
+// Familias tipográficas por defecto — todas Rajdhani.
+const _kDefaultFontDisplay = 'Rajdhani';
+const _kDefaultFontSans = 'Rajdhani';
+const _kDefaultFontMono = 'Rajdhani';
 
 // ---------------------------------------------------------------------------
 // Espejos estáticos globales — leídos por Gx helpers sin BuildContext.
@@ -271,6 +76,24 @@ String _globalFontMono = _kDefaultFontMono;
 Color _globalCanvasBase = kPalettes[_kDefaultPalette]!.deepSpace;
 // Espejo del color raised/hover (surfaceRaised de la paleta activa).
 Color _globalSurfaceRaised = kPalettes[_kDefaultPalette]!.surfaceRaised;
+
+// Espejos estáticos de la escala Gx, sincronizados en _syncStyleScale().
+// Permiten que los helpers nombrados Gx deleguen al theme provider en vez de
+// llevar fontSize/color hardcodeados (patrón de bypass — prohibido).
+TextStyle _globalMicroLabel = const TextStyle(fontSize: 13);
+TextStyle _globalLabel = const TextStyle(fontSize: 14);
+TextStyle _globalBody = const TextStyle(fontSize: 14);
+TextStyle _globalBodySecondary = const TextStyle(fontSize: 14);
+TextStyle _globalSubheading = const TextStyle(fontSize: 16);
+TextStyle _globalPanelTitle = const TextStyle(fontSize: 16);
+TextStyle _globalSectionHeading = const TextStyle(fontSize: 22);
+TextStyle _globalZuiTitle = const TextStyle(fontSize: 40);
+TextStyle _globalDataSmall = const TextStyle(fontSize: 14);
+TextStyle _globalDataHero = const TextStyle(fontSize: 28);
+
+// ---------------------------------------------------------------------------
+// DrasusThemeState — el estado mutable del tema, persiste en SharedPreferences.
+// ---------------------------------------------------------------------------
 
 // DrasusThemeState notifica a todos los widgets suscritos cuando el tema cambia.
 class DrasusThemeState extends ChangeNotifier {
@@ -342,35 +165,50 @@ class DrasusThemeState extends ChangeNotifier {
   static Color get globalCanvasBase => _globalCanvasBase;
   static Color get globalSurfaceRaised => _globalSurfaceRaised;
 
+  // Getters estáticos para la escala Gx — espejos sincronizados en _syncStyleScale().
+  static TextStyle get globalMicroLabel => _globalMicroLabel;
+  static TextStyle get globalLabel => _globalLabel;
+  static TextStyle get globalBody => _globalBody;
+  static TextStyle get globalBodySecondary => _globalBodySecondary;
+  static TextStyle get globalSubheading => _globalSubheading;
+  static TextStyle get globalPanelTitle => _globalPanelTitle;
+  static TextStyle get globalSectionHeading => _globalSectionHeading;
+  static TextStyle get globalZuiTitle => _globalZuiTitle;
+  static TextStyle get globalDataSmall => _globalDataSmall;
+  static TextStyle get globalDataHero => _globalDataHero;
+
+  // Construye el TextTheme temático desde el estado actual de la instancia.
+  // También lo usa _syncStyleScale() para mantener los espejos Gx sincronizados.
+  TextTheme _buildTextTheme() {
+    final tColor = effectiveTextColor;
+    final base = TextStyle(fontFamily: _fontSans, color: tColor);
+    return TextTheme(
+      displayLarge: base.copyWith(fontSize: 40, fontWeight: FontWeight.w500, letterSpacing: -0.8, fontFamily: _fontDisplay),
+      displayMedium: base.copyWith(fontSize: 32, fontWeight: FontWeight.w500, fontFamily: _fontDisplay),
+      displaySmall: base.copyWith(fontSize: 22, fontWeight: FontWeight.w500, fontFamily: _fontDisplay, letterSpacing: -0.4),
+      headlineLarge: base.copyWith(fontSize: 20, fontWeight: FontWeight.w500),
+      headlineMedium: base.copyWith(fontSize: 18, fontWeight: FontWeight.w500),
+      headlineSmall: base.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+      titleLarge: base.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+      titleMedium: base.copyWith(fontSize: 14, fontWeight: FontWeight.w500),
+      titleSmall: base.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+      bodyLarge: base.copyWith(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5),
+      bodyMedium: base.copyWith(fontSize: 13, fontWeight: FontWeight.w400, height: 1.5),
+      bodySmall: base.copyWith(fontSize: 12, fontWeight: FontWeight.w400, height: 1.4),
+      labelLarge: base.copyWith(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: _fontMono),
+      labelMedium: base.copyWith(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: _fontMono),
+      labelSmall: base.copyWith(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: _fontMono),
+    );
+  }
+
   // Construye el ThemeData unificado con las cuatro ThemeExtension de
   // ADR-0138. La textTheme se mapea explícitamente para que cualquier widget
   // Text() que use Theme.of(context).textTheme.* obtenga nuestras familias
   // tipográficas sin depender de los helpers Gx en cada callsite.
   ThemeData buildThemeData() {
     final pal = kPalettes[_palette]!;
-    final tColor = effectiveTextColor;
-    final baseTextStyle = TextStyle(
-      fontFamily: _fontSans,
-      color: tColor,
-    );
     return ThemeData.dark(useMaterial3: true).copyWith(
-      textTheme: TextTheme(
-        displayLarge: baseTextStyle.copyWith(fontSize: 40, fontWeight: FontWeight.w500, letterSpacing: -0.8, fontFamily: _fontDisplay),
-        displayMedium: baseTextStyle.copyWith(fontSize: 32, fontWeight: FontWeight.w500, fontFamily: _fontDisplay),
-        displaySmall: baseTextStyle.copyWith(fontSize: 22, fontWeight: FontWeight.w500, fontFamily: _fontDisplay, letterSpacing: -0.4),
-        headlineLarge: baseTextStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w500),
-        headlineMedium: baseTextStyle.copyWith(fontSize: 18, fontWeight: FontWeight.w500),
-        headlineSmall: baseTextStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
-        titleLarge: baseTextStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
-        titleMedium: baseTextStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w500),
-        titleSmall: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
-        bodyLarge: baseTextStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5),
-        bodyMedium: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w400, height: 1.5),
-        bodySmall: baseTextStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, height: 1.4),
-        labelLarge: baseTextStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: _fontMono),
-        labelMedium: baseTextStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, fontFamily: _fontMono),
-        labelSmall: baseTextStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w400, fontFamily: _fontMono),
-      ),
+      textTheme: _buildTextTheme(),
       extensions: [
         DrasusGlass.defaults,
         DrasusMotion.defaults,
@@ -378,6 +216,25 @@ class DrasusThemeState extends ChangeNotifier {
         DrasusPalette(accentColor: _accentColor, backgroundPalette: _palette),
       ],
     );
+  }
+
+  /// Reconstruye los espejos estáticos de la escala Gx desde el estado actual.
+  /// Se llama al final de load() y en cada mutador que afecte texto
+  /// (color, familia tipográfica). Mantiene _globalMicroLabel, _globalBody,
+  /// etc. sincronizados para que los helpers Gx deleguen al theme provider.
+  void _syncStyleScale() {
+    final tt = _buildTextTheme();
+    final tColor = effectiveTextColor;
+    _globalMicroLabel = tt.titleSmall?.copyWith(color: tColor.withOpacity(0.55)) ?? _globalMicroLabel;
+    _globalLabel = tt.titleMedium?.copyWith(color: tColor.withOpacity(0.55)) ?? _globalLabel;
+    _globalBody = tt.bodyLarge ?? _globalBody;
+    _globalBodySecondary = tt.bodyLarge?.copyWith(color: tColor.withOpacity(0.75)) ?? _globalBodySecondary;
+    _globalSubheading = tt.headlineSmall?.copyWith(height: 1.5) ?? _globalSubheading;
+    _globalPanelTitle = tt.titleLarge?.copyWith(fontFamily: _fontDisplay, color: tColor.withOpacity(0.75)) ?? _globalPanelTitle;
+    _globalSectionHeading = tt.displaySmall ?? _globalSectionHeading;
+    _globalZuiTitle = tt.displayLarge ?? _globalZuiTitle;
+    _globalDataSmall = tt.bodyLarge?.copyWith(fontFamily: _fontMono, height: 1.4) ?? _globalDataSmall;
+    _globalDataHero = tt.displayMedium?.copyWith(fontFamily: _fontMono, height: 1.1) ?? _globalDataHero;
   }
 
   // Carga el tema guardado desde SharedPreferences. Debe llamarse una vez
@@ -443,6 +300,8 @@ class DrasusThemeState extends ChangeNotifier {
     final palSurface = kPalettes[_palette]!;
     _globalCanvasBase = palSurface.deepSpace;
     _globalSurfaceRaised = palSurface.surfaceRaised;
+    // Sincronizar la escala Gx con el TextTheme.
+    _syncStyleScale();
 
     // No se notifica aquí: load() se llama antes de que haya oyentes.
   }
@@ -490,6 +349,7 @@ class DrasusThemeState extends ChangeNotifier {
     // Sincronizar espejos de paleta.
     _globalCanvasBase = palSurface.deepSpace;
     _globalSurfaceRaised = palSurface.surfaceRaised;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kKeyPalette, DrasusBackgroundPalette.values.indexOf(palette));
@@ -500,6 +360,7 @@ class DrasusThemeState extends ChangeNotifier {
   Future<void> setTextColor(Color color) async {
     _textOverride = color;
     _globalTextColor = color;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kKeyTextColor, color.toARGB32());
@@ -510,6 +371,7 @@ class DrasusThemeState extends ChangeNotifier {
   Future<void> setTextColorAuto() async {
     _textOverride = null;
     _globalTextColor = kTextDefaults[_palette]!;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kKeyTextColor, _kNoTextOverride);
@@ -543,6 +405,7 @@ class DrasusThemeState extends ChangeNotifier {
       // Manual: congelar valores actuales como overrides.
       _textOverride = _globalTextColor;
     }
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kKeyAutoPalette, value ? 1 : 0);
@@ -556,6 +419,7 @@ class DrasusThemeState extends ChangeNotifier {
   Future<void> setFontDisplay(String family) async {
     _fontDisplay = family;
     _globalFontDisplay = family;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKeyFontDisplay, family);
@@ -565,6 +429,7 @@ class DrasusThemeState extends ChangeNotifier {
   Future<void> setFontSans(String family) async {
     _fontSans = family;
     _globalFontSans = family;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKeyFontSans, family);
@@ -574,6 +439,7 @@ class DrasusThemeState extends ChangeNotifier {
   Future<void> setFontMono(String family) async {
     _fontMono = family;
     _globalFontMono = family;
+    _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKeyFontMono, family);

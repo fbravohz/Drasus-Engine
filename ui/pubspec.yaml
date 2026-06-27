@@ -11,7 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_rust_bridge: ^2.0.0
-  google_fonts: ^8.1.0
   iconsax_plus: ^1.0.0
   shared_preferences: ^2.2.0
 dev_dependencies:
@@ -22,28 +21,15 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Fuentes embebidas — offline-first, sin dependencia de google_fonts en runtime.
-  # Los .ttf provienen del caché de google_fonts generado por la app en ejecución.
-  # SpaceGrotesk → displayGrotesque (títulos w500)
-  # Inter          → uiSans (UI w400/w500)
-  # JetBrainsMono  → dataMono (números e IDs w400/w500)
-  # NOTA: JetBrainsMono-Medium.ttf copiado desde NerdFont (misma base tipográfica,
-  # añade iconos Nerd Font). Reemplazar con el .ttf limpio de fonts.google.com/
-  # specimen/JetBrains+Mono para reducir de ~2.4MB a ~110KB.
+  # Fuentes embebidas — Rajdhani, offline-first, sin google_fonts en runtime.
   fonts:
-    - family: SpaceGrotesk
+    - family: Rajdhani
       fonts:
-        - asset: assets/fonts/SpaceGrotesk-Medium.ttf
-          weight: 500
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Rajdhani-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Inter-Medium.ttf
+        - asset: assets/fonts/Rajdhani-Medium.ttf
           weight: 500
-    - family: JetBrainsMono
-      fonts:
-        - asset: assets/fonts/JetBrainsMono-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/JetBrainsMono-Medium.ttf
-          weight: 500
+        - asset: assets/fonts/Rajdhani-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Rajdhani-Bold.ttf
+          weight: 700
