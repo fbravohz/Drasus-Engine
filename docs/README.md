@@ -184,6 +184,12 @@ Proyectos de investigación avanzada y alta complejidad.
 
 | Moonshot | Descripción |
 |----------|-------------|
+| [**exercise-assignment-handler**](./moonshots/exercise-assignment-handler.md) | Gestor de ejercicio, asignación y expiración de opciones financieras (FSM extendida, detección de vencimiento, rolls) |
+| [**greeks-monitor**](./moonshots/greeks-monitor.md) | Monitoreo en tiempo real de griegas (Delta, Gamma, Theta, Vega, Rho) agregadas por posición, estrategia y portafolio |
+| [**option-chain-manager**](./moonshots/option-chain-manager.md) | Gestor de cadenas de opciones: estructura de vencimientos, strikes, open interest y quotes bid/ask |
+| [**option-data-ingestor**](./moonshots/option-data-ingestor.md) | Gateway de ingesta de datos de opciones: cadenas, IV surface, quotes PIT y open interest |
+| [**option-pricing-engine**](./moonshots/option-pricing-engine.md) | Motor de pricing de opciones: Black-Scholes, Binomial, Monte Carlo + superficie de volatilidad implícita |
+| [**option-strategy-builder**](./moonshots/option-strategy-builder.md) | Constructor de estrategias multi-pata de opciones (spreads, condors, butterflies) con ejecución atómica |
 | [**advanced-equities-engine**](./moonshots/advanced-equities-engine.md) | Motor avanzado especializado en negociación de acciones, incluyendo análisis fundamental, screening de valores y optimización de cartera de renta va... |
 | [**ai-dimensionality-suite**](./moonshots/ai-dimensionality-suite.md) | Compresión UMAP y detección outliers Autoencoder |
 | [**alternative-data-fabric**](./moonshots/alternative-data-fabric.md) | Orquestador visual de datos alternativos (sentimiento, satélite) con alineación PIT |

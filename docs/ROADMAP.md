@@ -41,8 +41,8 @@ EPIC-8 ZUI ← EPIC-7 feedback+withdraw ← EPIC-6 manage+execute(nativo) ← EP
 
 | Orden | Entrega | Módulo(s) | Qué desbloquea | Estado |
 |---|---|---|---|---|
-| EPIC-0 | Fundación y Spikes | infra transversal | Esqueleto compilable + riesgos resueltos | 🟡 en curso |
-| EPIC-1 | Soberanía de Datos | `ingest` | Data lake limpio y auditado | pendiente |
+| EPIC-0 | Fundación y Spikes | infra transversal | Esqueleto compilable + riesgos resueltos | ✅ cerrada (2026-06-27) |
+| EPIC-1 | Soberanía de Datos | `ingest` | Data lake limpio y auditado | 🟡 en curso |
 | EPIC-2 | Motor de Backtest | `validate` (núcleo) | Backtest determinista y confiable | pendiente |
 | EPIC-3 | Generación | `generate` | Miles de candidatas/día | pendiente |
 | EPIC-4 | Guantelete de Robustez | `validate` (guantelete) | Estrategias operables (Score ≥75) | pendiente |
@@ -83,7 +83,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 | STORY-005 — `async-job-executor` (cola durable + recuperación) | terminado | [STORY-005](./execution/STORY-005-async-job-executor.md) |
 | STORY-007 — `telemetry` (buffer + heartbeat) | parcial (TTR-002 → EPIC-7) | [STORY-007](./execution/STORY-007-telemetry.md) |
 | STORY-008 — `worker-isolation-orchestrator` | terminado | [STORY-008](./execution/STORY-008-worker-isolation-orchestrator.md) |
-| TASK-011 — Enmienda ADR-0003: tabla única por feature + TTRs de integración vs construcción | pendiente | [TASK-011](./execution/TASK-011-persistencia-reutilizacion-feature.md) |
+| TASK-011 — Enmienda ADR-0003: tabla única por feature + TTRs de integración vs construcción | ✅ terminado | [TASK-011](./execution/TASK-011-persistencia-reutilizacion-feature.md) |
 | STORY-009 — CLI Clap + binario raíz `app` | ✅ terminado | [Orden](./execution/STORY-009-cli-app.md) |
 | STORY-010 — `agentic-mcp-gateway` (núcleo MCP + evaluador de permisos) | 🟡 parcial (TTR-001 UI + TTR-004 SaaS → futuras épicas) | [Orden](./execution/STORY-010-agentic-mcp-gateway.md) |
 | STORY-014 — Smoke test NautilusTrader v2 crates (cierra SPIKE-001) | ✅ terminado | [Orden](./execution/STORY-014-nautilus-smoke-test.md) |
@@ -106,6 +106,14 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 **Objetivo:** datos en los que se puede confiar. Sin esto, todo backtest es ficción.
 
 **Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), descarga híbrida Bulk+Delta (ADR-0034) de 2 fuentes (prioridad de clase de activo: una Forex/CFD primero; una cripto como segunda fuente), transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118); almacén PIT de eventos fundamentales ([`fundamental-event-store`](./features/fundamental-event-store.md): ingesta de hecho crudo con linaje de proveedor + versionado vintage/as-of first-print vs revisiones, ADR-0126/0127).
+
+**Estado de las entregas de EPIC-1:**
+
+| Entrega | Estado | Orden de Trabajo |
+|---|---|---|
+| STORY-024 — Descarga híbrida soberana (Bulk + Delta) — primer crate hexagonal de dominio | ✅ terminado (2026-06-27, Modo Docente; QA APTO) | [STORY-024](./execution/STORY-024-sovereign-data-fetcher.md) |
+
+> **Nota:** EPIC-1 estrena el patrón hexagonal de dominio (ADR-0137): la primera feature (`sovereign-data-fetcher`) puebla `crates/features/data/`, hasta ahora vacío. Los tipos de puerto del catálogo (`Tick`, `Bars`) viven en `crates/shared/src/types/` (invariante: cada crate de feature depende solo de `shared`).
 
 **Criterio de salida:** un comando CLI descarga, sanitiza y particiona 5+ años de 2 símbolos; el PIT validator rechaza un dataset con leakage inyectado a propósito; una consulta DuckDB de remuestreo responde <200ms.
 
@@ -165,7 +173,7 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 ### EPIC-9+ — Moonshots (post-rentabilidad, ADR-0103)
 
-Orden sugerido por ROI esperado, revisable con datos reales: transpilador MQL5 (ADR-0101) → Copy-Trading + SaaS gateway → Deep Learning/DRL → La Colmena (ADR-0086) + Marketplace (ADR-0099) → SaaS Cloud (ADR-0033) → Operación Distribuida Edge/Control ([`distributed-edge-execution`](./moonshots/distributed-edge-execution.md), ADR-0119 — compuerta Client Zero, requiere SaaS Cloud previo) → resto del catálogo según evidencia.
+Orden sugerido por ROI esperado, revisable con datos reales: transpilador MQL5 (ADR-0101) → Copy-Trading + SaaS gateway → Deep Learning/DRL → La Colmena (ADR-0086) + Marketplace (ADR-0099) → SaaS Cloud (ADR-0033) → Operación Distribuida Edge/Control ([`distributed-edge-execution`](./moonshots/distributed-edge-execution.md), ADR-0119 — compuerta Client Zero, requiere SaaS Cloud previo) → **Opciones Financieras** (ADR-0140 — condicionado a cinco prerrequisitos: MVP completo, NT v2 en producción, demanda validada, datos históricos viables, capa anticorrupción madura; 6 moonshots + 9 refactorizaciones documentadas) → resto del catálogo según evidencia.
 
 ---
 

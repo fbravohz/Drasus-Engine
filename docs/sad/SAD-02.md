@@ -21,7 +21,7 @@ Drasus Engine elimina la complejidad de microservicios externos y dependencias d
 
 ### 2.2 El Músculo: Simulación y Ejecución (NautilusTrader + Rust SIMD)
 
-*   **Mecanismo de Integración (ADR-0107):** NautilusTrader se integra consumiendo los crates Rust nativos de su núcleo v2 (backtesting de eventos y ejecución live) como dependencias Cargo con versiones fijadas y vendorizadas. No existe fork, ni sidecar, ni capa Python: el motor corre dentro del mismo proceso Rust del Core, detrás de la capa anticorrupción contratada en `nautilus-integration`. Las clases de activo de primera clase son acciones, forex, futuros, ETFs y CFDs; las opciones financieras se difieren a la última fase del roadmap.
+*   **Mecanismo de Integración (ADR-0107):** NautilusTrader se integra consumiendo los crates Rust nativos de su núcleo v2 (backtesting de eventos y ejecución live) como dependencias Cargo con versiones fijadas y vendorizadas. No existe fork, ni sidecar, ni capa Python: el motor corre dentro del mismo proceso Rust del Core, detrás de la capa anticorrupción contratada en `nautilus-integration`. Las clases de activo de primera clase son acciones, forex, futuros, ETFs y CFDs; las opciones financieras se difieren a la última fase del roadmap (ADR-0140).
 
 El motor de simulación implementa modelos de fidelidad progresiva para garantizar precisión operativa:
 
