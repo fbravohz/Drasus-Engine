@@ -187,6 +187,22 @@ Toda ejecución de backtest y resultado registra el set de relevancia técnica p
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+El motor dual (ADR-0114) está diseñado para instrumentos lineales. Las opciones introducen desafíos específicos:
+
+- **Ruta Express (vectorizada):** no aplica directamente a opciones. Las opciones no tienen un solo precio — tienen una cadena de strikes × vencimientos, cada uno con su propio bid/ask. La vectorización columnar sobre OHLCV no modela payoffs no-lineales.
+- **Ruta Event-Driven (NautilusTrader):** NT sí soporta opciones nativamente (ADR-0107). El puente anticorrupción (`nautilus-integration`) debe extenderse para mapear `OptionContract` y `OptionChain` a tipos Drasus Engine.
+- **Contrato de Consistencia Conservadora:** la "Regla Intrabar Pesimista" (SL antes que TP) no tiene análogo claro en opciones, donde el payoff es no-lineal y depende del precio al vencimiento, no de precios intrabar.
+
+**Refactorización necesaria:** extender la Ruta Event-Driven para opciones vía NT; repensar la Ruta Express para estrategias de opciones (posiblemente como simulación Monte Carlo en lugar de vectorización columnar).
+
+**Moonshots asociados:** [`option-pricing-engine`](../moonshots/option-pricing-engine.md), [`exercise-assignment-handler`](../moonshots/exercise-assignment-handler.md).
+
+---
+
 ## Dependencias
 **Depende de:**
 - [`clock`](../features/clock.md) — para timestamps deterministas.

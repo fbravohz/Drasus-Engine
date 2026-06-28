@@ -119,6 +119,22 @@ Proporciona un framework unificado y determinista para el cálculo del tamaño d
 | **V. Forense** | `process_id` | PID del servicio de riesgo |
 | | `logic_hash` | Hash del modelo matemático activo |
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+Los 4 modelos de sizing actuales (Fixed Ratio, ATR-Adjusted, Risk Percent, Volatility Targeting) calculan tamaño de posición en contratos/unidades. En opciones, el sizing es fundamentalmente diferente:
+
+- El "tamaño" de una opción no es solo cantidad de contratos: es **exposición delta-equivalente**.
+- Un contrato de opción sobre SPY puede tener delta 0.30 o delta 0.95 dependiendo del strike y la volatilidad implícita.
+- El sizing correcto requiere calcular el **delta-adjusted notional**, no solo `Equity * Risk% / SL_Distance`.
+
+**Refactorización necesaria:** añadir un quinto modelo de sizing (`delta_equivalent`) que calcule la exposición en unidades equivalentes del subyacente, consumiendo las griegas del [`greeks-monitor`](../moonshots/greeks-monitor.md).
+
+**Moonshots asociados:** [`greeks-monitor`](../moonshots/greeks-monitor.md), [`option-pricing-engine`](../moonshots/option-pricing-engine.md).
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0109):** `SIZING_MODE` y sus parámetros son Primitivas de Acción de Mutación de Sizing del Dominio de Riesgo y Gestión de Posición. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

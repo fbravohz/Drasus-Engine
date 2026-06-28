@@ -176,6 +176,27 @@ Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legít
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+Las opciones financieras requieren estados adicionales que no existen en el FSM actual de 6 estados:
+
+| Estado necesario | Descripción | Complejidad |
+|---|---|---|
+| `EXERCISED` | El tenedor ejerce la opción; genera orden sobre el subyacente | Alta — FSM de dos capas |
+| `ASSIGNED` | La contraparte ejerce; evento externo no disparado por el usuario | Alta — detección automática |
+| `EXPIRED_WORTHLESS` | La opción vence OTM sin valor intrínseco | Media — estado terminal |
+| `EXPIRED_ITM` | La opción vence ITM; dispara ejercicio automático | Alta — genera orden sobre subyacente |
+
+**FSM de dos capas:** una orden de opción implica dos FSM: la de la opción misma (que transita a EXERCISED/ASSIGNED/EXPIRED) y la del subyacente (que recibe la orden generada al ejercer/asignar). El FSM actual modela una sola capa.
+
+**Invariante de diseño (costo cero):** el FSM usa enteros para estados (ADR-0004), lo que lo hace extensible sin migración de schema. No sellar el conjunto de estados como cerrado.
+
+**Moonshot asociado:** [`exercise-assignment-handler`](../moonshots/exercise-assignment-handler.md).
+
+---
+
 ## Dependencias
 **Depende de:**
 - [`clock`](../features/clock.md) — para timestamps deterministas.

@@ -55,6 +55,42 @@ La paridad bit-a-bit del CVD entre backtest y vivo (ver Restricciones) es el con
 ### **TTR-003: Volume Imbalance BBO Node**
 - **Qué tiene que pasar:** Implementar un nodo de microestructura que monitoree el DOM L2 en tiempo real y dispare una señal de compra/venta cuando el volumen de órdenes limite en el Best Bid supere al del Best Offer por más de 300% (o viceversa).
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+El flujo de órdenes actual (CVD, OFI, VWAP) opera sobre instrumentos lineales donde el volumen de transacciones es la métrica central. En opciones, cada transacción conlleva el pago de una **prima** (el precio de la opción × multiplicador del contrato), lo que habilita una métrica superior: el **Net Premium Flow (NPF)**.
+
+### Net Premium Flow (NPF)
+
+El NPF consolida el balance neto de capital que entra al mercado de opciones, clasificando cada transacción por intención institucional:
+
+| Flujo | Clasificación |
+|---|---|
+| **Alcista (+)** | Compra de Calls al Ask + Venta de Puts al Bid |
+| **Bajista (−)** | Compra de Puts al Ask + Venta de Calls al Bid |
+
+**NPF = Flujo Alcista Total − Flujo Bajista Total**
+
+La clasificación de cada transacción como "compra agresiva" o "venta agresiva" sigue el algoritmo de Lee-Ready: órdenes ejecutadas en el Ask son compras iniciadas por el comprador; órdenes en el Bid son ventas iniciadas por el vendedor.
+
+### Señales derivadas del NPF
+
+- **Detección de Sweeps institucionales:** órdenes que barren la liquidez de múltiples exchanges simultáneamente. Un Sweep al Ask con prima millonaria delata Smart Money operando con urgencia antes de un movimiento brusco del subyacente.
+- **Gamma Squeeze prediction:** NPF hiper-agresivo concentrado en Calls OTM de corto vencimiento obliga a los creadores de mercado (cortos de Gamma) a comprar el subyacente en masa, creando un bucle de retroalimentación alcista.
+- **Divergencia NPF vs Precio:** si el precio cae pero el NPF se mantiene positivo (acumulación oculta de Calls o venta agresiva de Puts), el sistema interpreta divergencia alcista.
+- **Contraste NPF vs Open Interest:** si el NPF masivo en el Ask supera al Open Interest previo, es apertura de posiciones agresivas (momento); si el volumen es alto pero cerca del Bid, es toma de ganancias o rebalanceo.
+
+### Filtrado de estrategias multi-pata
+
+El NPF bruto produce señales falsas cuando las transacciones son patas de estrategias multi-pata (spreads, straddles). El motor debe filtrar transacciones que forman parte de una combo order conocida (mismo timestamp, subyacente, y strikes correlacionados) antes de agregar al NPF neto.
+
+**Refactorización necesaria:** añadir el motor de NPF como una métrica paralela al CVD, consumiendo el feed de opciones del [`option-data-ingestor`](../moonshots/option-data-ingestor.md) y clasificando transacciones con el algoritmo de Lee-Ready adaptado a opciones.
+
+**Moonshots asociados:** [`option-data-ingestor`](../moonshots/option-data-ingestor.md), [`greeks-monitor`](../moonshots/greeks-monitor.md) (para el cálculo de Gamma del mercado agregado).
+
+---
+
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
 
 Híbrido: Perfil C (Ops/Hot-Path) + linaje III legítimo (snapshot DOM/tick reproducible).

@@ -103,6 +103,22 @@ Toda interacción con el conector registra el set de relevancia técnica para AI
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+Los protocolos actuales de comunicación con brokers (FIX, REST, gRPC/WebSocket) están orientados a instrumentos lineales. Para opciones:
+
+- Las órdenes de opciones usan **FIX tags específicos** (Tag 167=OPT, Tag 200=StrikePrice, Tag 201=PutOrCall, etc.) que el conector debe soportar.
+- Las **combo orders** (multi-pata atómica) son soportadas nativamente por algunos brokers (IBKR, CBOE) pero no por todos. El conector debe detectar la capacidad del broker y degradar a órdenes individuales con cancelación atómica si no soporta combos.
+- Los brokers de opciones requieren **nivel de aprobación** (Level 1-4) que el conector debe validar antes de enviar órdenes.
+
+**Refactorización necesaria:** extender el protocolo de normalización para incluir tipos de órdenes de opciones, soporte de combo orders y validación de nivel de aprobación del usuario.
+
+**Moonshots asociados:** [`option-strategy-builder`](../moonshots/option-strategy-builder.md), [`exercise-assignment-handler`](../moonshots/exercise-assignment-handler.md).
+
+---
+
 ## Dependencias
 **Depende de:**
 - [`clock`](../features/clock.md) — para timestamps deterministas.

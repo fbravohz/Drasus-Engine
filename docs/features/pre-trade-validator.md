@@ -107,6 +107,26 @@ Toda validación pre-milio registra el set de relevancia técnica para AI/R&D:
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+Los 11 checks actuales asumen instrumentos lineales. Para opciones se necesitan checks adicionales:
+
+| Check necesario | Descripción |
+|---|---|
+| **Greeks exposure check** | Delta/Gamma/Vega agregados del portafolio dentro de umbrales |
+| **Expiration proximity check** | No abrir opciones que vencen en < N días (configurable) |
+| **Implied volatility sanity** | No comprar opciones con IV en percentil > 95 (overpriced) |
+| **Assignment risk check** | Si se venden opciones naked, validar margen de asignación |
+| **Approval level check** | Validar nivel de aprobación del usuario (Level 1-4) en el broker |
+
+**Refactorización necesaria:** extender el pipeline de checks para incluir los checks de opciones cuando el `Instrument` es de tipo `Option`. Los checks existentes (1-11) siguen aplicando para instrumentos lineales sin cambios.
+
+**Moonshots asociados:** [`greeks-monitor`](../moonshots/greeks-monitor.md), [`option-pricing-engine`](../moonshots/option-pricing-engine.md).
+
+---
+
 ## Dependencias
 **Depende de:**
 - [`portfolio-rules`](../features/portfolio-rules.md) — para la jerarquía de límites.

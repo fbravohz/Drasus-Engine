@@ -89,6 +89,22 @@ Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de
     - ADR-0107: Integración Nativa con NautilusTrader v2 (Crates Rust, Sin Python, Sin Fork).
     - ADR-0020 V2: Inundación de Fundaciones.
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+NautilusTrader soporta opciones nativamente (ADR-0107: "forex, acciones, futuros, **opciones**, cripto"). El motor de matching, el modelo de dominio y los adaptadores de venue de NT ya manejan opciones.
+
+**Gap en el puente anticorrupción:** la restricción actual dice "las opciones financieras se difieren a la última fase del roadmap" (ADR-0107). El mapeo de instrumentos NT → tipos Drasus Engine no incluye `OptionContract`, `OptionChain`, ni `Greeks`.
+
+**Refactorización necesaria:** extender el mapeo de la capa anticorrupción para incluir los tipos de opciones de NT (`OptionContract`, `OptionChain`, `OptionGreeks`) a tipos equivalentes en `shared/`. Mientras la capa anticorrupción siga siendo un cortafuegos contractual (ningún módulo de negocio importa tipos de NT), agregar opciones será extender el mapeo, no reescribir el core.
+
+**Invariante de diseño (costo cero):** preservar la capa anticorrupción como cortafuegos. Esta restricción ya existe (ADR-0107) y es la que hace viable la extensión futura.
+
+**Moonshots asociados:** [`option-pricing-engine`](../moonshots/option-pricing-engine.md), [`option-chain-manager`](../moonshots/option-chain-manager.md).
+
+---
+
 ## Dependencias y Bloqueantes
 - **Depende de:** `data-validator`, `order-fsm`, `audit-log`.
 - **Bloquea:** Implementación final de los módulos `validate` y `execute`.

@@ -101,6 +101,23 @@ Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+El modelo de slippage actual usa ATR y volumen de barra. En opciones:
+
+- El spread bid/ask es mucho más amplio (a menudo 5-50x el spread del subyacente).
+- La liquidez varía dramáticamente por strike y vencimiento.
+- El modelo de Pardo (penetración de volumen) no aplica directamente: el volumen de opciones se mide en contratos abiertos (open interest), no en volumen de barra.
+- El slippage en opciones es el **asesino silencioso** de estrategias retail: spreads amplios destruyen el edge rápidamente.
+
+**Refactorización necesaria:** añadir un modelo de slippage específico para opciones basado en bid/ask spread del contrato, open interest del strike/vencimiento y volumen del contrato (no del subyacente).
+
+**Moonshot asociado:** [`option-data-ingestor`](../moonshots/option-data-ingestor.md) — fuente de datos de open interest y spreads de opciones.
+
+---
+
 ## Dependencias
 **Depende de:**
 - [`clock`](../features/clock.md) — para cálculo de Swaps y Horarios de sesión.

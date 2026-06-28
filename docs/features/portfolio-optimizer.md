@@ -265,6 +265,22 @@ Cada reporte de rebalanceo y sesión de optimización registra el set de relevan
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+Los motores de pesaje (HRP, Markowitz, D-Score) optimizan retornos lineales. Las opciones introducen payoffs no-lineales que invalidan la matriz de covarianza clásica:
+
+- Un portafolio con opciones necesita **optimización por escenarios (Monte Carlo)**, no por covarianza histórica.
+- Las métricas de riesgo deben ser específicas: delta-neutral, vega-weighted exposure.
+- El "Hedging Tick-by-Tick" (TTR-002) asume instrumentos lineales correlacionados; las opciones como cobertura no-lineal requieren un modelo distinto.
+
+**Refactorización necesaria:** añadir un modo de optimización por escenarios para portafolios que incluyan opciones, con métricas de riesgo no-lineal (delta-adjusted exposure, vega-weighted VaR).
+
+**Moonshots asociados:** [`greeks-monitor`](../moonshots/greeks-monitor.md), [`option-pricing-engine`](../moonshots/option-pricing-engine.md), [`option-strategy-builder`](../moonshots/option-strategy-builder.md).
+
+---
+
 ## Dependencias
 - [`portfolio-rules`](../features/portfolio-rules.md) — para la validación de límites globales.
 - [`hmm-regime-detection`](../features/hmm-regime-detection.md) — para el trigger de cambio de régimen.

@@ -73,6 +73,22 @@ Se gestiona mediante el objeto `AdvancedTradeManagementConfig`:
 
 ---
 
+## Preparación para Opciones (Post-MVP — ADR-0140)
+
+> **Estado:** Diferido. No implementar hasta que los cinco prerrequisitos de ADR-0140 se cumplan.
+
+El Grid Trading, Scaling In/Out y Trailing Stop son mecánicas de posición lineal. En opciones, las estrategias multi-pata (spreads, iron condors, butterflies) requieren:
+
+- Gestión de **legs** (patas) como unidad atómica: si una pata falla, toda la estrategia se deshace.
+- P&L no-lineal por combinación de strikes.
+- El "Trailing Stop" no aplica a opciones de la misma forma: el stop se gestiona por delta o por tiempo al vencimiento, no por precio del subyacente.
+
+**Refactorización necesaria:** añadir un modo de gestión de estrategias multi-pata donde las patas se tratan como unidad atómica, con P&L calculado sobre la combinación y stops gestionados por delta o tiempo al vencimiento.
+
+**Moonshot asociado:** [`option-strategy-builder`](../moonshots/option-strategy-builder.md).
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 - **Inundación de Fundaciones (ADR-0020 V2):**
     - Obligatorio incluir en cada guardado: `indicator_state_hash` (estado técnico exacto al ajustar el stop), `source_signal_id` (vínculo causal con la señal original).
