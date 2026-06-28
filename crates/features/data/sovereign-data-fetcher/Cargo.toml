@@ -1,0 +1,42 @@
+[package]
+name = "sovereign-data-fetcher"
+description = "Descargador híbrido soberano de datos de mercado (Bulk S3 + Delta REST). Primer crate hexagonal de dominio del proyecto (ADR-0137). EPIC-1 / Ingest."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ÚNICA dependencia interna permitida para un feature crate (ADR-0137).
+# Prohibido depender de otros feature crates o presets.
+shared = { path = "../../../shared" }
+
+# ── Cáscara (shell) — I/O, red, sistema de archivos ──────────────────────────
+# Cliente HTTP con TLS puro en Rust (sin OpenSSL, portable entre plataformas).
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+# Descompresor de archivos ZIP para los volcados Bulk del broker.
+zip = "2"
+# Runtime asíncrono: concurrencia, semáforos, sistema de archivos asíncrono.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs", "io-util", "time"] }
+# Propagación ergonómica de errores en el shell.
+anyhow = "1"
+# Derivación de Display + Error para tipos de error propios.
+thiserror = "1"
+# Serialización/deserialización para parámetros y payloads JSON.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Generación de UUIDs para identificadores de registros.
+uuid = { version = "1", features = ["v4"] }
+# Hash SHA-256 para los campos de integridad (audit_hash, audit_chain_hash).
+sha2 = "0.10"
+# Permite definir traits con métodos async que se usan como `dyn Trait`.
+async-trait = "0.1"
+# Acceso a SQLite para la persistencia del registro de descargas.
+# El feature crate no crea su propio pool — usa el de shared — pero sí
+# necesita sqlx para escribir queries y mapear filas.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
+
+[dev-dependencies]
+# Directorios temporales con limpieza automática para tests de integración.
+tempfile = "3"
+# Runtime de Tokio para tests async.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
