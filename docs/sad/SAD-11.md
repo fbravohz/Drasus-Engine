@@ -47,7 +47,7 @@
 ### Precios en Lógica Pura son Números Exactos (Transversal)
 * **Regla:** En la lógica pura, precios siempre son números exactos (centavos/ticks), no decimales.
 * **Por qué:** Evitar errores acumulados de decimales en operaciones financieras.
-* **Implementación:** Conversión de decimal a exacto ocurre solo en acceso datos y capas externas. Lógica pura siempre usa exactos.
+* **Implementación:** Conversión de decimal a exacto ocurre solo en acceso datos y capas externas. Lógica pura siempre usa exactos. En la capa de persistencia, la escala canónica es × 10⁸ (8 decimales) en columnas `INTEGER NOT NULL` (ADR-0141). `REAL` prohibido para precios y volumen en SQLite y Parquet.
 * **Beneficio:** Reproducibilidad absoluta; cálculos de ganancias/pérdidas sin errores.
 
 ### Sin Sorpresas de Tiempo en Lógica Pura (Transversal)
@@ -55,6 +55,28 @@
 * **Por qué:** Reproducibilidad y testeabilidad. Una prueba puede decir "es 2024-01-01 09:30:00" y forzar ese tiempo.
 * **Implementación:** El tiempo es un parámetro que se pasa (inyección de dependencia).
 * **Beneficio:** Simulaciones históricas reproducibles; debugging sin sorpresas.
+
+### Timestamps son INTEGER Nanosegundos UTC (Transversal — ADR-0141)
+* **Regla:** Todo timestamp en SQLite es `INTEGER NOT NULL` en nanosegundos Unix UTC desde epoch. NUNCA `TEXT` (ISO-8601) ni `REAL` (segundos fraccionarios).
+* **Por qué:** Precisión de nanosegundos para datos de mercado de alta frecuencia; operaciones aritméticas directas sin conversión; univocidad de representación.
+* **Implementación:** UTC estricto en toda la pila (Rust → Parquet → DuckDB). La conversión a zona horaria local ocurre solo en Flutter. Los campos `created_at` (tiempo de persistencia) y `event_timestamp_ns` / `bar_timestamp_ns` (tiempo del evento de mercado) tienen nombres distintos y no son intercambiables.
+* **Consecuencia:** La confusión de `created_at` con el timestamp del evento introduce look-ahead bias en backtests.
+
+### Enums son TEXT con CHECK Constraint (Transversal — ADR-0141)
+* **Regla:** Todo campo de estado o tipo con valores discretos es `TEXT NOT NULL` con un `CHECK (col IN (...))` que declara explícitamente los valores válidos. Doble validación: CHECK en SQL + validación en Rust.
+* **Por qué:** Sin el CHECK, SQLite acepta cualquier string en una columna `TEXT`; el schema no documenta los valores posibles y los bugs de estado inválido son silenciosos.
+* **Implementación:** Para nuevas migraciones, obligatorio. Para tablas existentes (`jobs.state`), corregir en la primera migración que toque esa tabla.
+
+### FKs con ON DELETE RESTRICT; CASCADE Prohibido (Transversal — ADR-0141)
+* **Regla:** Toda FK se declara con `ON DELETE RESTRICT` explícito. `ON DELETE CASCADE` está **PROHIBIDO** en todo el sistema.
+* **Por qué:** La inmutabilidad de los event-stores es un invariante físico. Un CASCADE borraría registros de auditoría en cascada, violándola irreversiblemente.
+* **Implementación:** `PRAGMA foreign_keys = ON` activo en pool.rs. Toda FK en toda migración, presente y futura, incluye `ON DELETE RESTRICT`.
+
+### Cambio de Estado y Registro en Audit-Log son Atómicos (Transversal — ADR-0141)
+* **Regla:** Todo cambio de estado de una entidad de dominio y su registro en `audit_events` se realizan en una única transacción `BEGIN IMMEDIATE`. Si cualquiera falla, todo hace rollback.
+* **Por qué:** El invariante "todo cambio de estado genera un registro en el audit-log" declarado en SAD-08 no tiene garantía técnica si los dos pasos ocurren en operaciones separadas. Un fallo entre ambos dejaría el sistema en estado inconsistente sin traza.
+* **Implementación:** En la Shell de la feature. No como trigger (la lógica de `audit_hash` requiere computación Rust).
+* **Consecuencia:** PROHIBIDO insertar en `audit_events` fuera de la transacción del cambio de estado.
 
 ### Permisos del Agente Graduados por Riesgo de Pipeline (Transversal — ADR-0123)
 * **Regla:** Un agente LLM conectado vía MCP nace con permiso total sobre ingestar/generar/validar/incubar/retroalimentar; sobre gestionar queda condicionado al `institutional_tag` (Demo concede, Live exige el interruptor de producción); sobre ejecutar/retirar nace sin permiso alguno.

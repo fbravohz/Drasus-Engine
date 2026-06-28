@@ -1,3 +1,5 @@
+> ✅ **Implementado** 2026-06-27 · Orden de trabajo [STORY-024](../execution/STORY-024-sovereign-data-fetcher.md) · TTR-001 + TTR-002. Crate: `crates/features/data/sovereign-data-fetcher/`.
+
 # Sovereign Data Fetcher
 
 **Carpeta:** `./features/sovereign-data-fetcher/`
@@ -84,6 +86,33 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 
 ---
 
+## Puertos de Integración
+
+> *(ADR-0137)* El Sovereign Data Fetcher es un **nodo fuente** del pipeline: no recibe datos de otro nodo del canvas — su "entrada" es una solicitud de configuración del usuario (símbolo, intervalo, rango), no un tipo de dato cableable. Produce los datos crudos que alimentan a la capa de normalización/sanitización.
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `ticks_out` | `Tick` | Output | 0..N | Transacciones crudas Bid/Ask/Last descargadas (volcados de trades + Delta REST) |
+| `bars_out` | `Bars` | Output | 0..N | Barras OHLCV crudas cuando la fuente entrega volcados de klines directamente |
+
+> El catálogo de tipos de ADR-0137 declara a `sovereign-data-fetcher` como feature productora canónica de `Tick`. Las dos salidas son mutuamente excluyentes por solicitud: una descarga de trades produce `Tick`; una descarga de klines produce `Bars`.
+
+## Contrato de Integración UI (ADR-0117 / ADR-0136)
+
+**Superficie propia: Inspector Panel** (nodo fuente del canvas). Como produce tipos de dominio (`Tick`/`Bars`) y recibe configuración del usuario, NO es plomería: al hacer clic en su nodo del Forge se abre un inspector panel lateral (ADR-0136) con su UI de configuración:
+
+- Selector de **broker/exchange** (ej. Binance Vision).
+- Selector de **símbolo** (ej. BTCUSDT).
+- **Rango de fechas** (desde / hasta).
+- **Timeframe/intervalo** (1m, 5m, 1h, 1D, …) y tipo de salida (trades → `Tick` / klines → `Bars`).
+- Disparador de descarga + estimación de tamaño y verificación de espacio en disco.
+
+UX complementaria provista por features hermanas del módulo `ingest` (NO por esta feature):
+- **Progreso de descarga** (barras "Bulk %/Delta %") → [`background-download-manager`](background-download-manager.md) (`ui_progress_updates`).
+- **Exploración visual del dataset** descargado → [`canvas-navigation`](canvas-navigation.md).
+
+**Estado de entrega:** el MOTOR de descarga (TTR-001 Bulk + TTR-002 Delta) se implementó en STORY-024 (backend, QA APTO). El **inspector panel de configuración es una entrega de UI pendiente** (Story de UI futura: UI-Designer escribe la Cáscara Visual ADR-0135 → Bridge → Flutter) — aún no construida.
+
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local (los datos se descargan y procesan en el disco del usuario).
@@ -100,9 +129,10 @@ Cada descarga registra el set de relevancia técnica para Datos:
 | | `audit_hash` | Hash de integridad del archivo comprimido |
 | | `audit_chain_hash` | Hash de la secuencia de descarga |
 | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
-| **III. Linaje** | `data_snapshot_id` | URL/Endpoint de la fuente Bulk/REST |
-| | `data_snapshot_id` | Ref al snapshot del broker |
-| | `logic_hash` | Hash del driver del fetcher |
-| **IV. Hardware** | `node_id` | ID del hardware físico |
+| **III. Linaje** | `data_snapshot_id` | Referencia al snapshot/volcado del broker que originó el segmento descargado |
+| | `logic_hash` | Hash del driver del fetcher que produjo el registro |
+| **IV. Hardware** | `node_id` | ID del hardware físico donde se ejecutó la descarga |
 | | `process_id` | PID del worker de descarga |
-| | `execution_latency_ms` | Tiempo total de descarga |
+| **Campo propio (fuera del catálogo de 25)** | `source_endpoint` | URL/endpoint de la fuente Bulk o REST de la que provino el dato — provenance obligatorio para la soberanía de datos |
+
+> **Nota de perfil (ADR-0020 V2):** esta tabla es Perfil A (Datos) — usa Grupo I (universal) + Grupo III (Linaje) + Grupo IV (Hardware). El tiempo total de descarga **no** se persiste aquí (sería un campo de Grupo V, ajeno al Perfil A): la duración y el progreso del trabajo de descarga los lleva el registro del trabajo asíncrono (tipo `Job` de `async-job-executor`) y la telemetría del `background-download-manager`. `source_endpoint` es un campo propio de dominio (provenance), fuera del catálogo de 25, justificado por la soberanía de datos.

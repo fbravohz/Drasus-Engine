@@ -85,6 +85,119 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 * **Invariante de Trazabilidad:** Todo cambio de estado atómico genera un registro en el `audit-log`.
 * **Zero-Copy Performance:** Uso de Polars/Arrow para mover grandes volúmenes de datos OHLCV sin serialización costosa.
 
+---
+
+### Tipos Canónicos de Columna por Uso (ADR-0141)
+
+| Uso | Tipo SQLite | Rust | Polars | Parquet |
+|---|---|---|---|---|
+| UUID, hash, texto, JSON, snapshot_id | `TEXT NOT NULL` | `String` | `Utf8` / `Categorical` | `BYTE_ARRAY` / `STRING` |
+| Timestamp nanosegundos UTC | `INTEGER NOT NULL` | `i64` | `Int64` | `INT64` |
+| Precio / volumen escalado × 10⁸ | `INTEGER NOT NULL` | `i64` | `Int64` | `INT64` |
+| Contador / secuencia | `INTEGER NOT NULL` | `i64` / `u64` | `Int64` / `UInt64` | `INT64` |
+| Booleano | `INTEGER NOT NULL (0/1)` | `bool` | `Boolean` | `BOOLEAN` |
+| JSON payload | `TEXT NOT NULL` | `serde_json::Value` | `Utf8` | `BYTE_ARRAY` |
+| Latencia en ms | `INTEGER NOT NULL` | `i64` | `Int64` | `INT64` |
+
+**Reglas de precio:** escala fija × 10⁸ en toda la pila. `REAL` prohibido en precio/volumen. La conversión float↔entero ocurre solo en la Shell.
+
+**Reglas de timestamp:** nanosegundos Unix UTC en `INTEGER`. `created_at` = tiempo de persistencia; `event_timestamp_ns` / `bar_timestamp_ns` = tiempo del evento de mercado. UTC estricto; zona local solo en Flutter.
+
+**STRICT mode:** toda tabla declarada con `CREATE TABLE nombre (...) STRICT;`. Aplica a las 6 tablas del baseline y a todas las nuevas.
+
+---
+
+### Claves Primarias y Generadores de Secuencia (ADR-0141)
+
+**Claves primarias:** `TEXT NOT NULL PRIMARY KEY`, valor UUIDv7 generado con `Uuid::now_v7()` del crate `uuid` (feature `v7`). Uniformidad total — sin UUID v4, sin ULID.
+
+**Dos semánticas de secuencia (distintas, no intercambiables):**
+- `event_sequence_id`: posición monótona global en tablas append-only (event-stores). Siempre con `UNIQUE`. Generación dentro de `BEGIN IMMEDIATE`.
+- `row_version`: contador de versión por fila en tablas mutables. Empieza en 1, incrementa con cada UPDATE. Sin `UNIQUE` global.
+
+---
+
+### Política de Indexado (ADR-0141)
+
+Convención de nombres: `idx_<tabla>_<columna1>[_<columna2>]`, minúsculas, snake_case.
+
+**Índices obligatorios:** toda columna FK hijo; `event_sequence_id` en tablas append-only; columna de `state`/`status` si es eje de recovery al arranque.
+
+**Índices opcionales (guiados por el query path):** compuesto `(categoría, timestamp)` en series temporales; `created_at` aislado si hay poda temporal; `(entity_type, entity_id)` para lookup de historial por entidad.
+
+**PROHIBIDO indexar** columnas de baja cardinalidad (booleanos) o tablas con < 10 000 filas esperadas.
+
+---
+
+### Integridad Cruzada SQLite↔Parquet (ADR-0141)
+
+SQLite no puede verificar mediante FK si una partición Parquet existe. La integridad se garantiza en la capa de aplicación:
+
+1. Todo campo que referencie una partición Parquet incluye en el comentario SQL el formato canónico del valor y un `CHECK` de formato. Formato canónico de `data_snapshot_id`: `<exchange>_<symbol>_<timeframe>_<year><month>` (ejemplo: `binance_BTCUSDT_1m_202601`).
+2. **Reconciler de startup:** el módulo Ingest, al inicializar la app, compara todos los `data_snapshot_id` registrados en SQLite contra los paths Parquet reales en disco. Los huérfanos se reportan en el audit-log con `action_type = 'PARQUET_ORPHAN_DETECTED'`.
+3. PROHIBIDO confiar en que un `data_snapshot_id NOT NULL` implica que la partición existe.
+
+---
+
+### Evolución de Esquema Parquet (ADR-0141)
+
+- Solo se añaden columnas; nunca se eliminan ni renombran.
+- Toda columna nueva tiene un valor default documentado para particiones antiguas (NULL si no hay valor natural).
+- Cada partición incluye el metadata field `schema_version` (string semver, ejemplo `"1.0"`, `"1.1"`).
+- PROHIBIDO reescribir particiones históricas como mecanismo de migración.
+
+---
+
+### DuckDB vs Puerto de Feature (ADR-0141)
+
+- **DuckDB directo (sin puerto):** lectura analítica sobre Parquets que la feature actual owna; remuestreo dinámico sobre datos propios; R&D ad-hoc.
+- **Puerto de feature obligatorio:** si el Parquet pertenece a otra feature; si el resultado va a otra feature del pipeline; si la consulta tiene implicaciones de PIT.
+- Regla mnemónica: *"DuckDB dentro de tu hexágono; puerto para hablar con otro hexágono."*
+
+---
+
+### Tablas M:N — Regla de Ownership (ADR-0141)
+
+- Si la relación tiene atributos propios: pertenece a la feature que gestiona esa relación.
+- Si no tiene atributos propios: pertenece a la feature "dueña" del lado más dependiente en el pipeline.
+- PROHIBIDO tabla puente compartida entre dos features; la otra feature accede por el `OutputPort` de la dueña.
+
+---
+
+### Patrón Transaccional Estado+Auditoría (ADR-0141)
+
+Todo cambio de estado de una entidad de dominio se realiza en una única transacción `BEGIN IMMEDIATE` que incluye el UPDATE de la entidad Y el INSERT en `audit_events`. Si cualquiera falla, todo hace rollback. PROHIBIDO insertar en `audit_events` fuera de esa transacción. No se implementa como trigger (la lógica de `audit_hash` requiere Rust).
+
+---
+
+### Configuración del Pool SQLite (ADR-0141)
+
+Los siguientes parámetros son obligatorios en `pool.rs` (implementación en la auditoría retroactiva del Tech Lead):
+
+| Parámetro | Valor |
+|---|---|
+| WAL | ya activo |
+| `foreign_keys` | `ON` |
+| `busy_timeout` | 5 000 ms |
+| `synchronous` | `NORMAL` |
+| `journal_size_limit` | 67 108 864 (64 MB) |
+| `wal_autocheckpoint` | 1 000 páginas |
+
+---
+
+### Política de Retención y VACUUM (ADR-0141)
+
+| Tipo | Ejemplos | Retención |
+|---|---|---|
+| Event-store inmutable | `audit_events`, `job_results`, `permission_decisions` | Forever. Sin poda. |
+| Telemetría | `telemetry_samples` | Configurable (default: 30 días). Poda por `created_at < ?`. |
+| Estado operativo | `jobs`, `sovereign_download_records` | Forever. Jobs `CANCELLED` > 90 días: poda opcional. |
+| Cache/staging (futuras) | tablas temporales | TTL configurable declarado en la migración. |
+
+`VACUUM` PROHIBIDO en runtime. Es operación de mantenimiento manual del módulo `withdraw`.
+
+---
+
 ### Condiciones de Transición entre Módulos
 
 | Transición | Condición Conceptual | Detalles |

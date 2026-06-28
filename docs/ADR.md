@@ -144,4 +144,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0138](./adr/ADR-0138.md) | Design System Centralization en UI (Flutter) — ThemeExtension + Widgets Primitivos · enmienda 2026-06-25: Tema Extensible (registro abierto de N propiedades — modos de superficie, color de fuente configurable, borde global = énfasis, selector híbrido) |
 | [ADR-0139](./adr/ADR-0139.md) | Principio Rector General — Single Source of Truth para Contratos Reusables |
 | [ADR-0140](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
-| [ADR-0140](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
+| [ADR-0141](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet, pool, retención y convenciones |

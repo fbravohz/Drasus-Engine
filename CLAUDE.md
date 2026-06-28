@@ -16,6 +16,7 @@ Este archivo se carga automáticamente al inicio de cada sesión y se cachea. Es
 - **Zero-Docker** y **Local-First / Soberanía de Datos:** sin contenedores en el core; el estado vive local. Prohibido acceso cross-module a tablas ajenas (se expone un puerto en la `public_interface` del dueño).
 - **Foundation Inundation (ADR-0020 V2):** ante duda genuina, incluir. El detalle y la tabla canónica de 4 perfiles viven en `docs/ADR.md` (ADR-0020 V2) — el ADR gana sobre cualquier resumen.
 - **Configurable vs Fijo:** "NUNCA/SIEMPRE" = invariante físico, fijo. "Umbral/Max/Min" = parámetro configurable.
+- **FASE DEL PROYECTO: GREENFIELD (pre-release).** Ningún usuario final ejecuta aún una build distribuida. Implica: el baseline de migraciones SQL es editable in-situ (recrear tablas con STRICT, corregir tipos, renombrar columnas, sin migration incremental). El congelamiento a **BROWNFIELD** se dispara con el primer release distribuido; a partir de ahí las migraciones son forward-only y robustas a saltos de versión. Detalle canónico en ADR-0006 (enmienda 2026-06-28).
 * **Agrupación de commits por tipo:** cuando el usuario autoriza commitear, agrupa los cambios pendientes en commits separados por tipo (`feat`, `docs`, `chore`, `fix`, `test`). Nunca un commit masivo de todo. Nunca commitees en automático sin que el usuario lo pida explícitamente en el turno actual.
 
 ---
