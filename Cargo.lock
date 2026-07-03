@@ -167,7 +167,9 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "nix",
+ "serde_json",
  "shared",
+ "sovereign-data-fetcher",
  "sqlx",
  "standard-pipeline",
  "tempfile",
@@ -348,6 +350,7 @@ version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
  "shared",
+ "sovereign-data-fetcher",
  "sqlx",
  "tokio",
 ]

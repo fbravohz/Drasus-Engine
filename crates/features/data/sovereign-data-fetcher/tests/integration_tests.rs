@@ -20,8 +20,8 @@ use shared::public_interface::{
 };
 use sovereign_data_fetcher::public_interface::{
     BulkFileInfo, BulkSource, DeltaSource, DownloadRepository, FetchError, FetchRequest,
-    FetcherConfig, TimeRange,
-    fetch, recover_interrupted_downloads,
+    FetcherConfig, TimeRange, VerifyInput, VerifyOutput,
+    fetch, recover_interrupted_downloads, verify_with_sources,
 };
 
 // ── Helpers de test ──────────────────────────────────────────────────────────
@@ -634,4 +634,74 @@ async fn fetch_aborts_when_orchestrator_detects_insufficient_disk() {
         "debe abortar con InsufficientDiskSpace, got: {:?}",
         result
     );
+}
+
+// ── CRITERIO CLI (ADR-0142 Fase 1): verify_with_sources_returns_ok_json ─────
+
+/// Verifica que `verify_with_sources` devuelve un VerifyOutput válido que
+/// serializa a JSON con la forma correcta cuando se usan adaptadores falsos.
+///
+/// Este test cubre el criterio del CLI de verificación (ADR-0142 Fase 1):
+///  1. Parseo de VerifyInput desde JSON (como lo haría el CLI con --input '...').
+///  2. Dispatch: verify_with_sources completa el ciclo sin error.
+///  3. Forma del JSON: el output serializa con los campos esperados ('ok', 'job_id', etc.).
+///
+/// No toca la red: los adaptadores falsos responden en memoria.
+#[tokio::test]
+async fn verify_with_fake_sources_returns_ok_json() {
+    let (pool, _dir) = setup_db().await;
+    let dest = setup_dest_dir();
+    // El reloj arranca en 10 días desde epoch para que start_ns sea positivo al restar 1 día.
+    let clock = DeterministicClock::new(86_400_000_000_000i64 * 10, 1_000);
+
+    // ── 1. Parseo de VerifyInput desde JSON (mismo camino que el CLI) ────────
+    let input_json = r#"{"symbol":"BTCUSDT","interval":"1m","days":1}"#;
+    let input: VerifyInput =
+        serde_json::from_str(input_json).expect("VerifyInput debe parsear desde JSON válido");
+
+    assert_eq!(input.symbol, "BTCUSDT");
+    assert_eq!(input.interval, "1m");
+    assert_eq!(input.days, Some(1));
+
+    // ── 2. Dispatch: verify_with_sources con adaptadores falsos ──────────────
+    // Sin archivos Bulk (list_inventory vacío) → todo el rango va a Delta.
+    let output: VerifyOutput = verify_with_sources(
+        &input,
+        dest.path(),
+        Arc::new(FakeSuccessBulkSource::new(vec![])),
+        &FakeSuccessDeltaSource::with_payload(b"datos-csv-simulados".to_vec()),
+        &pool,
+        &clock,
+    )
+    .await;
+
+    // La verificación debe completarse con ok: true.
+    assert!(output.ok, "verify_with_sources debe completarse sin error; error: {:?}", output.error);
+    assert!(output.job_id.is_some(), "job_id debe estar presente en el output exitoso");
+    assert!(output.record_id.is_some(), "record_id debe estar presente en el output exitoso");
+    assert_eq!(
+        output.bulk_files_downloaded,
+        Some(0),
+        "sin archivos Bulk, bulk_files_downloaded debe ser 0"
+    );
+    assert!(
+        output.delta_bytes.unwrap_or(0) > 0,
+        "delta_bytes debe ser > 0 cuando la fuente Delta devuelve datos"
+    );
+    assert!(output.error.is_none(), "error debe ser None en caso exitoso");
+
+    // ── 3. Forma del JSON: serialización y estructura ─────────────────────────
+    // serde_json::to_string ya está disponible como dependencia de producción del crate.
+    let json_str = serde_json::to_string(&output).expect("VerifyOutput debe serializar a JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&json_str).expect("el JSON producido debe ser válido");
+
+    assert_eq!(parsed["ok"], true, "campo 'ok' debe ser true");
+    assert!(parsed["job_id"].is_string(), "campo 'job_id' debe ser string");
+    assert!(parsed["record_id"].is_string(), "campo 'record_id' debe ser string");
+    assert!(parsed["error"].is_null(), "campo 'error' debe ser null en caso exitoso");
+    // Verifica que todos los campos de FetchResult están presentes en el JSON.
+    assert!(parsed["bulk_files_downloaded"].is_number(), "bulk_files_downloaded debe ser número");
+    assert!(parsed["delta_bytes"].is_number(), "delta_bytes debe ser número");
+    assert!(parsed["total_bytes"].is_number(), "total_bytes debe ser número");
 }

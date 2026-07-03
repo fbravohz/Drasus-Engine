@@ -28,6 +28,11 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
 # AuditLogRepository) — acceso exclusivo vía public_interface.rs (ADR-0003).
 shared = { path = "../shared" }
 
+# sovereign-data-fetcher provee el entrypoint `execute()` de producción que
+# el Bridge llama desde `submit_download_job`. Acceso exclusivo vía su
+# `public_interface` (ADR-0137).
+sovereign-data-fetcher = { path = "../features/data/sovereign-data-fetcher" }
+
 # flutter_rust_bridge genera los bindings Dart desde las funciones Rust
 # marcadas con #[frb(...)]. En tiempo de ejecución proporciona el runtime
 # de comunicación entre los dos lados de la frontera.

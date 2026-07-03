@@ -14,6 +14,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
 import 'api/audit.dart';
 import 'api/clock.dart';
+import 'api/data_fetcher.dart';
 import 'api/jobs.dart';
 import 'frb_generated.dart';
 
@@ -34,15 +35,29 @@ import 'frb_generated.dart';
 
 @protected AuditEventSummary dco_decode_audit_event_summary(dynamic raw);
 
+@protected JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw);
+
+@protected DownloadJobResult dco_decode_download_job_result(dynamic raw);
+
+@protected DownloadRecordDto dco_decode_download_record_dto(dynamic raw);
+
 @protected PlatformInt64 dco_decode_i_64(dynamic raw);
+
+@protected JobStatusDto dco_decode_job_status_dto(dynamic raw);
 
 @protected JobSummary dco_decode_job_summary(dynamic raw);
 
 @protected List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw);
 
+@protected List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw);
+
 @protected List<JobSummary> dco_decode_list_job_summary(dynamic raw);
 
 @protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+
+@protected String? dco_decode_opt_String(dynamic raw);
+
+@protected JobStatusDto? dco_decode_opt_box_autoadd_job_status_dto(dynamic raw);
 
 @protected BigInt dco_decode_u_64(dynamic raw);
 
@@ -54,15 +69,29 @@ import 'frb_generated.dart';
 
 @protected AuditEventSummary sse_decode_audit_event_summary(SseDeserializer deserializer);
 
+@protected JobStatusDto sse_decode_box_autoadd_job_status_dto(SseDeserializer deserializer);
+
+@protected DownloadJobResult sse_decode_download_job_result(SseDeserializer deserializer);
+
+@protected DownloadRecordDto sse_decode_download_record_dto(SseDeserializer deserializer);
+
 @protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+@protected JobStatusDto sse_decode_job_status_dto(SseDeserializer deserializer);
 
 @protected JobSummary sse_decode_job_summary(SseDeserializer deserializer);
 
 @protected List<AuditEventSummary> sse_decode_list_audit_event_summary(SseDeserializer deserializer);
 
+@protected List<DownloadRecordDto> sse_decode_list_download_record_dto(SseDeserializer deserializer);
+
 @protected List<JobSummary> sse_decode_list_job_summary(SseDeserializer deserializer);
 
 @protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+@protected String? sse_decode_opt_String(SseDeserializer deserializer);
+
+@protected JobStatusDto? sse_decode_opt_box_autoadd_job_status_dto(SseDeserializer deserializer);
 
 @protected BigInt sse_decode_u_64(SseDeserializer deserializer);
 
@@ -78,15 +107,29 @@ import 'frb_generated.dart';
 
 @protected void sse_encode_audit_event_summary(AuditEventSummary self, SseSerializer serializer);
 
+@protected void sse_encode_box_autoadd_job_status_dto(JobStatusDto self, SseSerializer serializer);
+
+@protected void sse_encode_download_job_result(DownloadJobResult self, SseSerializer serializer);
+
+@protected void sse_encode_download_record_dto(DownloadRecordDto self, SseSerializer serializer);
+
 @protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+@protected void sse_encode_job_status_dto(JobStatusDto self, SseSerializer serializer);
 
 @protected void sse_encode_job_summary(JobSummary self, SseSerializer serializer);
 
 @protected void sse_encode_list_audit_event_summary(List<AuditEventSummary> self, SseSerializer serializer);
 
+@protected void sse_encode_list_download_record_dto(List<DownloadRecordDto> self, SseSerializer serializer);
+
 @protected void sse_encode_list_job_summary(List<JobSummary> self, SseSerializer serializer);
 
 @protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+
+@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_job_status_dto(JobStatusDto? self, SseSerializer serializer);
 
 @protected void sse_encode_u_64(BigInt self, SseSerializer serializer);
 

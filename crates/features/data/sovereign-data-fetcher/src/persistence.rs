@@ -128,6 +128,37 @@ impl<'a> DownloadRepository<'a> {
         })
     }
 
+    /// Lista todos los registros de descarga, del más reciente al más antiguo.
+    ///
+    /// Sin paginación — adecuado para el volumen de EPIC-1 (decenas de
+    /// registros). Si la tabla está vacía, devuelve un Vec vacío.
+    pub async fn list_all(&self) -> Result<Vec<DownloadRecord>, DownloadRepositoryError> {
+        let rows = sqlx::query(
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+             data_snapshot_id, logic_hash, node_id, process_id, source_endpoint \
+             FROM sovereign_download_records ORDER BY event_sequence_id DESC",
+        )
+        .fetch_all(self.pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| DownloadRecord {
+                id: r.get("id"),
+                created_at: r.get("created_at"),
+                updated_at: r.get("updated_at"),
+                audit_hash: r.get("audit_hash"),
+                audit_chain_hash: r.get("audit_chain_hash"),
+                event_sequence_id: r.get("event_sequence_id"),
+                data_snapshot_id: r.get("data_snapshot_id"),
+                logic_hash: r.get("logic_hash"),
+                node_id: r.get("node_id"),
+                process_id: r.get("process_id"),
+                source_endpoint: r.get("source_endpoint"),
+            })
+            .collect())
+    }
+
     /// Carga un registro de descarga por `id`, o `None` si no existe.
     pub async fn find(
         &self,

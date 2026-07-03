@@ -23,6 +23,14 @@ shared = { path = "../shared" }
 # Conforme se construyen features, sus crates se añaden aquí como dependencias.
 standard-pipeline = { path = "../presets/standard-pipeline" }
 
+# Feature de descarga de datos — primer feature hexagonal (ADR-0137).
+# Se añade para soportar el subcomando `verify sovereign-data-fetcher` (ADR-0142).
+sovereign-data-fetcher = { path = "../features/data/sovereign-data-fetcher" }
+
+# Serialización/deserialización JSON para el input/output del subcomando `verify`.
+# Reutiliza la misma versión que ya usa el workspace (ya presente en el feature crate).
+serde_json = "1"
+
 [dev-dependencies]
 sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio", "macros"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }

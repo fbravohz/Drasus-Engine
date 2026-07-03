@@ -14,6 +14,7 @@ use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server,
     ExecutorIdentity, JobExecutor, JobExecutorConfig, SystemClock,
 };
+use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
 // ────────────────────────────────────────────────────────────────────────────
 // CLI declarativa (Clap 4 con el macro `derive`)
@@ -31,7 +32,7 @@ struct Cli {
     command: Commands,
 }
 
-/// Subcomandos disponibles en EPIC-0.
+/// Subcomandos disponibles.
 /// Los subcomandos de EPIC-1+ (`ingest`, `backtest`…) se añadirán
 /// en sus respectivas épicas (ver §8 de STORY-009).
 #[derive(Subcommand)]
@@ -47,6 +48,24 @@ enum Commands {
 
     /// Imprime la versión del binario y sale.
     Version,
+
+    /// Ejecuta el harness de verificación de una feature y emite el resultado como JSON.
+    ///
+    /// Ejemplo:
+    ///   drasus verify sovereign-data-fetcher --input '{"symbol":"BTCUSDT","interval":"1h"}'
+    ///
+    /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
+    Verify {
+        /// Identificador de la feature a verificar en kebab-case.
+        /// Feature soportada en Fase 1: `sovereign-data-fetcher`.
+        feature_id: String,
+
+        /// Input JSON para la verificación.
+        /// Si se omite, se usan los valores por defecto de la feature
+        /// (BTCUSDT, intervalo 1h, 1 día hacia atrás).
+        #[arg(long)]
+        input: Option<String>,
+    },
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -72,12 +91,68 @@ async fn main() {
         Commands::Start { db } => {
             run_start(&db).await;
         }
+
+        Commands::Verify { feature_id, input } => {
+            // Despacha la verificación y delega la presentación del resultado.
+            run_verify(&feature_id, input.as_deref()).await;
+        }
     }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 // Lógica de arranque (Shell puro — no hay lógica de dominio)
 // ────────────────────────────────────────────────────────────────────────────
+
+/// Despacha el subcomando `verify` a la feature indicada por `feature_id`.
+///
+/// Parsea el JSON de entrada (o usa los valores por defecto si `input_json` es None),
+/// llama a la función de verificación de la feature y serializa el output a stdout.
+/// En caso de error (feature desconocida, JSON malformado o fallo de verificación),
+/// escribe el error en stderr y sale con código 1.
+async fn run_verify(feature_id: &str, input_json: Option<&str>) {
+    match feature_id {
+        // ── Sovereign Data Fetcher ────────────────────────────────────────────
+        "sovereign-data-fetcher" => {
+            // Parsea el input JSON o usa los valores por defecto de la feature.
+            let input: VerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                // Sin --input: usa los valores por defecto (BTCUSDT, 1h, 1 día).
+                None => VerifyInput::default(),
+            };
+
+            // Llama a la función de verificación con adaptadores reales.
+            // El resultado incluye job_id, record_id, bytes descargados o descripción del error.
+            let output = verify(input).await;
+
+            // La salida JSON va siempre a stdout para que el usuario pueda pipear a `jq`.
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("VerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            // Si la verificación falló, emite el código de salida 1 para que los scripts
+            // puedan detectar el fallo (exit code 0 solo en éxito).
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
+        // ── Feature no reconocida ─────────────────────────────────────────────
+        unknown => {
+            eprintln!(
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher"
+            );
+            std::process::exit(1);
+        }
+    }
+}
 
 /// Inicializa el pool, aplica migraciones, recupera jobs del crash anterior
 /// y bloquea esperando señal de cierre.
@@ -201,4 +276,67 @@ async fn sigterm_received() {
 #[cfg(not(unix))]
 async fn sigterm_received() {
     std::future::pending::<()>().await;
+}
+
+// ── Tests unitarios de parseo de argumentos CLI ──────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    /// Verifica que el subcomando `verify` con `--input` parsea correctamente.
+    ///
+    /// Simula el comando:
+    ///   drasus verify sovereign-data-fetcher --input '{"symbol":"BTCUSDT","interval":"1h"}'
+    #[test]
+    fn cli_verify_with_input_parses_correctly() {
+        let cli = Cli::try_parse_from([
+            "drasus",
+            "verify",
+            "sovereign-data-fetcher",
+            "--input",
+            r#"{"symbol":"BTCUSDT","interval":"1h"}"#,
+        ])
+        .expect("el subcomando verify con --input debe parsear sin error");
+
+        match cli.command {
+            Commands::Verify { feature_id, input } => {
+                assert_eq!(feature_id, "sovereign-data-fetcher", "feature_id incorrecto");
+                let input_str = input.expect("--input debe estar presente");
+                // El JSON del input debe parsear a VerifyInput correctamente.
+                let parsed: VerifyInput = serde_json::from_str(&input_str)
+                    .expect("--input debe ser JSON válido de VerifyInput");
+                assert_eq!(parsed.symbol, "BTCUSDT");
+                assert_eq!(parsed.interval, "1h");
+            }
+            other => panic!("se esperaba Commands::Verify, se obtuvo {:?}", std::mem::discriminant(&other)),
+        }
+    }
+
+    /// Verifica que el subcomando `verify` sin `--input` también parsea (usa defaults).
+    ///
+    /// Simula el comando mínimo: drasus verify sovereign-data-fetcher
+    #[test]
+    fn cli_verify_without_input_parses_correctly() {
+        let cli = Cli::try_parse_from(["drasus", "verify", "sovereign-data-fetcher"])
+            .expect("verify sin --input debe parsear sin error");
+
+        // Sin --input el campo input debe ser None; run_verify usa los valores por defecto.
+        assert!(
+            matches!(cli.command, Commands::Verify { ref feature_id, input: None } if feature_id == "sovereign-data-fetcher"),
+            "se esperaba Verify {{ feature_id: sovereign-data-fetcher, input: None }}"
+        );
+    }
+
+    /// Verifica que `verify` con un feature-id desconocido parsea (el error ocurre en runtime).
+    ///
+    /// Clap acepta cualquier string como feature_id; la validación del feature-id conocido
+    /// ocurre en `run_verify` en tiempo de ejecución, no en el parseo de args.
+    #[test]
+    fn cli_verify_unknown_feature_parses_at_clap_level() {
+        let result = Cli::try_parse_from(["drasus", "verify", "feature-inexistente"]);
+        // Clap debe aceptar el argumento; la validación es responsabilidad de run_verify.
+        assert!(result.is_ok(), "Clap debe aceptar cualquier feature-id sin validar");
+    }
 }
