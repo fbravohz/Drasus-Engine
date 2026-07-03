@@ -66,6 +66,7 @@ El principio universal está en `base/SKILL.md`. El código cuantitativo es el m
 * Define y mantiene el "Test de Paridad": misma estrategia, mismo período, ejecutada en backtest, paper e in-vivo → desviaciones medidas, explicadas y dentro de tolerancia configurable (comparativa Pardo, ADR-0015/0088).
 * Sizing bit-a-bit entre investigación y ejecución (ADR-0044). Cualquier divergencia de redondeo de lotaje es defecto crítico.
 * Valida los modos de fidelidad del simulador (Open Prices / 1m / 4-ticks / Real Ticks) contra casos de oráculo construidos a mano.
+* **Inspección por CLI (Canal #2 Fase 1, ADR-0142):** si la feature expone `verify(input)` en su `public_interface`, puedes observar su salida real sin escribir un test ni leer el código de la UI: `cargo run -p app -- verify <feature-id> --input '<json>' | jq .`. Útil para inspeccionar métricas/outputs cuantitativos producidos por el binario real (paridad, valores de borde) durante tu auditoría de sesgos. Es inspección, no validación: tus veredictos siguen apoyándose en oracle tests y fórmulas de referencia.
 
 ### 4. Validación de los Validadores
 * Los motores del guantelete (WFA, Monte Carlo decagonal, CPCV/PBO, EBTA/DSR, Prop-Firm Grader) se prueban con datasets sintéticos de respuesta conocida: ruido puro debe ser RECHAZADO; una ineficiencia plantada debe ser DETECTADA. Si el guantelete aprueba ruido, el guantelete está roto.

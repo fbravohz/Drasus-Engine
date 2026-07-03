@@ -187,6 +187,8 @@ Checklist obligatoria antes de editar el archivo:
 
 - [ ] ¿Todos los tokens usados existen en `DESIGN.md`? (sin hex inventados)
 - [ ] ¿Todos los componentes existen en el catálogo `DESIGN.md §"Catálogo de Componentes"` §3–§11?
+- [ ] **¿El componente existe como widget FUNCIONAL en código (lección 2026-06-28)?** El catálogo de `DESIGN.md` y la galería (`ui/lib/gallery/`) son un **showcase render-only**: muchos componentes están dibujados pero SIN callbacks ni binding de datos (`GlowButton` sin `onPressed`, `GlowDropdown`/`GlowSegmented` sin `onChanged`, `GlowInput` sin `controller`), y otros que nombras pueden no existir como clase (`GlowTable`, `GlowEmpty`, `GlowBanner`, `GlowTooltip`, `GlowDatePicker`). Antes de referenciar un componente para una feature **interactiva**, verifica con `grep` que existe como widget que acepte la interacción/datos que tu spec necesita. Si es showcase-only o no existe → NO lo especifiques como si estuviera listo: márcalo explícitamente como **"componente a construir/extender en la librería"** y escálalo al Tech-Lead (catálogo ≠ librería de componentes usable).
+- [ ] **¿Tus "Notas de implementación" calzan con el contrato FFI real (lección 2026-06-28)?** Si la feature ya tiene su binding generado (`ui/lib/src/rust/api/<feature>.dart`), léelo: no especifiques polling (`Timer.periodic`) si la firma es `Future`/`await`, ni inventes campos que el DTO no expone. La nota debe describir el patrón que el binding real permite.
 - [ ] ¿Cada color de vitalidad tiene un estado de negocio asociado? (sin color "decorativo")
 - [ ] ¿La densidad coincide con el nivel ZUI asignado?
 - [ ] ¿Las violaciones del Paso 3 están corregidas?

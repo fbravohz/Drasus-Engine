@@ -60,6 +60,8 @@ El principio universal está en `base/SKILL.md`. Aquí los requisitos específic
 
 **QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado. El QA revisará los contratos de tipo, los bloques `unsafe` y los comentarios de ownership — no solo compilará el binding.
 
+**Verificación previa del backend por CLI (Canal #2 Fase 1, ADR-0142):** antes de cablear o depurar el FFI/gRPC de una feature, confirma que su `public_interface` ya funciona contra datos reales desde la terminal: `cargo run -p app -- verify <feature-id> --input '<json>' | jq .`. Así aíslas si un fallo está en el backend o en tu capa de bridge: si el CLI devuelve el JSON correcto, el motor está bien y el problema es de tipos/ownership/codegen en la frontera; si el CLI ya falla, regrésalo al engineer antes de tocar el binding.
+
 ### 2c. Post-Codegen Obligatorio — Corrección de `ioDirectory` en Workspace Cargo
 
 Después de cada ejecución de `flutter_rust_bridge_codegen generate`, verifica y corrige `ui/lib/src/rust/frb_generated.dart`:

@@ -76,6 +76,18 @@ Todo componente de la galería (`ui/lib/gallery/`) es **biblioteca reutilizable 
 
 Extender el sistema (nuevo modo de superficie, nueva propiedad de tema) se hace en UN solo lugar (el registro/tokens), nunca duplicando lógica por componente.
 
+### 2d. Superficie de Verificación Funcional (SVF) — patrón canónico (ADR-0117)
+Toda feature con Superficie propia entrega, en la MISMA Story que su backend, **UNA** pestaña en el Panel Operativo Fundacional que demuestra su SVF con datos reales (nunca mock): (a) un control que dispara la operación real vía `public_interface`/Bridge; (b) la visualización del resultado real devuelto por el Core (FFI); (c) un observable persistido visible tras recargar (id/timestamp/hash/estado). Patrón canónico a imitar: `ui/lib/tabs/clock_tab.dart`, `jobs_tab.dart`, `audit_tab.dart` (binding FFI en `ui/lib/src/rust/api/<feature>.dart` + tab en `ui/lib/tabs/<feature>_tab.dart`). Es el canal con el que el humano (perfil frontend) verifica el round-trip front→back→DB sin leer código — **sin la SVF la feature NO está terminada** (Gate de Integración Anti-Deuda). NO la confundas con el Dashboard widget (bento grid, después) ni con el nodo Canvas DAG con inspector panel (EPIC-8): la SVF es el mínimo de verificación, no la UX de producción.
+
+### 2e. Componente ausente o insuficiente → PARA Y ESCALA, no reimplementes en silencio (lección STORY-024, 2026-06-28)
+La galería (`ui/lib/gallery/`) es un **showcase render-only**: muchos componentes están dibujados pero SIN callbacks/binding (`GlowButton` sin `onPressed`, `GlowDropdown`/`GlowSegmented` sin `onChanged`, `GlowInput` sin `controller`) y otros que la spec nombra pueden no existir como clase (`GlowTable`, `GlowEmpty`, `GlowBanner`, `GlowTooltip`, `GlowDatePicker`). **Catálogo ≠ librería usable.** Cuando la Cáscara Visual te pida un componente que no existe o no soporta la interacción/datos que necesitas:
+- **NO lo reimplementes inline por feature.** Forkear el componente en cada pantalla produce deriva del design-system y bypass de la librería compartida — exactamente lo que el proyecto combate (ver detección de bypass del provider, commits 2026-06-26/27).
+- **PARA y reporta al Tech-Lead** la lista exacta de componentes faltantes/insuficientes y qué capacidad les falta (callback, controller, options, estado de error). El TL decide: extender el componente existente (edición backward-compatible) o construir el faltante como widget canónico en la librería.
+- Solo procedes a implementar la sección cuando los componentes existen como widgets funcionales que puedes **consumir**.
+
+### 2f. Consumo del theme provider — sin excepción bajo presión (lección STORY-024, 2026-06-28)
+PROHIBIDO hardcodear hex (`Color(0xFF...)`) aunque estés improvisando un componente: si el color que necesitas tiene token (`Gx.*` — p.ej. `Gx.transitionChipBg`, `Gx.criticalChipBg`), úsalo; si NO existe el token, **escala para añadirlo al theme**, nunca lo bypasees con un literal. (Caso real: se hardcodeó `Color(0xFF130F2A)` existiendo `Gx.transitionChipBg`, y con valor equivocado.) El único color literal admisible es `Colors.transparent`. Antes de entregar, `grep -nE "Color\(0x|Colors\.(?!transparent)"` sobre tus archivos debe salir limpio.
+
 ### 3. Consumo de la Capa de Enlace
 * Consume exclusivamente las funciones, streams y eventos expuestos por el Bridge (FFI/gRPC), estructurando reactivamente el estado.
 * Respeta el throttling de telemetría (refresco máx. cada 100ms) y renderiza datos ya reducidos (downsampling servidor); nunca pidas datasets crudos masivos.
