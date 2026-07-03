@@ -3,13 +3,14 @@
 // y un FAB que abre el catálogo de widgets disponibles (actualmente todos
 // "Próximamente"). No contiene lógica de negocio: es pura presentación.
 
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../gallery/gallery_tokens.dart';
 import '../gallery/gallery_painters.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
+import '../components/components.dart' as ui;
 import 'dashboard_registry.dart';
+import 'sovereign_data_fetcher_dashboard_widget.dart';
 
 // ---------------------------------------------------------------------------
 // DashboardTab — pestaña principal del tablero.
@@ -23,7 +24,7 @@ class DashboardTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // deepSpace de la paleta activa; fallback al bunker si el tema no está montado.
-    final surfaces = DrasusTheme.surfaceFor(context);
+    final surfaces = ThemeScope.surfaceFor(context);
     final bg = surfaces?.deepSpace ?? Gx.deepSpace;
 
     return Scaffold(
@@ -78,93 +79,52 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  // Abre el BottomSheet de catálogo de widgets de vidrio Apple.
+  // Abre el catálogo de widgets en un Sheet de vidrio (ui.Sheet vía showAppSheet).
   void _showWidgetCatalog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      // isScrollControlled permite que el sheet alcance 400px exactos.
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _WidgetCatalogSheet(),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _BentoGrid — layout bento variado con glassmorfismo Apple real.
-// ---------------------------------------------------------------------------
-
-// Celda de vidrio con BackdropFilter blur 40 + fill blanco 13% + borde 20%.
-// Muestra ícono + título + subtítulo "Sin datos — próximamente".
-class GlassBentoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final double height;
-
-  const GlassBentoCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    this.height = 200,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0x22FFFFFF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0x33FFFFFF),
-                width: 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(icon, size: 22, color: Gx.textBaseSecondary),
-                  const SizedBox(height: 10),
-                  Text(
-                    title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Sin datos — próximamente',
-                    style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted),
-                  ),
-                ],
-              ),
+    ui.showAppSheet(
+      context,
+      height: 400,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                Gx.space16, Gx.space8, Gx.space16, Gx.space8),
+            child: Text(
+              'Agregar Widget',
+              style: Gx.displayGrotesque(fontSize: 18, color: Gx.textBase),
             ),
           ),
-        ),
+          // Lista scrolleable de entradas del catálogo de widgets del dashboard.
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Gx.space16, vertical: Gx.space4),
+              itemCount: kDashboardRegistry.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 2),
+              itemBuilder: (ctx, i) =>
+                  _GlowWidgetCatalogItem(meta: kDashboardRegistry[i]),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ---------------------------------------------------------------------------
+// _BentoGrid — layout bento variado con glassmorfismo reactivo al tema.
+// GlassBentoCard migrado a ui.BentoCard (Batch 4 STORY-025).
+// ---------------------------------------------------------------------------
+
 // Layout bento: dos columnas con alturas variadas.
 // flex:2 (izquierda) — Portafolio Principal + fila Rendimiento/Drawdown.
-// flex:1 (derecha) — Estrategias Activas + Pipeline.
+// flex:1 (derecha) — Estrategias Activas + Pipeline + widget STORY-024.
 class _BentoGrid extends StatelessWidget {
   const _BentoGrid();
 
   @override
+  // Construye el layout bento de dos columnas usando ui.BentoCard como celda.
   Widget build(BuildContext context) {
     return IntrinsicHeight(
       child: Row(
@@ -175,24 +135,25 @@ class _BentoGrid extends StatelessWidget {
             flex: 2,
             child: Column(
               children: [
-                GlassBentoCard(
+                // ui.BentoCard reemplaza GlassBentoCard; no es const (lee Gx dinámico).
+                ui.BentoCard(
                   icon: IconsaxPlusLinear.chart,
                   title: 'Portafolio Principal',
                   height: 280,
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  children: const [
+                  children: [
                     Expanded(
-                      child: GlassBentoCard(
+                      child: ui.BentoCard(
                         icon: IconsaxPlusLinear.chart_1,
                         title: 'Rendimiento',
                         height: 180,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: GlassBentoCard(
+                      child: ui.BentoCard(
                         icon: IconsaxPlusLinear.warning_2,
                         title: 'Drawdown',
                         height: 180,
@@ -208,18 +169,22 @@ class _BentoGrid extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Column(
-              children: const [
-                GlassBentoCard(
+              children: [
+                ui.BentoCard(
                   icon: IconsaxPlusLinear.element_1,
                   title: 'Estrategias Activas',
                   height: 240,
                 ),
-                SizedBox(height: 12),
-                GlassBentoCard(
+                const SizedBox(height: 12),
+                ui.BentoCard(
                   icon: IconsaxPlusLinear.element,
                   title: 'Pipeline',
                   height: 220,
                 ),
+                const SizedBox(height: 12),
+                // Widget real del Sovereign Data Fetcher (STORY-024).
+                // Muestra el último registro de sovereign_download_records por FFI.
+                const SovereignDataFetcherDashboardWidget(),
               ],
             ),
           ),
@@ -322,72 +287,6 @@ class _DashedBorderPainter extends CustomPainter {
       old.strokeWidth != strokeWidth ||
       old.dashWidth != dashWidth ||
       old.gapWidth != gapWidth;
-}
-
-// ---------------------------------------------------------------------------
-// _WidgetCatalogSheet — BottomSheet de vidrio con el catálogo de widgets.
-// ---------------------------------------------------------------------------
-
-// Altura fija 400px. Vidrio Apple: BackdropFilter blur 36 + glassFill.
-// Lista los widgets del kDashboardRegistry; todos muestran el chip "Próximamente".
-class _WidgetCatalogSheet extends StatelessWidget {
-  const _WidgetCatalogSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 36, sigmaY: 36),
-        child: Container(
-          height: 400,
-          decoration: BoxDecoration(
-            color: Gx.surfaceFill,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border(
-              top: BorderSide(color: Gx.textBase.withOpacity(Gx.glassEdgeOpacity), width: 1),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Tirador visual del sheet.
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Gx.borderPanel,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text(
-                  'Agregar Widget',
-                  style: Gx.displayGrotesque(fontSize: 18, color: Gx.textBase),
-                ),
-              ),
-              // Lista scrolleable de entradas del catálogo.
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  itemCount: kDashboardRegistry.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 2),
-                  itemBuilder: (ctx, i) =>
-                      _GlowWidgetCatalogItem(meta: kDashboardRegistry[i]),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------

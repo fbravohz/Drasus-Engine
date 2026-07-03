@@ -106,4 +106,13 @@ const List<DashboardWidgetMeta> kDashboardRegistry = [
     icon: IconsaxPlusLinear.element_plus,
     available: false,
   ),
+  // Widget de última descarga de históricos soberanos — implementado en STORY-024.
+  DashboardWidgetMeta(
+    id: 'sovereign-data-fetcher',
+    name: 'Datos Soberanos',
+    description:
+        'Estado de la última descarga: ID, timestamp y endpoint fuente.',
+    icon: IconsaxPlusLinear.document_download,
+    available: true,
+  ),
 ];
