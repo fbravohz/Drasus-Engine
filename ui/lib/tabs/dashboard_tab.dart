@@ -8,7 +8,7 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import '../gallery/gallery_tokens.dart';
 import '../gallery/gallery_painters.dart';
 import '../theme/theme_scope.dart';
-import '../components/components.dart' as ui;
+import '../components/components.dart' as custom_ui;
 import 'dashboard_registry.dart';
 import 'sovereign_data_fetcher_dashboard_widget.dart';
 
@@ -79,9 +79,9 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  // Abre el catálogo de widgets en un Sheet de vidrio (ui.Sheet vía showAppSheet).
+  // Abre el catálogo de widgets en un Sheet de vidrio (custom_ui.Sheet vía showAppSheet).
   void _showWidgetCatalog(BuildContext context) {
-    ui.showAppSheet(
+    custom_ui.showAppSheet(
       context,
       height: 400,
       child: Column(
@@ -114,7 +114,7 @@ class DashboardTab extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // _BentoGrid — layout bento variado con glassmorfismo reactivo al tema.
-// GlassBentoCard migrado a ui.BentoCard (Batch 4 STORY-025).
+// GlassBentoCard migrado a custom_ui.BentoCard (Batch 4 STORY-025).
 // ---------------------------------------------------------------------------
 
 // Layout bento: dos columnas con alturas variadas.
@@ -124,7 +124,7 @@ class _BentoGrid extends StatelessWidget {
   const _BentoGrid();
 
   @override
-  // Construye el layout bento de dos columnas usando ui.BentoCard como celda.
+  // Construye el layout bento de dos columnas usando custom_ui.BentoCard como celda.
   Widget build(BuildContext context) {
     return IntrinsicHeight(
       child: Row(
@@ -135,8 +135,8 @@ class _BentoGrid extends StatelessWidget {
             flex: 2,
             child: Column(
               children: [
-                // ui.BentoCard reemplaza GlassBentoCard; no es const (lee Gx dinámico).
-                ui.BentoCard(
+                // custom_ui.BentoCard reemplaza GlassBentoCard; no es const (lee Gx dinámico).
+                custom_ui.BentoCard(
                   icon: IconsaxPlusLinear.chart,
                   title: 'Portafolio Principal',
                   height: 280,
@@ -145,7 +145,7 @@ class _BentoGrid extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: ui.BentoCard(
+                      child: custom_ui.BentoCard(
                         icon: IconsaxPlusLinear.chart_1,
                         title: 'Rendimiento',
                         height: 180,
@@ -153,7 +153,7 @@ class _BentoGrid extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ui.BentoCard(
+                      child: custom_ui.BentoCard(
                         icon: IconsaxPlusLinear.warning_2,
                         title: 'Drawdown',
                         height: 180,
@@ -170,13 +170,13 @@ class _BentoGrid extends StatelessWidget {
             flex: 1,
             child: Column(
               children: [
-                ui.BentoCard(
+                custom_ui.BentoCard(
                   icon: IconsaxPlusLinear.element_1,
                   title: 'Estrategias Activas',
                   height: 240,
                 ),
                 const SizedBox(height: 12),
-                ui.BentoCard(
+                custom_ui.BentoCard(
                   icon: IconsaxPlusLinear.element,
                   title: 'Pipeline',
                   height: 220,

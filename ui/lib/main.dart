@@ -2,6 +2,7 @@
 // Inicializa el bridge Rust↔Dart antes de montar el árbol de widgets.
 
 import 'package:flutter/material.dart';
+import 'app_meta.dart';
 import 'src/rust/frb_generated.dart';
 import 'theme/theme_scope.dart';
 import 'operational_panel.dart';
@@ -33,7 +34,7 @@ class AppRoot extends StatelessWidget {
     return ThemeScope(
       state: state,
       child: MaterialApp(
-        title: 'Drasus Engine',
+        title: kAppName,
         debugShowCheckedModeBanner: false,
         theme: state.buildThemeData(),
         home: const OperationalPanel(),

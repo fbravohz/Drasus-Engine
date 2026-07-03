@@ -15,8 +15,8 @@ import 'gallery_tokens.dart';
 import 'gallery_fx.dart';
 import 'gallery_painters.dart';
 import '../theme/theme_scope.dart';
-// Librería de componentes funcionales — se consume con namespace ui.* (ADR-0138).
-import '../components/components.dart' as ui;
+// Librería de componentes funcionales — se consume con namespace custom_ui.* (ADR-0138).
+import '../components/components.dart' as custom_ui;
 import 'sections/section_nav.dart';
 import 'sections/section_inputs_extended.dart';
 // section_buttons_extended.dart eliminado (todos los Glow* migrados — Batch 3, STORY-025).
@@ -108,7 +108,7 @@ Widget galleryFrame(String label, Widget child, {double width = 280}) {
 // Widgets de demo privados (estado local para mocks de la galería)
 // ---------------------------------------------------------------------------
 
-// Demo del estado "cargando" de ui.Button. Simula trabajo asíncrono de 2s.
+// Demo del estado "cargando" de custom_ui.Button. Simula trabajo asíncrono de 2s.
 // Muestra la capacidad nativa de Button(loading: true) — no requiere componente separado.
 class _LoadingButtonDemo extends StatefulWidget {
   const _LoadingButtonDemo();
@@ -130,9 +130,9 @@ class _LoadingButtonDemoState extends State<_LoadingButtonDemo> {
   @override
   // Botón secundario con spinner integrado; se deshabilita durante la carga.
   Widget build(BuildContext context) {
-    return ui.Button(
+    return custom_ui.Button(
       label: _loading ? 'Cargando…' : 'LANZAR',
-      variant: ui.ButtonVariant.secondary,
+      variant: custom_ui.ButtonVariant.secondary,
       // onPressed = null durante la carga: deshabilita el botón internamente.
       onPressed: _loading ? null : _launch,
       loading: _loading,
@@ -243,7 +243,7 @@ Widget _swatches(List<List<Object>> entries, {bool glow = false}) {
   );
 }
 
-// _tabsMock eliminado — galería consume ui.Tabs directamente (Batch 4 STORY-025).
+// _tabsMock eliminado — galería consume custom_ui.Tabs directamente (Batch 4 STORY-025).
 
 /// Pipeline de 5 pasos con puntos de color por estado.
 Widget _pipelineMock() {
@@ -458,7 +458,7 @@ Widget _alert(IconData icon, String msg, Color c, Color bg) => frosted(
       ),
     );
 
-// _modalMock eliminado — galería consume ui.Dialog directamente (Batch 4 STORY-025).
+// _modalMock eliminado — galería consume custom_ui.Dialog directamente (Batch 4 STORY-025).
 
 /// Célula organismo con gauge de salud y chip de estado.
 Widget _organismCard() => Container(
@@ -621,7 +621,7 @@ List<GalleryEntry> _foundations() => [
       // Surface consume el modo global del tema — no toma parámetro de estilo.
       GalleryEntry(
           'Superficie (modo global)',
-          (ctx) => ui.Surface(
+          (ctx) => custom_ui.Surface(
                 padding: const EdgeInsets.all(12),
                 glow: Gx.glow(Gx.transitionIndigo, blur: 18, opacity: 0.25),
                 child: _panelHeader(Gx.iconBlurOn, 'Superficie del tema activo'),
@@ -637,10 +637,10 @@ List<GalleryEntry> _foundations() => [
           'Badge',
           (ctx) => _panelSolid(
                 child: Wrap(spacing: 12, runSpacing: 8, children: [
-                  ui.Badge(count: 5),
-                  ui.Badge(label: 'NEW'),
-                  ui.Badge(count: 128),
-                  ui.Badge(
+                  custom_ui.Badge(count: 5),
+                  custom_ui.Badge(label: 'NEW'),
+                  custom_ui.Badge(count: 128),
+                  custom_ui.Badge(
                     count: 3,
                     child: Container(
                       width: 32,
@@ -701,27 +701,27 @@ List<GalleryEntry> _layout() => [
                               shadows: Gx.textGlow(Gx.optimaCyan))),
                     ]),
               )),
-      // Tabs — tres pestañas de demo en altura acotada (ui.Tabs, Batch 4 STORY-025).
+      // Tabs — tres pestañas de demo en altura acotada (custom_ui.Tabs, Batch 4 STORY-025).
       GalleryEntry(
           'Tabs',
           (ctx) => SizedBox(
                 height: 160,
-                child: ui.Tabs(
+                child: custom_ui.Tabs(
                   isScrollable: false,
                   tabs: [
-                    ui.TabItem(
+                    custom_ui.TabItem(
                       label: 'MACRO',
                       child: Center(
                           child: Text('Vista MACRO',
                               style: Gx.bodySecondary)),
                     ),
-                    ui.TabItem(
+                    custom_ui.TabItem(
                       label: 'MESO',
                       child: Center(
                           child: Text('Vista MESO',
                               style: Gx.bodySecondary)),
                     ),
-                    ui.TabItem(
+                    custom_ui.TabItem(
                       label: 'MICRO',
                       child: Center(
                           child: Text('Vista MICRO',
@@ -743,7 +743,7 @@ List<GalleryEntry> _layout() => [
       // Card: tarjeta de contenido genérica — un nivel de profundidad sobre panel.
       GalleryEntry(
           'Card',
-          (ctx) => ui.Card(
+          (ctx) => custom_ui.Card(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -760,7 +760,7 @@ List<GalleryEntry> _layout() => [
       // BentoCard — celda bento-grid reactiva al modo de tema global (Batch 4 STORY-025).
       GalleryEntry(
           'Bento Card',
-          (ctx) => ui.BentoCard(
+          (ctx) => custom_ui.BentoCard(
                 icon: Icons.star_outline,
                 title: 'Sharpe Ratio',
                 height: 140,
@@ -776,43 +776,43 @@ List<GalleryEntry> _navigation() => [
       GalleryEntry('Breadcrumbs',
           (ctx) => _panelSolid(child: breadcrumbs())),
       GalleryEntry('Pagination',
-          (ctx) => _panelSolid(child: ui.Pagination(total: 8))),
+          (ctx) => _panelSolid(child: custom_ui.Pagination(total: 8))),
       GalleryEntry('Command Palette', (ctx) => const CommandPalette()),
       GalleryEntry('Tree View',
           (ctx) => _panelSolid(
-              child: ui.TreeView(nodes: [
-                ui.TreeViewNode(label: 'Raíz', id: 1, children: [
-                  ui.TreeViewNode(label: 'Hijo A', id: 2),
-                  ui.TreeViewNode(label: 'Hijo B', id: 3),
+              child: custom_ui.TreeView(nodes: [
+                custom_ui.TreeViewNode(label: 'Raíz', id: 1, children: [
+                  custom_ui.TreeViewNode(label: 'Hijo A', id: 2),
+                  custom_ui.TreeViewNode(label: 'Hijo B', id: 3),
                 ]),
               ]))),
       GalleryEntry(
           'Back to Top',
           (ctx) => _panelSolid(
-                child: SizedBox(height: 60, child: ui.BackToTop()),
+                child: SizedBox(height: 60, child: custom_ui.BackToTop()),
               )),
       GalleryEntry('Anchor / Scrollspy',
-          (ctx) => ui.Scrollspy(sections: const ['Introducción', 'Detalles', 'Resumen'])),
+          (ctx) => custom_ui.Scrollspy(sections: const ['Introducción', 'Detalles', 'Resumen'])),
     ];
 
 /// §6 Inputs: text field, search, dropdown, switch, slider, checkbox, tags.
 List<GalleryEntry> _inputs() => [
       // Input — modo no controlado: el componente gestiona su estado interno.
       GalleryEntry('Text field (foco con glow)',
-          (ctx) => ui.Input(hint: 'Símbolo…')),
+          (ctx) => custom_ui.Input(hint: 'Símbolo…')),
       GalleryEntry('Search',
-          (ctx) => ui.Input(hint: 'Buscar estrategia…')),
+          (ctx) => custom_ui.Input(hint: 'Buscar estrategia…')),
       GalleryEntry('Input con error',
-          (ctx) => ui.Input(hint: 'Símbolo…', errorText: 'Símbolo no válido')),
+          (ctx) => custom_ui.Input(hint: 'Símbolo…', errorText: 'Símbolo no válido')),
       // Dropdown — modo no controlado: empieza sin selección, hint visible.
       GalleryEntry(
           'Dropdown (abre)',
-          (ctx) => ui.Dropdown<String>(
+          (ctx) => custom_ui.Dropdown<String>(
               items: const [
-                ui.DropdownItem(value: 'Tendencia', label: 'Tendencia'),
-                ui.DropdownItem(value: 'Rango', label: 'Rango'),
-                ui.DropdownItem(value: 'Volátil', label: 'Volátil'),
-                ui.DropdownItem(value: 'Calmo', label: 'Calmo'),
+                custom_ui.DropdownItem(value: 'Tendencia', label: 'Tendencia'),
+                custom_ui.DropdownItem(value: 'Rango', label: 'Rango'),
+                custom_ui.DropdownItem(value: 'Volátil', label: 'Volátil'),
+                custom_ui.DropdownItem(value: 'Calmo', label: 'Calmo'),
               ],
               hint: 'Régimen…',
               onChanged: (v) => debugPrint('dropdown: $v'))),
@@ -820,13 +820,13 @@ List<GalleryEntry> _inputs() => [
       GalleryEntry(
           'Switch (toca)',
           (ctx) => Row(children: [
-                ui.Switch(onChanged: (v) => debugPrint('switch1: $v')),
+                custom_ui.Switch(onChanged: (v) => debugPrint('switch1: $v')),
                 const SizedBox(width: 12),
-                ui.Switch(value: false, onChanged: (v) => debugPrint('switch2: $v')),
+                custom_ui.Switch(value: false, onChanged: (v) => debugPrint('switch2: $v')),
               ])),
       // Slider — modo no controlado: initialValue = 0.62.
       GalleryEntry('Slider (arrastra)',
-          (ctx) => ui.Slider(initialValue: 0.62, onChanged: (v) => debugPrint('slider: $v'))),
+          (ctx) => custom_ui.Slider(initialValue: 0.62, onChanged: (v) => debugPrint('slider: $v'))),
       GalleryEntry(
           'Checkbox / Radio',
           (ctx) => Row(children: [
@@ -856,14 +856,14 @@ List<GalleryEntry> _inputsExtended() => [
       // Combobox — non-controlado; filtra ítems por texto al escribir.
       GalleryEntry(
           'Combobox / Autocomplete',
-          (ctx) => ui.Combobox<String>(
+          (ctx) => custom_ui.Combobox<String>(
                 items: const [
-                  ui.ComboboxItem(value: 'SPX', label: 'SPX'),
-                  ui.ComboboxItem(value: 'SPY', label: 'SPY'),
-                  ui.ComboboxItem(value: 'SPXL', label: 'SPXL'),
-                  ui.ComboboxItem(value: 'QQQ', label: 'QQQ'),
-                  ui.ComboboxItem(value: 'GLD', label: 'GLD'),
-                  ui.ComboboxItem(value: 'G10', label: 'G10'),
+                  custom_ui.ComboboxItem(value: 'SPX', label: 'SPX'),
+                  custom_ui.ComboboxItem(value: 'SPY', label: 'SPY'),
+                  custom_ui.ComboboxItem(value: 'SPXL', label: 'SPXL'),
+                  custom_ui.ComboboxItem(value: 'QQQ', label: 'QQQ'),
+                  custom_ui.ComboboxItem(value: 'GLD', label: 'GLD'),
+                  custom_ui.ComboboxItem(value: 'G10', label: 'G10'),
                 ],
                 hint: 'Símbolo…',
                 onChanged: (v) => debugPrint('combobox: $v'),
@@ -871,13 +871,13 @@ List<GalleryEntry> _inputsExtended() => [
       // MultiSelect — non-controlado; chips de selección múltiple.
       GalleryEntry(
           'Multiselect',
-          (ctx) => ui.MultiSelect<String>(
+          (ctx) => custom_ui.MultiSelect<String>(
                 items: const [
-                  ui.MultiSelectItem(value: 'SPX', label: 'SPX'),
-                  ui.MultiSelectItem(value: 'QQQ', label: 'QQQ'),
-                  ui.MultiSelectItem(value: 'GLD', label: 'GLD'),
-                  ui.MultiSelectItem(value: 'G10', label: 'G10'),
-                  ui.MultiSelectItem(value: 'DXY', label: 'DXY'),
+                  custom_ui.MultiSelectItem(value: 'SPX', label: 'SPX'),
+                  custom_ui.MultiSelectItem(value: 'QQQ', label: 'QQQ'),
+                  custom_ui.MultiSelectItem(value: 'GLD', label: 'GLD'),
+                  custom_ui.MultiSelectItem(value: 'G10', label: 'G10'),
+                  custom_ui.MultiSelectItem(value: 'DXY', label: 'DXY'),
                 ],
                 onChanged: (s) => debugPrint('multiselect: $s'),
               )),
@@ -885,7 +885,7 @@ List<GalleryEntry> _inputsExtended() => [
       GalleryEntry(
           'Number Input',
           (ctx) => _panelSolid(
-                child: ui.NumberInput(
+                child: custom_ui.NumberInput(
                   min: 1.0,
                   max: 20.0,
                   step: 1.0,
@@ -896,7 +896,7 @@ List<GalleryEntry> _inputsExtended() => [
       // Textarea — non-controlado; 3 líneas, hint con descripción de estrategia.
       GalleryEntry(
           'Textarea',
-          (ctx) => ui.Textarea(
+          (ctx) => custom_ui.Textarea(
                 hint: 'Descripción de la estrategia…',
                 onChanged: (v) => debugPrint('textarea: $v'),
               )),
@@ -904,7 +904,7 @@ List<GalleryEntry> _inputsExtended() => [
       GalleryEntry(
           'OTP / PIN Input',
           (ctx) => _panelSolid(
-                child: ui.OtpInput(
+                child: custom_ui.OtpInput(
                   length: 6,
                   onCompleted: (v) => debugPrint('otp completed: $v'),
                   onChanged: (v) => debugPrint('otp: $v'),
@@ -914,7 +914,7 @@ List<GalleryEntry> _inputsExtended() => [
       GalleryEntry(
           'Rating',
           (ctx) => _panelSolid(
-                child: ui.Rating(
+                child: custom_ui.Rating(
                   max: 5,
                   onChanged: (v) => debugPrint('rating: $v'),
                 ),
@@ -925,17 +925,17 @@ List<GalleryEntry> _inputsExtended() => [
       // FormField — wrapper con label, input hijo y texto de ayuda.
       GalleryEntry(
           'Form Field (normal)',
-          (ctx) => ui.FormField(
+          (ctx) => custom_ui.FormField(
                 label: 'Símbolo de activo',
-                child: ui.Input(hint: 'SPX'),
+                child: custom_ui.Input(hint: 'SPX'),
                 helperText: 'Cualquier ticker de futuros.',
               )),
       // FormField con error — errorText reemplaza al helperText en rojo.
       GalleryEntry(
           'Form Field (error)',
-          (ctx) => ui.FormField(
+          (ctx) => custom_ui.FormField(
                 label: 'Símbolo de activo',
-                child: ui.Input(
+                child: custom_ui.Input(
                     hint: 'SPX',
                     errorText: 'Símbolo no reconocido.'),
                 errorText: 'Símbolo no reconocido.',
@@ -943,38 +943,38 @@ List<GalleryEntry> _inputsExtended() => [
       // Cascader — non-controlado; jerarquía régimen → símbolo con dos columnas.
       GalleryEntry(
           'Cascader',
-          (ctx) => ui.Cascader<String>(
+          (ctx) => custom_ui.Cascader<String>(
                 nodes: const [
-                  ui.CascaderNode(value: 'optima', label: 'Óptimo', children: [
-                    ui.CascaderNode(value: 'SPX', label: 'SPX'),
-                    ui.CascaderNode(value: 'QQQ', label: 'QQQ'),
-                    ui.CascaderNode(value: 'GLD', label: 'GLD'),
+                  custom_ui.CascaderNode(value: 'optima', label: 'Óptimo', children: [
+                    custom_ui.CascaderNode(value: 'SPX', label: 'SPX'),
+                    custom_ui.CascaderNode(value: 'QQQ', label: 'QQQ'),
+                    custom_ui.CascaderNode(value: 'GLD', label: 'GLD'),
                   ]),
-                  ui.CascaderNode(value: 'transition', label: 'Transición', children: [
-                    ui.CascaderNode(value: 'EURUSD', label: 'EUR/USD'),
-                    ui.CascaderNode(value: 'G10', label: 'G10'),
+                  custom_ui.CascaderNode(value: 'transition', label: 'Transición', children: [
+                    custom_ui.CascaderNode(value: 'EURUSD', label: 'EUR/USD'),
+                    custom_ui.CascaderNode(value: 'G10', label: 'G10'),
                   ]),
-                  ui.CascaderNode(value: 'alert', label: 'Alerta', children: [
-                    ui.CascaderNode(value: 'VIX', label: 'VIX'),
-                    ui.CascaderNode(value: 'OIL', label: 'OIL'),
+                  custom_ui.CascaderNode(value: 'alert', label: 'Alerta', children: [
+                    custom_ui.CascaderNode(value: 'VIX', label: 'VIX'),
+                    custom_ui.CascaderNode(value: 'OIL', label: 'OIL'),
                   ]),
                 ],
                 onChanged: (v) => debugPrint('cascader: $v'),
               )),
       // Los siguientes siguen como Glow* hasta el Batch 4 correspondiente.
       GalleryEntry('Transfer / Dual-list',
-          (ctx) => ui.TransferList(
+          (ctx) => custom_ui.TransferList(
               available: const ['Alfa', 'Beta', 'Gamma'], selected: const ['Delta'])),
-      GalleryEntry('Date-range Picker', (ctx) => ui.DateRangePicker()),
-      GalleryEntry('Time Picker', (ctx) => ui.TimePicker()),
-      GalleryEntry('Color Picker', (ctx) => ui.ColorPicker()),
+      GalleryEntry('Date-range Picker', (ctx) => custom_ui.DateRangePicker()),
+      GalleryEntry('Time Picker', (ctx) => custom_ui.TimePicker()),
+      GalleryEntry('Color Picker', (ctx) => custom_ui.ColorPicker()),
       // Dropzone — modo demo: al tocar simula 2s de carga (Batch 4 STORY-025).
       GalleryEntry('File Upload / Dropzone',
-          (ctx) => ui.Dropzone(label: 'Arrastra archivos o toca para cargar')),
+          (ctx) => custom_ui.Dropzone(label: 'Arrastra archivos o toca para cargar')),
       // MentionInput — non-controlado; sugerencias de usuarios simulados.
       GalleryEntry(
           'Mention Input',
-          (ctx) => ui.MentionInput(
+          (ctx) => custom_ui.MentionInput(
                 suggestions: const [
                   '@quant-01',
                   '@alpha-desk',
@@ -991,43 +991,43 @@ List<GalleryEntry> _buttons() => [
       // Button primary — variante de confirmación/éxito (gradOptima).
       GalleryEntry(
           'Primario (clic)',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
               label: 'CONFIRMAR',
-              variant: ui.ButtonVariant.primary,
+              variant: custom_ui.ButtonVariant.primary,
               onPressed: () => debugPrint('button: primary'))),
       // Button secondary — variante de transición/incubación (gradTransition).
       GalleryEntry(
           'Secundario',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
               label: 'INCUBAR',
-              variant: ui.ButtonVariant.secondary,
+              variant: custom_ui.ButtonVariant.secondary,
               onPressed: () => debugPrint('button: secondary'))),
       // Button danger — variante destructiva (gradCritical).
       GalleryEntry(
           'Peligro',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
               label: 'RETIRAR',
-              variant: ui.ButtonVariant.danger,
+              variant: custom_ui.ButtonVariant.danger,
               onPressed: () => debugPrint('button: danger'))),
       // Button ghost — superficie frosted sin gradiente.
       GalleryEntry(
           'Ghost (secundario)',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
               label: 'Detalles',
-              variant: ui.ButtonVariant.ghost,
+              variant: custom_ui.ButtonVariant.ghost,
               onPressed: () => debugPrint('button: ghost'))),
       // Button loading — muestra spinner junto al label.
       GalleryEntry(
           'Loading',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
               label: 'PROCESANDO',
-              variant: ui.ButtonVariant.primary,
+              variant: custom_ui.ButtonVariant.primary,
               loading: true,
               onPressed: () {})),
       // Button disabled — sin callback → opacidad reducida.
       GalleryEntry(
           'Deshabilitado',
-          (ctx) => ui.Button(label: 'DESHABILITADO', variant: ui.ButtonVariant.primary)),
+          (ctx) => custom_ui.Button(label: 'DESHABILITADO', variant: custom_ui.ButtonVariant.primary)),
       GalleryEntry(
           'Icon buttons (hover)',
           (ctx) => Row(children: [
@@ -1049,27 +1049,27 @@ List<GalleryEntry> _buttons() => [
     ];
 
 /// §7 Botones extendidos: toggle, loading, group, FAB, segmented, split.
-/// Todos consumen ui.* — galería consumidora (Batch 3, STORY-025).
+/// Todos consumen custom_ui.* — galería consumidora (Batch 3, STORY-025).
 List<GalleryEntry> _buttonsExtended() => [
       // Toggle Button — dos instancias: una en ON, otra en OFF.
       GalleryEntry(
           'Toggle Button',
           (ctx) => _panelSolid(
                 child: Row(children: [
-                  ui.ToggleButton(
+                  custom_ui.ToggleButton(
                       label: 'AUTO',
                       labelOff: 'MANUAL',
                       initial: true,
                       onChanged: (v) => debugPrint('toggle: $v')),
                   const SizedBox(width: 10),
-                  ui.ToggleButton(
+                  custom_ui.ToggleButton(
                       label: 'AUTO',
                       labelOff: 'MANUAL',
                       onChanged: (v) => debugPrint('toggle: $v')),
                 ]),
               )),
-      // Loading Button — usa ui.Button(loading:) con demo de estado async.
-      // Decisión de consolidación: LoadingButton = ui.Button(loading: true).
+      // Loading Button — usa custom_ui.Button(loading:) con demo de estado async.
+      // Decisión de consolidación: LoadingButton = custom_ui.Button(loading: true).
       // No se crea un componente separado (Button ya cubre el contrato completo).
       GalleryEntry('Loading Button',
           (ctx) => _panelSolid(child: const _LoadingButtonDemo())),
@@ -1077,7 +1077,7 @@ List<GalleryEntry> _buttonsExtended() => [
       GalleryEntry(
           'Button Group',
           (ctx) => _panelSolid(
-                child: ui.ButtonGroup(
+                child: custom_ui.ButtonGroup(
                   items: const ['1D', '1W', '1M'],
                   onChanged: (i) => debugPrint('group: índice $i'),
                 ),
@@ -1086,7 +1086,7 @@ List<GalleryEntry> _buttonsExtended() => [
       GalleryEntry(
           'FAB',
           (ctx) => _panelSolid(
-                child: ui.Fab(
+                child: custom_ui.Fab(
                   icon: Icons.add,
                   onPressed: () => debugPrint('FAB pulsado'),
                   tooltip: 'Añadir',
@@ -1095,13 +1095,13 @@ List<GalleryEntry> _buttonsExtended() => [
       // Segmented Control — modo no controlado: empieza en el primer ítem.
       GalleryEntry(
           'Segmented Control',
-          (ctx) => ui.Segmented(
+          (ctx) => custom_ui.Segmented(
               options: const ['Tend.', 'Rango', 'Vol.'],
               onChanged: (i) => debugPrint('segmented: $i'))),
       // Split Button — acción principal + tres opciones secundarias.
       GalleryEntry(
           'Split Button',
-          (ctx) => ui.SplitButton(
+          (ctx) => custom_ui.SplitButton(
                 label: 'EJECUTAR',
                 onPressed: () => debugPrint('split: acción principal'),
                 actions: const [
@@ -1120,10 +1120,10 @@ List<GalleryEntry> _dataDisplay() => [
           'Chips de estado',
           (ctx) => _panelSolid(
                 child: Wrap(spacing: 6, runSpacing: 6, children: [
-                  ui.Chip(label: 'ÓPTIMO', status: ui.ChipStatus.optima, pill: true),
-                  ui.Chip(label: 'INCUBA', status: ui.ChipStatus.transition, pill: true),
-                  ui.Chip(label: 'VOLÁTIL', status: ui.ChipStatus.alert, pill: true),
-                  ui.Chip(label: 'FALLO', status: ui.ChipStatus.critical, pill: true),
+                  custom_ui.Chip(label: 'ÓPTIMO', status: custom_ui.ChipStatus.optima, pill: true),
+                  custom_ui.Chip(label: 'INCUBA', status: custom_ui.ChipStatus.transition, pill: true),
+                  custom_ui.Chip(label: 'VOLÁTIL', status: custom_ui.ChipStatus.alert, pill: true),
+                  custom_ui.Chip(label: 'FALLO', status: custom_ui.ChipStatus.critical, pill: true),
                 ]),
               )),
       // KeyValue — fila etiqueta → valor con colores semánticos y tipografía mono.
@@ -1131,18 +1131,18 @@ List<GalleryEntry> _dataDisplay() => [
           'Key-value rows',
           (ctx) => _panelSolid(
                 child: Column(children: [
-                  ui.KeyValue(label: 'Drawdown', value: '-4.2%', valueColor: Gx.alertAmber, mono: true),
-                  ui.KeyValue(label: 'Sharpe', value: '1.84', valueColor: Gx.optimaCyan, mono: true),
-                  ui.KeyValue(label: 'Slippage', value: '0.03%', mono: true),
+                  custom_ui.KeyValue(label: 'Drawdown', value: '-4.2%', valueColor: Gx.alertAmber, mono: true),
+                  custom_ui.KeyValue(label: 'Sharpe', value: '1.84', valueColor: Gx.optimaCyan, mono: true),
+                  custom_ui.KeyValue(label: 'Slippage', value: '0.03%', mono: true),
                 ]),
               )),
       // Table — tabla con cabecera, hover de fila y datos con colores semánticos.
       GalleryEntry('Tabla densa',
-          (ctx) => ui.Table(
+          (ctx) => custom_ui.Table(
                 columns: const [
-                  ui.TableColumn(label: 'ID'),
-                  ui.TableColumn(label: 'RÉGIMEN'),
-                  ui.TableColumn(label: 'SHARPE', numeric: true),
+                  custom_ui.TableColumn(label: 'ID'),
+                  custom_ui.TableColumn(label: 'RÉGIMEN'),
+                  custom_ui.TableColumn(label: 'SHARPE', numeric: true),
                 ],
                 rows: [
                   [
@@ -1185,12 +1185,12 @@ List<GalleryEntry> _dataDisplay() => [
               )),
       // DatePicker — modo no controlado: empieza en el mes actual sin selección.
       GalleryEntry('DatePicker (toca un día)',
-          (ctx) => ui.DatePicker(onChanged: (d) => debugPrint('date: $d'))),
+          (ctx) => custom_ui.DatePicker(onChanged: (d) => debugPrint('date: $d'))),
       // Calendar — mes navegable con marcador de eventos (Batch 4 STORY-025).
       // events: días múltiplos de 7 con punto alertAmber (datos de demo).
       GalleryEntry(
           'Calendar (mes navegable)',
-          (ctx) => ui.Calendar(
+          (ctx) => custom_ui.Calendar(
                 onChanged: (d) => debugPrint('calendar: $d'),
                 events: {
                   DateTime(DateTime.now().year, DateTime.now().month, 7),
@@ -1201,7 +1201,7 @@ List<GalleryEntry> _dataDisplay() => [
       // Tooltip — el popup aparece al hacer hover sobre el hijo.
       GalleryEntry(
           'Tooltip',
-          (ctx) => ui.Tooltip(
+          (ctx) => custom_ui.Tooltip(
                 message: 'Sharpe ajustado por régimen',
                 child: frosted(
                   radius: Gx.rTooltip,
@@ -1235,7 +1235,7 @@ List<GalleryEntry> _dataDisplayExtended() => [
           (ctx) => _panelSolid(child: descriptionList())),
       // Empty — estado vacío con orbe latente y mensaje descriptivo.
       GalleryEntry('Empty State',
-          (ctx) => _panelSolid(child: ui.Empty(
+          (ctx) => _panelSolid(child: custom_ui.Empty(
                 message: 'Sin estrategias activas',
                 subtitle: 'Crea tu primera célula para comenzar.',
               ))),
@@ -1244,30 +1244,30 @@ List<GalleryEntry> _dataDisplayExtended() => [
           'Progress Circular',
           (ctx) => _panelSolid(
                 child: Row(children: [
-                  ui.ProgressCircular(
+                  custom_ui.ProgressCircular(
                       value: 0.68, color: Gx.transitionIndigo),
                   const SizedBox(width: 12),
-                  ui.ProgressCircular(value: 0.82, color: Gx.optimaCyan),
+                  custom_ui.ProgressCircular(value: 0.82, color: Gx.optimaCyan),
                   const SizedBox(width: 12),
-                  ui.ProgressCircular(value: 0.35, color: Gx.alertAmber),
+                  custom_ui.ProgressCircular(value: 0.35, color: Gx.alertAmber),
                 ]),
               )),
       GalleryEntry('Popover', (ctx) => popoverExample()),
       GalleryEntry('Tree Table',
           (ctx) => _panelSolid(
-              child: ui.TreeTable(
+              child: custom_ui.TreeTable(
                   columns: const [
-                    ui.TreeTableColumn(label: 'Nombre'),
-                    ui.TreeTableColumn(label: 'Valor', numeric: true),
+                    custom_ui.TreeTableColumn(label: 'Nombre'),
+                    custom_ui.TreeTableColumn(label: 'Valor', numeric: true),
                   ],
                   nodes: [
-                    ui.TreeTableNode(id: 'a', cells: const [Text('Alfa'), Text('12')], children: [
-                      ui.TreeTableNode(id: 'a1', cells: const [Text('Beta'), Text('4')]),
+                    custom_ui.TreeTableNode(id: 'a', cells: const [Text('Alfa'), Text('12')], children: [
+                      custom_ui.TreeTableNode(id: 'a1', cells: const [Text('Beta'), Text('4')]),
                     ]),
                   ]))),
       GalleryEntry('Carousel',
           (ctx) => _panelSolid(
-              child: ui.Carousel(items: const [
+              child: custom_ui.Carousel(items: const [
                 Center(child: Text('Slide 1')),
                 Center(child: Text('Slide 2')),
                 Center(child: Text('Slide 3')),
@@ -1278,13 +1278,13 @@ List<GalleryEntry> _dataDisplayExtended() => [
 List<GalleryEntry> _feedback() => [
       // Banner — cuatro tipos semánticos: info/success/warning/error.
       GalleryEntry('Banner — óptimo',
-          (ctx) => ui.Banner(message: 'Estrategia dentro del sobre.', type: ui.BannerType.success)),
+          (ctx) => custom_ui.Banner(message: 'Estrategia dentro del sobre.', type: custom_ui.BannerType.success)),
       GalleryEntry('Banner — alerta',
-          (ctx) => ui.Banner(message: 'SPX pasó a Volátil.', type: ui.BannerType.warning)),
+          (ctx) => custom_ui.Banner(message: 'SPX pasó a Volátil.', type: custom_ui.BannerType.warning)),
       GalleryEntry('Banner — crítico',
-          (ctx) => ui.Banner(message: 'Slippage letal: retiro.', type: ui.BannerType.error)),
+          (ctx) => custom_ui.Banner(message: 'Slippage letal: retiro.', type: custom_ui.BannerType.error)),
       GalleryEntry('Banner — info',
-          (ctx) => ui.Banner(message: 'Actualización de configuración disponible.', type: ui.BannerType.info)),
+          (ctx) => custom_ui.Banner(message: 'Actualización de configuración disponible.', type: custom_ui.BannerType.info)),
       GalleryEntry(
           'Toast',
           (ctx) => frosted(
@@ -1301,19 +1301,19 @@ List<GalleryEntry> _feedback() => [
       // Dialog — muestra el componente estático + botón de trigger del overlay (Batch 4 STORY-025).
       GalleryEntry(
           'Modal / Dialog',
-          (ctx) => ui.Dialog(
+          (ctx) => custom_ui.Dialog(
                 title: 'Confirmar retiro',
                 content: Text('La célula node-19 será archivada.',
                     style: Gx.bodySecondary),
                 actions: [
-                  ui.Button(
+                  custom_ui.Button(
                     label: 'Cancelar',
-                    variant: ui.ButtonVariant.ghost,
+                    variant: custom_ui.ButtonVariant.ghost,
                     onPressed: () {},
                   ),
-                  ui.Button(
+                  custom_ui.Button(
                     label: 'RETIRAR',
-                    variant: ui.ButtonVariant.danger,
+                    variant: custom_ui.ButtonVariant.danger,
                     onPressed: () => debugPrint('dialog: retirar'),
                   ),
                 ],
@@ -1321,9 +1321,9 @@ List<GalleryEntry> _feedback() => [
       // Sheet — botón de trigger que abre el sheet de vidrio (Batch 4 STORY-025).
       GalleryEntry(
           'Sheet',
-          (ctx) => ui.Button(
+          (ctx) => custom_ui.Button(
                 label: 'Abrir Sheet',
-                onPressed: () => ui.showAppSheet(
+                onPressed: () => custom_ui.showAppSheet(
                   ctx,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -1361,21 +1361,21 @@ List<GalleryEntry> _feedback() => [
     ];
 
 /// §9 Feedback extendido: notification, popconfirm, snackbars, result, backdrop, stepper, accordion.
-/// Componentes Glow* sustituidos por ui.* — galería consumidora (Batch 3, STORY-025).
+/// Componentes Glow* sustituidos por custom_ui.* — galería consumidora (Batch 3, STORY-025).
 List<GalleryEntry> _feedbackExtended() => [
       // Notification Card — tipo info, arranca no leída; al tocar pasa a leída.
       GalleryEntry(
           'Notification Card',
-          (ctx) => ui.NotificationCard(
+          (ctx) => custom_ui.NotificationCard(
                 title: 'node-07 entró en régimen óptimo',
                 message: 'hace 3 min',
-                type: ui.NotificationCardType.info,
+                type: custom_ui.NotificationCardType.info,
                 onDismiss: () => debugPrint('notif: descartada'),
               )),
       // Popconfirm — el widget ancla es el botón destructor de la demo.
       GalleryEntry(
           'Popconfirm',
-          (ctx) => ui.Popconfirm(
+          (ctx) => custom_ui.Popconfirm(
                 message: '¿Confirmar retiro?',
                 description: 'Esta acción archivará la célula.',
                 onConfirm: () => debugPrint('popconfirm: confirmado'),
@@ -1402,7 +1402,7 @@ List<GalleryEntry> _feedbackExtended() => [
       GalleryEntry(
           'Stepper / Wizard',
           (ctx) => _panelSolid(
-                child: ui.Stepper(
+                child: custom_ui.Stepper(
                   steps: const ['Datos', 'Backtest', 'Validar', 'Incubar'],
                   currentStep: 1,
                   onStepTapped: (i) => debugPrint('stepper: paso $i'),
@@ -1411,18 +1411,18 @@ List<GalleryEntry> _feedbackExtended() => [
       // Accordion — 3 secciones plegables con contenido de ejemplo.
       GalleryEntry(
           'Accordion / Collapse',
-          (ctx) => ui.Accordion(
+          (ctx) => custom_ui.Accordion(
                 items: const [
-                  ui.AccordionItem(
+                  custom_ui.AccordionItem(
                     title: 'Parámetros del backtest',
                     content:
                         'Ventana 252 días · Capital 1M · Comisión 0.1bps',
                   ),
-                  ui.AccordionItem(
+                  custom_ui.AccordionItem(
                     title: 'Filtros de régimen',
                     content: 'HMM 4 estados · Umbral volatilidad 0.22',
                   ),
-                  ui.AccordionItem(
+                  custom_ui.AccordionItem(
                     title: 'Criterios de retiro',
                     content: 'Drawdown máx. 8% · Slippage letal >15bps',
                   ),

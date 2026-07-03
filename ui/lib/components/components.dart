@@ -4,9 +4,9 @@
 // Los consumidores (galería, tabs de features, Cáscaras Delgadas) importan
 // con namespace para evitar colisiones con widgets de Material:
 //
-//   import 'package:drasus_ui/components/components.dart' as ui;
+//   import 'package:drasus_ui/components/components.dart' as custom_ui;
 //
-// Uso:  ui.Button(...)  ui.Table(...)  ui.Input(...)  ui.Switch(...)
+// Uso:  custom_ui.Button(...)  custom_ui.Table(...)  custom_ui.Input(...)
 //
 // Convención (FIJO — ADR-0138 §Enmienda 2026-06-29):
 //   • Cada componente en su propio archivo snake_case en este mismo directorio.

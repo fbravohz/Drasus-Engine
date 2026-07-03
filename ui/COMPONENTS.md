@@ -15,16 +15,16 @@ El barrel `ui/lib/components/components.dart` reexporta todos.
 Los consumidores importan con namespace:
 
 ```dart
-import 'package:drasus_ui/components/components.dart' as ui;
+import 'package:drasus_ui/components/components.dart' as custom_ui;
 // Uso:
-ui.Button(onPressed: ..., label: 'Confirmar')
-ui.Table(columns: ..., rows: ...)
+custom_ui.Button(onPressed: ..., label: 'Confirmar')
+custom_ui.Table(columns: ..., rows: ...)
 ```
 
 ### Nombres neutrales
 
 Clases **desnudas**, sin prefijo de estilo (`Glow`, `Glass`) ni de proyecto (`Drasus`).
-Las colisiones con widgets Material se resuelven por el namespace `ui.`.
+Las colisiones con widgets Material se resuelven por el namespace `custom_ui.`.
 El sistema es **rename-proof**: cambiar el nombre del producto no toca ningún componente.
 
 ### Contrato funcional obligatorio
@@ -51,7 +51,7 @@ El único color literal admisible es `Colors.transparent`.
 
 La galería (`ui/lib/gallery/`) muestra cada componente con **mocks** (datos y
 callbacks simulados). Las features consumen los mismos componentes con datos
-reales. La galería NO define componentes; los importa de `ui.`.
+reales. La galería NO define componentes; los importa de `custom_ui.`.
 
 ---
 
@@ -78,7 +78,7 @@ reales. La galería NO define componentes; los importa de `ui.`.
 | `KeyValue` | `key_value.dart` | Fila etiqueta → valor con separador inferior por token de borde | `label`, `value`, `valueColor?` (Color), `mono` | — | gallery_registry |
 | `DatePicker` | `date_picker.dart` | Selector de fecha compacto con grilla mensual y navegación | `value?` (DateTime), `onChanged?`, `firstDate?`, `lastDate?` | default, día-seleccionado, día-hover, fuera-de-rango | gallery_registry |
 | `Combobox<T>` | `combobox.dart` | Autocomplete genérico: campo de texto + lista de sugerencias filtradas | `value?` (T), `items` (List\<ComboboxItem\<T>>), `onChanged?`, `hint?` | closed, open, filtrado, sin-selección | gallery_registry |
-| `MultiSelect<T>` | `multi_select.dart` | Selección múltiple con chips; usa ui.Chip para los seleccionados | `selected?` (Set\<T>), `items` (List\<MultiSelectItem\<T>>), `onChanged?` | default, ítem-seleccionado (chip transition), ítem-disponible (neutro) | gallery_registry |
+| `MultiSelect<T>` | `multi_select.dart` | Selección múltiple con chips; usa custom_ui.Chip para los seleccionados | `selected?` (Set\<T>), `items` (List\<MultiSelectItem\<T>>), `onChanged?` | default, ítem-seleccionado (chip transition), ítem-disponible (neutro) | gallery_registry |
 | `NumberInput` | `number_input.dart` | Campo numérico con botones +/− que respetan rango y paso | `value?` (double), `initialValue?`, `onChanged?`, `min`, `max`, `step` | default, en-mínimo (−deshabilitado), en-máximo (+deshabilitado) | gallery_registry |
 | `Textarea` | `textarea.dart` | Campo de texto multilínea con glow de foco y soporte de controller externo | `controller?`, `hint?`, `onChanged?`, `maxLines`, `enabled` | default, focus (glow+borde), disabled | gallery_registry |
 | `OtpInput` | `otp_input.dart` | Entrada OTP/PIN de N cajas con avance automático de foco entre dígitos | `length`, `onCompleted?`, `onChanged?` | caja-vacía, caja-con-foco (glow+borde+cursor), caja-rellena | gallery_registry |

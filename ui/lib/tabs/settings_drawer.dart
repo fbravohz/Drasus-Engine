@@ -5,11 +5,12 @@
 
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../app_meta.dart';
 import '../theme/theme_scope.dart';
 import '../gallery/gallery_tokens.dart';
-// El alias del namespace de componentes es `uic` (no `ui`) porque este archivo
-// ya importa `dart:ui as ui`. Ver caveat en ADR-0138 / ui/COMPONENTS.md.
-import '../components/components.dart' as uic;
+// El namespace de componentes usa el alias `custom_ui`, que no colisiona con
+// `dart:ui as ui` de este archivo. Ver ADR-0138 / ui/COMPONENTS.md.
+import '../components/components.dart' as custom_ui;
 
 // ---------------------------------------------------------------------------
 // Swatches curados para el selector de color de énfasis (12 opciones).
@@ -210,7 +211,7 @@ class _SectionCuenta extends StatelessWidget {
               const SizedBox(height: 2),
               Text('fbravo.hz@gmail.com', style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary)),
               const SizedBox(height: 1),
-              Text('Drasus Engine v0.1.0-α', style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
+              Text('$kAppName v$kAppVersion', style: Gx.dataMono(fontSize: 11, color: Gx.textBaseMuted)),
             ],
           ),
         ),
@@ -284,7 +285,7 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          uic.ColorPicker(
+          custom_ui.ColorPicker(
             swatches: _kAccentPresets,
             value: accent,
             onChanged: (color) => theme?.setAccent(color),
@@ -298,7 +299,7 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          uic.ColorPicker(
+          custom_ui.ColorPicker(
             swatches: _kTextPresets,
             value: textColor,
             onChanged: (color) => theme?.setTextColor(color),
@@ -312,7 +313,7 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          uic.ColorPicker(
+          custom_ui.ColorPicker(
             swatches: _kComponentBgPresets,
             value: componentBgColor,
             onChanged: (color) => theme?.setComponentBgColor(color),
