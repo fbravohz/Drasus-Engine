@@ -1,14 +1,14 @@
-// GlassSurface — primitivo de vidrio Apple (ADR-0138).
+// FrostedSurface — primitivo de vidrio Apple (ADR-0138).
 // Superficie translúcida con BackdropFilter + relleno + rim-light, que lee
-// sus tokens de DrasusGlass vía Theme.of(context).extension<DrasusGlass>().
+// sus tokens de GlassTokens vía Theme.of(context).extension<GlassTokens>().
 // Reemplaza al patrón ClipRRect+BackdropFilter+Container duplicado en las
 // secciones y el SettingsDrawer.
 
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import '../theme/drasus_tokens.dart';
+import '../theme/tokens.dart';
 import '../gallery/gallery_tokens.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 
 /// Superficie de vidrio Apple reutilizable.
 ///
@@ -16,15 +16,15 @@ import '../drasus_theme.dart';
 /// - [child]: contenido a envolver.
 /// - [borderRadius]: radio de las esquinas (default `Gx.rPanel`).
 /// - [padding]: padding interior opcional.
-class GlassSurface extends StatelessWidget {
+class FrostedSurface extends StatelessWidget {
   final Widget child;
   final double borderRadius;
   final EdgeInsetsGeometry? padding;
 
-  // No es const: GlassSurface lee el modo global estático y debe poder
+  // No es const: FrostedSurface lee el modo global estático y debe poder
   // reconstruirse al cambiar el modo. Un constructor const permitiría
   // instanciación const que congelaría el modo (regla DESIGN.md §Superficie).
-  GlassSurface({
+  FrostedSurface({
     super.key,
     required this.child,
     this.borderRadius = Gx.rPanel,
@@ -33,10 +33,10 @@ class GlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mode = DrasusThemeState.globalSurfaceMode;
+    final mode = ThemeState.globalSurfaceMode;
     final radius = BorderRadius.circular(borderRadius);
 
-    if (mode == DrasusSurfaceMode.solid) {
+    if (mode == SurfaceMode.solid) {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
@@ -48,7 +48,7 @@ class GlassSurface extends StatelessWidget {
       );
     }
 
-    if (mode == DrasusSurfaceMode.tint) {
+    if (mode == SurfaceMode.tint) {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
@@ -66,7 +66,7 @@ class GlassSurface extends StatelessWidget {
     // mode == enhancedGlass: gradiente profundo + borde del énfasis dinámico + glow amplio.
     // Replica la receta de glassEnhanced() con Gx.accentDynamic como color de borde,
     // sin importar gallery_fx.dart (evita acoplamiento entre capas de la biblioteca).
-    if (mode == DrasusSurfaceMode.enhancedGlass) {
+    if (mode == SurfaceMode.enhancedGlass) {
       final accentColor = Gx.accentDynamic;
       final content = Container(
         padding: padding,
@@ -94,7 +94,7 @@ class GlassSurface extends StatelessWidget {
 
     // mode == glass: vidrio Apple completo.
     final glass =
-        Theme.of(context).extension<DrasusGlass>() ?? DrasusGlass.defaults;
+        Theme.of(context).extension<GlassTokens>() ?? GlassTokens.defaults;
 
     return ClipRRect(
       borderRadius: radius,

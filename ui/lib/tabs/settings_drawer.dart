@@ -1,13 +1,15 @@
 // Drawer de configuración deslizable desde la derecha.
 // Muestra: cuenta del usuario, selector de color de énfasis, selector de paleta
 // de fondo, e información del sistema. No contiene lógica de negocio: solo
-// llama a DrasusThemeState.setAccent / setPalette para cambiar el tema visual.
+// llama a ThemeState.setAccent / setPalette para cambiar el tema visual.
 
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 import '../gallery/gallery_tokens.dart';
-import '../widgets/color_picker.dart';
+// El alias del namespace de componentes es `uic` (no `ui`) porque este archivo
+// ya importa `dart:ui as ui`. Ver caveat en ADR-0138 / ui/COMPONENTS.md.
+import '../components/components.dart' as uic;
 
 // ---------------------------------------------------------------------------
 // Swatches curados para el selector de color de énfasis (12 opciones).
@@ -64,15 +66,15 @@ const List<Color> _kComponentBgPresets = [
 ];
 
 // Nombre corto de cada paleta para mostrarlo bajo el chip.
-const Map<DrasusBackgroundPalette, String> _kPaletteNames = {
-  DrasusBackgroundPalette.bunker: 'bunker',
-  DrasusBackgroundPalette.ash: 'ash',
-  DrasusBackgroundPalette.crimson: 'crimson',
-  DrasusBackgroundPalette.forest: 'forest',
-  DrasusBackgroundPalette.navy: 'navy',
-  DrasusBackgroundPalette.void_: 'void',
-  DrasusBackgroundPalette.slate: 'slate',
-  DrasusBackgroundPalette.paper: 'paper',
+const Map<BackgroundPalette, String> _kPaletteNames = {
+  BackgroundPalette.bunker: 'bunker',
+  BackgroundPalette.ash: 'ash',
+  BackgroundPalette.crimson: 'crimson',
+  BackgroundPalette.forest: 'forest',
+  BackgroundPalette.navy: 'navy',
+  BackgroundPalette.void_: 'void',
+  BackgroundPalette.slate: 'slate',
+  BackgroundPalette.paper: 'paper',
 };
 
 // ---------------------------------------------------------------------------
@@ -89,13 +91,13 @@ class SettingsDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Leemos el estado del tema para reaccionar a cambios en tiempo real.
-    final theme = DrasusTheme.of(context);
+    final theme = ThemeScope.of(context);
     final accent = theme?.accentColor ?? Gx.transitionIndigo;
-    final palette = theme?.backgroundPalette ?? DrasusBackgroundPalette.bunker;
+    final palette = theme?.backgroundPalette ?? BackgroundPalette.bunker;
     // Color de texto base efectivo (override manual o auto por paleta).
-    final textColor = theme?.effectiveTextColor ?? DrasusThemeState.globalTextColor;
+    final textColor = theme?.effectiveTextColor ?? ThemeState.globalTextColor;
     // Color de fondo de componentes activo (tinte de glass / fondo de solid).
-    final componentBgColor = theme?.componentBgColor ?? DrasusThemeState.globalComponentBgColor;
+    final componentBgColor = theme?.componentBgColor ?? ThemeState.globalComponentBgColor;
     // Modo automático de paleta (true = acento/texto/componente se auto-seleccionan).
     final isAutoPalette = theme?.isAutoPalette ?? true;
 
@@ -143,7 +145,7 @@ class SettingsDrawer extends StatelessWidget {
 
                   // ---- Sección SUPERFICIE ----
                   _SectionSuperficie(
-                    surfaceMode: theme?.surfaceMode ?? DrasusSurfaceMode.glass,
+                    surfaceMode: theme?.surfaceMode ?? SurfaceMode.glass,
                     theme: theme,
                   ),
                   const SizedBox(height: 28),
@@ -223,10 +225,10 @@ class _SectionCuenta extends StatelessWidget {
 // ---------------------------------------------------------------------------
 class _SectionApariencia extends StatelessWidget {
   final Color accent;
-  final DrasusBackgroundPalette palette;
+  final BackgroundPalette palette;
   final Color textColor;
   final Color componentBgColor;
-  final DrasusThemeState? theme;
+  final ThemeState? theme;
   final bool isAutoPalette;
 
   const _SectionApariencia({
@@ -282,10 +284,10 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          ColorPickerWidget(
+          uic.ColorPicker(
             swatches: _kAccentPresets,
-            selectedColor: accent,
-            onColorChanged: (color) => theme?.setAccent(color),
+            value: accent,
+            onChanged: (color) => theme?.setAccent(color),
           ),
           const SizedBox(height: 24),
 
@@ -296,10 +298,10 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          ColorPickerWidget(
+          uic.ColorPicker(
             swatches: _kTextPresets,
-            selectedColor: textColor,
-            onColorChanged: (color) => theme?.setTextColor(color),
+            value: textColor,
+            onChanged: (color) => theme?.setTextColor(color),
           ),
           const SizedBox(height: 24),
 
@@ -310,10 +312,10 @@ class _SectionApariencia extends StatelessWidget {
                 .copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 12),
-          ColorPickerWidget(
+          uic.ColorPicker(
             swatches: _kComponentBgPresets,
-            selectedColor: componentBgColor,
-            onColorChanged: (color) => theme?.setComponentBgColor(color),
+            value: componentBgColor,
+            onChanged: (color) => theme?.setComponentBgColor(color),
           ),
           const SizedBox(height: 24),
         ],
@@ -328,7 +330,7 @@ class _SectionApariencia extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 10,
-          children: DrasusBackgroundPalette.values.map((p) {
+          children: BackgroundPalette.values.map((p) {
             final surfaces = kPalettes[p]!;
             final isSelected = p == palette;
             return _PaletteChip(
@@ -411,7 +413,7 @@ class _SimpleToggle extends StatelessWidget {
 
 // El borde activo usa el color de énfasis; la etiqueta es el nombre de la paleta.
 class _PaletteChip extends StatelessWidget {
-  final DrasusBackgroundPalette palette;
+  final BackgroundPalette palette;
   final Color deepSpaceColor;
   final String label;
   final bool isSelected;
@@ -461,8 +463,8 @@ class _PaletteChip extends StatelessWidget {
 // Sección SUPERFICIE — selector de modo global: glass / tint / solid.
 // ---------------------------------------------------------------------------
 class _SectionSuperficie extends StatelessWidget {
-  final DrasusSurfaceMode surfaceMode;
-  final DrasusThemeState? theme;
+  final SurfaceMode surfaceMode;
+  final ThemeState? theme;
 
   const _SectionSuperficie({
     required this.surfaceMode,
@@ -470,7 +472,7 @@ class _SectionSuperficie extends StatelessWidget {
   });
 
   @override
-  // Itera kSurfaceModeRegistry (no DrasusSurfaceMode.values directamente)
+  // Itera kSurfaceModeRegistry (no SurfaceMode.values directamente)
   // para que los modos nuevos aparezcan solos al añadirse al registro.
   Widget build(BuildContext context) {
     return Column(
@@ -504,7 +506,7 @@ class _SectionSuperficie extends StatelessWidget {
 // Recibe la recipe del registro kSurfaceModeRegistry para mostrar
 // etiqueta y descripción sin switch hardcodeado: N-extensible por diseño.
 class _SurfaceModeOption extends StatelessWidget {
-  final DrasusSurfaceMode mode;
+  final SurfaceMode mode;
   final SurfaceModeRecipe recipe;
   final bool isSelected;
   final VoidCallback onTap;

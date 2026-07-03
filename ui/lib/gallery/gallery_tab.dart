@@ -9,7 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'gallery_tokens.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 import 'gallery_registry.dart';
 
 // Widget raíz de la pestaña. Ahora es StatefulWidget para manejar la selección
@@ -35,7 +35,7 @@ class _GalleryTabState extends State<GalleryTab> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DrasusTheme.of(context);
+    final theme = ThemeScope.of(context);
     final surfaces = theme?.surfaces;
     final ds = surfaces?.deepSpace ?? Gx.deepSpace;
 

@@ -8,10 +8,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'gallery_tokens.dart';
 import 'gallery_painters.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 
 // Vidrio Apple — o lo que indique el modo global de superficie.
-// Lee DrasusThemeState.globalSurfaceMode para decidir la receta:
+// Lee ThemeState.globalSurfaceMode para decidir la receta:
 //   glass → BackdropFilter + blur + rim (vidrio completo)
 //   tint  → Solo glassFill, sin blur ni rim (panel translúcido)
 //   solid → El color sólido indicado (por defecto panelSolid)
@@ -23,9 +23,9 @@ Widget frosted({
   Color? solidColor,
   List<BoxShadow>? glow,
 }) {
-  final mode = DrasusThemeState.globalSurfaceMode;
+  final mode = ThemeState.globalSurfaceMode;
 
-  if (mode == DrasusSurfaceMode.solid) {
+  if (mode == SurfaceMode.solid) {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -39,7 +39,7 @@ Widget frosted({
     );
   }
 
-  if (mode == DrasusSurfaceMode.tint) {
+  if (mode == SurfaceMode.tint) {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -57,7 +57,7 @@ Widget frosted({
 
   // mode == enhancedGlass: gradiente profundo + borde del énfasis dinámico + glow amplio.
   // Usa el énfasis dinámico como color de borde (la regla "borde global = énfasis").
-  if (mode == DrasusSurfaceMode.enhancedGlass) {
+  if (mode == SurfaceMode.enhancedGlass) {
     return glassEnhanced(
       child: child,
       semanticColor: Gx.accentDynamic,
@@ -177,9 +177,9 @@ class PanelFromDecoration extends StatelessWidget {
   // Envuelve el Container original en frosted() si el modo no es solid; en solid usa la
   // decoration original sin modificar. Toma el borde y sombras de la decoration original.
   Widget build(BuildContext context) {
-    final mode = DrasusThemeState.globalSurfaceMode;
+    final mode = ThemeState.globalSurfaceMode;
 
-    if (mode == DrasusSurfaceMode.solid) {
+    if (mode == SurfaceMode.solid) {
       return Container(
         padding: padding,
         margin: margin,
@@ -246,11 +246,11 @@ Widget glassEnhanced({
   double blur = 36,
   List<BoxShadow>? glow,
 }) {
-  final mode = DrasusThemeState.globalSurfaceMode;
+  final mode = ThemeState.globalSurfaceMode;
 
   // En solid: color de componentes directo; en glass/tint/enhancedGlass: mismo color
   // (los wrappers aplican la opacidad adecuada al renderizar).
-  final fill = mode == DrasusSurfaceMode.solid ? Gx.surfacePanel : Gx.componentBgBase;
+  final fill = mode == SurfaceMode.solid ? Gx.surfacePanel : Gx.componentBgBase;
 
   final shadows = glow ?? Gx.glow(semanticColor, blur: 20, opacity: 0.15);
 
@@ -267,7 +267,7 @@ Widget glassEnhanced({
   );
 
   // glass y enhancedGlass aplican BackdropFilter; tint y solid solo el Container.
-  if (mode == DrasusSurfaceMode.glass || mode == DrasusSurfaceMode.enhancedGlass) {
+  if (mode == SurfaceMode.glass || mode == SurfaceMode.enhancedGlass) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
@@ -326,419 +326,14 @@ class _HoverGlowState extends State<HoverGlow> {
 
 // Botón con gradiente, glow potente, hover y "propagación de luz" al pulsar
 // (un pulso de glow que estalla del centro hacia afuera, inspiración Reflect).
-class GlowButton extends StatefulWidget {
-  final String label;
-  final List<Color> gradient;
-  final Color glowColor;
-  final Color? textColor;
-  const GlowButton(
-      {super.key,
-      required this.label,
-      required this.gradient,
-      required this.glowColor,
-      this.textColor});
-
-  @override
-  State<GlowButton> createState() => _GlowButtonState();
-}
-
-class _GlowButtonState extends State<GlowButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _burst =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 460));
-  bool _hover = false;
-  bool _down = false;
-
-  @override
-  void dispose() {
-    _burst.dispose();
-    super.dispose();
-  }
-
-  @override
-  // Botón con gradiente y glow progresivo (_hover), escala al presionar (_down) y pulso de
-  // luz (_burst) al soltar. Animaciones locales de UI, no dependen del Bridge.
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _down = true),
-        onTapUp: (_) {
-          setState(() => _down = false);
-          _burst.forward(from: 0); // dispara la explosión de luz
-        },
-        onTapCancel: () => setState(() => _down = false),
-        child: AnimatedScale(
-          scale: _down ? 0.96 : 1.0,
-          duration: const Duration(milliseconds: 110),
-          child: AnimatedBuilder(
-            animation: _burst,
-            builder: (_, child) {
-              // Pulso: 0 → pico → 0 mientras la animación corre.
-              final burst = sin(_burst.value * pi);
-              final k = (_hover ? 1.2 : 0.75) + burst * 1.3;
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                decoration: BoxDecoration(
-                  gradient: Gx.linear(widget.gradient),
-                  borderRadius: BorderRadius.circular(Gx.rButton),
-                  boxShadow: Gx.glowStrong(widget.glowColor, k),
-                ),
-                child: child,
-              );
-            },
-            // Estilo del texto del botón: usa el helper uiSans (familia Inter)
-            // en lugar de TextStyle suelto para respetar la voz tipográfica del sistema.
-            child: Text(widget.label,
-                style: Gx.uiSans(
-                  fontSize: 13,
-                  weight: FontWeight.w600,
-                  color: widget.textColor ?? Gx.canvasBase,
-                ).copyWith(letterSpacing: 0.3)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // Switch funcional de palanca: alterna estado al tocar, con knob deslizante animado, gradiente y
 // glow en ON. Estado local (_on) sin dependencia del Bridge.
-class GlowSwitch extends StatefulWidget {
-  final bool initial;
-  final Color color;
-  const GlowSwitch({super.key, this.initial = true, this.color = Gx.reactorGreen});
-  @override
-  State<GlowSwitch> createState() => _GlowSwitchState();
-}
-
-class _GlowSwitchState extends State<GlowSwitch> {
-  late bool _on = widget.initial;
-  @override
-  // Switch de palanca con knob deslizante animado, gradiente y glow en ON; estado local _on.
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => setState(() => _on = !_on),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        width: 48,
-        height: 26,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          gradient: _on
-              ? Gx.linear([
-                  widget.color.withOpacity(0.4),
-                  widget.color.withOpacity(0.15)
-                ])
-              : null,
-          color: _on ? null : Gx.gaugeTrack,
-          borderRadius: BorderRadius.circular(999),
-          // OFF: borde estructural global (dinámico con el énfasis activo).
-          border: Border.all(color: _on ? widget.color : Gx.borderBase),
-          boxShadow: _on ? Gx.glow(widget.color, blur: 16, opacity: 0.5) : null,
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          alignment: _on ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              // OFF: color de knob usando token dinámico de texto muted.
-              color: _on ? widget.color : Gx.textBaseMuted,
-              boxShadow:
-                  _on ? Gx.glow(widget.color, blur: 12, opacity: 0.8) : null,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // Slider funcional: se arrastra, con relleno en gradiente y manija con glow.
-class GlowSlider extends StatefulWidget {
-  final double initial;
-  final List<Color> gradient;
-  final Color glowColor;
-  const GlowSlider(
-      {super.key,
-      this.initial = 0.62,
-      this.gradient = Gx.gradTransition,
-      this.glowColor = Gx.transitionIndigo});
-  @override
-  State<GlowSlider> createState() => _GlowSliderState();
-}
-
-class _GlowSliderState extends State<GlowSlider> {
-  late double _v = widget.initial;
-  void _set(double dx, double w) =>
-      setState(() => _v = (dx / w).clamp(0.0, 1.0));
-  @override
-  // Slider con relleno degradado, glow en el track y manija circular; estado local _v.
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (ctx, box) {
-      final w = box.maxWidth;
-      return GestureDetector(
-        onPanDown: (d) => _set(d.localPosition.dx, w),
-        onPanUpdate: (d) => _set(d.localPosition.dx, w),
-        child: SizedBox(
-          height: 26,
-          child: Stack(alignment: Alignment.centerLeft, children: [
-            Container(
-                height: 5,
-                decoration: BoxDecoration(
-                    color: Gx.gaugeTrack,
-                    borderRadius: BorderRadius.circular(3))),
-            FractionallySizedBox(
-              widthFactor: _v,
-              child: Container(
-                  height: 5,
-                  decoration: BoxDecoration(
-                      gradient: Gx.linear(widget.gradient),
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow:
-                          Gx.glow(widget.glowColor, blur: 10, opacity: 0.6))),
-            ),
-            Align(
-              alignment: Alignment(_v * 2 - 1, 0),
-              child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      // Token dinámico para el knob del slider — legible en paper y bunker.
-                      color: Gx.textBase,
-                      boxShadow: Gx.glowStrong(widget.glowColor))),
-            ),
-          ]),
-        ),
-      );
-    });
-  }
-}
-
 // Input funcional: foco real (FocusNode) con borde y glow limpios — sin la
 // aberración cromática que quedaba mal. El glow es la señal de foco.
-class GlowInput extends StatefulWidget {
-  final String hint;
-  final String? initial;
-  final Color color;
-  const GlowInput(
-      {super.key,
-      required this.hint,
-      this.initial,
-      this.color = Gx.transitionIndigo});
-  @override
-  State<GlowInput> createState() => _GlowInputState();
-}
-
-class _GlowInputState extends State<GlowInput> {
-  final FocusNode _f = FocusNode();
-  late final TextEditingController _ctrl =
-      TextEditingController(text: widget.initial);
-
-  @override
-  void initState() {
-    super.initState();
-    // Redibuja al ganar/perder foco para animar el glow.
-    _f.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _f.dispose();
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  // Input con glow en el borde al recibir foco (_f.hasFocus); sin lógica de negocio,
-  // solo estado local de FocusNode.
-  Widget build(BuildContext context) {
-    final focused = _f.hasFocus;
-    return panelSurface(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      radius: Gx.rInput,
-      glow: focused ? Gx.glow(widget.color, blur: 18, opacity: 0.45) : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Gx.rInput),
-          border: focused
-              ? Border.all(color: widget.color, width: Gx.borderFocus)
-              : null,
-        ),
-        child: TextField(
-          focusNode: _f,
-          controller: _ctrl,
-          cursorColor: widget.color,
-          style: Gx.uiSans(fontSize: 14, color: Gx.textBase),
-          decoration: InputDecoration.collapsed(
-              hintText: widget.hint,
-              hintStyle: Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted)),
-        ),
-      ),
-    );
-  }
-}
-
 // Desplegable funcional: abre/cierra con animación y glow; al elegir, se cierra.
-class GlowDropdown extends StatefulWidget {
-  final String label;
-  final List<String> options;
-  const GlowDropdown({super.key, required this.label, required this.options});
-  @override
-  State<GlowDropdown> createState() => _GlowDropdownState();
-}
-
-class _GlowDropdownState extends State<GlowDropdown> {
-  bool _open = false;
-  late String _sel = widget.label;
-  @override
-  // Desplegable con panel semántico expandible/contraíble (_open) y opción seleccionada (_sel).
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => _open = !_open),
-          child: panelSurface(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            glow: _open
-                ? Gx.glow(Gx.transitionIndigo, blur: 16, opacity: 0.45)
-                : null,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Flexible(
-                  // Texto seleccionado con token dinámico de texto base.
-                  child: Text(_sel,
-                      style: Gx.uiSans(fontSize: 14, color: Gx.textBase),
-                      overflow: TextOverflow.ellipsis)),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                turns: _open ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                // Phosphor caretDown: estética terminal más limpia que el chevron Material.
-                child: Icon(Gx.iconChevronDown,
-                    // Token dinámico de texto secundario — se adapta a la paleta activa.
-                    size: 18, color: Gx.textBaseSecondary),
-              ),
-            ]),
-          ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          child: _open
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: panelSurface(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: widget.options
-                          .map((o) => InkWell(
-                                onTap: () =>
-                                    setState(() { _sel = o; _open = false; }),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  // Texto de opción con token dinámico secundario.
-                                  child: Text(o, style: Gx.uiSans(fontSize: 14, color: Gx.textBaseSecondary)),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-}
-
 // Calendario funcional en grilla: toca un día y se enciende con un anillo de glow. Muestra
 // marcadores de evento. Estado local (_sel) de UI, sin datos del Bridge.
-class GlowCalendar extends StatefulWidget {
-  const GlowCalendar({super.key});
-  @override
-  State<GlowCalendar> createState() => _GlowCalendarState();
-}
-
-class _GlowCalendarState extends State<GlowCalendar> {
-  int _sel = 14;
-  @override
-  // Grilla de 28 días con día seleccionado (_sel) y marcadores de evento; estado local de UI.
-  Widget build(BuildContext context) {
-    return panelSurface(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Título del calendario: énfasis dinámico para cabeceras de panel.
-          Text('Junio 2026', style: Gx.panelTitle.copyWith(color: Gx.accentDynamic)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: List.generate(28, (i) {
-              final day = i + 1;
-              final sel = day == _sel;
-              final hasEvent = day % 7 == 3;
-              return GestureDetector(
-                onTap: () => setState(() => _sel = day),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border:
-                        sel ? Border.all(color: Gx.optimaCyan, width: 1.5) : null,
-                    boxShadow: sel
-                        ? Gx.glow(Gx.optimaCyan, blur: 14, opacity: 0.7)
-                        : null,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Día seleccionado: color semántico (estado). No seleccionado: token dinámico.
-                      Text('$day',
-                          style: Gx.dataMono(
-                              fontSize: 11,
-                              color: sel ? Gx.optimaCyan : Gx.textBaseSecondary)),
-                      if (hasEvent)
-                        Positioned(
-                          bottom: 3,
-                          child: Container(
-                              width: 3,
-                              height: 3,
-                              decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Gx.alertAmber)),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // Texto con "propagación de luz" (inspiración Reflect): al tocarlo, la
 // iluminación se expande del centro hacia afuera como una explosión.
 class LightBurstText extends StatefulWidget {

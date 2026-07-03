@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 // Calcula la intensidad de ignición eléctrica para un punto en X dado el
 // progreso actual del scan. Retorna 0.0–1.0 donde 1.0 = máxima ignición
 // (el scan acaba de pasar por ese punto). Decae exponencialmente con
-// scanDecay (default 8.0 — DrasusMotion.scanDecay).
+// scanDecay (default 8.0 — MotionTokens.scanDecay).
 double electricIntensity(
   double pointX,
   double scanX,

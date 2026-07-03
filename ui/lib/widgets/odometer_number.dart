@@ -1,11 +1,11 @@
 // OdometerNumber — primitivo de odómetro numérico (ADR-0138).
 // Anima un double desde 0.0 hasta [value] con Curves.easeOutCubic y
 // formatea el valor interpolado cada frame. Lee la duración por defecto
-// de DrasusMotion.odometerMs vía Theme.of(context).
+// de MotionTokens.odometerMs vía Theme.of(context).
 // Extraído de _QuantKpiOdometer en section_dataviz_quant.dart.
 
 import 'package:flutter/material.dart';
-import '../theme/drasus_tokens.dart';
+import '../theme/tokens.dart';
 
 /// Firma del formateador: recibe el double interpolado y retorna el texto.
 typedef OdometerFormatter = String Function(double value);
@@ -29,7 +29,7 @@ class OdometerNumber extends StatelessWidget {
   /// Sufijo fijo tras el número (unidad, signo de porcentaje).
   final String suffix;
 
-  /// Duración de la animación. Default: DrasusMotion.odometerMs.
+  /// Duración de la animación. Default: MotionTokens.odometerMs.
   final Duration? duration;
 
   /// Estilo del texto del número.
@@ -69,7 +69,7 @@ class OdometerNumber extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final motion =
-        Theme.of(context).extension<DrasusMotion>() ?? DrasusMotion.defaults;
+        Theme.of(context).extension<MotionTokens>() ?? MotionTokens.defaults;
     final dur = duration ?? Duration(milliseconds: motion.odometerMs);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: value),

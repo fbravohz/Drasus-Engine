@@ -19,7 +19,7 @@
 //   flutter test --update-goldens test/gallery_golden_test.dart
 
 import 'package:flutter/material.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 import '../tabs/settings_drawer.dart';
 import 'gallery_tokens.dart';
 import 'gallery_tab.dart';
@@ -27,15 +27,15 @@ import 'gallery_tab.dart';
 // Punto de entrada: monta solo la galería con selector de temas.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final state = DrasusThemeState();
+  final state = ThemeState();
   state.load().then((_) {
     runApp(_GalleryPreviewApp(state: state));
   });
 }
 
-// Aplicación con DrasusTheme + galería + selector de temas en settings drawer.
+// Aplicación con ThemeScope + galería + selector de temas en settings drawer.
 class _GalleryPreviewApp extends StatefulWidget {
-  final DrasusThemeState state;
+  final ThemeState state;
   const _GalleryPreviewApp({required this.state});
 
   @override
@@ -54,10 +54,10 @@ class _GalleryPreviewAppState extends State<_GalleryPreviewApp> {
   }
 
   @override
-  // Monta DrasusTheme → MaterialApp con AppBar + SettingsDrawer + GalleryTab.
-  // Los datos de tema vienen de DrasusThemeState (cargado en main()); GalleryTab no usa FFI.
+  // Monta ThemeScope → MaterialApp con AppBar + SettingsDrawer + GalleryTab.
+  // Los datos de tema vienen de ThemeState (cargado en main()); GalleryTab no usa FFI.
   Widget build(BuildContext context) {
-    return DrasusTheme(
+    return ThemeScope(
       state: widget.state,
       child: MaterialApp(
         title: 'Drasus — Preview de Galería',

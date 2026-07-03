@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../gallery/gallery_tokens.dart';
 import '../gallery/gallery_painters.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 
 // ---------------------------------------------------------------------------
 // CanvasTab — pestaña del canvas con panel lateral + lienzo interactivo.
@@ -65,7 +65,7 @@ class _CanvasTabState extends State<CanvasTab> {
 
   @override
   Widget build(BuildContext context) {
-    final surfaces = DrasusTheme.surfaceFor(context);
+    final surfaces = ThemeScope.surfaceFor(context);
     // panelSolid: color de fondo del panel lateral de features.
     final panelBg = surfaces?.panelSolid ?? Gx.surfacePanel;
 

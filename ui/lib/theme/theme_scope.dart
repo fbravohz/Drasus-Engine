@@ -7,16 +7,16 @@
 // ChangeNotifier  → rebuilds reactivos cuando cambia el tema.
 // SharedPreferences → el tema elegido sobrevive reinicios de la app.
 //
-// Tipos de datos puros (enums, paletas, defaults) → theme/drasus_palettes.dart
-// ThemeExtension (vidrio, movimiento, superficies) → theme/drasus_tokens.dart
+// Tipos de datos puros (enums, paletas, defaults) → palettes.dart
+// ThemeExtension (vidrio, movimiento, superficies) → tokens.dart
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'theme/drasus_palettes.dart';
-import 'theme/drasus_tokens.dart';
+import 'palettes.dart';
+import 'tokens.dart';
 // Re-exporta los tipos públicos de paletas para que los consumidores existentes
-// no necesiten cambiar su import de 'drasus_theme.dart'.
-export 'theme/drasus_palettes.dart';
+// no necesiten cambiar su import de 'theme/theme_scope.dart'.
+export 'palettes.dart';
 
 // ---------------------------------------------------------------------------
 // Claves y defaults de SharedPreferences.
@@ -44,9 +44,9 @@ const _kKeyFontMono = 'font_mono';
 // Color de énfasis por defecto: transitionIndigo.
 const _kDefaultAccent = Color(0xFF9A8CFF);
 // Paleta por defecto: bunker nocturno.
-const _kDefaultPalette = DrasusBackgroundPalette.bunker;
+const _kDefaultPalette = BackgroundPalette.bunker;
 // Modo de superficie por defecto: vidrio Apple completo.
-const _kDefaultSurfaceMode = DrasusSurfaceMode.glass;
+const _kDefaultSurfaceMode = SurfaceMode.glass;
 // Color de fondo de componentes por defecto: midnight blue sutil.
 // Base neutra oscura que funciona como tinte en glass y fondo en solid.
 const _kDefaultComponentBg = Color(0xFF1A1A2E);
@@ -61,7 +61,7 @@ const _kDefaultFontMono = 'Rajdhani';
 // ---------------------------------------------------------------------------
 
 // Espejo del modo de superficie activo.
-DrasusSurfaceMode _globalSurfaceMode = _kDefaultSurfaceMode;
+SurfaceMode _globalSurfaceMode = _kDefaultSurfaceMode;
 // Espejo del color de énfasis activo.
 Color _globalAccent = _kDefaultAccent;
 // Espejo del color de texto base efectivo (override manual o auto por paleta).
@@ -92,14 +92,14 @@ TextStyle _globalDataSmall = const TextStyle(fontSize: 14);
 TextStyle _globalDataHero = const TextStyle(fontSize: 28);
 
 // ---------------------------------------------------------------------------
-// DrasusThemeState — el estado mutable del tema, persiste en SharedPreferences.
+// ThemeState — el estado mutable del tema, persiste en SharedPreferences.
 // ---------------------------------------------------------------------------
 
-// DrasusThemeState notifica a todos los widgets suscritos cuando el tema cambia.
-class DrasusThemeState extends ChangeNotifier {
+// ThemeState notifica a todos los widgets suscritos cuando el tema cambia.
+class ThemeState extends ChangeNotifier {
   Color _accentColor = _kDefaultAccent;
-  DrasusBackgroundPalette _palette = _kDefaultPalette;
-  DrasusSurfaceMode _surfaceMode = _kDefaultSurfaceMode;
+  BackgroundPalette _palette = _kDefaultPalette;
+  SurfaceMode _surfaceMode = _kDefaultSurfaceMode;
   // Override manual de color de texto; null = modo automático por paleta.
   Color? _textOverride;
   // Color de fondo de componentes: base para solid, tinte para glass/tint.
@@ -115,16 +115,16 @@ class DrasusThemeState extends ChangeNotifier {
   Color get accentColor => _accentColor;
 
   // Devuelve la paleta de fondo activa.
-  DrasusBackgroundPalette get backgroundPalette => _palette;
+  BackgroundPalette get backgroundPalette => _palette;
 
   // Devuelve true si el modo automático de paleta está activo.
   bool get isAutoPalette => _autoPalette;
 
   // Devuelve los 5 colores de superficie para la paleta activa.
-  DrasusSurfacePalette get surfaces => kPalettes[_palette]!;
+  SurfacePalette get surfaces => kPalettes[_palette]!;
 
   // Devuelve el modo de superficie activo.
-  DrasusSurfaceMode get surfaceMode => _surfaceMode;
+  SurfaceMode get surfaceMode => _surfaceMode;
 
   // Devuelve el color de texto base efectivo: override manual o automático por paleta.
   Color get effectiveTextColor => _textOverride ?? kTextDefaults[_palette]!;
@@ -144,8 +144,8 @@ class DrasusThemeState extends ChangeNotifier {
   // Devuelve la familia tipográfica mono (datos) activa.
   String get fontMono => _fontMono;
 
-  // Acceso estático global: frosted() y GlassSurface lo leen sin BuildContext.
-  static DrasusSurfaceMode get globalSurfaceMode => _globalSurfaceMode;
+  // Acceso estático global: frosted() y FrostedSurface lo leen sin BuildContext.
+  static SurfaceMode get globalSurfaceMode => _globalSurfaceMode;
 
   // Acceso estático global: Gx.accentDynamic lo lee sin BuildContext.
   static Color get globalAccent => _globalAccent;
@@ -210,10 +210,10 @@ class DrasusThemeState extends ChangeNotifier {
     return ThemeData.dark(useMaterial3: true).copyWith(
       textTheme: _buildTextTheme(),
       extensions: [
-        DrasusGlass.defaults,
-        DrasusMotion.defaults,
-        DrasusSurfaces.fromPalette(pal),
-        DrasusPalette(accentColor: _accentColor, backgroundPalette: _palette),
+        GlassTokens.defaults,
+        MotionTokens.defaults,
+        SurfaceTokens.fromPalette(pal),
+        PaletteTokens(accentColor: _accentColor, backgroundPalette: _palette),
       ],
     );
   }
@@ -252,14 +252,14 @@ class DrasusThemeState extends ChangeNotifier {
     }
     if (paletteIdx != null &&
         paletteIdx >= 0 &&
-        paletteIdx < DrasusBackgroundPalette.values.length) {
-      _palette = DrasusBackgroundPalette.values[paletteIdx];
+        paletteIdx < BackgroundPalette.values.length) {
+      _palette = BackgroundPalette.values[paletteIdx];
     }
     final modeIdx = prefs.getInt(_kKeySurfaceMode);
     if (modeIdx != null &&
         modeIdx >= 0 &&
-        modeIdx < DrasusSurfaceMode.values.length) {
-      _surfaceMode = DrasusSurfaceMode.values[modeIdx];
+        modeIdx < SurfaceMode.values.length) {
+      _surfaceMode = SurfaceMode.values[modeIdx];
       _globalSurfaceMode = _surfaceMode;
     }
 
@@ -307,12 +307,12 @@ class DrasusThemeState extends ChangeNotifier {
   }
 
   // Cambia el modo de superficie global (glass/tint/solid).
-  Future<void> setSurfaceMode(DrasusSurfaceMode mode) async {
+  Future<void> setSurfaceMode(SurfaceMode mode) async {
     _surfaceMode = mode;
     _globalSurfaceMode = mode;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_kKeySurfaceMode, DrasusSurfaceMode.values.indexOf(mode));
+    await prefs.setInt(_kKeySurfaceMode, SurfaceMode.values.indexOf(mode));
   }
 
   // Cambia el color de énfasis, actualiza el espejo estático y lo persiste.
@@ -328,7 +328,7 @@ class DrasusThemeState extends ChangeNotifier {
 
   // Cambia la paleta de fondo y la persiste. Notifica a los widgets.
   // En modo automático de paleta, recalcula texto, acento y fondo de componentes.
-  Future<void> setPalette(DrasusBackgroundPalette palette) async {
+  Future<void> setPalette(BackgroundPalette palette) async {
     _palette = palette;
     final palSurface = kPalettes[_palette]!;
 
@@ -352,7 +352,7 @@ class DrasusThemeState extends ChangeNotifier {
     _syncStyleScale();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_kKeyPalette, DrasusBackgroundPalette.values.indexOf(palette));
+    await prefs.setInt(_kKeyPalette, BackgroundPalette.values.indexOf(palette));
   }
 
   // Establece un override manual de color de texto base y lo persiste.
@@ -447,31 +447,31 @@ class DrasusThemeState extends ChangeNotifier {
 }
 
 // ---------------------------------------------------------------------------
-// DrasusTheme — InheritedNotifier que expone DrasusThemeState al árbol.
+// ThemeScope — InheritedNotifier que expone ThemeState al árbol.
 // ---------------------------------------------------------------------------
 
 // InheritedNotifier es una versión especializada de InheritedWidget que
 // se suscribe automáticamente a un ChangeNotifier y reconstruye los widgets
 // dependientes cada vez que el notifier dispara. No requiere AnimatedBuilder
 // ni ListenableBuilder extra.
-class DrasusTheme extends InheritedNotifier<DrasusThemeState> {
-  const DrasusTheme({
+class ThemeScope extends InheritedNotifier<ThemeState> {
+  const ThemeScope({
     super.key,
-    required DrasusThemeState state,
+    required ThemeState state,
     required super.child,
   }) : super(notifier: state);
 
   // Acceso estático al estado del tema desde cualquier descendiente.
-  // Retorna null si DrasusTheme no está montado sobre el widget que llama.
-  static DrasusThemeState? of(BuildContext context) {
+  // Retorna null si ThemeScope no está montado sobre el widget que llama.
+  static ThemeState? of(BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<DrasusTheme>()
+        .dependOnInheritedWidgetOfExactType<ThemeScope>()
         ?.notifier;
   }
 
   // Retorna los 5 colores de superficie de la paleta activa.
-  // Atajo para DrasusTheme.of(context)?.surfaces.
-  static DrasusSurfacePalette? surfaceFor(BuildContext context) {
+  // Atajo para ThemeScope.of(context)?.surfaces.
+  static SurfacePalette? surfaceFor(BuildContext context) {
     return of(context)?.surfaces;
   }
 }

@@ -1,22 +1,22 @@
 // AnimatedArc — primitivo de arco animado (ADR-0138).
 // Arco radial que crece desde 0 hasta el ángulo final (definido por
 // [progress] 0..1) al montarse, con Curves.easeOutCubic. Lee la duración
-// por defecto de DrasusMotion.arcMs vía Theme.of(context).
+// por defecto de MotionTokens.arcMs vía Theme.of(context).
 // Extraído del patrón de _QuantRadialGauge / _QuantGaugePainter.
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../theme/drasus_tokens.dart';
+import '../theme/tokens.dart';
 import '../gallery/gallery_tokens.dart';
 
 /// Arco radial animado desde 0° hasta [progress] × barrido total.
 ///
 /// Params:
 /// - [progress]: fracción destino 0.0–1.0.
-/// - [color]: color del arco (default DrasusPalette.accentColor).
+/// - [color]: color del arco (default PaletteTokens.accentColor).
 /// - [size]: lado del lienzo cuadrado.
 /// - [strokeWidth]: grosor del trazo (default 6).
-/// - [duration]: duración (default DrasusMotion.arcMs).
+/// - [duration]: duración (default MotionTokens.arcMs).
 /// - [gradColors]: degradado semántico opcional del arco.
 /// - [startAngle] / [totalSweep]: geometría del arco (defaults del gauge).
 /// - [trackColor]: color del riel de fondo (default Gx.divider).
@@ -60,7 +60,7 @@ class _AnimatedArcState extends State<AnimatedArc>
     super.initState();
     // Sin Theme.of(context) aquí: context no resuelve heredados en initState.
     // Usamos el valor explícito del widget si lo pasaron, o un default
-    // constante que didChangeDependencies ajustará desde DrasusMotion.
+    // constante que didChangeDependencies ajustará desde MotionTokens.
     _duration = widget.duration ?? const Duration(milliseconds: 1000);
     _ctrl = AnimationController(vsync: this, duration: _duration);
     _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
@@ -74,7 +74,7 @@ class _AnimatedArcState extends State<AnimatedArc>
     // si el caller no pasó una explícita.
     if (widget.duration == null) {
       final motion =
-          Theme.of(context).extension<DrasusMotion>() ?? DrasusMotion.defaults;
+          Theme.of(context).extension<MotionTokens>() ?? MotionTokens.defaults;
       final resolved = Duration(milliseconds: motion.arcMs);
       if (resolved != _duration) {
         _duration = resolved;
@@ -95,7 +95,7 @@ class _AnimatedArcState extends State<AnimatedArc>
   @override
   Widget build(BuildContext context) {
     final palette =
-        Theme.of(context).extension<DrasusPalette>() ?? DrasusPalette.defaults;
+        Theme.of(context).extension<PaletteTokens>() ?? PaletteTokens.defaults;
     final color = widget.color ?? palette.accentColor;
     return SizedBox(
       width: widget.size,

@@ -2,17 +2,17 @@
 // Cuatro ThemeExtension<T>: vidrio, motion, superficies y paleta.
 // Ningún token de estas familias vive como constante suelta fuera de aquí.
 //
-// Los defaults se tomaron de gallery_tokens.dart y drasus_palettes.dart
+// Los defaults se tomaron de gallery_tokens.dart y palettes.dart
 // (no se inventó ningún valor). Flutter exige copyWith + lerp para que
 // las transiciones animadas entre temas funcionen.
 
 import 'package:flutter/material.dart';
-import 'drasus_palettes.dart';
+import 'palettes.dart';
 
 // ---------------------------------------------------------------------------
-// DrasusGlass — vidrio Apple (chrome translúcido + rim-light).
+// GlassTokens — vidrio Apple (chrome translúcido + rim-light).
 // ---------------------------------------------------------------------------
-class DrasusGlass extends ThemeExtension<DrasusGlass> {
+class GlassTokens extends ThemeExtension<GlassTokens> {
   // Relleno base del vidrio (60% alpha). Default: Gx.surfaceFill.
   final Color fill;
   // Sigma del desenfoque del BackdropFilter. Default: 36 (Gx.glassBlur).
@@ -26,7 +26,7 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
   // Color del rim-light. Default: 0x0DA096FF (canónico ADR-0138).
   final Color rimColor;
 
-  const DrasusGlass({
+  const GlassTokens({
     required this.fill,
     required this.blurSigma,
     required this.tint,
@@ -36,7 +36,7 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
   });
 
   // Instancia por defecto con los valores canónicos del bunker nocturno.
-  static const defaults = DrasusGlass(
+  static const defaults = GlassTokens(
     fill: Color(0x40F0F2FF),
     blurSigma: 36.0,
     tint: Color(0x14AAAAFF),
@@ -46,7 +46,7 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
   );
 
   @override
-  DrasusGlass copyWith({
+  GlassTokens copyWith({
     Color? fill,
     double? blurSigma,
     Color? tint,
@@ -54,7 +54,7 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
     double? edgeOpacity,
     Color? rimColor,
   }) =>
-      DrasusGlass(
+      GlassTokens(
         fill: fill ?? this.fill,
         blurSigma: blurSigma ?? this.blurSigma,
         tint: tint ?? this.tint,
@@ -64,9 +64,9 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
       );
 
   @override
-  DrasusGlass lerp(ThemeExtension<DrasusGlass>? other, double t) {
-    if (other is! DrasusGlass) return this;
-    return DrasusGlass(
+  GlassTokens lerp(ThemeExtension<GlassTokens>? other, double t) {
+    if (other is! GlassTokens) return this;
+    return GlassTokens(
       fill: Color.lerp(fill, other.fill, t)!,
       blurSigma: _lerpDouble(blurSigma, other.blurSigma, t),
       tint: Color.lerp(tint, other.tint, t)!,
@@ -78,7 +78,7 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
 
   @override
   bool operator ==(Object other) =>
-      other is DrasusGlass &&
+      other is GlassTokens &&
       other.fill == fill &&
       other.blurSigma == blurSigma &&
       other.tint == tint &&
@@ -91,9 +91,9 @@ class DrasusGlass extends ThemeExtension<DrasusGlass> {
 }
 
 // ---------------------------------------------------------------------------
-// DrasusMotion — duraciones universales de animación (Motion Philosophy).
+// MotionTokens — duraciones universales de animación (Motion Philosophy).
 // ---------------------------------------------------------------------------
-class DrasusMotion extends ThemeExtension<DrasusMotion> {
+class MotionTokens extends ThemeExtension<MotionTokens> {
   // Duración del odómetro numérico. Default: 1000ms (QuantKpiOdometerRow).
   final int odometerMs;
   // Duración del arco animado. Default: 1000ms (QuantRadialGauge).
@@ -105,7 +105,7 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
   // Duración del path drawing. Default: 1500ms (STORY-019).
   final int pathDrawMs;
 
-  const DrasusMotion({
+  const MotionTokens({
     required this.odometerMs,
     required this.arcMs,
     required this.scanMs,
@@ -113,7 +113,7 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
     required this.pathDrawMs,
   });
 
-  static const defaults = DrasusMotion(
+  static const defaults = MotionTokens(
     odometerMs: 1000,
     arcMs: 1000,
     scanMs: 1400,
@@ -122,14 +122,14 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
   );
 
   @override
-  DrasusMotion copyWith({
+  MotionTokens copyWith({
     int? odometerMs,
     int? arcMs,
     int? scanMs,
     double? scanDecay,
     int? pathDrawMs,
   }) =>
-      DrasusMotion(
+      MotionTokens(
         odometerMs: odometerMs ?? this.odometerMs,
         arcMs: arcMs ?? this.arcMs,
         scanMs: scanMs ?? this.scanMs,
@@ -138,9 +138,9 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
       );
 
   @override
-  DrasusMotion lerp(ThemeExtension<DrasusMotion>? other, double t) {
-    if (other is! DrasusMotion) return this;
-    return DrasusMotion(
+  MotionTokens lerp(ThemeExtension<MotionTokens>? other, double t) {
+    if (other is! MotionTokens) return this;
+    return MotionTokens(
       odometerMs: _lerpInt(odometerMs, other.odometerMs, t),
       arcMs: _lerpInt(arcMs, other.arcMs, t),
       scanMs: _lerpInt(scanMs, other.scanMs, t),
@@ -151,7 +151,7 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
 
   @override
   bool operator ==(Object other) =>
-      other is DrasusMotion &&
+      other is MotionTokens &&
       other.odometerMs == odometerMs &&
       other.arcMs == arcMs &&
       other.scanMs == scanMs &&
@@ -163,17 +163,17 @@ class DrasusMotion extends ThemeExtension<DrasusMotion> {
 }
 
 // ---------------------------------------------------------------------------
-// DrasusSurfaces — pila sólida escalada desde deepSpace.
+// SurfaceTokens — pila sólida escalada desde deepSpace.
 // panelRaised y panelBorder se mapean desde surfaceRaised y borderPanel de Gx.
 // ---------------------------------------------------------------------------
-class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
+class SurfaceTokens extends ThemeExtension<SurfaceTokens> {
   final Color deepSpace;
   final Color navRail;
   final Color panelSolid;
   final Color panelRaised;
   final Color panelBorder;
 
-  const DrasusSurfaces({
+  const SurfaceTokens({
     required this.deepSpace,
     required this.navRail,
     required this.panelSolid,
@@ -182,7 +182,7 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
   });
 
   // Defaults del bunker nocturno (drasus_palettes.dart kPalettes[bunker] + Gx).
-  static const defaults = DrasusSurfaces(
+  static const defaults = SurfaceTokens(
     deepSpace: Color(0xFF04050E),
     navRail: Color(0xFF060819),
     panelSolid: Color(0xFF090D1F),
@@ -190,9 +190,9 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
     panelBorder: Color(0xFF17213A), // Gx.borderPanel
   );
 
-  // Construye la pila desde una DrasusSurfacePalette activa.
+  // Construye la pila desde una SurfacePalette activa.
   // panelRaised toma surfaceRaised; panelBorder se conserva (invariante).
-  factory DrasusSurfaces.fromPalette(DrasusSurfacePalette p) => DrasusSurfaces(
+  factory SurfaceTokens.fromPalette(SurfacePalette p) => SurfaceTokens(
         deepSpace: p.deepSpace,
         navRail: p.navRail,
         panelSolid: p.panelSolid,
@@ -201,14 +201,14 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
       );
 
   @override
-  DrasusSurfaces copyWith({
+  SurfaceTokens copyWith({
     Color? deepSpace,
     Color? navRail,
     Color? panelSolid,
     Color? panelRaised,
     Color? panelBorder,
   }) =>
-      DrasusSurfaces(
+      SurfaceTokens(
         deepSpace: deepSpace ?? this.deepSpace,
         navRail: navRail ?? this.navRail,
         panelSolid: panelSolid ?? this.panelSolid,
@@ -217,9 +217,9 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
       );
 
   @override
-  DrasusSurfaces lerp(ThemeExtension<DrasusSurfaces>? other, double t) {
-    if (other is! DrasusSurfaces) return this;
-    return DrasusSurfaces(
+  SurfaceTokens lerp(ThemeExtension<SurfaceTokens>? other, double t) {
+    if (other is! SurfaceTokens) return this;
+    return SurfaceTokens(
       deepSpace: Color.lerp(deepSpace, other.deepSpace, t)!,
       navRail: Color.lerp(navRail, other.navRail, t)!,
       panelSolid: Color.lerp(panelSolid, other.panelSolid, t)!,
@@ -230,7 +230,7 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
 
   @override
   bool operator ==(Object other) =>
-      other is DrasusSurfaces &&
+      other is SurfaceTokens &&
       other.deepSpace == deepSpace &&
       other.navRail == navRail &&
       other.panelSolid == panelSolid &&
@@ -242,39 +242,39 @@ class DrasusSurfaces extends ThemeExtension<DrasusSurfaces> {
 }
 
 // ---------------------------------------------------------------------------
-// DrasusPalette — acento dinámico + paleta de fondo activa.
+// PaletteTokens — acento dinámico + paleta de fondo activa.
 // ---------------------------------------------------------------------------
-class DrasusPalette extends ThemeExtension<DrasusPalette> {
+class PaletteTokens extends ThemeExtension<PaletteTokens> {
   // Acento elegido por el usuario (chrome interactivo). Default: transitionIndigo.
   final Color accentColor;
   // Paleta de fondo activa (enum existente en drasus_palettes.dart).
-  final DrasusBackgroundPalette backgroundPalette;
+  final BackgroundPalette backgroundPalette;
 
-  const DrasusPalette({
+  const PaletteTokens({
     required this.accentColor,
     required this.backgroundPalette,
   });
 
-  static const defaults = DrasusPalette(
+  static const defaults = PaletteTokens(
     accentColor: Color(0xFF9A8CFF), // transitionIndigo
-    backgroundPalette: DrasusBackgroundPalette.bunker,
+    backgroundPalette: BackgroundPalette.bunker,
   );
 
   @override
-  DrasusPalette copyWith({
+  PaletteTokens copyWith({
     Color? accentColor,
-    DrasusBackgroundPalette? backgroundPalette,
+    BackgroundPalette? backgroundPalette,
   }) =>
-      DrasusPalette(
+      PaletteTokens(
         accentColor: accentColor ?? this.accentColor,
         backgroundPalette: backgroundPalette ?? this.backgroundPalette,
       );
 
   @override
-  DrasusPalette lerp(ThemeExtension<DrasusPalette>? other, double t) {
-    if (other is! DrasusPalette) return this;
+  PaletteTokens lerp(ThemeExtension<PaletteTokens>? other, double t) {
+    if (other is! PaletteTokens) return this;
     // El enum no interpola: usa step al 50% (convención Flutter para enums).
-    return DrasusPalette(
+    return PaletteTokens(
       accentColor: Color.lerp(accentColor, other.accentColor, t)!,
       backgroundPalette: t < 0.5 ? backgroundPalette : other.backgroundPalette,
     );
@@ -282,7 +282,7 @@ class DrasusPalette extends ThemeExtension<DrasusPalette> {
 
   @override
   bool operator ==(Object other) =>
-      other is DrasusPalette &&
+      other is PaletteTokens &&
       other.accentColor == accentColor &&
       other.backgroundPalette == backgroundPalette;
 

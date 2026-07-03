@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'src/rust/frb_generated.dart';
-import 'drasus_theme.dart';
+import 'theme/theme_scope.dart';
 import 'operational_panel.dart';
 
 // main() es el punto de entrada de toda aplicación Dart.
@@ -13,24 +13,24 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializa el estado del tema y carga preferencias de SharedPreferences.
-  final themeState = DrasusThemeState();
+  final themeState = ThemeState();
   await themeState.load();
 
   // Carga la librería nativa compilada de Rust (.so en Linux, .dylib en
   // macOS, .dll en Windows) y establece el canal de comunicación FFI.
   await RustLib.init();
 
-  runApp(DrasusApp(state: themeState));
+  runApp(AppRoot(state: themeState));
 }
 
-// Widget raíz de la aplicación. Usa DrasusThemeState para acento + paleta de fondo.
-class DrasusApp extends StatelessWidget {
-  final DrasusThemeState state;
-  const DrasusApp({super.key, required this.state});
+// Widget raíz de la aplicación. Usa ThemeState para acento + paleta de fondo.
+class AppRoot extends StatelessWidget {
+  final ThemeState state;
+  const AppRoot({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
-    return DrasusTheme(
+    return ThemeScope(
       state: state,
       child: MaterialApp(
         title: 'Drasus Engine',

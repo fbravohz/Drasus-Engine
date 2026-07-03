@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import '../drasus_theme.dart';
+import '../theme/theme_scope.dart';
 
 // Gx = "Gallery tokens". Espejo 1:1 de la sección "Tokens — Colors" de DESIGN.md.
 class Gx {
@@ -73,20 +73,20 @@ class Gx {
   // solid → variantes del color de fondo de componentes (globalComponentBgColor)
   //   con ligeros ajustes de ligereza vía HSLColor para diferenciar fill/panel/card.
   // glass/tint/enhancedGlass → color de fondo de componentes como tinte del glass
-  //   (la translucidez la manejan frosted() / GlassSurface al renderizar).
+  //   (la translucidez la manejan frosted() / FrostedSurface al renderizar).
   //
   // Cambiar el color de componentes en SettingsDrawer → TODO pixel reacciona.
   // -------------------------------------------------------------------------
 
   // Color de fondo de componentes sin procesar (raw, sin opacidad ni ajustes).
-  // Lo usan los wrappers (frosted, GlassSurface) para construir gradientes y
+  // Lo usan los wrappers (frosted, FrostedSurface) para construir gradientes y
   // tintes con la opacidad adecuada a cada modo de superficie.
   // Público dentro del paquete: gallery_fx.dart lo consume directamente.
-  static Color get componentBgBase => DrasusThemeState.globalComponentBgColor;
+  static Color get componentBgBase => ThemeState.globalComponentBgColor;
 
   // Verdadero si el modo activo es sólido (sin translucidez).
   static bool get _isSolidMode =>
-      DrasusThemeState.globalSurfaceMode == DrasusSurfaceMode.solid;
+      ThemeState.globalSurfaceMode == SurfaceMode.solid;
 
   // Ajusta la ligereza de un color en un delta porcentual (positivo = más claro).
   // Usa HSLColor para preservar tono y saturación al variar solo la luminosidad.
@@ -120,19 +120,19 @@ class Gx {
   // -------------------------------------------------------------------------
 
   // Color de texto base efectivo (override manual o auto por paleta activa).
-  static Color get textBase => DrasusThemeState.globalTextColor;
+  static Color get textBase => ThemeState.globalTextColor;
 
   // Texto secundario: mismo color base a 75% de opacidad.
   static Color get textBaseSecondary =>
-      DrasusThemeState.globalTextColor.withOpacity(0.75);
+      ThemeState.globalTextColor.withOpacity(0.75);
 
   // Etiqueta: mismo color base a 55% de opacidad.
   static Color get textBaseLabel =>
-      DrasusThemeState.globalTextColor.withOpacity(0.55);
+      ThemeState.globalTextColor.withOpacity(0.55);
 
   // Texto inactivo/muted: mismo color base a 37% de opacidad.
   static Color get textBaseMuted =>
-      DrasusThemeState.globalTextColor.withOpacity(0.37);
+      ThemeState.globalTextColor.withOpacity(0.37);
 
   // -------------------------------------------------------------------------
   // Tokens dinámicos de paleta — leen el espejo estático _globalCanvasBase.
@@ -140,10 +140,10 @@ class Gx {
   // fondo de lienzo en secciones que no tienen acceso a Theme.of(context).
 
   // Color del lienzo base (deepSpace de la paleta activa).
-  static Color get canvasBase => DrasusThemeState.globalCanvasBase;
+  static Color get canvasBase => ThemeState.globalCanvasBase;
 
   // Color raised/hover (surfaceRaised de la paleta activa).
-  static Color get surfaceRaisedDynamic => DrasusThemeState.globalSurfaceRaised;
+  static Color get surfaceRaisedDynamic => ThemeState.globalSurfaceRaised;
 
   // -------------------------------------------------------------------------
   // Tokens dinámicos de borde y énfasis.
@@ -153,12 +153,12 @@ class Gx {
   // -------------------------------------------------------------------------
 
   // Color de énfasis dinámico (lee el espejo estático _globalAccent).
-  static Color get accentDynamic => DrasusThemeState.globalAccent;
+  static Color get accentDynamic => ThemeState.globalAccent;
 
   // Borde estructural global tintado con el énfasis activo al 35% de opacidad.
   // Úsalo donde antes se usaba Gx.borderPanel como borde genérico.
   static Color get borderBase =>
-      DrasusThemeState.globalAccent.withOpacity(0.35);
+      ThemeState.globalAccent.withOpacity(0.35);
 
   // -------------------------------------------------------------------------
   // Grosor de borde — valores canónicos usados en toda la UI.
@@ -206,11 +206,11 @@ class Gx {
   //
   // Las firmas de los helpers son idénticas a las anteriores (con GoogleFonts)
   // para no tener que tocar ningún callsite en el resto de la galería.
-  // NOTA: getters dinámicos, leen el espejo estático de DrasusThemeState.
+  // NOTA: getters dinámicos, leen el espejo estático de ThemeState.
   // Cambiar la fuente en SettingsDrawer → TODO texto de la galería reacciona.
-  static String get fontDisplay => DrasusThemeState.globalFontDisplay;
-  static String get fontSans => DrasusThemeState.globalFontSans;
-  static String get fontMono => DrasusThemeState.globalFontMono;
+  static String get fontDisplay => ThemeState.globalFontDisplay;
+  static String get fontSans => ThemeState.globalFontSans;
+  static String get fontMono => ThemeState.globalFontMono;
 
   // Helper: retorna un TextStyle con Rajdhani (display grotesco).
   // NOTA: SIN default de color — el llamante DEBE elegir explícitamente
@@ -263,19 +263,19 @@ class Gx {
         fontWeight: weight,
       );
 
-  // Type Scale de DESIGN.md — DELEGAN al theme provider vía DrasusThemeState.
+  // Type Scale de DESIGN.md — DELEGAN al theme provider vía ThemeState.
   // Prohibido hardcodear fontSize/color aquí: todo viene de _syncStyleScale()
-  // en DrasusThemeState, que a su vez deriva del TextTheme de buildThemeData().
-  static TextStyle get microLabel => DrasusThemeState.globalMicroLabel;
-  static TextStyle get label => DrasusThemeState.globalLabel;
-  static TextStyle get body => DrasusThemeState.globalBody;
-  static TextStyle get bodySecondary => DrasusThemeState.globalBodySecondary;
-  static TextStyle get subheading => DrasusThemeState.globalSubheading;
-  static TextStyle get panelTitle => DrasusThemeState.globalPanelTitle;
-  static TextStyle get sectionHeading => DrasusThemeState.globalSectionHeading;
-  static TextStyle get zuiTitle => DrasusThemeState.globalZuiTitle;
-  static TextStyle get dataSmall => DrasusThemeState.globalDataSmall;
-  static TextStyle get dataHero => DrasusThemeState.globalDataHero;
+  // en ThemeState, que a su vez deriva del TextTheme de buildThemeData().
+  static TextStyle get microLabel => ThemeState.globalMicroLabel;
+  static TextStyle get label => ThemeState.globalLabel;
+  static TextStyle get body => ThemeState.globalBody;
+  static TextStyle get bodySecondary => ThemeState.globalBodySecondary;
+  static TextStyle get subheading => ThemeState.globalSubheading;
+  static TextStyle get panelTitle => ThemeState.globalPanelTitle;
+  static TextStyle get sectionHeading => ThemeState.globalSectionHeading;
+  static TextStyle get zuiTitle => ThemeState.globalZuiTitle;
+  static TextStyle get dataSmall => ThemeState.globalDataSmall;
+  static TextStyle get dataHero => ThemeState.globalDataHero;
 
   // --- Gradientes (compatibles entre los colores del sistema) ---
   // Cada gradiente se queda DENTRO de una familia semántica, así el color sigue

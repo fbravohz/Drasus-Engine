@@ -9,7 +9,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../theme/drasus_tokens.dart';
+import '../theme/tokens.dart';
 import '../gallery/gallery_tokens.dart';
 import 'electric_primitives.dart';
 
@@ -20,7 +20,7 @@ import 'electric_primitives.dart';
 /// - [color]: color semántico de la curva y del scan.
 /// - [height]: alto del lienzo (default 96).
 /// - [scanEnabled]: si true, ejecuta el scan al montarse (default true).
-/// - [duration]: duración del scan (default DrasusMotion.scanMs).
+/// - [duration]: duración del scan (default MotionTokens.scanMs).
 /// - [label]: texto opcional de la cabecera compacta.
 class ElectricLineChart extends StatefulWidget {
   final List<double> points;
@@ -66,7 +66,7 @@ class _ElectricLineChartState extends State<ElectricLineChart>
     super.didChangeDependencies();
     if (widget.duration == null) {
       final motion =
-          Theme.of(context).extension<DrasusMotion>() ?? DrasusMotion.defaults;
+          Theme.of(context).extension<MotionTokens>() ?? MotionTokens.defaults;
       final resolved = Duration(milliseconds: motion.scanMs);
       if (resolved != _duration) {
         _duration = resolved;

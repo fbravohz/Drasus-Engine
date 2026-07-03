@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import '../gallery_fx.dart';
 import '../gallery_tokens.dart';
 import '../../widgets/electric_primitives.dart';
-import '../../widgets/glass_surface.dart';
+import '../../widgets/frosted_surface.dart';
 
 // ===========================================================================
 // PRIMITIVOS ELÉCTRICOS — migrados a lib/widgets/electric_primitives.dart.
@@ -1265,7 +1265,7 @@ class _Cluster3dPainter extends CustomPainter {
 }
 
 // Tooltip vidrio Apple para el punto hovereado en el cluster 3D.
-// Migrado a GlassSurface (ADR-0138) — el primitivo encapsula el BackdropFilter
+// Migrado a FrostedSurface (ADR-0138) — el primitivo encapsula el BackdropFilter
 // + glassFill + rim-light; este widget solo aporta el contenido del tooltip.
 class _TooltipOverlay extends StatelessWidget {
   final _Strategy3d point;
@@ -1283,7 +1283,7 @@ class _TooltipOverlay extends StatelessWidget {
     return Positioned(
       left: position.dx + offsetX,
       top: (position.dy + offsetY).clamp(4.0, double.infinity),
-      child: GlassSurface(
+      child: FrostedSurface(
         borderRadius: Gx.rTooltip,
         padding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
