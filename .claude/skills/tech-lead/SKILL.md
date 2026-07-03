@@ -329,6 +329,7 @@ docs/ (ROADMAP + SAD + ADR + modules/*.md + features/*.md)
 * Trigger ÚNICO: tú mismo detectas la condición "Call External Refactor" (archivo >400 líneas, anidación compleja, deuda detectada) durante Etapa 5, o el TTR activo corresponde a empaquetado/release de EPIC-8 (ROADMAP).
 * Despachas, exiges suite de tests verde antes/después, validas resultado vía QA-Engineer antes de cerrar.
 * No participa del pipeline de feature normal (Etapas 0-6).
+* **Alcance de un refactor que rompe una dependencia de capas invertida (lección STORY-026):** al mover un símbolo (helper/token) a otra capa para eliminar una dependencia invertida, incluye en el movimiento sus **sub-helpers privados** — los que SOLO ese símbolo consume. Si los dejas atrás, la dependencia no se elimina: se **relocaliza** a la nueva capa (ej. `frosted` se movió a `theme/` pero llamaba a `glassEnhanced`, que quedó en `gallery/` → `theme/` volvió a depender de `gallery/`). En la Orden, exige verificación con `grep` de que la capa destino NO importe la capa origen tras el movimiento.
 
 ### Lateral — Naming-Specialist
 * Trigger: ad-hoc, cuando el Architect o el usuario requieren una decisión de nombramiento (producto, módulo, feature).
