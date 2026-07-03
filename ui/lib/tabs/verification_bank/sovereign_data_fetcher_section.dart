@@ -4,8 +4,14 @@
 // timeframe/tipo, dispara submitDownloadJob() por FFI, y ve el resultado en
 // la Zona B. La Zona C muestra el historial persistido en sovereign_download_records.
 //
+// Presentación (STORY-025): consume la librería de componentes `custom_ui.*`
+// (Input, Dropdown, Segmented, Button, Banner, Chip, KeyValue, Empty, Table,
+// Tooltip, Surface) en lugar de reimplementar cada control inline. La lógica
+// FFI/estado es idéntica; solo cambia la capa de presentación. El único
+// primitivo local es ScanRingWidget (animación de monitoreo, en gallery_fx).
+//
 // Patrón de job (Gap G1): NO usa Timer.periodic. submitDownloadJob() es await
-// y resuelve con el resultado completo. Mientras espera: botón deshabilitado +
+// y resuelve con el resultado completo. Mientras espera: botón en `loading:` +
 // ScanRingWidget activo. Al resolver: puebla Zona B y refresca Zona C.
 //
 // Columnas del historial (Gap G2): solo id, created_at y source_endpoint.
@@ -17,9 +23,11 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 
-import '../../src/rust/api/data_fetcher.dart';
+import '../../components/components.dart' as custom_ui;
+// gallery_fx se importa SOLO por ScanRingWidget (primitivo de animación).
+import '../../gallery/gallery_fx.dart' show ScanRingWidget;
 import '../../gallery/gallery_tokens.dart';
-import '../../gallery/gallery_fx.dart';
+import '../../src/rust/api/data_fetcher.dart';
 
 // Ruta a la base de datos SQLite de Drasus — igual que jobs_tab.dart.
 const String _kDbPath = 'drasus.db';
@@ -288,7 +296,7 @@ class _SovereignDataFetcherSectionState
   // Construye el panel con todos los controles: broker, símbolo, fechas,
   // timeframe, tipo de salida y botón de descarga.
   Widget _buildZonaA() {
-    return panelSurface(
+    return custom_ui.Surface(
       padding: const EdgeInsets.all(Gx.space16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,8 +336,7 @@ class _SovereignDataFetcherSectionState
     );
   }
 
-  // Selector de broker: desplegable personalizado con Drasus tokens.
-  // Actualmente solo hay un broker (Binance Vision).
+  // Selector de broker (custom_ui.Dropdown). Solo hay un broker (Binance Vision).
   Widget _buildDropdownBroker() {
     return _buildDropdownLocal(
       label: 'Broker',
@@ -339,35 +346,26 @@ class _SovereignDataFetcherSectionState
     );
   }
 
-  // Campo de texto para el símbolo (ej. BTCUSDT).
-  // La conversión a uppercase se aplica al enviar, no al escribir.
+  // Campo de símbolo (custom_ui.Input). La conversión a uppercase se aplica al
+  // enviar (_descargar), no al escribir.
   Widget _buildInputSimbolo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Símbolo', style: Gx.microLabel),
         const SizedBox(height: 4),
-        panelSurface(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Gx.space12, vertical: 10),
-          child: TextField(
-            controller: _symbolCtrl,
-            // uppercase al editar para feedback visual inmediato.
-            textCapitalization: TextCapitalization.characters,
-            style: Gx.uiSans(fontSize: 14, color: Gx.textBase),
-            decoration: InputDecoration.collapsed(
-              hintText: 'Ej. BTCUSDT',
-              hintStyle:
-                  Gx.uiSans(fontSize: 14, color: Gx.textBaseMuted),
-            ),
-          ),
+        custom_ui.Input(
+          controller: _symbolCtrl,
+          hint: 'Ej. BTCUSDT',
         ),
       ],
     );
   }
 
   // Botón selector de fecha que abre el DatePicker nativo de Flutter.
-  // [isError] pinta el borde en criticalCrimson si las fechas son inválidas.
+  // El diálogo nativo cubre el rango multi-año (2017–2030) que necesita el
+  // fetcher; custom_ui.DateRangePicker es de un solo mes y no aplica aquí.
+  // [isError] pinta el borde con glow crimson si las fechas son inválidas.
   Widget _buildDateButton(
     String label,
     DateTime fecha,
@@ -385,7 +383,7 @@ class _SovereignDataFetcherSectionState
         const SizedBox(height: 4),
         GestureDetector(
           onTap: onTap,
-          child: panelSurface(
+          child: custom_ui.Surface(
             padding: const EdgeInsets.symmetric(
                 horizontal: Gx.space12, vertical: 10),
             glow: isError
@@ -435,113 +433,33 @@ class _SovereignDataFetcherSectionState
     );
   }
 
-  // Conmutador Trades/Klines — 0 → ticks, 1 → bars.
+  // Conmutador Trades/Klines (custom_ui.Segmented) — 0 → ticks, 1 → bars.
   Widget _buildSegmentedOutputType() {
-    const opciones = ['Trades (Tick)', 'Klines (Bars)'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Tipo de salida', style: Gx.microLabel),
         const SizedBox(height: 4),
-        panelSurface(
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: opciones.asMap().entries.map((e) {
-              final isActive = e.key == _outputTypeIndex;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () =>
-                      setState(() => _outputTypeIndex = e.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      // El segmento activo: fondo tintado + borde neón transitionIndigo.
-                      color: isActive
-                          ? Gx.transitionIndigo.withAlpha(40)
-                          : Colors.transparent,
-                      borderRadius:
-                          BorderRadius.circular(999),
-                      border: isActive
-                          ? Border.all(color: Gx.transitionIndigo)
-                          : null,
-                      boxShadow: isActive
-                          ? Gx.glow(Gx.transitionIndigo,
-                              blur: 8, opacity: 0.4)
-                          : null,
-                    ),
-                    child: Text(
-                      e.value,
-                      textAlign: TextAlign.center,
-                      style: Gx.uiSans(
-                        fontSize: 11,
-                        color: isActive
-                            ? Gx.transitionIndigo
-                            : Gx.textBaseLabel,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+        custom_ui.Segmented(
+          options: const ['Trades (Tick)', 'Klines (Bars)'],
+          selected: _outputTypeIndex,
+          onChanged: (i) => setState(() => _outputTypeIndex = i),
         ),
       ],
     );
   }
 
-  // Botón "Descargar" — estilo gradReactor + glow verde.
-  // Deshabilitado solo cuando hay un job en curso (_isRunning).
+  // Botón "Descargar" (custom_ui.Button). El componente gestiona el estado
+  // deshabilitado y el spinner de `loading:` — sin gradiente ni spinner inline.
   Widget _buildBotonDescargar() {
     final enabled = !_isRunning && !_fechaError;
 
-    return GestureDetector(
-      onTap: enabled ? _descargar : null,
-      child: AnimatedOpacity(
-        opacity: enabled ? 1.0 : 0.5,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 24, vertical: 11),
-          decoration: BoxDecoration(
-            // Gradiente reactorGreen→optimaCyan cuando activo.
-            gradient: enabled
-                ? Gx.linear(Gx.gradReactor)
-                : Gx.linear([Gx.surfaceCard, Gx.surfacePanel]),
-            borderRadius:
-                BorderRadius.circular(Gx.rButton),
-            boxShadow: enabled
-                ? Gx.glowStrong(Gx.reactorGreen, 0.85)
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Spinner integrado cuando el job corre — feedback visual inmediato.
-              if (_isRunning) ...[
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Gx.transitionIndigo,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                _isRunning ? 'Descargando...' : 'Descargar',
-                style: Gx.uiSans(
-                  fontSize: 13,
-                  weight: FontWeight.w600,
-                  color: enabled ? Gx.deepSpace : Gx.textBaseMuted,
-                ).copyWith(letterSpacing: 0.3),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return custom_ui.Button(
+      label: _isRunning ? 'Descargando...' : 'Descargar',
+      onPressed: enabled ? _descargar : null,
+      variant: custom_ui.ButtonVariant.primary,
+      enabled: enabled,
+      loading: _isRunning,
     );
   }
 
@@ -551,11 +469,11 @@ class _SovereignDataFetcherSectionState
 
   // Muestra el resultado del job activo o el último completado.
   // Si _isRunning: ScanRingWidget + chip "En progreso".
-  // Si hay error: banner rojo.
+  // Si hay error: custom_ui.Banner.
   // Si hay resultado exitoso: 4 key-value + chip de estado final.
-  // Si no hay ningún job ejecutado: panel informativo vacío.
+  // Si no hay ningún job ejecutado: mensaje informativo.
   Widget _buildZonaB() {
-    return panelSurface(
+    return custom_ui.Surface(
       padding: const EdgeInsets.all(Gx.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,37 +501,30 @@ class _SovereignDataFetcherSectionState
     );
   }
 
-  // Banner de error para fallos de FFI o validación.
+  // Banner de error (custom_ui.Banner) + acción para descartarlo. El error
+  // también se limpia solo al reintentar la descarga.
   Widget _buildBannerError(String mensaje) {
-    return Container(
-      padding: const EdgeInsets.all(Gx.space12),
-      decoration: BoxDecoration(
-        color: Gx.criticalChipBg,
-        borderRadius: BorderRadius.circular(Gx.rPanel),
-        border: Border.all(color: Gx.criticalChipBorder),
-        boxShadow:
-            Gx.glow(Gx.criticalCrimson, blur: 12, opacity: 0.25),
-      ),
-      child: Row(children: [
-        Icon(IconsaxPlusLinear.danger,
-            size: 16,
-            color: Gx.criticalCrimson,
-            shadows: Gx.textGlow(Gx.criticalCrimson)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            mensaje,
-            style:
-                Gx.uiSans(fontSize: 12, color: Gx.criticalCrimson),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        custom_ui.Banner(
+          message: mensaje,
+          type: custom_ui.BannerType.error,
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: GestureDetector(
+              onTap: () => setState(() => _error = null),
+              child: Text(
+                'Descartar',
+                style: Gx.uiSans(fontSize: 11, color: Gx.textBaseMuted),
+              ),
+            ),
           ),
         ),
-        // Botón para limpiar el error y permitir reintentar.
-        GestureDetector(
-          onTap: () => setState(() => _error = null),
-          child: Icon(Icons.close,
-              size: 14, color: Gx.criticalCrimson),
-        ),
-      ]),
+      ],
     );
   }
 
@@ -621,27 +532,14 @@ class _SovereignDataFetcherSectionState
   Widget _buildJobEnCurso() {
     return Row(children: [
       ScanRingWidget(
-        // El ScanRingWidget envuelve un chip que indica el estado running.
+        // El ScanRingWidget envuelve el chip que indica el estado running.
         color: Gx.transitionIndigo,
         maxRadius: 24,
         period: const Duration(milliseconds: 2800),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFF130F2A), // transitionChipBg
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFF3A2E6E)),
-            boxShadow: Gx.glow(Gx.transitionIndigo,
-                blur: 12, opacity: 0.35),
-          ),
-          child: Text(
-            'En progreso',
-            style: Gx.uiSans(
-              fontSize: 11,
-              color: Gx.transitionIndigo,
-            ).copyWith(shadows: Gx.textGlow(Gx.transitionIndigo)),
-          ),
+        child: custom_ui.Chip(
+          label: 'En progreso',
+          status: custom_ui.ChipStatus.transition,
+          pill: true,
         ),
       ),
       const SizedBox(width: Gx.space16),
@@ -660,13 +558,15 @@ class _SovereignDataFetcherSectionState
     // Estado del job: viene de getJobStatus() o se infiere del result.error.
     final estadoStr = status?.state ??
         (result.error != null ? 'FAILED' : 'COMPLETED');
-    final (estadoLabel, chipFg, chipBg, chipBorder, pill) =
-        _mapearEstado(estadoStr);
+    final (estadoLabel, estadoStatus, pill) = _mapearEstado(estadoStr);
+    final estadoColor = _statusColor(estadoStatus);
 
     // Formatea BigInt de bytes para mostrar al usuario.
-    final totalBytesStr =
-        _formatBytes(result.totalBytes);
+    final totalBytesStr = _formatBytes(result.totalBytes);
     final bulkFilesStr = result.bulkFilesDownloaded.toString();
+    final jobIdCorto = result.jobId.length > 8
+        ? result.jobId.substring(0, 8)
+        : result.jobId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,19 +579,22 @@ class _SovereignDataFetcherSectionState
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _buildKV('Job ID', result.jobId.length > 8
-                ? result.jobId.substring(0, 8)
-                : result.jobId,
-                Gx.textBase),
-            _buildKV('Estado', estadoLabel, chipFg),
-            _buildKV('Archivos Bulk', bulkFilesStr, Gx.textBase),
-            _buildKV('Total bytes', totalBytesStr, Gx.textBase),
+            custom_ui.KeyValue(
+                label: 'Job ID', value: jobIdCorto, mono: true),
+            custom_ui.KeyValue(
+                label: 'Estado',
+                value: estadoLabel,
+                valueColor: estadoColor,
+                mono: true),
+            custom_ui.KeyValue(
+                label: 'Archivos Bulk', value: bulkFilesStr, mono: true),
+            custom_ui.KeyValue(
+                label: 'Total bytes', value: totalBytesStr, mono: true),
           ],
         ),
         const SizedBox(height: Gx.space8),
         // Chip de estado al pie del panel.
-        _buildChip(estadoLabel, chipFg, chipBg, chipBorder,
-            pill: pill),
+        custom_ui.Chip(label: estadoLabel, status: estadoStatus, pill: pill),
       ],
     );
   }
@@ -703,7 +606,7 @@ class _SovereignDataFetcherSectionState
   // Muestra la tabla de sovereign_download_records con 3 columnas reales:
   // id (truncado 8 chars), created_at (ISO 8601) y source_endpoint (truncado 40).
   Widget _buildZonaC() {
-    return panelSurface(
+    return custom_ui.Surface(
       padding: const EdgeInsets.all(Gx.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,187 +638,64 @@ class _SovereignDataFetcherSectionState
     );
   }
 
-  // Estado vacío de la Zona C: ícono + mensaje cuando no hay registros.
+  // Estado vacío de la Zona C (custom_ui.Empty).
   Widget _buildEstadoVacio() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(IconsaxPlusLinear.document_download,
-              size: 32, color: Gx.textBaseMuted),
-          const SizedBox(height: Gx.space8),
-          Text(
-            'Sin descargas aún.',
-            style: Gx.uiSans(fontSize: 13, color: Gx.textBaseMuted),
-          ),
+    return custom_ui.Empty(
+      message: 'Sin descargas aún.',
+      icon: IconsaxPlusLinear.document_download,
+    );
+  }
+
+  // Tabla de registros (custom_ui.Table) con scroll vertical.
+  // Columnas (Gap G2): solo id, created_at, source_endpoint.
+  Widget _buildTablaHistorial() {
+    return SingleChildScrollView(
+      child: custom_ui.Table(
+        columns: const [
+          custom_ui.TableColumn(label: 'ID'),
+          custom_ui.TableColumn(label: 'Fecha (UTC)'),
+          custom_ui.TableColumn(label: 'Endpoint'),
+        ],
+        rows: [
+          for (final r in _records) _filaHistorial(r),
         ],
       ),
     );
   }
 
-  // Tabla de registros con scroll vertical.
-  // Columnas (Gap G2): solo id, created_at, source_endpoint.
-  Widget _buildTablaHistorial() {
-    return Column(
-      children: [
-        // Cabecera de la tabla.
-        _buildFilaTabla(
-          id: 'ID',
-          createdAt: 'FECHA (UTC)',
-          sourceEndpoint: 'ENDPOINT',
-          isHeader: true,
-        ),
-        const SizedBox(height: 2),
-        // Filas de datos con scroll vertical.
-        Expanded(
-          child: ListView.builder(
-            itemCount: _records.length,
-            itemBuilder: (ctx, i) {
-              final r = _records[i];
-              // Trunca el UUID a 8 chars para ahorrar espacio visual.
-              final idCorto =
-                  r.id.length > 8 ? r.id.substring(0, 8) : r.id;
-              // Convierte ns → microsegundos → DateTime UTC → ISO 8601.
-              final fecha = DateTime.fromMicrosecondsSinceEpoch(
-                r.createdAt ~/ 1000,
-              ).toUtc().toIso8601String();
-              // Trunca el endpoint a 40 chars para la celda.
-              final endpointTruncado = r.sourceEndpoint.length > 40
-                  ? '${r.sourceEndpoint.substring(0, 40)}…'
-                  : r.sourceEndpoint;
-              return _buildFilaTabla(
-                id: idCorto,
-                createdAt: fecha,
-                sourceEndpoint: endpointTruncado,
-                fullEndpoint: r.sourceEndpoint,
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  // Construye una fila del historial: id | created_at | source_endpoint.
+  // El endpoint se trunca a 40 chars y muestra la URL completa en Tooltip.
+  List<Widget> _filaHistorial(DownloadRecordDto r) {
+    // Trunca el UUID a 8 chars para ahorrar espacio visual.
+    final idCorto = r.id.length > 8 ? r.id.substring(0, 8) : r.id;
+    // Convierte ns → microsegundos → DateTime UTC → ISO 8601.
+    final fecha = DateTime.fromMicrosecondsSinceEpoch(
+      r.createdAt ~/ 1000,
+    ).toUtc().toIso8601String();
+    // Trunca el endpoint a 40 chars para la celda.
+    final endpointTruncado = r.sourceEndpoint.length > 40
+        ? '${r.sourceEndpoint.substring(0, 40)}…'
+        : r.sourceEndpoint;
 
-  // Fila de la tabla: id | created_at | source_endpoint.
-  // [isHeader]: si true, muestra etiquetas de columna en Gx.microLabel.
-  // [fullEndpoint]: texto completo del endpoint para el Tooltip al hover.
-  Widget _buildFilaTabla({
-    required String id,
-    required String createdAt,
-    required String sourceEndpoint,
-    bool isHeader = false,
-    String? fullEndpoint,
-  }) {
-    final textStyle = isHeader
-        ? Gx.microLabel
-        : Gx.dataMono(fontSize: 12, color: Gx.textBase);
+    final cellStyle = Gx.dataMono(fontSize: 12, color: Gx.textBase);
 
-    // Celda de endpoint: con Tooltip si no es cabecera (muestra URL completa).
-    Widget endpointCell = Expanded(
-      flex: 3,
-      child: fullEndpoint != null
-          ? Tooltip(
-              // Tooltip con la URL completa al hacer hover sobre el texto truncado.
-              message: fullEndpoint,
-              child: Text(
-                sourceEndpoint,
-                style: textStyle,
-                overflow: TextOverflow.ellipsis,
-              ),
-            )
-          : Text(
-              sourceEndpoint,
-              style: textStyle,
-              overflow: TextOverflow.ellipsis,
-            ),
-    );
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      decoration: BoxDecoration(
-        // Sin borde en la cabecera; borde inferior hairline en filas de datos.
-        border: isHeader
-            ? null
-            : Border(
-                bottom:
-                    BorderSide(color: Gx.borderBase, width: 0.5)),
+    return [
+      Text(idCorto, style: cellStyle, overflow: TextOverflow.ellipsis),
+      Text(fecha, style: cellStyle, overflow: TextOverflow.ellipsis),
+      // Tooltip con la URL completa al hacer hover sobre el texto truncado.
+      custom_ui.Tooltip(
+        message: r.sourceEndpoint,
+        child: Text(endpointTruncado,
+            style: cellStyle, overflow: TextOverflow.ellipsis),
       ),
-      child: Row(children: [
-        // Columna ID — flex 1, truncado a 8 chars.
-        Expanded(
-          flex: 1,
-          child: Text(id, style: textStyle, overflow: TextOverflow.ellipsis),
-        ),
-        // Columna created_at — flex 3, ISO 8601 UTC.
-        Expanded(
-          flex: 3,
-          child: Text(createdAt, style: textStyle, overflow: TextOverflow.ellipsis),
-        ),
-        // Columna source_endpoint — flex 3, truncado + Tooltip.
-        endpointCell,
-      ]),
-    );
+    ];
   }
 
   // ---------------------------------------------------------------------------
   // Helpers de presentación
   // ---------------------------------------------------------------------------
 
-  // Fila clave-valor reutilizable (Zona B).
-  // [valueColor]: color del valor para enfatizar el estado semántico.
-  Widget _buildKV(String key, String value, Color valueColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      decoration:
-          BoxDecoration(border: Border(bottom: BorderSide(color: Gx.borderBase))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              key,
-              overflow: TextOverflow.ellipsis,
-              style: Gx.uiSans(fontSize: 12, color: Gx.textBaseLabel),
-            ),
-          ),
-          Text(
-            value,
-            style: Gx.dataMono(fontSize: 13, color: valueColor)
-                .copyWith(shadows: Gx.textGlow(valueColor, 6)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Chip de estado con tokens semánticos.
-  Widget _buildChip(
-    String label,
-    Color fg,
-    Color bg,
-    Color border, {
-    bool pill = false,
-  }) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: border),
-        borderRadius:
-            BorderRadius.circular(pill ? 999 : Gx.rChip),
-        boxShadow: Gx.glow(fg, blur: 12, opacity: 0.30),
-      ),
-      child: Text(
-        label,
-        style: Gx.uiSans(fontSize: 12, color: fg, height: 1.2)
-            .copyWith(shadows: Gx.textGlow(fg)),
-      ),
-    );
-  }
-
-  // Dropdown genérico con label, valor actual y lista de opciones.
-  // A diferencia de GlowDropdown (solo demostración), este expone [onChanged].
+  // Dropdown genérico (custom_ui.Dropdown) con label, valor y opciones.
   Widget _buildDropdownLocal({
     required String label,
     required String value,
@@ -927,87 +707,50 @@ class _SovereignDataFetcherSectionState
       children: [
         Text(label, style: Gx.microLabel),
         const SizedBox(height: 4),
-        // DropdownButton de Material estilizado para coincidir con el sistema.
-        DropdownButtonHideUnderline(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: Gx.space12, vertical: 6),
-            decoration: BoxDecoration(
-              // panelSurface equivalente para el dropdown nativo.
-              color: Gx.surfacePanel,
-              borderRadius: BorderRadius.circular(Gx.rInput),
-              border: Border.all(color: Gx.borderBase),
-            ),
-            child: DropdownButton<String>(
-              value: value,
-              dropdownColor: Gx.surfacePanel,
-              isExpanded: true,
-              iconEnabledColor: Gx.textBaseSecondary,
-              style: Gx.uiSans(fontSize: 13, color: Gx.textBase),
-              items: options
-                  .map((o) => DropdownMenuItem(
-                        value: o,
-                        child: Text(o,
-                            style: Gx.uiSans(
-                                fontSize: 13, color: Gx.textBase)),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) onChanged(v);
-              },
-            ),
-          ),
+        custom_ui.Dropdown<String>(
+          value: value,
+          items: [
+            for (final o in options)
+              custom_ui.DropdownItem(value: o, label: o),
+          ],
+          onChanged: onChanged,
         ),
       ],
     );
   }
 
-  // Mapea el estado string del job a sus tokens visuales semánticos.
-  // Retorna: (label, fg, bg, border, pill).
+  // Mapea el estado string del job a su etiqueta + ChipStatus semántico + pill.
   // Gap G3: no existe "Retrying" en EPIC-1; "CANCELLED" → Fallido.
-  (String, Color, Color, Color, bool) _mapearEstado(String state) {
+  // ChipStatus null = chip neutro (estado desconocido).
+  (String, custom_ui.ChipStatus?, bool) _mapearEstado(String state) {
     switch (state) {
       case 'COMPLETED':
-        return (
-          'Completado',
-          Gx.optimaCyan,
-          const Color(0xFF08251F),
-          const Color(0xFF1E5E4F),
-          false,
-        );
+        return ('Completado', custom_ui.ChipStatus.optima, false);
       case 'RUNNING':
-        return (
-          'En progreso',
-          Gx.transitionIndigo,
-          const Color(0xFF130F2A),
-          const Color(0xFF3A2E6E),
-          true, // pill = radio 999 para estado vivo
-        );
+        return ('En progreso', custom_ui.ChipStatus.transition, true);
       case 'QUEUED':
-        return (
-          'En cola',
-          Gx.transitionBlue,
-          const Color(0xFF0A1526),
-          const Color(0xFF1A3A6E),
-          false,
-        );
+        return ('En cola', custom_ui.ChipStatus.transition, false);
       case 'FAILED':
       case 'CANCELLED':
-        return (
-          'Fallido',
-          Gx.criticalCrimson,
-          const Color(0xFF2A0C0C),
-          const Color(0xFF7A2A28),
-          false,
-        );
+        return ('Fallido', custom_ui.ChipStatus.critical, false);
       default:
-        return (
-          state,
-          Gx.textBaseMuted,
-          Gx.surfaceCard,
-          Gx.borderBase,
-          false,
-        );
+        return (state, null, false);
+    }
+  }
+
+  // Color semántico asociado a un ChipStatus (para el valor del KeyValue).
+  Color _statusColor(custom_ui.ChipStatus? status) {
+    switch (status) {
+      case custom_ui.ChipStatus.optima:
+        return Gx.optimaCyan;
+      case custom_ui.ChipStatus.transition:
+        return Gx.transitionIndigo;
+      case custom_ui.ChipStatus.alert:
+        return Gx.alertAmber;
+      case custom_ui.ChipStatus.critical:
+        return Gx.criticalCrimson;
+      case null:
+        return Gx.textBaseMuted;
     }
   }
 
