@@ -113,6 +113,228 @@ UX complementaria provista por features hermanas del módulo `ingest` (NO por es
 
 **Estado de entrega:** el MOTOR de descarga (TTR-001 Bulk + TTR-002 Delta) se implementó en STORY-024 (backend, QA APTO). El **inspector panel de configuración es una entrega de UI pendiente** (Story de UI futura: UI-Designer escribe la Cáscara Visual ADR-0135 → Bridge → Flutter) — aún no construida.
 
+## Cáscara Visual (Thin Shell)
+
+> Autoridad: ADR-0106 · ADR-0136 · ADR-0117 · `docs/DESIGN.md` · `docs/DESIGN.md §"Catálogo de Componentes"`
+
+> **Alcance STORY-024 — Opción B ratificada:** se diseñan las manifestaciones (1) SVF en el Banco de Verificación y (2) Dashboard widget. La manifestación (3) nodo Canvas DAG queda como **deuda de integración visual** — la infraestructura Canvas (drag-drop, puertos tipados, bezier S-curve) no existe en EPIC-1. El Tech Lead debe registrarla en `PROGRESS.md` y resolverla al construir la infra Canvas en EPIC-8, conforme ADR-0117 / ADR-0136 (enmienda 2026-06-28).
+
+---
+
+### Contexto de superficie (ADR-0136)
+
+| # | Manifestación | Contexto (ADR-0136) | Descripción en una frase |
+|---|---|---|---|
+| 1 | SVF — sección del Banco de Verificación | Sección seleccionable en el Banco de Verificación (panel-solid denso, tab único del shell operacional) | El usuario configura broker, símbolo, rango, timeframe y tipo de salida, dispara el job real vía FFI y ve el resultado del job más el historial persistido de `sovereign_download_records`. |
+| 2 | Dashboard widget | **Dashboard widget** — read-only en el centro de monitoreo | Tarjeta compacta que muestra la última descarga: símbolo, timestamp, bytes totales y estado del job. |
+| 3 · deuda | Nodo Canvas DAG + Inspector Panel lateral | **Inspector Panel** (definitivo — diferido a EPIC-8) | Al hacer clic en el nodo del Canvas [Forge/Reactor], abre el inspector panel lateral con la UI de configuración completa — no construida hasta que exista la infra Canvas. |
+
+---
+
+### Superficie y Densidad
+
+**SVF (Banco de Verificación):**
+- Superficie principal: `panel-solid` — `panelSurface(child: ...)` leyendo `Gx.surfacePanel`. Radio 11px, borde `Gx.borderBase` (1px hairline).
+- Densidad: **densa** — contexto de verificación operacional. Padding perimetral `Gx.space16`. Gaps entre zonas `Gx.space8`.
+- Lienzo de fondo del Banco: `deepSpace` (`Gx.canvasBase`) + telón cósmico tenue (`starField #E6ECF8` @ 2–5%).
+
+**Dashboard widget:**
+- Superficie: `panel-solid` compacto — `panelSurface(child: ...)`. Radio 11px.
+- Densidad: **máxima** (bento grid). Padding `Gx.space12`.
+
+---
+
+### Componentes
+
+#### Zona A — Panel de Control (SVF, controles de entrada)
+
+| ID de catálogo (DESIGN.md §4–§11) | Rol en esta feature | Tokens clave | Estados semánticos |
+|---|---|---|---|
+| `panel-solid` | Contenedor de los controles de entrada | `Gx.surfacePanel`, `Gx.borderBase`, radio 11px | — |
+| `select / dropdown` (`GlowDropdown`) | Selector de Broker/Exchange (Binance Vision, …) | `glassFill` superficie; foco: borde 1.5px + `glow(transitionIndigo, blur 18)`; chevron rota 180° al abrir | default, focus, selected, disabled |
+| `text-field / input` (`GlowInput`) | Campo de símbolo (ej. BTCUSDT) — texto libre, uppercase | `glassFill`; foco: borde 1.5px `transitionIndigo` + `glow(transitionIndigo, blur 18)`; error: borde `criticalCrimson` | default, focus, error (`criticalCrimson` si vacío al disparar) |
+| `date-picker` (`GlowDatePicker`) × 2 | Fecha Desde / Fecha Hasta — dos instancias lado a lado | `glassFill`; día seleccionado: anillo `optimaCyan`; día actual: anillo `transitionIndigo` | default, focus, error (`criticalCrimson` si Desde ≥ Hasta) |
+| `select / dropdown` (`GlowDropdown`) | Selector de Timeframe/Intervalo (1m, 5m, 15m, 1h, 4h, 1D, 1W) | mismos tokens que selector de broker | default, focus, selected |
+| `segmented-control` (`GlowSegmented`) | Tipo de salida: **Trades → Tick** / **Klines → Bars** | Segmento activo: `glassFill` + borde neón `transitionIndigo` + texto `Gx.textBase`; inactivo: texto `Gx.textBaseMuted` | selected |
+| `button-primary` (`GlowButton`) | Botón "Descargar" — dispara `submitDownloadJob(…)` vía FFI | Relleno `gradReactor`, texto `deepSpace #080A18`, `glowStrong(reactorGreen)`; al hover glow se intensifica; al press escala 0.96 + propagación de luz ~460ms; en loading glow pulsante `transitionIndigo` | default, hover, pressed, loading, disabled (cuando hay job activo) |
+
+#### Zona B — Panel de Resultados (SVF, job activo)
+
+| ID de catálogo (DESIGN.md §4–§11) | Rol en esta feature | Tokens clave | Estados semánticos |
+|---|---|---|---|
+| `panel-solid` | Contenedor del estado del job activo o último job | `Gx.surfacePanel`, `Gx.borderBase`, radio 11px | — |
+| `key-value-row` (`_keyValue`) × 4 | Job ID · Estado · Archivos descargados · Bytes totales | Label: `Gx.textBaseLabel` (textLabel @55%) alineado izq; valor: `dataMono 13px` alineado der; separador `divider`; color del valor = color del estado | según estado del job (ver §Estados Semánticos) |
+| `badge / tag / chip / pill` (`_chip`) | Estado del job activo en el key-value de Estado | Texto, fondo, borde y radio según §Estados Semánticos | Completado / En progreso / En cola / Reintentando / Fallido |
+| `spinner / loader` (`_scanRing`) | Indicador de descarga activa — solo visible mientras estado = En progreso | `scanRing(transitionIndigo)` ritmo medio 2–3s | solo cuando estado = running |
+
+#### Zona C — Historial de Descargas (SVF, registros persistidos de la DB)
+
+| ID de catálogo (DESIGN.md §4–§11) | Rol en esta feature | Tokens clave | Estados semánticos |
+|---|---|---|---|
+| `panel-solid` | Contenedor del historial `sovereign_download_records` | `Gx.surfacePanel`, `Gx.borderBase`, radio 11px | — |
+| `table / data-grid` (`GlowTable`) | Tabla de registros: id · created_at · símbolo · bytes · estado · source_endpoint | Cabecera 11px `Gx.textBaseLabel`; celdas `dataMono 13px`; hover fila `Gx.surfaceRaisedDynamic`; separador `divider`; números bytes alineados derecha | completado (`optimaCyan`) / fallido (`criticalCrimson`) / en progreso (`transitionIndigo`) |
+| `badge / tag / chip / pill` (`_chip`) | Chip de estado en cada fila del historial | mismos tokens que §Estados Semánticos | todos los estados |
+| `tooltip` (`GlowTooltip`) | Valor completo de `source_endpoint` al hover sobre celda truncada | `glassFill`, `glassRim`, radio 12px | — |
+| `empty-state` (`GlowEmpty`) | Sin registros aún | Texto `Gx.textBaseMuted`; ícono cristal latente | — |
+
+#### Manifestación 2 — Dashboard widget (read-only)
+
+| ID de catálogo (DESIGN.md §4–§11) | Rol en esta feature | Tokens clave | Estados semánticos |
+|---|---|---|---|
+| `panel-solid` | Contenedor del widget en el bento grid | `Gx.surfacePanel`, radio 11px, padding `Gx.space12` | — |
+| `stat / metric` (`_kpi`) | Bytes totales de la última descarga — número-héroe | `dataMono 28px`; color = estado del último job; `textGlow(estadoColor)` | óptimo (`optimaCyan`) / fallido (`criticalCrimson`) / en progreso (`transitionIndigo`) |
+| `key-value-row` (`_keyValue`) × 2 | Símbolo descargado · Timestamp `created_at` | Label `Gx.textBaseLabel`; valor `dataMono 13px` | — |
+| `badge / tag / chip / pill` (`_chip`) | Estado del último job registrado | mismos tokens que §Estados Semánticos | todos los estados |
+
+---
+
+### Estados Semánticos (Espectro de Vitalidad)
+
+Mapeados al campo `status` del job de descarga y de `sovereign_download_records`:
+
+| Estado de negocio | Color token | Tratamiento visual completo |
+|---|---|---|
+| Completado | `optimaCyan #54E8D0` | chip: texto `#54E8D0`, fondo `#08251F`, borde 1px `#1E5E4F`, radio 8px · `glow(optimaCyan)` · valor key-value: texto `#54E8D0` |
+| En progreso | `transitionIndigo #9A8CFF` | chip: texto `#9A8CFF`, fondo `#130F2A`, borde 1px `#3A2E6E`, radio **999px** (estado vivo) · `glow(transitionIndigo)` pulsante · `scanRing(transitionIndigo)` en panel activo · valor key-value: texto `#9A8CFF` |
+| En cola | `transitionBlue #56A8FF` | chip: texto `#56A8FF`, fondo `#0A1526`, borde 1px `#1A3A6E`, radio 8px · sin glow activo |
+| Reintentando | `alertAmber #FFC94D` | chip: texto `#FFC94D`, fondo `#241900`, borde 1px `#5C3D00`, radio **999px** (estado vivo) · `glow(alertAmber)` pulsante |
+| Fallido | `criticalCrimson #F0413F` | chip: texto `#F0413F`, fondo `#2A0C0C`, borde 1px `#7A2A28`, radio 8px · `glow(criticalCrimson)` parpadeante |
+
+---
+
+### Layout
+
+**SVF — Banco de Verificación:**
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Banco de Verificación  (tab único del shell operacional)        │
+│  ┌─────────────┬────────────────────────────────────────────┐   │
+│  │  Menú lat.  │  Sección: Sovereign Data Fetcher           │   │
+│  │  (navRail)  │                                            │   │
+│  │  · Reloj    │  ┌─── Zona A: Panel de Control ─────────┐ │   │
+│  │  · Trabajos │  │  Broker [Dropdown]  Símbolo [Input]   │ │   │
+│  │  · Auditoría│  │  Desde [DatePicker] Hasta [DatePicker]│ │   │
+│  │  · Datos ←  │  │  Timeframe [Drop.]  [Trades|Klines]   │ │   │
+│  │    Soberanos│  │              [  Descargar  ]           │ │   │
+│  └─────────────┤  └───────────────────────────────────────┘ │   │
+│                │  (Gx.space8)                                │   │
+│                │  ┌─── Zona B: Job Activo ─────────────────┐│   │
+│                │  │ Job ID: [mono]      Estado: [chip]      ││   │
+│                │  │ Archivos: [mono]    Bytes: [mono]       ││   │
+│                │  └────────────────────────────────────────-┘│   │
+│                │  (Gx.space8)                                │   │
+│                │  ┌─── Zona C: Historial ──────────────────┐│   │
+│                │  │ id │ created_at │ símbolo │ bytes │ est ││   │
+│                │  │ ── │ ────────── │ ─────── │ ───── │ ── ││   │
+│                │  │ [fila hover → surfaceRaised]            ││   │
+│                │  │ ...                    [scroll vertical]││   │
+│                │  └────────────────────────────────────────-┘│   │
+│                └────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+- **Menú lateral del Banco:** `navRail #0B1022`, entradas con ícono Iconsax + label `Gx.textBase 13px`. Entrada activa: borde izq 2px `transitionIndigo` + `glow(transitionIndigo)`. Sigue el patrón de `ui/lib/gallery/` (registro centralizado, construcción bajo demanda).
+- **Zona A — controles:** `Column` con tres filas de inputs. Cada fila es `Row([Expanded, SizedBox(Gx.space12), Expanded])`. Botón "Descargar" en `Row` centrado al final. Padding `Gx.space16` perimetral. Gap entre filas de controles: `Gx.space12`.
+- **Zona B — job activo:** `GridView.count(crossAxisCount: 2, childAspectRatio: 4.0)` con 4 `_keyValue`. Padding `Gx.space12`. Solo visible cuando `_jobId != null`. Separación de la Zona A: `Gx.space8`.
+- **Zona C — historial:** `GlowTable` dentro de `Expanded` que toma el resto del alto disponible. Scroll vertical. Columnas — proporciones flex: `id` (1, truncado 8 chars), `created_at` (2, ISO 8601 mono), `símbolo` (1), `bytes` (1, alineado der), `estado` (1, chip), `source_endpoint` (2, truncado + tooltip). Separación de la Zona B: `Gx.space8`.
+
+**Dashboard widget:**
+- `Column(children: [header, heroStat, keyValueRows, chipEstado])`.
+- Header: ícono Iconsax `cloud_download` 14px `Gx.textBaseLabel` + label `"Datos Soberanos"` en `displayGrotesque 12px 500` `Gx.textBaseLabel`.
+- Número-héroe: bytes totales en `dataMono 28px` con color y `textGlow(estadoColor)`.
+- Dos `key-value-row`: símbolo + `created_at`.
+- Chip de estado al pie.
+- Alto mínimo: 110px. Sin scroll.
+
+---
+
+### Animaciones Aplicables
+
+Seleccionadas de `docs/DESIGN.md §Motion Philosophy`:
+
+- [x] **Clic de botón "Descargar":** hundimiento (escala 0.96) + propagación de luz (~460ms) — comportamiento estándar de `GlowButton`
+- [x] **Hover en controles** (inputs, dropdowns, botón): `glowStrong` intensificado + leve escala (~160–220ms)
+- [x] **Foco de input** (símbolo, fechas): borde 1.5px `transitionIndigo` + glow limpio (~200ms), sin aberración RGB
+- [x] **Dropdown** (broker, timeframe): `AnimatedSize` + rotación del chevron 180°
+- [x] **Chip pulsante / parpadeante:** glow pulsante `transitionIndigo` (En progreso) / `alertAmber` (Reintentando) / parpadeo `criticalCrimson` (Fallido)
+- [x] **Loader activo:** `scanRing(transitionIndigo)` ritmo medio 2–3s mientras job corre
+- [ ] Zoom canvas: no aplica (sin Canvas en EPIC-1)
+- [ ] Switch: no aplica
+- [ ] Slider: no aplica
+
+---
+
+### Notas de implementación para el Flutter Engineer
+
+**1. Patrón de widget y polling:**
+`SovereignDataFetcherSection` como `StatefulWidget`. Usar `Timer.periodic(const Duration(seconds: 2), _actualizarEstadoJob)` mientras `_jobId != null && !_jobTerminado`. Cancelar en `dispose()`. Patrón idéntico a `ui/lib/tabs/clock_tab.dart`.
+
+**2. `GlowDatePicker` × 2 (no `GlowDateRangePicker`):**
+`GlowDateRangePicker` está en `gallery/sections/section_std_missing.dart` — pendiente de implementación. Usar dos instancias de `GlowDatePicker({initial, onSelected})` lado a lado. Validar `_fechaDesde.isBefore(_fechaHasta)` en cada callback; si falla, pintar el borde de la segunda instancia en `criticalCrimson` y deshabilitar "Descargar".
+
+**3. `GlowSegmented` para tipo de salida:**
+```dart
+// Conmutador Trades/Klines — mapeo interno al enum de Rust
+GlowSegmented(
+  options: const ['Trades (Tick)', 'Klines (Bars)'],
+  selected: _outputTypeIndex,
+  onChanged: (i) => setState(() => _outputTypeIndex = i),
+)
+// 0 → OutputType.ticks,  1 → OutputType.bars
+```
+
+**4. Superficie dinámica — obligatorio:**
+Todo contenedor usa `panelSurface(child: ...)`. Prohibido `Container(color: Gx.panelSolid)` raw. Colores de texto: `Gx.textBase`, `Gx.textBaseLabel`, `Gx.textBaseMuted`. Prohibido `const` en cualquier widget de superficie (congela colores al cambiar el modo global).
+
+**5. `GlowTable` — columna `source_endpoint`:**
+Truncar a 40 caracteres con `"…"`. Envolver en `GlowTooltip({message: record.sourceEndpoint, child: Text(truncated)})`.
+
+**6. Sidebar del Banco de Verificación:**
+Añadir entrada al menú lateral del Banco con `IconsaxPlusLinear.cloud_download`, label `"Datos Soberanos"`. Entrada seleccionada: borde izq 2px `transitionIndigo` + `glow(transitionIndigo)`. Seguir el patrón de registro existente en `ui/lib/gallery/`.
+
+**7. Registro en `dashboard_registry.dart`:**
+Añadir con `available: true`:
+```dart
+// Widget de última descarga de históricos soberanos
+DashboardWidgetMeta(
+  id: 'sovereign-data-fetcher',
+  name: 'Datos Soberanos',
+  description: 'Estado de la última descarga: símbolo, bytes y estado del job.',
+  icon: IconsaxPlusLinear.cloud_download,
+  available: true,
+)
+```
+El widget implementado se llama `SovereignDataFetcherDashboardWidget` — read-only, sin callbacks.
+
+**8. Estado vacío del historial:**
+Si `listDownloadRecords()` retorna lista vacía, mostrar `GlowEmpty({message: 'Sin descargas aún.', icon: IconsaxPlusLinear.cloud_download})` en la Zona C.
+
+**9. Techo Fijo (ADR-0117):**
+Sin manejo elaborado de errores (un `GlowBanner(type: error)` en Zona B es suficiente para fallos FFI). Sin paginación de la tabla en EPIC-1. Sin validación inline en tiempo real salvo la restricción Desde < Hasta. El botón "Descargar" se deshabilita únicamente mientras haya un job en estado `running` o `queued`.
+
+---
+
+### Despacho al Bridge Engineer — Métodos FFI necesarios
+
+Antes de que el Flutter Engineer implemente esta sección, el Bridge Engineer debe exponer:
+
+| Método FFI | Firma sugerida | Descripción |
+|---|---|---|
+| `submitDownloadJob` | `({String symbol, String broker, DateTime startDate, DateTime endDate, String timeframe, OutputType outputType}) → String` | Dispara el job y retorna el `job_id` asignado por el Core. |
+| `getJobStatus` | `({String jobId}) → JobStatus` | Retorna el estado actual: `state` (enum queued/running/retrying/completed/failed), `files_downloaded`, `bytes_total`. |
+| `listDownloadRecords` | `() → List<DownloadRecord>` | Lee `sovereign_download_records` de la DB; lista completa (sin paginación en EPIC-1). |
+
+`JobStatus.state` es el enum Rust que mapea a los cinco estados semánticos de §Estados Semánticos.
+
+---
+
+### Correcciones de violaciones (pre-diseño)
+
+Ninguna violación detectada. El documento usa correctamente la terminología de ADR-0136 (Inspector Panel), no los términos descontinuados MACRO/MESO/MICRO. No hay menciones de WebGL, cálculo en frontend ni tecnologías rechazadas.
+
+---
+
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local (los datos se descargan y procesan en el disco del usuario).

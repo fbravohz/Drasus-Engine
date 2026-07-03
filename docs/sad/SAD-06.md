@@ -1,6 +1,6 @@
 ## 6. Experiencia de Usuario y Flujos (Dashboard + Canvas)
 
-> ⚠️ ADR-0028 (ZUI Fractal de 3 niveles nominados) fue **supersedido por ADR-0136** (2026-06-23). Los términos Fleet Command (Macro), Orchestrator (Meso) y Strategy Inspector (Micro) como denominaciones de pantalla están descontinuados. Ver `docs/UI-ARCHITECTURE.md` y ADR-0136 para la especificación completa.
+> ⚠️ ADR-0028 (ZUI Fractal de 3 niveles nominados) fue **supersedido por ADR-0136** (2026-06-23). Los términos Fleet Command (Macro), Orchestrator (Meso) y Strategy Inspector (Micro) como denominaciones de pantalla están descontinuados. Ver ADR-0136 para la especificación completa.
 
 El sistema se organiza en **dos superficies**:
 
