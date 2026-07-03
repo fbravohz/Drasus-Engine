@@ -169,7 +169,8 @@ Convertir el catálogo estético de la galería en una librería de componentes 
 - [x] `grep -rnE "class Glow" ui/lib/` = 0 ; `class Glass` = solo `GlassTokens` (tema); `GlassSurface`→`FrostedSurface`
 - [x] `grep -rnE "class Drasus" ui/lib/` = 0 (quedan strings de nombre de producto, no clases)
 - [x] `ui/COMPONENTS.md` cubre los 51 componentes
-- [ ] SVF de STORY-024 reescrita consumiendo `ui.*` (cierra STORY-024) — **siguiente paso**
+- [x] **Alias de namespace definitivo: `custom_ui`** (2026-07-03, decisión del propietario) — reemplaza `ui`/`uic`; elimina de raíz la colisión con `dart:ui as ui` (ya no hace falta el parche `uic`). Aplicado en los 4 consumidores + barrel + `COMPONENTS.md`.
+- [x] SVF de STORY-024 reescrita consumiendo `custom_ui.*` (cierra STORY-024, 2026-07-03) — `sovereign_data_fetcher_section.dart` consume Input/Dropdown/Segmented/Button(loading)/Banner/Chip/KeyValue/Empty/Table/Tooltip/Surface en vez de reimplementaciones inline; lógica FFI/estado intacta; `ScanRingWidget` (primitivo de animación) se mantiene. Build linux verde.
 
 ## 5. Criterio de aceptación (por batch)
 
