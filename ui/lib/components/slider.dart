@@ -6,7 +6,7 @@
 // Los consumidores importan con namespace `import ... as ui;` → `ui.Slider`.
 
 import 'package:flutter/material.dart' hide Slider;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Slider arrastrable con track degradado y knob con glow.
 // Contrato funcional: [value] posición actual en [min, max] (null = no controlado,

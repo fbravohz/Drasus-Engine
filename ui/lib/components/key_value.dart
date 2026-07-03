@@ -3,7 +3,7 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Fila etiqueta → valor con separador inferior por token de borde.
 // Contrato funcional: [label] texto descriptivo de la clave; [value] texto

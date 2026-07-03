@@ -4,8 +4,8 @@
 // Estilo 100% por tema; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Lista de transferencia dual (disponibles ↔ seleccionados).
 // Modo no controlado: [available] y [selected] son listas iniciales que el

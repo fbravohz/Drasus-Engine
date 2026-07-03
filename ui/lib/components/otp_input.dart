@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Campo OTP/PIN de longitud configurable.
 // Contrato funcional:

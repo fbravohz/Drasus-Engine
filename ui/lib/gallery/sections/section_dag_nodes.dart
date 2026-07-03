@@ -4,8 +4,9 @@
 // Sin lógica de negocio ni FFI — solo widgets y CustomPainter visuales.
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
+import '../../theme/gx_tokens.dart';
 import '../gallery_fx.dart';
+import '../../theme/surfaces.dart';
 
 // ===========================================================================
 // DagNodesSection — widget raíz exportable para gallery_tab.dart

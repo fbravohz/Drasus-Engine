@@ -6,8 +6,8 @@
 // Los consumidores importan con namespace `import ... as ui;` → `ui.Table`.
 
 import 'package:flutter/material.dart' hide Table;
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Definición de columna para la tabla.
 class TableColumn {

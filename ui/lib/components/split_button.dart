@@ -3,8 +3,8 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Botón dividido en dos partes:
 //   - Izquierda: botón de acción principal (gradiente reactor + glow).

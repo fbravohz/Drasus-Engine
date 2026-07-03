@@ -5,8 +5,8 @@
 // bordes via Gx.borderBase/accentDynamic, espaciado via Gx.space*.
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // FleetCommandPanel — panel del Comando de Flota (vista MACRO)

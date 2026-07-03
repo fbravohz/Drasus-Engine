@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import '../gallery/gallery_painters.dart';
 import '../theme/theme_scope.dart';
 import '../components/components.dart' as custom_ui;

@@ -9,7 +9,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
+import '../../theme/gx_tokens.dart';
 
 // ---------------------------------------------------------------------------
 // _hoverCursor — helper compartido por todos los painters de línea.

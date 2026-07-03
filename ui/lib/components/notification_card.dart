@@ -3,8 +3,8 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Tipo semántico de la notificación. Mapea a los cuatro estados de vitalidad del sistema.
 // Determina el color del borde lateral y del punto "no leída".

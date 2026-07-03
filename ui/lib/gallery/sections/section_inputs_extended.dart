@@ -3,8 +3,8 @@
 // que no tiene clase equivalente en la librería. Las clases Glow* fueron migradas.
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // Rich Text Editor — placeholder de área de edición enriquecida

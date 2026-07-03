@@ -3,8 +3,8 @@
 // No es const: lee Gx.* en build(); un const freezaría los tokens del tema.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Botón circular "Volver arriba" con superficie de panel y glow de énfasis dinámico.
 // Uso típico: envuelto en Align(alignment: Alignment.bottomRight) sobre un Stack.

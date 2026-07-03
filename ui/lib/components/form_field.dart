@@ -8,7 +8,7 @@
 
 // ignore: undefined_hidden_name — FormField se oculta para evitar la colisión de nombres.
 import 'package:flutter/material.dart' hide FormField;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Wrapper de campo de formulario con etiqueta superior y texto de ayuda/error inferior.
 // Contrato funcional:

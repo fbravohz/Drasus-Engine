@@ -8,8 +8,8 @@
 
 // ignore: undefined_hidden_name — Dialog se oculta para evitar colisión de nombres.
 import 'package:flutter/material.dart' hide Dialog;
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Contenedor estilizado de diálogo modal.
 // Contrato funcional:

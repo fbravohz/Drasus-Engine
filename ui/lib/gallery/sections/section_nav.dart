@@ -3,8 +3,8 @@
 // Glow + gradientes + vidrio Apple en todos los componentes (DESIGN.md).
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // ZUI Nav Pill — pill flotante con tabs de nivel MACRO/MESO/MICRO.

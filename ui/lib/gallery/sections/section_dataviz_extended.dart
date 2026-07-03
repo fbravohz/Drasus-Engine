@@ -4,7 +4,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
+import '../../theme/gx_tokens.dart';
 
 // ---------------------------------------------------------------------------
 // HeatmapPainter — mapa de calor 7×7 con gradiente semántico.

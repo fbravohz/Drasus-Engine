@@ -8,7 +8,7 @@
 
 // ignore: undefined_hidden_name — se oculta Stepper de Material para evitar colisión.
 import 'package:flutter/material.dart' hide Stepper;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Indicador de progreso por pasos con barra de avance inferior.
 // Estados de cada paso:

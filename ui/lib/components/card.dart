@@ -6,8 +6,8 @@
 // Los consumidores importan con namespace `import ... as ui;` → `ui.Card`.
 
 import 'package:flutter/material.dart' hide Card;
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Tarjeta de contenido genérica con superficie de card.
 // Contrato funcional: [child] contenido de la tarjeta; [padding] padding interno

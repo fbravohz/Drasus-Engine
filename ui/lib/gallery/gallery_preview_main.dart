@@ -21,7 +21,7 @@
 import 'package:flutter/material.dart';
 import '../theme/theme_scope.dart';
 import '../tabs/settings_drawer.dart';
-import 'gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import 'gallery_tab.dart';
 
 // Punto de entrada: monta solo la galería con selector de temas.

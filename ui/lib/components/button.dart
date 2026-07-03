@@ -4,8 +4,8 @@
 
 import 'dart:math' show sin, pi;
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Variantes semánticas del botón — mapean a los estados de vitalidad del sistema.
 enum ButtonVariant {

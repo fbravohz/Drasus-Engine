@@ -5,8 +5,8 @@
 // Migrado de GlowCalendar (gallery/gallery_fx.dart, Batch 4 STORY-025).
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Nombres de mes en español para el encabezado de navegación.
 const _calMonths = [

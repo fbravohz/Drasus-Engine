@@ -5,7 +5,7 @@
 
 import 'dart:ui' as dartUi;
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import '../theme/theme_scope.dart';
 
 // Bottom-sheet estilizado con efecto glass/tint/solid según el modo global de tema.

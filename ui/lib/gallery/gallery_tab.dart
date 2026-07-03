@@ -8,7 +8,7 @@
 // GalleryTab({super.key}) para no romper operational_panel.dart.
 
 import 'package:flutter/material.dart';
-import 'gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import '../theme/theme_scope.dart';
 import 'gallery_registry.dart';
 

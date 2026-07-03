@@ -14,8 +14,8 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Paleta semántica por defecto: espectro de vitalidad del sistema de diseño.
 // Se usa cuando el consumidor no pasa swatches propios.

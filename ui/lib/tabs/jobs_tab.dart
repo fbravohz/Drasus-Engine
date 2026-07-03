@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 import '../src/rust/api/jobs.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Ruta a la base de datos SQLite de Drasus en el sistema de archivos local.
 // Esta constante centraliza la ruta para que sea fácil de cambiar si el

@@ -7,7 +7,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../app_meta.dart';
 import '../theme/theme_scope.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 // El namespace de componentes usa el alias `custom_ui`, que no colisiona con
 // `dart:ui as ui` de este archivo. Ver ADR-0138 / ui/COMPONENTS.md.
 import '../components/components.dart' as custom_ui;

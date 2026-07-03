@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import '../theme/theme_scope.dart';
+import 'theme_scope.dart';
 
 // Gx = "Gallery tokens". Espejo 1:1 de la sección "Tokens — Colors" de DESIGN.md.
 class Gx {

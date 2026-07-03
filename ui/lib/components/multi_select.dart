@@ -7,8 +7,8 @@
 // evitar colisión de nombres.
 
 import 'package:flutter/material.dart' hide Chip;
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 import 'chip.dart'; // Chip y ChipStatus del sistema de diseño
 
 // Ítem de un MultiSelect — asocia un valor tipado a una etiqueta visible.

@@ -3,7 +3,7 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Botón que alterna entre dos estados (ON/OFF). El activo lleva gradiente de
 // transición (índigo) con glow; el inactivo usa la superficie de relleno del tema.

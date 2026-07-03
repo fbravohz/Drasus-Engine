@@ -26,7 +26,7 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../components/components.dart' as custom_ui;
 // gallery_fx se importa SOLO por ScanRingWidget (primitivo de animación).
 import '../../gallery/gallery_fx.dart' show ScanRingWidget;
-import '../../gallery/gallery_tokens.dart';
+import '../../theme/gx_tokens.dart';
 import '../../src/rust/api/data_fetcher.dart';
 
 // Ruta a la base de datos SQLite de Drasus — igual que jobs_tab.dart.

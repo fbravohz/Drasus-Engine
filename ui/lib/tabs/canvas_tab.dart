@@ -6,7 +6,7 @@
 
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import '../gallery/gallery_painters.dart';
 import '../theme/theme_scope.dart';
 

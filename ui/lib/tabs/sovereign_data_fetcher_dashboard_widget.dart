@@ -14,8 +14,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../src/rust/api/data_fetcher.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Ruta a la base de datos SQLite de Drasus — igual que jobs_tab.dart.
 const String _kDbPathDashboard = 'drasus.db';

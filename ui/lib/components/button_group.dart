@@ -3,7 +3,7 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Fila de botones agrupados horizontalmente. Solo uno puede estar activo.
 // El botón seleccionado lleva gradiente de transición + glow; los demás usan

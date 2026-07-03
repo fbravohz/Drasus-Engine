@@ -6,8 +6,8 @@
 // de esquina). Los consumidores importan con namespace `import ... as ui;` → `ui.Banner`.
 
 import 'package:flutter/material.dart' hide Banner;
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Tipos de mensaje disponibles — cada uno mapea a un color semántico de vitalidad.
 enum BannerType { info, success, warning, error }

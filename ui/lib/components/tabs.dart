@@ -4,7 +4,7 @@
 // Reemplaza el uso directo de Material TabBar/TabBarView + DefaultTabController.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Definición de una pestaña: ícono opcional, etiqueta de texto y widget de contenido.
 class TabItem {

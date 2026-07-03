@@ -3,8 +3,8 @@
 // Estilo 100% por tema; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Par de fechas de inicio y fin de un rango seleccionado.
 class DateRange {

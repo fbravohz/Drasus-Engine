@@ -7,7 +7,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 /// Arco radial animado desde 0° hasta [progress] × barrido total.
 ///

@@ -4,8 +4,8 @@
 // Migrado de GlowDropzone (gallery/sections/section_std_missing.dart, Batch 4 STORY-025).
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Estados internos de la zona de drop.
 enum _DropStatus { idle, hover, loading }

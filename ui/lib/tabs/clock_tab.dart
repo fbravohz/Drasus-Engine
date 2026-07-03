@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../src/rust/api/clock.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // ClockTab es un StatefulWidget porque necesita actualizar lo que muestra
 // en pantalla cada segundo. Un StatelessWidget no puede cambiar por sí solo.

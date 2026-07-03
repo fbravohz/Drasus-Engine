@@ -13,8 +13,8 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../gallery_fx.dart';
-import '../gallery_tokens.dart';
+import '../../theme/surfaces.dart';
+import '../../theme/gx_tokens.dart';
 import '../../widgets/electric_primitives.dart';
 import '../../widgets/frosted_surface.dart';
 

@@ -3,7 +3,7 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Estado vacío: icono (o orbe de cristal latente) + mensaje + subtítulo opcional.
 // Contrato funcional: [message] texto principal del estado vacío; [icon] icono

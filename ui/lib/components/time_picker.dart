@@ -3,8 +3,8 @@
 // El ítem central está resaltado con borde de énfasis dinámico y glow.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Selector de hora con estilo rueda de desplazamiento.
 // Muestra tres ítems visibles por columna (anterior / seleccionado / siguiente).

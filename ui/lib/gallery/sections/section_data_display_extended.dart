@@ -4,8 +4,8 @@
 // Render-only con estado de UI local. Sin lógica de negocio ni FFI.
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // Avatar / Avatar Group

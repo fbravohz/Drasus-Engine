@@ -6,7 +6,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Telón cósmico estático: resplandor violeta (supernova) + tenue disco de
 // acreción + campo de estrellas. Es ambiente sutil; jamás compite con los datos.

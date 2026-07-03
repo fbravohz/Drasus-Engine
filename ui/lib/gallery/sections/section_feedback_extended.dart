@@ -12,8 +12,8 @@
 // (funciones helper de galería; no son componentes con contrato funcional).
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // snackbarVariants() — 3 variantes de snackbar/toast (éxito, alerta, error)

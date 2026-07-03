@@ -3,8 +3,8 @@
 // Simula el comportamiento de un ancla lateral que sigue la posición del scroll.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Lista de anclas de secciones con indicador de posición activa.
 // Modo controlado:    Scrollspy(sections: ..., active: _i, onChanged: ...)

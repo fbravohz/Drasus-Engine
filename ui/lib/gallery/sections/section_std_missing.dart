@@ -3,8 +3,8 @@
 // Resto de clases Glow* se migrarán en Batch 3/4.
 
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ===========================================================================
 // §6 INPUTS — TRANSFER / DUAL-LIST

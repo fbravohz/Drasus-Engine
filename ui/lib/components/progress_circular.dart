@@ -4,7 +4,7 @@
 // Modo indeterminado (value == null): gira continuamente sin texto.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Indicador circular de progreso determinado o indeterminado.
 // Uso determinado: ProgressCircular(value: 0.68)

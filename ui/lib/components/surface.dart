@@ -3,8 +3,8 @@
 // El estilo lo decide el tema global; prohibido hardcodear color o modo.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
-import '../gallery/gallery_fx.dart';
+import '../theme/gx_tokens.dart';
+import '../theme/surfaces.dart';
 
 // Wrapper de superficie que aplica vidrio/tint/solid según el modo global.
 // Delega a panelSurface() y reacciona automáticamente a cambios de tema.

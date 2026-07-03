@@ -6,7 +6,7 @@
 // Los consumidores importan con namespace `import ... as ui;` → `ui.Chip`.
 
 import 'package:flutter/material.dart' hide Chip;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Estado semántico del chip — mapea a los colores de vitalidad del sistema.
 enum ChipStatus {

@@ -3,7 +3,7 @@
 // Estilo 100% por tema; prohibido hardcodear color.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Nodo del árbol de navegación.
 // Puede ser raíz (con hijos) o hoja (sin hijos, seleccionable).

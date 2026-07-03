@@ -8,7 +8,7 @@
 // dentro del archivo (no usa Flutter's Tooltip internamente).
 
 import 'package:flutter/material.dart' hide Tooltip;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Tooltip flotante estilizado sobre el widget hijo.
 // Contrato funcional: [message] texto del tooltip; [child] widget sobre el que

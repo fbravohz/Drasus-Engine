@@ -9,8 +9,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../gallery_tokens.dart';
-import '../gallery_fx.dart';
+import '../../theme/gx_tokens.dart';
+import '../../theme/surfaces.dart';
 
 // ---------------------------------------------------------------------------
 // _TradeEntry — modelo de una entrada de trade sintética

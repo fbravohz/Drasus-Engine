@@ -7,7 +7,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import '../theme/theme_scope.dart';
 
 /// Superficie de vidrio Apple reutilizable.

@@ -10,7 +10,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import 'electric_primitives.dart';
 
 /// Gráfico de líneas con scan eléctrico al montarse.

@@ -6,7 +6,7 @@
 // Los consumidores importan con namespace `import ... as ui;` → `ui.Switch`.
 
 import 'package:flutter/material.dart' hide Switch;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Palanca de activación con knob animado y glow en ON.
 // Contrato funcional: [value] estado actual (null = modo no controlado, empieza en false);

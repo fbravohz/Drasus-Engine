@@ -11,8 +11,9 @@
 // a ese componente (construcción bajo demanda).
 
 import 'package:flutter/material.dart';
-import 'gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 import 'gallery_fx.dart';
+import '../theme/surfaces.dart';
 import 'gallery_painters.dart';
 import '../theme/theme_scope.dart';
 // Librería de componentes funcionales — se consume con namespace custom_ui.* (ADR-0138).

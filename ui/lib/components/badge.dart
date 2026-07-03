@@ -4,7 +4,7 @@
 // El estilo lo decide el tema global vía tokens Gx; prohibido hardcodear color.
 
 import 'package:flutter/material.dart' hide Badge;
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Badge: pequeño indicador superpuesto con número, etiqueta o punto.
 // Contrato funcional: [count] número a mostrar (null = sin número);

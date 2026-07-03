@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 import '../src/rust/api/audit.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Ruta a la base de datos SQLite de Drasus. La misma constante que jobs_tab.dart.
 // Si en el futuro se configura dinámicamente, se pasa como parámetro al widget.

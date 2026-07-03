@@ -3,7 +3,7 @@
 // La página activa lleva glow del énfasis dinámico del tema.
 
 import 'package:flutter/material.dart';
-import '../gallery/gallery_tokens.dart';
+import '../theme/gx_tokens.dart';
 
 // Controles de paginación con soporte controlado y no controlado.
 // Modo controlado:    Pagination(page: _p, total: 5, onChanged: ...)
