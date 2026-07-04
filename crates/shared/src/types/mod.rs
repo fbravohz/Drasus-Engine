@@ -394,3 +394,18 @@ impl TypedPort for TimestampNs {
     fn canvas_color() -> &'static str { "#8492B0" }
     fn cardinality() -> &'static str { "0..1" }
 }
+
+// ── Tipos del substrato de monetización (ADR-0137 enmienda 2026-07-03, ADR-0144) ─
+
+/// Marcador de tipo de puerto para el catálogo (ADR-0137). El dato real que
+/// circula por este puerto es `crate::domain::central_identity::AccountIdentity`
+/// (mismo patrón de nombres duplicados-por-módulo que `AuditEvent`/
+/// `TelemetrySample`/`Job` arriba: el marcador vive en `types`, el struct
+/// con los campos reales vive en `domain`/`persistence`).
+#[derive(Debug, Clone)]
+pub struct AccountIdentity;
+impl TypedPort for AccountIdentity {
+    fn type_id() -> &'static str { "AccountIdentity" }
+    fn canvas_color() -> &'static str { "#8492B0" }
+    fn cardinality() -> &'static str { "1" }
+}

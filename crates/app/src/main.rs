@@ -11,8 +11,8 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
-    create_pool, run_migrations, run_mcp_server,
-    ExecutorIdentity, JobExecutor, JobExecutorConfig, SystemClock,
+    create_pool, run_migrations, run_mcp_server, verify_central_identity,
+    CentralIdentityVerifyInput, ExecutorIdentity, JobExecutor, JobExecutorConfig, SystemClock,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -53,11 +53,12 @@ enum Commands {
     ///
     /// Ejemplo:
     ///   drasus verify sovereign-data-fetcher --input '{"symbol":"BTCUSDT","interval":"1h"}'
+    ///   drasus verify central-identity --input '{"email":"a@b.com"}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Feature soportada en Fase 1: `sovereign-data-fetcher`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -144,10 +145,44 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Central Identity (STORY-027, vive en `shared` -- ver ADR-0137) ────
+        "central-identity" => {
+            // Parsea el input JSON. A diferencia de sovereign-data-fetcher,
+            // `email` es obligatorio (sin valores por defecto razonables para
+            // un correo), así que sin --input no hay nada que verificar.
+            let input: CentralIdentityVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "central-identity requiere --input con al menos {{\"email\":\"...\"}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_central_identity(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("CentralIdentityVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity"
             );
             std::process::exit(1);
         }

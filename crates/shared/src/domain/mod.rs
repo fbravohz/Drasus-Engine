@@ -5,6 +5,10 @@
 //! - `audit_log`: construcción y verificación de la cadena de hashes del
 //!   Audit Log (`docs/features/audit-log.md` TTR-001, ADR-0015, ADR-0020 V2,
 //!   ADR-0027).
+//! - `central_identity`: huella de hardware determinista, validación de
+//!   formato de correo, verificación de firma OAuth y el hash de auditoría
+//!   encadenado por `row_version` de la cuenta (`docs/features/central-identity.md`,
+//!   ADR-0143, ADR-0144, ADR-0141). STORY-027.
 //! - `clock`: el puerto `Clock` y la implementación de reloj determinista
 //!   (lista para backtest) (W3, `docs/features/clock.md` TTR-001/TTR-002).
 //! - `job`: la máquina de estados de jobs asíncronos -- transiciones
@@ -20,6 +24,7 @@
 //!   TTR-001, ADR-0015, ADR-0020 V2).
 
 pub mod audit_log;
+pub mod central_identity;
 pub mod clock;
 pub mod job;
 pub mod logic;

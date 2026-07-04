@@ -102,12 +102,48 @@
 //!   plano (`spawn_flush_task`) y poda (`purge`). Reusa [`ExecutorIdentity`]
 //!   del Async Job Executor — mismo perfil de campos ADR-0020 V2, no se
 //!   duplica el tipo.
+//!
+//! ## Central Identity (`docs/features/central-identity.md`, ADR-0143,
+//! ## ADR-0144, STORY-027)
+//!
+//! Cimiento #1 del substrato de monetización: la cuenta LOCAL de usuario.
+//! `licensing-system`, `usage-metering` y `consent-registry` dependen de su
+//! `owner_id`.
+//!
+//! - [`AccountIdentity`]: el tipo de puerto `identity_out` (ADR-0137,
+//!   catálogo) — identidad de cuenta + estado de verificación, SIN
+//!   secretos (ADR-0093).
+//! - [`compute_hardware_fingerprint`] / [`validate_email_format`] /
+//!   [`verify_oauth_signature`]: el núcleo puro (sin I/O, ADR-0002/0004).
+//! - [`Account`] / [`NewAccount`] / [`AccountRepository`]: la tabla
+//!   `accounts` (migración `0007_central_identity.sql`), MUTABLE con
+//!   `row_version` (ADR-0141), no append-only.
+//! - [`IdentityCache`] / [`IdentityCacheConfig`]: caché local con TTL
+//!   (`IDENTITY_CACHE_TTL`, default 24h) para operación offline.
+//! - [`CentralIdentityVerifier`] / [`LocalStubCentralIdentityVerifier`]: el
+//!   puerto de verificación contra la Cabina de Mando Central, con su
+//!   implementación stub local (ADR-0144: "puerto ahora, adaptador
+//!   después" — la Cabina de Mando todavía no existe).
+//! - [`verify_central_identity`]: harness CLI (Canal #2, ADR-0142) —
+//!   `cargo run -p app -- verify central-identity --input '{"email":"a@b.com"}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
 };
 pub use crate::domain::audit_log::{
     AuditEvent, AuditEventContent, ChainVerificationResult, verify_chain,
+};
+pub use crate::domain::central_identity::{
+    compute_account_audit_hash, compute_hardware_fingerprint, normalize_email,
+    validate_email_format, verify_oauth_signature, AccountIdentity, EmailFormatError,
+    EmailVerificationStatus, HardwareFingerprintError, OAuthTokenMaterial,
+};
+pub use crate::orchestrator::central_identity::{
+    CentralIdentityError, CentralIdentityVerifier, IdentityCache, IdentityCacheConfig,
+    IdentityVerificationRequest, LocalStubCentralIdentityVerifier,
+};
+pub use crate::persistence::central_identity::{
+    Account, AccountRepository, AccountRepositoryError, NewAccount,
 };
 pub use crate::domain::clock::{Clock, DeterministicClock};
 pub use crate::domain::job::{estimate_remaining_seconds, validate_transition, InvalidTransition, JobState, Progress};
@@ -130,3 +166,180 @@ pub use crate::domain::mcp_gateway::{
 };
 pub use crate::orchestrator::mcp_server::run_mcp_server;
 pub use crate::persistence::mcp_gateway::{McpGatewayError, McpGatewayRepository};
+
+// ── Harness de verificación CLI de Central Identity (ADR-0142 Fase 1) ───────
+
+/// Input para la verificación de Central Identity vía CLI (`docs/features/central-identity.md`,
+/// STORY-027). Se deserializa desde el JSON que pasa el usuario con
+/// `--input '...'`.
+///
+/// `email` es el único campo obligatorio: `cargo run -p app -- verify
+/// central-identity --input '{"email":"a@b.com"}'` ya es una invocación
+/// válida. El resto tiene valores por defecto razonables para una
+/// verificación de humo rápida.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CentralIdentityVerifyInput {
+    /// Correo con el que se registra/vincula la cuenta.
+    pub email: String,
+    /// Proveedor de identidad federada, si el login fue vía OAuth.
+    #[serde(default)]
+    pub oauth_provider: Option<String>,
+    /// Identificadores de máquina sin procesar para calcular la huella de
+    /// hardware. Si se omite, usa el hostname del proceso como único
+    /// identificador (suficiente para una verificación de humo local).
+    #[serde(default)]
+    pub machine_identifiers: Option<Vec<String>>,
+    /// Entorno/etiqueta institucional de la cuenta.
+    #[serde(default = "default_institutional_tag")]
+    pub institutional_tag: String,
+}
+
+/// Valor por defecto de `institutional_tag` cuando el usuario no lo pasa en
+/// `--input` -- una verificación de humo local no pertenece a ningún
+/// entorno de producción real.
+fn default_institutional_tag() -> String {
+    "DRASUS_LOCAL_VERIFY".to_string()
+}
+
+/// Output de la verificación de Central Identity. Siempre serializa a JSON
+/// válido (ADR-0142: "JSON estructurado en el CLI, FIJO").
+///
+/// Si `ok` es `true`, los campos de identidad están rellenos y coinciden
+/// EXACTAMENTE con lo que expondría el puerto `identity_out` -- ningún
+/// campo adicional, ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CentralIdentityVerifyOutput {
+    /// `true` si la verificación completó sin errores.
+    pub ok: bool,
+    pub owner_id: Option<String>,
+    pub email: Option<String>,
+    pub email_verification_status: Option<String>,
+    pub node_id: Option<String>,
+    pub institutional_tag: Option<String>,
+    /// `true` si el valor devuelto salió de la caché con TTL en vez de una
+    /// verificación fresca contra el verificador (en esta llamada de CLI,
+    /// siempre pasa por ambos pasos: verifica y luego cachea, así que
+    /// `cached` confirma que el cableado caché -> puerto quedó correcto).
+    pub cached: bool,
+    pub error: Option<String>,
+}
+
+impl CentralIdentityVerifyOutput {
+    /// Construye un output de error con todos los campos de identidad en
+    /// `None`.
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            owner_id: None,
+            email: None,
+            email_verification_status: None,
+            node_id: None,
+            institutional_tag: None,
+            cached: false,
+            error: Some(msg),
+        }
+    }
+
+    /// Construye un output exitoso a partir de la identidad ya cacheada.
+    fn from_identity(identity: AccountIdentity) -> Self {
+        Self {
+            ok: true,
+            owner_id: Some(identity.owner_id),
+            email: Some(identity.email),
+            email_verification_status: Some(identity.email_verification_status.as_str().to_string()),
+            node_id: Some(identity.node_id),
+            institutional_tag: Some(identity.institutional_tag),
+            cached: true,
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Central Identity con adaptadores reales
+/// (BD SQLite temporal + reloj de sistema real + verificador stub local).
+///
+/// Crea una BD SQLite temporal exclusiva para esta verificación (mismo
+/// patrón que `sovereign-data-fetcher::public_interface::verify`), aplica
+/// las migraciones embebidas, verifica/vincula la identidad vía
+/// [`LocalStubCentralIdentityVerifier`], la guarda en una [`IdentityCache`]
+/// recién creada y devuelve lo que la caché reporta -- ejercitando el
+/// camino completo Core -> Shell -> puerto que un usuario real recorrería.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify central-identity --input '{"email":"a@b.com"}'`
+pub async fn verify_central_identity(input: CentralIdentityVerifyInput) -> CentralIdentityVerifyOutput {
+    // BD SQLite temporal exclusiva para esta verificación -- no contamina
+    // datos de producción (mismo patrón que sovereign-data-fetcher::verify).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-central-identity-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return CentralIdentityVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return CentralIdentityVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return CentralIdentityVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    // Reloj de producción: la caché mide el TTL contra la hora real.
+    // `Arc<dyn Clock>` porque tanto el verificador como la caché necesitan
+    // su propia referencia compartida al mismo reloj.
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Sin identificadores de máquina explícitos: usa el hostname del
+    // proceso como único identificador -- suficiente para una verificación
+    // de humo local (no se espera acceso a hardware real en CI).
+    let machine_identifiers = input.machine_identifiers.unwrap_or_else(|| {
+        vec![hostname::get()
+            .map(|h| h.to_string_lossy().to_string())
+            .unwrap_or_else(|_| "unknown-host".to_string())]
+    });
+
+    let verifier = crate::orchestrator::central_identity::LocalStubCentralIdentityVerifier::new(&pool, clock.as_ref());
+    let request = crate::orchestrator::central_identity::IdentityVerificationRequest {
+        email: input.email,
+        oauth_provider: input.oauth_provider,
+        machine_identifiers,
+        institutional_tag: input.institutional_tag,
+        access_token_id: None,
+    };
+
+    let identity = match verifier.verify_identity(request).await {
+        Ok(identity) => identity,
+        Err(e) => return CentralIdentityVerifyOutput::from_error(e.to_string()),
+    };
+
+    // Pasa por la caché con TTL antes de reportar -- ejercita el cableado
+    // completo que el observable de la Story describe ("identidad cacheada
+    // + estado"), no solo la verificación cruda.
+    let cache = crate::orchestrator::central_identity::IdentityCache::new(
+        clock,
+        crate::orchestrator::central_identity::IdentityCacheConfig::default(),
+    );
+    cache.set(identity);
+
+    match cache.get() {
+        Some(cached_identity) => CentralIdentityVerifyOutput::from_identity(cached_identity),
+        // Inalcanzable en la práctica: acabamos de guardar con TTL de 24h;
+        // solo fallaría si el reloj del sistema saltara 24h entre `set` y
+        // `get`, lo cual no ocurre en una sola invocación síncrona del CLI.
+        None => CentralIdentityVerifyOutput::from_error(
+            "la identidad recién guardada ya no está vigente en la caché (inesperado)".to_string(),
+        ),
+    }
+}

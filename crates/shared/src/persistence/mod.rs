@@ -15,6 +15,9 @@
 //! - `audit_log`: repositorio de solo-apéndice para el Audit Log
 //!   (`docs/features/audit-log.md` TTR-001, migración
 //!   `0002_audit_log.sql`).
+//! - `central_identity`: repositorio MUTABLE (con `row_version`, ADR-0141)
+//!   para la tabla `accounts` (`docs/features/central-identity.md`,
+//!   ADR-0143, ADR-0144, migración `0007_central_identity.sql`). STORY-027.
 //! - `job`: repositorio para las tablas `jobs` y `job_results` del Async
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
@@ -24,6 +27,7 @@
 //!   `docs/features/telemetry.md` TTR-001, migración `0004_telemetry.sql`.
 
 pub mod audit_log;
+pub mod central_identity;
 pub mod job;
 pub mod mcp_gateway;
 pub mod pool;

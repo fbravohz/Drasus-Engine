@@ -8,6 +8,9 @@
 //! `docs/features/clock.md`) para uso en producción (`request_type =
 //! REAL`).
 //!
+//! - `central_identity`: caché de identidad con TTL + puerto de
+//!   verificación central con stub local (`docs/features/central-identity.md`,
+//!   ADR-0143, ADR-0144). STORY-027.
 //! - `job_executor`: la cáscara del Async Job Executor -- pool de workers
 //!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
 //!   y recuperación en startup (`docs/features/async-job-executor.md`
@@ -19,6 +22,7 @@
 //!   bloqueante + tarea de fondo que vacía a SQLite por lotes
 //!   (`docs/features/telemetry.md` TTR-001, ADR-0015).
 
+pub mod central_identity;
 pub mod job_executor;
 pub mod mcp_server;
 pub mod telemetry;
