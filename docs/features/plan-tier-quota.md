@@ -1,8 +1,10 @@
 # Plan / Tier / Quota
 
+> 🟡 **Parcial** 2026-07-04 · Orden de trabajo [STORY-029](../execution/STORY-029-plan-tier-quota.md) · Cimiento local completo: migración `0009_plan_tier_quota.sql` (Grupo I + Perfil D acotado + `row_version`), Core puro (`domain/plan_tier_quota.rs`: `validate_plan`, `resolve_limits`, codificación determinista de `features_enabled`, hash de auditoría encadenado), Shell (`persistence/plan_tier_quota.rs`: repositorio con concurrencia optimista; `orchestrator/plan_tier_quota.rs`: `seed_default_catalog` stub Free/Paid, `PlanLimitsCache` con TTL keyed por tier), puerto `plan_limits_out` → `PlanLimits` en `public_interface::plan_tier_quota`, CLI `verify plan-tier-quota` (ADR-0142). Crate: `crates/shared` (excepción bendecida ADR-0137). Pendiente: sincronización real del catálogo con la Cabina de Mando Central (no existe aún), re-cableado de `licensing-system` (#2) para consumir este `PlanLimits` real en vez de su stub (follow-up de integración diferido, fuera de esta Story), y la UI de planes/precios (Superficie propia, deuda de integración).
+
 **Carpeta:** `./features/plan-tier-quota/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-03
+**Estado:** 🟡 Parcial (cimiento local completo; sincronización central, re-cableado de licensing-system y UI diferidos)
+**Última actualización:** 2026-07-04
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #3) · ADR-0008 (configurabilidad)
 
 ## ¿Qué es esta feature?
