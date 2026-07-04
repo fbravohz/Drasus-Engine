@@ -103,12 +103,22 @@ Asigna uno de estos cinco contextos según dónde vive la superficie de la featu
 | **Canvas — Vista Relacional** | El feature aparece como card-node en el canvas (pipeline, módulo, o jerarquía de entidades) visto desde fuera | Card-node compacto: header 32px + estado semántico + puertos laterales. Densidad máxima. Ver spec `dag-node-graph` en DESIGN.md. |
 | **Canvas — Vista Interior** | El usuario entra al interior de un nodo de módulo o estrategia (zoom in-place). Se ve el interior del nodo expandido. | Lienzo CustomPainter interno (para logic-blocks/DAG de señales) o mixer-view (para módulos). Densidad media. Componentes `dag-node-graph`, `panel-solid`, key-value. |
 | **Inspector Panel** | La feature abre un panel lateral al hacer clic sobre su nodo (leaf node: feature atómica, logic block). | Panel lateral (rightside). Máximo aire (comfortable density). Número-héroe 28px mono. Cono de MC `gradTransition`. Display 44–56px para títulos. Gráficos de data-viz. |
-| **Plomería** | Sin superficie propia: motores de cálculo, colas, buses, relojes, adaptadores de datos. | Solo nota de Ventana de Verificación. No diseñas pantalla — solo documentas qué observable debe aparecer en la feature consumidora. |
+| **Plomería** | Sin superficie de producto propia: motores de cálculo, colas, buses, relojes, adaptadores de datos, cimientos del substrato. | **Igual diseñas su SVF** (entrada en el harness SVF genérico: JSON precargado → enviar → respuesta real por FFI) y su representación de galería con mocks si aporta alguna. NO diseñas UI de producto (esa se difiere). Ver el modelo SVF vs. Galería abajo. |
 
 > **Nota de migración (2026-06-23):** Los términos "MACRO", "MESO" y "MICRO" como niveles de navegación quedan descontinuados (ADR-0136 supersede ADR-0028). Si encuentras una feature que aún usa esa terminología en su `## Cáscara Visual`, corrígela usando el nuevo esquema de contextos al procesar esa feature.
 
 **Si la feature es Plomería:**
-Escribe solo una nota breve dentro de la sección indicando la Ventana de Verificación y el observable concreto. No elabores diseño visual completo. Termina aquí.
+Documenta su **entrada en la SVF** (el JSON precargado que la prueba y el observable de respuesta esperado) y, si aporta algún componente visual, su ficha de galería con mocks. NO elabores UI de producto completa (esa se difiere). Toda feature —aun de plomería— pasa por esta Etapa 0.5: sus entradas/salidas deben **recorrer transversalmente** front→back→DB, verificables sin leer código.
+
+**SVF vs. Galería — NO se duplican, se ESTRATIFICAN (modelo canónico del usuario, 2026-07-04):**
+
+| | **SVF** | **Galería** |
+|---|---|---|
+| Qué prueba | El **comportamiento de una feature** (backend) | El **catálogo de componentes de UI reutilizables** |
+| Pregunta que responde | ¿La fontanería funciona? (entra JSON → sale respuesta real) | ¿Qué piezas visuales tengo y cómo se ven/comportan? |
+| Datos | Backend **real** por FFI | **Mocks** |
+
+No hay duplicación — hay capas: la pantalla de la SVF está **construida CON** componentes de la galería (input block, botón enviar, surface de respuesta **son** componentes de la galería). Galería = **vocabulario** de piezas; SVF = una **pantalla** hecha con ese vocabulario cableada a un backend real. **Patrón canónico de la SVF:** tab con selector de feature → izquierda: input block con el JSON precargado → centro: botón enviar → derecha: respuesta del backend en block read-only. Es la gemela GUI de `drasus verify` → **harness SVF genérico construido UNA vez**, cada feature se enchufa casi gratis. **Ni la SVF ni los mocks de galería dependen de adaptadores de red diferidos** (p. ej. la Cabina de Mando): se diseñan y corren contra el backend local real; nunca los difieras con la excusa de "el adaptador es futuro".
 
 ---
 

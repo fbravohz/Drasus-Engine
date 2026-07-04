@@ -99,6 +99,8 @@ cargo build --release -p bridge
 cd ui && flutter run -d linux   # o macos / windows
 ```
 
+**Recompilar en el momento oportuno — `.so` VIEJO ≠ `.so` ausente (lección 2026-07-04):** el prerequisito de arriba no es solo "la primera vez". `flutter run` (aun en modo **debug**) carga el **`target/release/libbridge.so`** vía `ioDirectory`. Si ese `.so` existe pero es **viejo** respecto a las bindings generadas, NO da "Failed to load" — da un error **distinto y confuso**: `Bad state: Content hash on Dart side (X) is different from Rust side (Y), indicating out-of-sync code`, y la app **arranca pero nunca abre ventana** (el chequeo de integridad de FRB aborta tras cargar la librería). Por eso, **tras CUALQUIER cambio** que afecte al `.so` — el propio `crates/bridge`, o los crates de los que depende (`shared`, `features/*`), o una regeneración de bindings — hay que **re-ejecutar `cargo build --release -p bridge`** ANTES del siguiente `flutter run`. Un reinicio del sistema NO lo arregla (no es un problema de entorno, es un artefacto desincronizado). Diagnóstico: compara `rustContentHash` en `ui/lib/src/rust/frb_generated.dart` contra `FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH` en `crates/bridge/src/frb_generated.rs` (fuentes) — si coinciden, el desajuste está en el `.so` compilado → recompila release.
+
 ### 3. Concurrencia y Seguridad
 * Maneja de forma segura el paso de datos a través de la frontera de C (FFI); cero punteros colgantes, ownership explícito.
 * El Event-Loop de Rust (Tokio) jamás bloquea el hilo principal (Isolate) de Flutter.
