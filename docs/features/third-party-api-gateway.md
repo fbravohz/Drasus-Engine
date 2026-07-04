@@ -79,6 +79,7 @@ Tabla de credenciales de API + registro de uso (append-only) con Grupo I + Perfi
 
 ## Dependencias y Bloqueantes
 
+- **Distinción de `saas-gateway` / `saas-cloud-engine` (moonshots):** NO confundir. El `saas-gateway` es el ingreso del cliente headless del **propio usuario** hacia su clúster de ejecución (auth/RBAC/rate-limit para su sesión, modo `SaaSCloudEngine` de ADR-0033). Esta feature (`third-party-api-gateway`) es la **API pública para terceros externos** (fondos, plataformas, bots) que consumen certificación/feeds/ejecución de Drasus. Ambos usan gRPC + auth + rate-limit, pero el sujeto y el propósito son distintos.
 - **Depende de:** gRPC (ADR-0142), `central-identity`, `consent-registry`, `institutional-report-engine`, `data-aggregation`.
 - **Bloquea a:** los productos vendidos por API (Execution-as-a-Service, feeds, certificación externa).
 - **Contrato de Integración UI (ADR-0117) — Ventana de Verificación:** su observable (credenciales activas + conteo de solicitudes) queda visible en un panel de administración de API en ajustes; hasta entonces, deuda de integración registrada.

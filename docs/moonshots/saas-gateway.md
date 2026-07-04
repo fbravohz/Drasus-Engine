@@ -7,6 +7,8 @@
 
 ---
 
+> 🔗 **Nota cruzada (ADR-0143/0144):** NO confundir con la feature `third-party-api-gateway` (cimiento #8 del substrato). Este `saas-gateway` es el ingreso del cliente headless del **propio usuario** hacia su clúster de ejecución (su sesión). El `third-party-api-gateway` es la **API pública para terceros externos** que consumen capacidades de Drasus. Ambos comparten patrón (gRPC + auth + rate-limit), sujeto y propósito distintos.
+
 ## 1. ¿Qué es esta feature?
 
 El Gateway central de acceso regula los flujos de comunicación externa en la nube entre los Thin Clients (Flutter local) y el clúster de ejecución orquestado de Rust Core, centralizando la seguridad y controlando los límites de uso de los endpoints.
