@@ -1,7 +1,9 @@
-sp# Central Identity
+# Central Identity
+
+> 🟡 **Parcial** 2026-07-03 · Orden de trabajo [STORY-027](../execution/STORY-027-central-identity.md) · Cimiento local completo: migración `0007_central_identity.sql` (Grupo I + Perfil D + `row_version`), Core puro (`domain/central_identity.rs`: huella de hardware, validación de correo, verificación de firma OAuth), Shell (`persistence/central_identity.rs`, `orchestrator/central_identity.rs`: repositorio, caché con TTL, puerto `CentralIdentityVerifier` + stub local), puerto `identity_out` → `AccountIdentity` en `public_interface.rs`, CLI `verify central-identity` (ADR-0142). Crate: `crates/shared` (excepción bendecida ADR-0137, enmienda 2026-07-03). Pendiente: adaptador real contra la Cabina de Mando Central (no existe aún) y la UI del panel de cuenta (Superficie propia, deuda de integración contra `licensing-system`).
 
 **Carpeta:** `./features/central-identity/`
-**Estado:** En Diseño
+**Estado:** 🟡 Parcial (cimiento local completo; adaptador central y UI diferidos)
 **Última actualización:** 2026-07-03
 **Decisión Arquitectónica Asociada:** ADR-0143 (Tres Planos) · ADR-0144 (Substrato de Monetización, cimiento #1)
 
@@ -76,7 +78,7 @@ Un identificador de cuenta estable (`owner_id`, ADR-0020 V2 Grupo II) cacheado l
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Tabla de cuenta con Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `owner_id`, `institutional_tag`, `access_token_id`, `node_id` (huella de hardware). Campos propios fuera del catálogo (marcados como tales): estado de verificación de correo, proveedor OAuth. `STRICT`, UUIDv7 (ADR-0141). Perfil D.
+Tabla de cuenta con Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, **`row_version`**) + `owner_id`, `institutional_tag`, `access_token_id`, `node_id` (huella de hardware). **Tabla mutable → `row_version`, NO `event_sequence_id UNIQUE` (ADR-0141).** Campos propios fuera del catálogo (marcados como tales): estado de verificación de correo, proveedor OAuth. `STRICT`, UUIDv7 (ADR-0141). Perfil D.
 
 ## Dependencias y Bloqueantes
 

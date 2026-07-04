@@ -39,6 +39,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 * **PROHIBIDO** realizar llamadas síncronas de validación de red en el bucle principal de ejecución de órdenes (*Hot-Path*).
 * **PROHIBIDO** almacenar claves privadas de firma de licencias dentro del ejecutable o código fuente del cliente.
 * **PROHIBIDO** deshabilitar el funcionamiento del actualizador de emergencia o de la auditoría local si la licencia expira.
+* **Una sola instancia por máquina (FIJO):** corre **una** instancia de Drasus por máquina, identificada por su huella de hardware. Un segundo arranque en la misma máquina comparte la huella y NO cuenta como una segunda activación. Las *activaciones* del tier cuentan **máquinas distintas** (p. ej. 1 laptop personal + 2 nodos VPS headless), no procesos; esas máquinas se fusionan en **una sola interfaz** vía el Plano de Control del usuario (ADR-0119).
 
 ---
 
@@ -49,7 +50,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 | HEARTBEAT_INTERVAL | 90 días | 30 - 360 días | Tiempo límite permitido de ejecución local antes de requerir un refresco en línea. | CONFIG |
 | RECHECK_WINDOW | 5 días | 1 - 15 días | Ventana previa al vencimiento del heartbeat donde se inician las alertas visuales en la interfaz. | CONFIG |
 | GRACE_PERIOD | 7 días | 0 - 30 días | Días adicionales de ejecución permitida tras vencer el heartbeat antes del bloqueo funcional. | CONFIG |
-| ACTIVATIONS_PER_TIER | Explorer 1 / Sovereign 2 | 1 - N | Activaciones simultáneas permitidas por tier (anti-abuso multi-instancia, ADR-0143). Una segunda instancia (ej. PC + VPS) exige tier de pago. | CONFIG |
+| ACTIVATIONS_PER_TIER | Explorer 1 / Sovereign 3 | 1 - N | **Máquinas distintas** (por huella de hardware) autorizadas en simultáneo — una instancia por máquina. Explorer = 1; Sovereign = 3 (típico: 1 laptop personal + 2 nodos VPS headless), fusionadas en una sola interfaz (ADR-0119). El límite real por plan lo fija `plan-tier-quota`. | CONFIG |
 | SUPPRESS_WORK_TELEMETRY_ON_PAID | true | true/false | En Sovereign Tier al corriente, apaga en origen la emisión de telemetría de trabajo (ADR-0143). | FIJO |
 
 ---
