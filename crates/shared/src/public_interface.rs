@@ -145,6 +145,20 @@ pub use crate::orchestrator::central_identity::{
 pub use crate::persistence::central_identity::{
     Account, AccountRepository, AccountRepositoryError, NewAccount,
 };
+pub use crate::domain::licensing_system::{
+    canonical_license_bytes, derive_execution_gate, evaluate_heartbeat_status, hardware_matches,
+    heartbeat_status_to_compliance_status_id, verify_license_signature, ExecutionGate,
+    GateEvaluationInput, GateVerdict, HeartbeatConfig, HeartbeatStatus, LicensePayload,
+    LicenseSignatureError, LicenseTier, PlanLimits, DEFAULT_HEARTBEAT_INTERVAL_NS,
+};
+pub use crate::orchestrator::licensing_system::{
+    build_execution_gate, sync_compliance_status, BuildExecutionGateError, ExecutionGateCache,
+    ExecutionGateCacheConfig, IssueLicenseRequest, LocalStubLicenseIssuer,
+    LocalStubPlanLimitsProvider, PlanLimitsProvider, SignedLicenseFile,
+};
+pub use crate::persistence::licensing_system::{
+    LicenseRecord, LicenseRepository, LicenseRepositoryError, NewLicenseActivation,
+};
 pub use crate::domain::clock::{Clock, DeterministicClock};
 pub use crate::domain::job::{estimate_remaining_seconds, validate_transition, InvalidTransition, JobState, Progress};
 pub use crate::orchestrator::job_executor::{
@@ -340,6 +354,225 @@ pub async fn verify_central_identity(input: CentralIdentityVerifyInput) -> Centr
         // `get`, lo cual no ocurre en una sola invocación síncrona del CLI.
         None => CentralIdentityVerifyOutput::from_error(
             "la identidad recién guardada ya no está vigente en la caché (inesperado)".to_string(),
+        ),
+    }
+}
+
+// ── Harness de verificación CLI de Licensing System (ADR-0142 Fase 1) ───────
+
+/// Input para la verificación de Licensing System vía CLI (`docs/features/licensing-system.md`,
+/// STORY-028). Se deserializa desde el JSON que pasa el usuario con
+/// `--input '...'`.
+///
+/// `tier` es el único campo que un uso típico necesita:
+/// `cargo run -p app -- verify licensing-system --input '{"tier":"SOVEREIGN"}'`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LicensingSystemVerifyInput {
+    /// `"SOVEREIGN"` o `"EXPLORER"` (`docs/features/licensing-system.md`
+    /// "Niveles de Licencia").
+    #[serde(default = "default_license_tier")]
+    pub tier: String,
+    /// Correo de la cuenta local a vincular (vía `central-identity`, puerto
+    /// `identity_in`). Si se omite, usa un correo fijo de verificación.
+    #[serde(default = "default_owner_email")]
+    pub owner_email: String,
+}
+
+fn default_license_tier() -> String {
+    "SOVEREIGN".to_string()
+}
+
+fn default_owner_email() -> String {
+    "verify-licensing@drasus.local".to_string()
+}
+
+/// Output de la verificación de Licensing System. Siempre serializa a JSON
+/// válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que expone
+/// el puerto `execution_gate_out` -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LicensingSystemVerifyOutput {
+    pub ok: bool,
+    pub verdict: Option<String>,
+    pub tier: Option<String>,
+    pub suppress_work_telemetry: Option<bool>,
+    pub activations: Option<i64>,
+    pub reason: Option<String>,
+    pub error: Option<String>,
+}
+
+impl LicensingSystemVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            verdict: None,
+            tier: None,
+            suppress_work_telemetry: None,
+            activations: None,
+            reason: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_gate(gate: ExecutionGate) -> Self {
+        let verdict = match gate.verdict {
+            GateVerdict::Allow => "Allow",
+            GateVerdict::Deny => "Deny",
+            GateVerdict::UpgradeRequired => "UpgradeRequired",
+        };
+        Self {
+            ok: true,
+            verdict: Some(verdict.to_string()),
+            tier: Some(gate.tier.as_str().to_string()),
+            suppress_work_telemetry: Some(gate.suppress_work_telemetry),
+            activations: Some(gate.activations),
+            reason: Some(gate.reason),
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Licensing System con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real + emisor de licencia stub +
+/// proveedor de límites stub), recorriendo el camino completo del cimiento
+/// #2: vincula una `AccountIdentity` local (reutiliza `central-identity`,
+/// puerto `identity_in` -- NO recalcula la huella de hardware), emite y
+/// activa una licencia de desarrollo firmada para el `tier` pedido, obtiene
+/// `PlanLimits` del stub (puerto `plan_limits_in`), construye el
+/// `ExecutionGate` y lo pasa por su caché con TTL antes de reportar.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify licensing-system --input '{"tier":"SOVEREIGN"}'`
+pub async fn verify_licensing_system(input: LicensingSystemVerifyInput) -> LicensingSystemVerifyOutput {
+    let tier = match LicenseTier::from_str_value(&input.tier) {
+        Some(tier) => tier,
+        None => {
+            return LicensingSystemVerifyOutput::from_error(format!(
+                "tier desconocido: '{}' -- se esperaba SOVEREIGN o EXPLORER",
+                input.tier
+            ))
+        }
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón que
+    // verify_central_identity).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-licensing-system-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return LicensingSystemVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return LicensingSystemVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return LicensingSystemVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Paso 1 -- identity_in: vincula/crea la AccountIdentity local vía
+    // central-identity (REUTILIZA su huella de hardware, no la recalcula).
+    let machine_identifiers = vec![hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string())];
+    let identity_verifier =
+        crate::orchestrator::central_identity::LocalStubCentralIdentityVerifier::new(&pool, clock.as_ref());
+    let identity = match identity_verifier
+        .verify_identity(crate::orchestrator::central_identity::IdentityVerificationRequest {
+            email: input.owner_email,
+            oauth_provider: None,
+            machine_identifiers,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+        })
+        .await
+    {
+        Ok(identity) => identity,
+        Err(e) => return LicensingSystemVerifyOutput::from_error(format!("fallo al vincular identidad: {e}")),
+    };
+
+    // Paso 2 -- emisor stub: firma una licencia de desarrollo para esta
+    // cuenta + esta máquina (la clave privada nunca sale de `issuer`).
+    let issuer = LocalStubLicenseIssuer::new();
+    let now_ns = clock.timestamp_ns();
+    let signed = issuer.issue_license(IssueLicenseRequest {
+        owner_id: identity.owner_id.clone(),
+        node_id: identity.node_id.clone(),
+        tier,
+        issued_at_ns: now_ns,
+        heartbeat_expires_at_ns: now_ns + DEFAULT_HEARTBEAT_INTERVAL_NS,
+    });
+
+    // Paso 3 -- activa (persiste) la licencia firmada para esta máquina.
+    let license_repo = LicenseRepository::new(&pool, clock.as_ref());
+    let license = match license_repo
+        .activate(NewLicenseActivation {
+            owner_id: identity.owner_id.clone(),
+            institutional_tag: identity.institutional_tag.clone(),
+            access_token_id: None,
+            node_id: identity.node_id.clone(),
+            license_id: signed.license_id.clone(),
+            process_id: Some(format!("drasus-pid-{}", std::process::id())),
+            signature_hash: signed.signature_hex.clone(),
+            tier,
+            issued_at_ns: signed.issued_at_ns,
+            heartbeat_expires_at_ns: signed.heartbeat_expires_at_ns,
+            compliance_status_id: "ACTIVE".to_string(),
+        })
+        .await
+    {
+        Ok(license) => license,
+        Err(e) => return LicensingSystemVerifyOutput::from_error(format!("fallo al activar licencia: {e}")),
+    };
+
+    // Paso 4 -- plan_limits_in: límites del stub (plan-tier-quota real, diferido).
+    let plan_limits_provider = LocalStubPlanLimitsProvider::default();
+    let plan_limits = plan_limits_provider.plan_limits_for(&identity.owner_id, tier).await;
+
+    // Paso 5 -- construye el veredicto (fuera del hot-path: esta función SÍ
+    // hace lecturas de BD local; el hot-path real solo leería la caché).
+    let heartbeat_config = HeartbeatConfig::default();
+    let gate = match build_execution_gate(
+        &pool,
+        clock.as_ref(),
+        &identity.node_id,
+        &license,
+        &signed.signature_hex,
+        &signed.public_key_hex,
+        &heartbeat_config,
+        &plan_limits,
+    )
+    .await
+    {
+        Ok(gate) => gate,
+        Err(e) => return LicensingSystemVerifyOutput::from_error(format!("fallo al construir el gate: {e}")),
+    };
+
+    // Paso 6 -- pasa por la caché con TTL antes de reportar, ejercitando el
+    // cableado completo que el hot-path real consultaría.
+    let cache = ExecutionGateCache::new(clock, ExecutionGateCacheConfig::default());
+    cache.set(gate);
+
+    match cache.get() {
+        Some(cached_gate) => LicensingSystemVerifyOutput::from_gate(cached_gate),
+        // Inalcanzable en la práctica: acabamos de guardar con el TTL por
+        // defecto (5 minutos); solo fallaría si el reloj saltara ese tiempo
+        // entre `set` y `get`, lo cual no ocurre en una invocación síncrona.
+        None => LicensingSystemVerifyOutput::from_error(
+            "el veredicto recién guardado ya no está vigente en la caché (inesperado)".to_string(),
         ),
     }
 }

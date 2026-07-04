@@ -21,6 +21,9 @@
 //! - `job`: repositorio para las tablas `jobs` y `job_results` del Async
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
+//! - `licensing_system`: repositorio MUTABLE (con `row_version`, ADR-0141)
+//!   para la tabla `licenses` (`docs/features/licensing-system.md`,
+//!   ADR-0143, ADR-0144, migración `0008_licensing_system.sql`). STORY-028.
 //! - `pool`: fábrica del pool de conexiones + runner de migraciones embebidas.
 //! - `telemetry`: repositorio para `telemetry_samples` (insertar por lote,
 //!   purgar por corte, consultar por `metric_name` + rango) —
@@ -29,6 +32,7 @@
 pub mod audit_log;
 pub mod central_identity;
 pub mod job;
+pub mod licensing_system;
 pub mod mcp_gateway;
 pub mod pool;
 pub mod telemetry;

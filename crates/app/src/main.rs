@@ -11,8 +11,9 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
-    create_pool, run_migrations, run_mcp_server, verify_central_identity,
-    CentralIdentityVerifyInput, ExecutorIdentity, JobExecutor, JobExecutorConfig, SystemClock,
+    create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_licensing_system,
+    CentralIdentityVerifyInput, ExecutorIdentity, JobExecutor, JobExecutorConfig,
+    LicensingSystemVerifyInput, SystemClock,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -54,11 +55,12 @@ enum Commands {
     /// Ejemplo:
     ///   drasus verify sovereign-data-fetcher --input '{"symbol":"BTCUSDT","interval":"1h"}'
     ///   drasus verify central-identity --input '{"email":"a@b.com"}'
+    ///   drasus verify licensing-system --input '{"tier":"SOVEREIGN"}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -179,10 +181,43 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Licensing System (STORY-028, vive en `shared` -- ver ADR-0137) ────
+        "licensing-system" => {
+            // A diferencia de central-identity, aquí SÍ hay defaults razonables
+            // para todos los campos (tier = SOVEREIGN, correo fijo de humo) --
+            // por eso `drasus verify licensing-system` sin --input también es válido.
+            let input: LicensingSystemVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => match serde_json::from_str("{}") {
+                    Ok(v) => v,
+                    // "{}" con todos los campos #[serde(default)] siempre parsea.
+                    Err(_) => unreachable!("LicensingSystemVerifyInput con defaults debe parsear desde '{{}}'"),
+                },
+            };
+
+            let output = verify_licensing_system(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("LicensingSystemVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system"
             );
             std::process::exit(1);
         }

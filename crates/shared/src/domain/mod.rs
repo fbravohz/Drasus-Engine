@@ -15,6 +15,11 @@
 //!   válidas, progreso y estimación de tiempo restante
 //!   (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-002/004/005/006, ADR-0004, ADR-0011).
+//! - `licensing_system`: verificación de firma Ed25519 asimétrica, huella de
+//!   hardware (comparación, NO recálculo), heartbeat/gracia, supresión de
+//!   telemetría por tier y derivación del veredicto `ExecutionGate`
+//!   (`docs/features/licensing-system.md`, ADR-0143, ADR-0144, ADR-0093,
+//!   ADR-0141). STORY-028.
 //! - `logic`: placeholder vacío, solo estructura (F0/W1).
 //! - `mcp_gateway`: evaluador de permisos puro del Gateway MCP (ADR-0123) —
 //!   tipos `Pipeline`, `PermissionRequest`, `PermissionDecision` y la función
@@ -27,6 +32,7 @@ pub mod audit_log;
 pub mod central_identity;
 pub mod clock;
 pub mod job;
+pub mod licensing_system;
 pub mod logic;
 pub mod mcp_gateway;
 pub mod telemetry;

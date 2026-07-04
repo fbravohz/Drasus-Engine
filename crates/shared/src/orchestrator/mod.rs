@@ -11,6 +11,10 @@
 //! - `central_identity`: caché de identidad con TTL + puerto de
 //!   verificación central con stub local (`docs/features/central-identity.md`,
 //!   ADR-0143, ADR-0144). STORY-027.
+//! - `licensing_system`: emisor de licencias de desarrollo (stub Ed25519),
+//!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
+//!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
+//!   STORY-028.
 //! - `job_executor`: la cáscara del Async Job Executor -- pool de workers
 //!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
 //!   y recuperación en startup (`docs/features/async-job-executor.md`
@@ -24,6 +28,7 @@
 
 pub mod central_identity;
 pub mod job_executor;
+pub mod licensing_system;
 pub mod mcp_server;
 pub mod telemetry;
 pub mod worker_runner;

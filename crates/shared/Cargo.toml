@@ -19,6 +19,14 @@ anyhow = "1"
 thiserror = "1"
 # Hostname del nodo (Grupo IV ADR-0020 V2 — node_id del Gateway MCP).
 hostname = "0.4"
+# Firma/verificación asimétrica Ed25519 para licencias (ADR-0093 §3: la clave
+# privada de firma NUNCA vive en el cliente; el cliente solo verifica con la
+# clave pública incrustada). STORY-028.
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+# Generador de números aleatorios criptográfico -- SOLO lo usa el emisor de
+# licencias de desarrollo (Shell) para generar el par de claves de prueba;
+# la verificación (Core) es pura y no lo necesita. STORY-028.
+rand = "0.8"
 # SDK oficial MCP para Rust (modelcontextprotocol/rust-sdk).
 # "server"       → ServerHandler + transport-async-rw + schemars (integrado).
 # "transport-io" → transport stdio (stdin/stdout de Tokio).
