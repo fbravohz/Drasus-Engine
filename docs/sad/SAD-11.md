@@ -78,6 +78,12 @@
 * **Implementación:** En la Shell de la feature. No como trigger (la lógica de `audit_hash` requiere computación Rust).
 * **Consecuencia:** PROHIBIDO insertar en `audit_events` fuera de la transacción del cambio de estado.
 
+### Soberanía Condicionada por Tier y Telemetría Obligatoria (Transversal — ADR-0143)
+* **Regla:** El cómputo corre siempre en hardware del usuario; el proveedor nunca ejecuta el motor. Pero toda instancia mantiene un canal de control obligatorio hacia la Cabina de Mando Central (Zero-Telemetry derogado). Qué datos de trabajo se envían depende del tier: gratis = todo el trabajo (dueño: el proveedor, por ToS); pago al corriente = supresión en origen; pago vencido = emisión reactivada (sin borrar el entorno).
+* **Por qué:** Habilitar cualquier modelo de monetización (licencias, datos agregados, cuotas) sin perder la ventaja de margen del cómputo local ni la privacidad vendible al cliente de pago.
+* **Implementación:** El emisor de telemetría de artefactos se gobierna por el estado de licencia, evaluado localmente con licencia cacheada y período de gracia offline. Los secretos (credenciales de bróker, IPs live) nunca se exfiltran, en ningún tier (ADR-0093).
+* **Consecuencia:** Lo que no se envía (tier de pago) no se puede filtrar ni requerir judicialmente. El consentimiento/ToS versionado es prerrequisito legal del firehose gratuito.
+
 ### Permisos del Agente Graduados por Riesgo de Pipeline (Transversal — ADR-0123)
 * **Regla:** Un agente LLM conectado vía MCP nace con permiso total sobre ingestar/generar/validar/incubar/retroalimentar; sobre gestionar queda condicionado al `institutional_tag` (Demo concede, Live exige el interruptor de producción); sobre ejecutar/retirar nace sin permiso alguno.
 * **Por qué:** Permite delegar el trabajo tedioso de descubrimiento sin abrir por defecto una puerta sin control hacia el capital real.

@@ -3,19 +3,21 @@
 **Carpeta:** `./features/licensing-system/`  
 **Estado:** Lista para implementar  
 **Última actualización:** 2026-06-04  
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)  
+**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones) · ADR-0143 (Soberanía Condicionada por Tier) · ADR-0144 (Substrato de Monetización, cimiento #2)
+
+> 🔶 **Enmendado por ADR-0143 (2026-07-03)** — el modelo dual Sovereign/Explorer se re-encuadra como el modelo de tiers de ADR-0143. **"Cero telemetría absoluta" queda derogado:** toda instancia mantiene un canal de control obligatorio (identidad/licencia/heartbeat); lo que el tier de pago obtiene es la **supresión en origen de la telemetría de trabajo**, no la ausencia total de canal. Esta feature es el **cimiento #2** del substrato: además de validar la licencia, actúa como el **gate** que ordena suprimir/reactivar la telemetría y cuenta las **activaciones simultáneas por tier**.
 
 ---
 
 ## 1. ¿Qué es esta feature?
 
-El sistema de licenciamiento regula los niveles de acceso del usuario al ecosistema Drasus Engine sin comprometer la privacidad o el rendimiento local. Permite la validación de licencias comerciales y el control del modelo dual (Sovereign Tier y Explorer Tier).
+El sistema de licenciamiento regula los niveles de acceso del usuario al ecosistema Drasus Engine y es el **gate** que decide, antes de cada operación sensible, si se ejecuta y si se suprime la telemetría de trabajo (ADR-0143). Vincula la licencia a la identidad (`central-identity`) y a la huella de hardware, y controla las activaciones simultáneas por tier.
 
-* **Problema:** Los sistemas de licenciamiento tradicionales dependen de telemetría constante y llamadas síncronas de red, violando el principio `Local-First` y exponiendo el sistema a fallos si se pierde la conexión a internet.
-* **Comportamiento observable:** El usuario puede usar la plataforma de forma offline. El sistema valida periódicamente el estado de la licencia sin interrumpir las operaciones críticas.
-* **Niveles de Licencia (Modelos):**
-  * **Sovereign Tier:** Privacidad absoluta. Cero telemetría y cero envío de datos. Requiere validación manual o de latencia extendida.
-  * **Explorer Tier:** Licencia de costo reducido a cambio de compartir estadísticas operativas y datos de rendimiento anonimizados del sistema.
+* **Problema:** el negocio necesita cobrar y prevenir el abuso multi-instancia sin poner una llamada de red síncrona en el hot-path ni bloquear al usuario honesto cuando pierde conexión.
+* **Comportamiento observable:** el usuario puede operar offline durante un período de gracia; el sistema valida la licencia de forma asíncrona y, según el tier, apaga o enciende la emisión de telemetría de trabajo en su máquina.
+* **Niveles de Licencia (tiers de ADR-0143):**
+  * **Sovereign Tier (pago al corriente):** privacidad real — la telemetría de **trabajo** (estrategias, backtests, portafolios, resultados) se **suprime en origen**. Se conserva solo el canal mínimo de control (licencia/heartbeat/anti-abuso). Los secretos nunca salen, en ningún tier (ADR-0093).
+  * **Explorer Tier (gratuito):** costo cero a cambio de que el trabajo del usuario alimente a la Cabina de Mando del proveedor (firehose, dueño por ToS — `consent-registry`). Si un usuario de pago deja de pagar, degrada a este comportamiento (sin borrar su entorno).
 
 ---
 
@@ -47,6 +49,8 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 | HEARTBEAT_INTERVAL | 90 días | 30 - 360 días | Tiempo límite permitido de ejecución local antes de requerir un refresco en línea. | CONFIG |
 | RECHECK_WINDOW | 5 días | 1 - 15 días | Ventana previa al vencimiento del heartbeat donde se inician las alertas visuales en la interfaz. | CONFIG |
 | GRACE_PERIOD | 7 días | 0 - 30 días | Días adicionales de ejecución permitida tras vencer el heartbeat antes del bloqueo funcional. | CONFIG |
+| ACTIVATIONS_PER_TIER | Explorer 1 / Sovereign 2 | 1 - N | Activaciones simultáneas permitidas por tier (anti-abuso multi-instancia, ADR-0143). Una segunda instancia (ej. PC + VPS) exige tier de pago. | CONFIG |
+| SUPPRESS_WORK_TELEMETRY_ON_PAID | true | true/false | En Sovereign Tier al corriente, apaga en origen la emisión de telemetría de trabajo (ADR-0143). | FIJO |
 
 ---
 

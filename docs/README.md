@@ -173,6 +173,14 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**worker-isolation-orchestrator**](./features/worker-isolation-orchestrator.md) | El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tareas pesadas (simulaciones, entrenamientos de IA) en procesos... | Todos |
 | [**zero-crossing-filter**](./features/zero-crossing-filter.md) | Filtra señales de trading para detectar aquellas que son ortogonales (independientes) respecto a factores de mercado conocidos. Detecta los momentos... | generate |
 | [**canvas-navigation**](./features/canvas-navigation.md) | Canvas Navigation gestiona el viewport, zoom, breadcrumb y navegación por la jerarquía de entidades del Canvas unificado (ADR-0136) | validate, generate |
+| [**central-identity**](./features/central-identity.md) | Cuenta del usuario en la Cabina de Mando Central: verificación de correo + identidad federada (OAuth); produce el `owner_id` que ancla licencias, telemetría y anti-abuso (ADR-0143/0144, cimiento #1). | Cabina de Mando / substrato |
+| [**plan-tier-quota**](./features/plan-tier-quota.md) | Catálogo configurable de planes y sus límites (volumen nocional, activaciones, features); desacopla el pricing del código (ADR-0144, cimiento #3). | Cabina de Mando / substrato |
+| [**usage-metering**](./features/usage-metering.md) | Libro append-only de valor nocional USD por ciclo de facturación; base de cobro por uso o flat-fee y del gate de cuota (ADR-0144, cimiento #4). | execute, feedback / substrato |
+| [**consent-registry**](./features/consent-registry.md) | Registro versionado y fechado de aceptación de ToS con opt-out granular; columna vertebral legal del firehose gratuito y de la venta de datos (ADR-0143/0144, cimiento #5). | Cabina de Mando / substrato |
+| [**enriched-domain-events**](./features/enriched-domain-events.md) | Instrumentación temprana: eventos inmutables ricos sobre el bus (orden con fricción, backtest, régimen, drawdown…); raíz del substrato de monetización (ADR-0144, cimiento #6). | Todos / substrato |
+| [**institutional-report-engine**](./features/institutional-report-engine.md) | Puerto que convierte resultados del guantelete en reportes institucionales firmados y trazables; habilita stress test, validación, certificación, forense (ADR-0144, cimiento #7). | validate, feedback / substrato |
+| [**third-party-api-gateway**](./features/third-party-api-gateway.md) | Capa gRPC pública con autenticación y rate-limit que expone certificación, feeds y ejecución a terceros; extiende ADR-0142 (ADR-0144, cimiento #8). | Cabina de Mando / substrato |
+| [**data-aggregation**](./features/data-aggregation.md) | Anonimiza (privacidad diferencial + hash) y agrega datos de ejecución consentidos en índices vendibles (sentimiento, régimen, fricción, correlación); ADR-0102/0144, cimiento #9. | Cabina de Mando / substrato |
 
 ---
 
@@ -232,6 +240,11 @@ Proyectos de investigación avanzada y alta complejidad.
 | [**tda-phase-space-isolation**](./moonshots/tda-phase-space-isolation.md) | Aislamiento de co-colapso de cola vía Análisis de Datos Topológicos |
 | [**topografia-3d-liquidez**](./moonshots/topografia-3d-liquidez.md) | Es un modo de visualización avanzado que renderiza el historial del Order Book y las zonas de liquidez acumuladas como un modelo tridimensional 3D ... |
 | [**universal-strategy-transpiler**](./moonshots/universal-strategy-transpiler.md) | Permite exportar y traducir de forma nativa la lógica del Grafo de Lógica visual Strategy AST de Drasus Engine a múltiples lenguajes de programación y... |
+| [**institutional-report-products**](./moonshots/institutional-report-products.md) | Adaptadores del cimiento de reportes: Stress Testing, Model Validation (herramienta), Backtest Certification, Drawdown Forensics para fondos y family offices (ADR-0144). |
+| [**aggregated-data-feeds**](./moonshots/aggregated-data-feeds.md) | Adaptadores del cimiento de agregación: Regime Intelligence, Broker Friction Index, Correlation/Liquidity warnings vendibles a instituciones (ADR-0102/0144). |
+| [**pfof-order-flow**](./moonshots/pfof-order-flow.md) | ⚠️ ZIZAÑA — venta de flujo de órdenes (PFOF): imposible en el modelo local sin ser el ruteador; archivado condicionado a ejecución hosteada (ADR-0144). |
+| [**capital-allocation-platform**](./moonshots/capital-allocation-platform.md) | ⚠️ ZIZAÑA — plataforma que asigna capital de terceros con management/performance fee: convierte a Drasus en gestor regulado, deja de ser software (ADR-0144). |
+| [**regulatory-signoff-service**](./moonshots/regulatory-signoff-service.md) | ⚠️ ZIZAÑA — validación con firma acreditada (SR 11-7/UCITS/Basel): el motor genera el reporte, pero el sello exige acreditación que no se tiene (ADR-0144). |
 
 ---
 
@@ -374,6 +387,17 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0131**](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
 | [**ADR-0132**](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
 | [**ADR-0133**](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
+| [**ADR-0134**](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo + Mobile/Web Cliente Delgado) y Detección de Muerte del Padre Portátil |
+| [**ADR-0135**](./adr/ADR-0135.md) | Sección `## Cáscara Visual` Obligatoria en Features con Superficie — UI-Designer como Etapa 0.5 |
+| [**ADR-0136**](./adr/ADR-0136.md) | Arquitectura Visual Unificada — Dashboard + Canvas [Forge/Reactor] · supersede ADR-0028 |
+| [**ADR-0137**](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset |
+| [**ADR-0138**](./adr/ADR-0138.md) | Design System Centralization en UI — ThemeExtension + Librería de Componentes Funcional Neutral |
+| [**ADR-0139**](./adr/ADR-0139.md) | Principio Rector General — Single Source of Truth para Contratos Reusables |
+| [**ADR-0140**](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
+| [**ADR-0141**](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet |
+| [**ADR-0142**](./adr/ADR-0142.md) | Harness de Verificación sin UI — Canal #2: CLI First (`drasus verify`), gRPC Planificado |
+| [**ADR-0143**](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central |
+| [**ADR-0144**](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después) |
 
 ---
 

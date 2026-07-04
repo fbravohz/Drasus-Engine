@@ -25,3 +25,4 @@ El SAD se partió por sección bajo [`sad/`](./sad/). El contenido es **idéntic
 | [19. Glosario y Apéndices](./sad/SAD-19.md) |
 | [20. Gobernanza y Soberanía de Datos](./sad/SAD-20.md) |
 | [21. Fusión de Datos Fundamentales (Capa de Eventos)](./sad/SAD-21.md) |
+| [22. Cabina de Mando Central y Substrato de Monetización](./sad/SAD-22.md) |

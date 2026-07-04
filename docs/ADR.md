@@ -146,3 +146,5 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0140](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
 | [ADR-0141](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet, pool, retención y convenciones |
 | [ADR-0142](./adr/ADR-0142.md) | Harness de Verificación sin UI — Canal #2: CLI First (`drasus verify` subcomando Clap en `crates/app`), gRPC Planificado (Spike + tonic + protos por dominio) |
+| [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor (enmienda ADR-0016/0030/0102, extiende ADR-0119/0033) |
+| [ADR-0144](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después); clasifica modelos en cimiento/moonshot-zizaña/descartado |

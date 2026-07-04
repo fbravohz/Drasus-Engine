@@ -42,6 +42,7 @@ EPIC-8 ZUI ← EPIC-7 feedback+withdraw ← EPIC-6 manage+execute(nativo) ← EP
 | Orden | Entrega | Módulo(s) | Qué desbloquea | Estado |
 |---|---|---|---|---|
 | EPIC-0 | Fundación y Spikes | infra transversal | Esqueleto compilable + riesgos resueltos | ✅ cerrada (2026-06-27) |
+| **Cimientos** | **Substrato de Monetización** (transversal, greenfield) | `shared` + Cabina de Mando | Tres Planos (ADR-0143) + 9 cimientos (ADR-0144) listos para cualquier modelo de negocio | pendiente (va **antes** de la auditoría retroactiva) |
 | EPIC-1 | Soberanía de Datos | `ingest` | Data lake limpio y auditado | 🟡 en curso |
 | EPIC-2 | Motor de Backtest | `validate` (núcleo) | Backtest determinista y confiable | pendiente |
 | EPIC-3 | Generación | `generate` | Miles de candidatas/día | pendiente |
@@ -102,6 +103,30 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 > **Biblioteca de Componentes UI + Sistema de Tema (registro retroactivo, 2026-06-25):** el tema dinámico, las cáscaras de Tablero/Lienzo, el design system y la galería de ~160 componentes se construyeron de forma ad-hoc entre commits **sin Story ni Orden de Trabajo** (deuda de gobernanza). STORY-016 a 019 los registran retroactivamente con su estado real; STORY-020 extiende el contrato de tokens (tema extensible, ADR-0138 enmienda 2026-06-25) y STORY-021 estandariza toda la biblioteca y corrige bugs de interacción. **⚠️ Corrección del modelo (ADR-0138 enmienda 2026-06-29):** el modelo "la galería es biblioteca de producción, piezas sin lógica que se enchufan por épica" quedó **DEROGADO** — invertía la intención del propietario. La biblioteca real son **componentes funcionales aislados, neutrales al estilo y al proyecto** (`ui/lib/components/`); la galería es **consumidora con mocks**. STORY-020/021 estandarizaron la capa visual/tokens (logro real) pero NO el contrato funcional ni el naming. La corrección se ejecuta en **STORY-025** (ver abajo), prerrequisito de toda UI de feature de EPIC-1+.
 
 > **Nota de reestructura (ADR-0137, 2026-06-23):** el esqueleto original de STORY-001 eran 8 crates de módulo vacíos (`ingest`, `generate`, …). El giro a arquitectura hexagonal los **demolió**: el módulo dejó de ser dueño runtime y pasó a ser preset de composición. El workspace hoy es `shared` + `crates/features/<dominio>/` (vacío al cierre de EPIC-0) + `presets/` + `app` + `bridge`. STORY-001 sigue "terminada" como hito histórico, pero su artefacto fue sustituido por la nueva estructura; el código de Fundación (que vivía en `shared`, no en los crates de módulo) sobrevivió intacto y verde. Pendiente documental progresivo: añadir `## Puertos de Integración` (ADR-0137) a las 6 features de Fundación.
+
+### Cimientos de Monetización (transversal, greenfield — ADR-0143 / ADR-0144)
+
+**Objetivo:** dejar en la base de datos y en los contratos **todo lo necesario para cualquier modelo de negocio futuro** (licencias, cuotas por uso, datos agregados, reportes, facturación), sin rehacer el core después. Filosofía de Inundación de Fundaciones (ADR-0020 V2) aplicada al negocio: *"construye la fontanería una vez, vende el agua de mil formas."* Va **antes** de la auditoría retroactiva para que ésta contraste también estos fundamentos (memoria `pricing-foundations-saas`).
+
+**Cambio de invariante (ADR-0143):** deroga Zero-Telemetry y re-escopa Local-First a un **modelo de tres planos** — UI (local) · Ejecución (hardware del usuario, PC o VPS headless) · **Cabina de Mando Central del proveedor** (nunca computa; autentica, licencia, ingiere telemetría, agrega). Soberanía **condicionada por tier**: gratis = el trabajo del usuario es del proveedor (por ToS); pago al corriente = supresión de telemetría en origen; pago vencido = emisión reactivada. Secretos (credenciales de bróker, IPs live) nunca salen (ADR-0093). Detalle en `SAD-22`.
+
+**Alcance:** los **9 cimientos** (ADR-0144), plomería crosscutting que vive en `crates/shared` (patrón `clock`/`audit-log`/`telemetry`) + la nueva superficie de la Cabina de Mando. Cada uno entrega su puerto tipado (ADR-0137) y su esquema greenfield (ADR-0141/ADR-0020 V2) **ahora**; los productos concretos son adaptadores posteriores.
+
+| # | Cimiento (Feature) | Rol |
+|---|---|---|
+| 1 | [`central-identity`](./features/central-identity.md) | Cuenta central, verificación, OAuth |
+| 2 | [`licensing-system`](./features/licensing-system.md) (extendida) | Licencia + activaciones + gate de supresión (ADR-0143) |
+| 3 | [`plan-tier-quota`](./features/plan-tier-quota.md) | Catálogo configurable de planes y límites |
+| 4 | [`usage-metering`](./features/usage-metering.md) | Libro de nocional USD por ciclo |
+| 5 | [`consent-registry`](./features/consent-registry.md) | Aceptación de ToS versionada (columna vertebral legal) |
+| 6 | [`enriched-domain-events`](./features/enriched-domain-events.md) | Instrumentación temprana del bus (raíz del substrato) |
+| 7 | [`institutional-report-engine`](./features/institutional-report-engine.md) | Puerto de reportes institucionales + plantilla base |
+| 8 | [`third-party-api-gateway`](./features/third-party-api-gateway.md) | gRPC público con auth + rate-limit (extiende ADR-0142) |
+| 9 | [`data-aggregation`](./features/data-aggregation.md) | Anonimización + agregación de datos vendibles |
+
+**Adaptadores futuros (moonshots):** [`institutional-report-products`](./moonshots/institutional-report-products.md) (stress test, validación, certificación, forense) y [`aggregated-data-feeds`](./moonshots/aggregated-data-feeds.md) (régimen, fricción de bróker, correlación, liquidez). **Zizaña archivada:** [`pfof-order-flow`](./moonshots/pfof-order-flow.md), [`capital-allocation-platform`](./moonshots/capital-allocation-platform.md), [`regulatory-signoff-service`](./moonshots/regulatory-signoff-service.md).
+
+**Criterio de salida:** migración greenfield con las tablas de los 9 cimientos (Grupo I + perfil, `STRICT`, UUIDv7); el bus emite los eventos enriquecidos; el gate de licencia suprime/reactiva la telemetría según tier con período de gracia offline; el firehose gratuito captura artefactos de trabajo (sin secretos); el consentimiento se registra versionado. Cada cimiento con Superficie propia entrega su SVF; los de plomería registran su Ventana de Verificación (ADR-0117).
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
