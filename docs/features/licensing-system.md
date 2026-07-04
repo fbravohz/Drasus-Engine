@@ -1,8 +1,10 @@
 # Sistema de Licenciamiento (Licensing System)
 
+> 🟡 **Parcial** 2026-07-04 · Orden de trabajo [STORY-028](../execution/STORY-028-licensing-system.md) · Gate local completo: migración `0008_licensing_system.sql` (Grupo I + Perfil D + `row_version`, tabla `licenses`), Core puro (`domain/licensing_system.rs`: verificación de firma **Ed25519 asimétrica** — NO HMAC —, comparación de huella reutilizada de `AccountIdentity`, heartbeat/gracia determinista, supresión de telemetría por tier, derivación de `ExecutionGate`), Shell (`persistence/licensing_system.rs`: repositorio con concurrencia optimista; `orchestrator/licensing_system.rs`: emisor de licencias de desarrollo stub Ed25519, proveedor de `PlanLimits` stub, caché del veredicto con TTL), puerto `execution_gate_out` → `ExecutionGate` en `public_interface.rs`, CLI `verify licensing-system` (ADR-0142). Crate: `crates/shared` (excepción bendecida ADR-0137). Pendiente: emisor real de licencias en la Cabina de Mando, adaptador real de `plan-tier-quota` (#3) para `plan_limits_in`, UI del panel de licencia/tier (Superficie propia, deuda de integración).
+
 **Carpeta:** `./features/licensing-system/`  
-**Estado:** Lista para implementar  
-**Última actualización:** 2026-06-04  
+**Estado:** 🟡 Parcial (gate local completo; emisor central, `plan-tier-quota` real y UI diferidos)  
+**Última actualización:** 2026-07-04  
 **Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones) · ADR-0143 (Soberanía Condicionada por Tier) · ADR-0144 (Substrato de Monetización, cimiento #2)
 
 > 🔶 **Enmendado por ADR-0143 (2026-07-03)** — el modelo dual Sovereign/Explorer se re-encuadra como el modelo de tiers de ADR-0143. **"Cero telemetría absoluta" queda derogado:** toda instancia mantiene un canal de control obligatorio (identidad/licencia/heartbeat); lo que el tier de pago obtiene es la **supresión en origen de la telemetría de trabajo**, no la ausencia total de canal. Esta feature es el **cimiento #2** del substrato: además de validar la licencia, actúa como el **gate** que ordena suprimir/reactivar la telemetría y cuenta las **activaciones simultáneas por tier**.
@@ -76,9 +78,9 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 * Reloj del sistema (validado contra fuentes de tiempo locales protegidas).
 
 ### Proceso
-* Combina los identificadores de hardware y aplica un algoritmo de firma criptográfica `HMAC-SHA256` utilizando la clave pública incrustada.
-* Compara el hash resultante con el contenido en el archivo de licencia.
-* Verifica si la fecha actual es menor a la fecha de expiración del heartbeat local.
+* Verifica la firma **asimétrica Ed25519** del archivo de licencia con la clave PÚBLICA incrustada en el cliente (la clave PRIVADA firma solo en el emisor — Cabina de Mando real, o el stub local de desarrollo — y jamás sale de ahí; ADR-0093 §3, corrección obligatoria de STORY-028: HMAC quedó descartado por ser simétrico).
+* Compara el `node_id` (huella de hardware) del archivo de licencia contra el `node_id` que trae `AccountIdentity` (puerto `identity_in`, producido por `central-identity`) — sin recalcular la huella.
+* Verifica si la fecha actual es menor a la fecha de expiración del heartbeat local (con reloj determinista inyectado).
 
 ### Salida
 * Veredicto de validación: LICENCIA_VÁLIDA / LICENCIA_INVÁLIDA / REQUIERE_REFRESCO.
@@ -117,10 +119,24 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 * **Local-First (ADR-0016):** 100% Local. La validación se realiza en la máquina del usuario; la red solo se utiliza asíncronamente para refrescar el token de heartbeat.
 * **Inundación de Fundaciones (ADR-0020 V2):**
   * **Perfil D (Ops / Auditoría):** Foco en Identidad del Hardware, Soberanía de los Datos del Cliente y Auditoría Local de Accesos.
-  * **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
+  * **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, **`row_version`**. Tabla **mutable** (el heartbeat refresca la validez en sitio) → `row_version` para concurrencia optimista, NO `event_sequence_id UNIQUE` (ese patrón es solo para tablas append-only; ADR-0141). El historial de cambios de licencia va al `audit-log` existente, no a esta tabla.
   * **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `access_token_id`.
   * **IV. Infraestructura & Ops:** `node_id` (huella de hardware), `process_id`.
   * **V. Forense (Gobernanza):** `signature_hash` (firma de hardware), `compliance_status_id` (estado de la licencia).
   * **Hooks Forenses:** Registro de intentos fallidos de validación de firma de hardware en el log local protegido.
 * **Contrato de Persistencia:**  
   Los metadatos de la licencia se guardan cifrados en el almacén local del sistema utilizando claves derivadas de la huella digital.
+
+---
+
+## 9. Puertos de Integración (ADR-0137)
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `identity_in` | `AccountIdentity` (plomería, ADR-0144) | Input | `1` | Identidad y huella de hardware (`node_id`) de la instancia, producida por [`central-identity`](central-identity.md). La licencia se **valida contra** esta huella; NO se re-deriva aquí (reutilización, ADR-0144 FIJO). |
+| `plan_limits_in` | `PlanLimits` (plomería, ADR-0144) | Input | `1` | Límites vigentes del plan (activaciones, volumen nocional, features), producidos por `plan-tier-quota` (cimiento #3). **Aún no construido → se cablea a un stub local**; el adaptador real llega con #3 (puerto ahora, adaptador después, ADR-0144). |
+| `execution_gate_out` | `ExecutionGate` (plomería, ADR-0144) | Output | `1` | Veredicto de ejecución **`{Allow / Deny / UpgradeRequired}`** + orden de supresión/reactivación de telemetría de trabajo por tier (ADR-0143). Consumido por el hot-path de `execute` (¿puedo operar?) y por `telemetry` (¿debo suprimir la emisión?) → ≥2 consumidores. |
+
+> Tipos técnicos del substrato (plomería del Plano de Control del proveedor, no de dominio del canvas), análogos a `AuditEvent`/`TelemetrySample`. Registrados en el catálogo de ADR-0137 vía la enmienda de ADR-0144 (2026-07-03). Residencia en `crates/shared` (mismo criterio bendecido que `central-identity`/`audit-log`/`telemetry`).
+
+> **Orden de dependencia:** este cimiento (#2) consume `AccountIdentity` de #1 (real) y `PlanLimits` de #3 (stub hasta que exista). No introduce acoplamiento entre features de dominio: todo pasa por puertos tipados sobre `shared`.
