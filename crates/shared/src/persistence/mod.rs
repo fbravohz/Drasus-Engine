@@ -25,6 +25,9 @@
 //!   para la tabla `licenses` (`docs/features/licensing-system.md`,
 //!   ADR-0143, ADR-0144, migración `0008_licensing_system.sql`). STORY-028.
 //! - `pool`: fábrica del pool de conexiones + runner de migraciones embebidas.
+//! - `plan_tier_quota`: repositorio MUTABLE (con `row_version`, ADR-0141)
+//!   para la tabla `plans` (`docs/features/plan-tier-quota.md`, ADR-0143,
+//!   ADR-0144, migración `0009_plan_tier_quota.sql`). STORY-029.
 //! - `telemetry`: repositorio para `telemetry_samples` (insertar por lote,
 //!   purgar por corte, consultar por `metric_name` + rango) —
 //!   `docs/features/telemetry.md` TTR-001, migración `0004_telemetry.sql`.
@@ -34,5 +37,6 @@ pub mod central_identity;
 pub mod job;
 pub mod licensing_system;
 pub mod mcp_gateway;
+pub mod plan_tier_quota;
 pub mod pool;
 pub mod telemetry;

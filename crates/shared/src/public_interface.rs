@@ -126,6 +126,18 @@
 //!   después" — la Cabina de Mando todavía no existe).
 //! - [`verify_central_identity`]: harness CLI (Canal #2, ADR-0142) —
 //!   `cargo run -p app -- verify central-identity --input '{"email":"a@b.com"}'`.
+//!
+//! ## Plan / Tier / Quota (`docs/features/plan-tier-quota.md`, ADR-0143,
+//! ## ADR-0144, STORY-029)
+//!
+//! Cimiento #3 del substrato de monetización: el catálogo configurable de
+//! planes. Produce el tipo de puerto `PlanLimits` que `licensing-system`
+//! (#2) hoy consume por stub y que `usage-metering` (#4, futuro) necesitará.
+//!
+//! Vive bajo su propio submódulo público
+//! ([`plan_tier_quota`]) en vez de aplanarse a este nivel superior: el
+//! doc-comment de `plan_tier_quota` explica por qué (colisión de nombre
+//! `PlanLimits` con el stub aún vigente en `licensing_system`).
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -573,6 +585,195 @@ pub async fn verify_licensing_system(input: LicensingSystemVerifyInput) -> Licen
         // entre `set` y `get`, lo cual no ocurre en una invocación síncrona.
         None => LicensingSystemVerifyOutput::from_error(
             "el veredicto recién guardado ya no está vigente en la caché (inesperado)".to_string(),
+        ),
+    }
+}
+
+// ── Plan / Tier / Quota (STORY-029, vive en `shared` -- ver ADR-0137) ───────
+
+/// Submódulo público del cimiento #3 (`docs/features/plan-tier-quota.md`,
+/// ADR-0143, ADR-0144, STORY-029).
+///
+/// **Por qué un submódulo y no un `pub use` plano como el resto de este
+/// archivo:** el puerto `plan_limits_out` de esta Feature produce un tipo
+/// llamado `PlanLimits` (ADR-0137, catálogo, enmienda 2026-07-03). Pero
+/// `licensing-system` (cimiento #2, STORY-028, YA SELLADO) declaró antes
+/// su PROPIO struct `PlanLimits` como stub temporal
+/// (`domain::licensing_system::PlanLimits`, sin `notional_limit`), y ese
+/// nombre ya está aplanado en este mismo archivo unas líneas arriba.
+/// Aplanar aquí el `PlanLimits` real de este cimiento colisionaría
+/// (`error[E0255]: the name 'PlanLimits' is defined multiple times`). La
+/// Orden de esta Story prohíbe expresamente tocar el código sellado de
+/// `licensing-system` para unificarlos ("Re-cableado de licensing-system
+/// (#2)... NO parte de esta Orden", STORY-029 §8) -- por eso, mientras ese
+/// follow-up de integración no se ejecute, ambos tipos conviven bajo rutas
+/// distintas: `public_interface::PlanLimits` (el stub de #2) y
+/// `public_interface::plan_tier_quota::PlanLimits` (el real de #3).
+pub mod plan_tier_quota {
+    pub use crate::domain::plan_tier_quota::{
+        canonical_features_json, compute_plan_audit_hash, decode_features_json, resolve_limits,
+        validate_plan, PlanCandidate, PlanLimits, PlanSnapshot, PlanTier, PlanValidationError,
+        PricingModel,
+    };
+    pub use crate::orchestrator::plan_tier_quota::{
+        build_plan_limits_for_tier, seed_default_catalog, BuildPlanLimitsError,
+        LocalStubPlanCatalogConfig, PlanLimitsCache, PlanLimitsCacheConfig,
+    };
+    pub use crate::persistence::plan_tier_quota::{
+        NewPlan, Plan, PlanRepository, PlanRepositoryError,
+    };
+}
+
+/// Input para la verificación de Plan / Tier / Quota vía CLI
+/// (`docs/features/plan-tier-quota.md`, STORY-029). Se deserializa desde
+/// el JSON que pasa el usuario con `--input '...'`.
+///
+/// `tier` es el único campo que un uso típico necesita:
+/// `cargo run -p app -- verify plan-tier-quota --input '{"tier":"FREE"}'`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct PlanTierQuotaVerifyInput {
+    /// `"FREE"` o `"PAID"` (`docs/features/plan-tier-quota.md` "Parámetros
+    /// Configurables": `TIER_SET`).
+    #[serde(default = "default_plan_tier")]
+    pub tier: String,
+}
+
+fn default_plan_tier() -> String {
+    "FREE".to_string()
+}
+
+/// Output de la verificación de Plan / Tier / Quota. Siempre serializa a
+/// JSON válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que
+/// expone el puerto `plan_limits_out` -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct PlanTierQuotaVerifyOutput {
+    pub ok: bool,
+    pub tier: Option<String>,
+    pub notional_limit: Option<i64>,
+    pub max_activations: Option<i64>,
+    pub features_enabled: Option<Vec<String>>,
+    /// `true` si el valor devuelto salió de la caché con TTL en vez de una
+    /// resolución fresca contra el catálogo (esta llamada de CLI siempre
+    /// pasa por ambos pasos: resuelve y luego cachea).
+    pub cached: bool,
+    pub error: Option<String>,
+}
+
+impl PlanTierQuotaVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            tier: None,
+            notional_limit: None,
+            max_activations: None,
+            features_enabled: None,
+            cached: false,
+            error: Some(msg),
+        }
+    }
+
+    fn from_limits(tier: plan_tier_quota::PlanTier, limits: plan_tier_quota::PlanLimits) -> Self {
+        Self {
+            ok: true,
+            tier: Some(tier.as_str().to_string()),
+            notional_limit: Some(limits.notional_limit),
+            max_activations: Some(limits.max_activations),
+            features_enabled: Some(limits.features_enabled),
+            cached: true,
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Plan / Tier / Quota con adaptadores reales
+/// (BD SQLite temporal + reloj de sistema real + catálogo de desarrollo
+/// stub), recorriendo el camino completo del cimiento #3: siembra el
+/// catálogo Free/Paid (si aún no existe en esta BD temporal), resuelve
+/// `PlanLimits` para el `tier` pedido, y lo pasa por su caché con TTL antes
+/// de reportar -- ejercitando el camino completo Core -> Shell -> puerto
+/// que un usuario real recorrería.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify plan-tier-quota --input '{"tier":"FREE"}'`
+pub async fn verify_plan_tier_quota(input: PlanTierQuotaVerifyInput) -> PlanTierQuotaVerifyOutput {
+    let tier = match plan_tier_quota::PlanTier::from_str_value(&input.tier) {
+        Some(tier) => tier,
+        None => {
+            return PlanTierQuotaVerifyOutput::from_error(format!(
+                "tier desconocido: '{}' -- se esperaba FREE o PAID",
+                input.tier
+            ))
+        }
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón que
+    // verify_central_identity / verify_licensing_system).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-plan-tier-quota-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return PlanTierQuotaVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return PlanTierQuotaVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return PlanTierQuotaVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Paso 1 -- siembra el catálogo de desarrollo (Free + Paid) si esta BD
+    // temporal todavía no lo tiene.
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+    if let Err(e) = plan_tier_quota::seed_default_catalog(
+        &pool,
+        clock.as_ref(),
+        "drasus-system",
+        &node_id,
+        "DRASUS_LOCAL_VERIFY",
+        &plan_tier_quota::LocalStubPlanCatalogConfig::default(),
+    )
+    .await
+    {
+        return PlanTierQuotaVerifyOutput::from_error(format!("fallo al sembrar el catálogo: {e}"));
+    }
+
+    // Paso 2 -- resuelve PlanLimits para el tier pedido (fuera del
+    // hot-path: esta función SÍ hace lecturas de BD local).
+    let limits = match plan_tier_quota::build_plan_limits_for_tier(&pool, clock.as_ref(), tier).await {
+        Ok(limits) => limits,
+        Err(e) => return PlanTierQuotaVerifyOutput::from_error(format!("fallo al resolver límites: {e}")),
+    };
+
+    // Paso 3 -- pasa por la caché con TTL antes de reportar, ejercitando el
+    // cableado completo que el hot-path real consultaría.
+    let cache = plan_tier_quota::PlanLimitsCache::new(clock, plan_tier_quota::PlanLimitsCacheConfig::default());
+    cache.set(tier, limits);
+
+    match cache.get(tier) {
+        Some(cached_limits) => PlanTierQuotaVerifyOutput::from_limits(tier, cached_limits),
+        // Inalcanzable en la práctica: acabamos de guardar con el TTL por
+        // defecto (15 minutos); solo fallaría si el reloj saltara ese
+        // tiempo entre `set` y `get`, lo cual no ocurre en una invocación
+        // síncrona.
+        None => PlanTierQuotaVerifyOutput::from_error(
+            "los límites recién guardados ya no están vigentes en la caché (inesperado)".to_string(),
         ),
     }
 }

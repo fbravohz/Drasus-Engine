@@ -22,6 +22,10 @@
 //! - `mcp_server`: servidor MCP sobre stdio (ADR-0123, STORY-010) — expone
 //!   las operaciones de `shared` como herramientas MCP y registra cada
 //!   decisión de permiso en `permission_decisions`.
+//! - `plan_tier_quota`: catálogo de desarrollo (stub, Free/Paid) + caché con
+//!   TTL de límites resueltos por tier + composición del puerto
+//!   `plan_limits_out` (`docs/features/plan-tier-quota.md`, ADR-0143,
+//!   ADR-0144). STORY-029.
 //! - `telemetry`: el buffer de alta velocidad -- cola en memoria no
 //!   bloqueante + tarea de fondo que vacía a SQLite por lotes
 //!   (`docs/features/telemetry.md` TTR-001, ADR-0015).
@@ -30,6 +34,7 @@ pub mod central_identity;
 pub mod job_executor;
 pub mod licensing_system;
 pub mod mcp_server;
+pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod worker_runner;
 

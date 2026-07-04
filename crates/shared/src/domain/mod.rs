@@ -24,6 +24,11 @@
 //! - `mcp_gateway`: evaluador de permisos puro del Gateway MCP (ADR-0123) —
 //!   tipos `Pipeline`, `PermissionRequest`, `PermissionDecision` y la función
 //!   `evaluate_permission` (sin I/O). STORY-010.
+//! - `plan_tier_quota`: catálogo configurable de planes -- validación de
+//!   coherencia de un plan (tier + cuotas + precio), resolución de límites
+//!   (`PlanLimits`) y hash de auditoría encadenado por `row_version`
+//!   (`docs/features/plan-tier-quota.md`, ADR-0143, ADR-0144, ADR-0141).
+//!   STORY-029.
 //! - `telemetry`: construcción pura de muestras de latencia/heartbeat y la
 //!   decisión de poda por ventana de retención (`docs/features/telemetry.md`
 //!   TTR-001, ADR-0015, ADR-0020 V2).
@@ -35,5 +40,6 @@ pub mod job;
 pub mod licensing_system;
 pub mod logic;
 pub mod mcp_gateway;
+pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod worker_orchestrator;
