@@ -148,3 +148,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0142](./adr/ADR-0142.md) | Harness de Verificación sin UI — Canal #2: CLI First (`drasus verify` subcomando Clap en `crates/app`), gRPC Planificado (Spike + tonic + protos por dominio) |
 | [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor (enmienda ADR-0016/0030/0102, extiende ADR-0119/0033) |
 | [ADR-0144](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después); clasifica modelos en cimiento/moonshot-zizaña/descartado |
+| [ADR-0145](./adr/ADR-0145.md) | Pilar de Cuentas Verificadas Drasus — Atestación soberana de ejecución + read-only al bróker + registro multi-cuenta (cimiento #10) + track record publicable; enmienda ADR-0143 (telemetría clase 5), acota ADR-0001 al monolito (portal en repo aparte) |

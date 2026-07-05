@@ -47,6 +47,23 @@ El **Bus de Eventos Enriquecido** (#6) es la raíz: sin eventos estructurados no
 - **Descartado (veneno reputacional):** venta de flujo retail identificable para front-running contra los propios usuarios.
 - **Ya diseñados (asegurar que emitan a estos puertos):** La Colmena, Marketplace de Cajas Negras, Copy-Trading, Collective Intelligence, Transpiler, Microestructura L3.
 
+### 22.6 Pilar de Cuentas Verificadas Drasus (cimiento #10, ADR-0145)
+
+Décimo cimiento del substrato: un pilar de producto análogo a **myFXbook / MT5 Signals** con un diferenciador **soberano**. Donde esos comparables confían en la conexión read-only al bróker, Drasus **atestigua criptográficamente lo que su propio motor ejecutó** (cadena de hash + append-only del audit-log ya construido). Contrato/esquema **ahora**; portal **después**.
+
+**Tres piezas:**
+1. **Atestación soberana de ejecución** — Drasus certifica la porción de actividad que fluyó por su módulo `execute` (FillEvent conciliado + PreTradeVerdict, encadenado). Etiqueta **"Ejecución Verificada por Drasus"**.
+2. **Registro multi-cuenta** (`verified-account-registry`) — una identidad Drasus (`owner_id`) → N cuentas (fondeo/prop/ICMarkets/Binance/IBKR), cada una con su track record y ámbito de atestación.
+3. **Track record publicable opt-in** — el usuario publica (o no) las estadísticas de una cuenta en el portal público.
+
+**Dos ámbitos de atestación por cuenta (coexistentes):** (i) *soberana* (ejecución propia, atestada por hash chain) y (ii) *read-only del bróker* (cuenta-completa, estilo myFXbook, computada en el **Plano de Ejecución del usuario**). La investor password/credencial **nunca** sube a la Cabina de Mando (ADR-0093).
+
+**Quinta clase de telemetría (enmienda a ADR-0143):** "track record publicable" — resultados sin la lógica generadora, **opt-in por cuenta, independiente del tier**. Protege el *trabajo/PI*, permite publicar *resultados*. Identificable por diseño → NO pasa por la anonimización de #9.
+
+**Enriquecimiento del cimiento #6 (necesario para reconstruir la pista):** dos eventos nuevos — **flujo de capital** (depósito/retiro/transferencia; imprescindible para gain% sin depósitos) y **snapshot de estado de cuenta** (equity/balance/margen; alimenta las curvas) — más el refuerzo de la orden-con-fricción con `account_id`/PnL/MAE/MFE/duración.
+
+**Portal público (repo aparte, stack libre, diferido):** el portal (`drasusengine.com/<ruta-por-decidir>`) y la Cabina de Mando web **NO** forman parte del monolito Rust+Flutter; viven en un **repositorio separado** con su propio stack a decidir (Next.js u otro para SEO es admisible). El invariante ADR-0001 se acota al monolito (motor + UI). Ahora solo se construye, dentro del monolito, lo que reportará al portal: eventos de #6, registro #10, consentimiento #5 y el contrato/puerto de reporte.
+
 ---
 
-**Documento versión 1.0** | Creado: 2026-07-03 (ADR-0143 / ADR-0144)
+**Documento versión 1.1** | Creado: 2026-07-03 (ADR-0143 / ADR-0144) · §22.6 añadida 2026-07-04 (ADR-0145)

@@ -1,9 +1,9 @@
-# Enriched Domain Events
+ccccc# Enriched Domain Events
 
 **Carpeta:** `./features/enriched-domain-events/`
 **Estado:** En Diseño
 **Última actualización:** 2026-07-03
-**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #6) · ADR-0085 (bus) · ADR-0027 (event sourcing) · ADR-0143 (supresión por tier)
+**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #6) · ADR-0085 (bus) · ADR-0027 (event sourcing) · ADR-0143 (supresión por tier) · **ADR-0145 (enriquecimiento para Cuentas Verificadas: flujo de capital + snapshot de cuenta + refuerzo de orden)**
 
 ## ¿Qué es esta feature?
 
@@ -15,7 +15,9 @@ La instrumentación temprana: tipos de evento **inmutables y ricos** que el moto
 
 ## Comportamientos Observables
 
-- Cuando se ejecuta una orden → emite un evento con instrumento, lado, cantidad, precio, slippage, tiempo de fill, bróker y nocional.
+- Cuando se ejecuta una orden → emite un evento con instrumento, lado, cantidad, precio, slippage, tiempo de fill, bróker, nocional y —refuerzo ADR-0145— `account_id`, PnL realizado, MAE, MFE y duración del trade (para derivar % de trades rentables, tiempo medio de espera y días de trading por cuenta).
+- **Cuando hay un movimiento de capital (depósito / retiro / transferencia) —ADR-0145—** → emite un evento de flujo de capital con signo, monto (entero ×10⁸), divisa, cuenta y timestamp. Es imprescindible para calcular el gain% separado del capital aportado (el crecimiento excluye depósitos).
+- **Cuando cambia el estado de una cuenta de bróker —ADR-0145—** → emite un snapshot con equity, balance y margen disponible/requerido por cuenta (cadencia por-fill o periódica). Alimenta las curvas de equidad y balance del track record.
 - Cuando termina un backtest → emite un evento con las métricas completas (Sharpe, drawdown, PBO, régimen).
 - Cuando se detecta un régimen, un drawdown, estrés de liquidez o un cambio de correlación → emite su evento respectivo.
 - Cuando la licencia ordena supresión (tier de pago, ADR-0143) → el emisor hacia la Cabina de Mando se apaga en origen, pero el evento sigue disponible **localmente** para el propio usuario.
@@ -55,6 +57,8 @@ Un evento estructurado en el bus + en el event-store local, opcionalmente replic
 - **TTR-001:** Catálogo de tipos de evento enriquecidos y su construcción (Core puro, hash encadenado).
 - **TTR-002:** Publicación en el bus (ADR-0085) + persistencia append-only local.
 - **TTR-003:** Envío a la Cabina de Mando gobernado por el gate de supresión (ADR-0143).
+- **TTR-004 (ADR-0145):** Evento de flujo de capital (depósito/retiro/transferencia; monto entero ×10⁸, con signo, divisa, cuenta).
+- **TTR-005 (ADR-0145):** Evento de snapshot de estado de cuenta (equity/balance/margen por cuenta de bróker) + refuerzo de la orden-con-fricción con `account_id`/PnL/MAE/MFE/duración.
 
 ## Puertos de Integración (ADR-0137)
 
@@ -74,12 +78,12 @@ Un evento estructurado en el bus + en el event-store local, opcionalmente replic
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
 
-Event-store append-only (`event_sequence_id UNIQUE`, `audit_chain_hash` encadenado, NULL en génesis) con Grupo I + Perfil D. Campo propio fuera del catálogo (marcado): tipo de evento (`TEXT` con `CHECK`), payload estructurado (`TEXT` con `json_valid`). Reutiliza el patrón de `audit-log`/`telemetry` (ADR-0141). `STRICT`, UUIDv7.
+Event-store append-only (`event_sequence_id UNIQUE`, `audit_chain_hash` encadenado, NULL en génesis) con Grupo I + Perfil D. Campo propio fuera del catálogo (marcado): tipo de evento (`TEXT` con `CHECK`), payload estructurado (`TEXT` con `json_valid`). El `CHECK` del tipo de evento incluye los subtipos nuevos de ADR-0145 (flujo de capital, snapshot de estado de cuenta) además de los previos. Montos monetarios (flujo de capital, equity/balance/margen del snapshot) como **entero ×10⁸**, nunca `REAL` (ADR-0141). Reutiliza el patrón de `audit-log`/`telemetry` (ADR-0141). `STRICT`, UUIDv7.
 
 **Rastro de Evidencia:** es la fuente primaria de causalidad para el módulo `feedback` y para todos los productos de monetización.
 
 ## Dependencias y Bloqueantes
 
 - **Depende de:** bus de eventos (ADR-0085), audit-log (construido), `licensing-system` (gate de supresión).
-- **Bloquea a:** `usage-metering`, `data-aggregation`, `institutional-report-engine`.
+- **Bloquea a:** `usage-metering`, `data-aggregation`, `institutional-report-engine`, `verified-account-registry` (#10, ADR-0145 — consume flujo de capital + snapshot de cuenta + orden reforzada).
 - **Contrato de Integración UI (ADR-0117) — Ventana de Verificación:** su observable (conteo y último timestamp de eventos por tipo) queda visible en el tab de verificación de una feature consumidora (p. ej. el panel de consumo de `usage-metering`); hasta entonces, deuda de integración registrada.
