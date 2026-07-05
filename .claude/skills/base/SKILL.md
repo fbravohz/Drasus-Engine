@@ -166,7 +166,7 @@ Cada ingeniero tiene detalles de sintaxis específicos de su lenguaje en su prop
 
 ## Sellado de Implementación y Reproducibilidad
 
-Dos reglas universales para CUALQUIER rol (Tech-Lead, ingenieros, Architect):
+Tres reglas universales para CUALQUIER rol (Tech-Lead, ingenieros, Architect):
 
 ### 1. Sellar lo implementado (con fecha)
 Cuando completes una unidad de especificación — un **TTR**, una **Feature**, un **Módulo**, o realices en código una **decisión de ADR** — vas a su documento fuente y lo marcas como implementado, con fecha y enlace a la Orden de Trabajo que lo ejecutó.
@@ -177,6 +177,14 @@ Cuando completes una unidad de especificación — un **TTR**, una **Feature**, 
 
 ### 2. Dar siempre los comandos de validación
 Al cerrar cualquier trabajo, entrega al usuario los **comandos exactos** (copy/paste) para que reproduzca y valide por su cuenta (build, tests, lints, o el comando de la herramienta). El usuario debe poder verificar sin depender de tu palabra ni de buscar en el chat. Esos comandos también quedan escritos en la Orden de Trabajo (sección 5).
+
+### 3. Registrar SIEMPRE lo que difieres (nunca en la memoria de un agente)
+Cada vez que **aplaces trabajo hacia el futuro** — un adaptador, un servidor, una UI, una feature, un endurecimiento, un spike — DEBES escribirlo en su **lugar canónico y descubrible**, junto con su **disparador** (el evento que dispara su construcción: "tras EPIC-5", "al existir la Cabina", "al cablear el job"). Está **PROHIBIDO** dejar un diferimiento vivo solo en la conversación, en tu razonamiento, o como prosa suelta: la próxima instancia de agente **no lo hereda** y el trabajo se pierde sin que nadie sepa dónde quedó ni cuándo tocaba. Dónde registrar según el tipo:
+- **Fase o entrega nueva/aplazada** (algo que merece figurar en el mapa de desarrollo, aunque aún no tenga nº de EPIC) → `docs/ROADMAP.md`: fila en el mapa de entregas **y** su disparador. Dominio del **Architect**.
+- **Deuda técnica granular deliberada** → `docs/DEBT.md` como fila `DEBT-XXX` (severidad · causa raíz · impacto actual · disparador de pago). Regla del propio archivo: *"si una deuda no está aquí, no está rastreada."* Dominio del **Tech-Lead**.
+- **Pendiente acotado a una feature** → banner `> 🟡 **Parcial** … · Pendiente: …` en su `docs/features/*.md`, que luego se enrola como fila de DEBT cuando se llega a ella.
+
+Regla rectora: **un diferimiento sin disparador escrito no está "diferido": está olvidado.** Si detectas trabajo diferido en el pasado que no quedó registrado, regístralo al hallarlo.
 
 ---
 
