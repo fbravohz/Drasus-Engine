@@ -1,8 +1,10 @@
 # Consent Registry (ToS)
 
+> 🟡 **Parcial** 2026-07-04 · Orden de trabajo [STORY-031](../execution/STORY-031-consent-registry.md) · Cimiento local completo: migración `0011_consent_registry.sql` (Grupo I append-only con `event_sequence_id UNIQUE` + triggers anti UPDATE/DELETE + `CHECK(json_valid(optout_map))` + Perfil D acotado), Core puro (`domain/consent_registry.rs`: `needs_reacceptance`, `resolve_coverage` con las tres puertas Covered/StaleVersion/OptedOut/NoConsent y default-niega, `apply_consent_action` — event-sourcing con snapshot completo sobre `BTreeMap` para serialización JSON determinista, `parse_optout_map`, hash de auditoría encadenado por `event_sequence_id`), Shell (`persistence/consent_registry.rs`: repositorio APPEND-ONLY sin `update`/`delete`, `load_latest_for_owner` para el estado vigente; `orchestrator/consent_registry.rs`: composición del puerto), puerto `consent_out` → `ConsentVerdict` en `public_interface` (más re-exports planos), CLI `verify consent-registry` (ADR-0142). Crate: `crates/shared` (excepción bendecida ADR-0137). Pendiente: sincronización con la Cabina de Mando Central (no existe aún), cableado real de consumidores (`data-aggregation` #9, firehose, opt-in del track record ADR-0145 #10), SVF (Canal #1) + galería del panel de ToS/opt-outs (deuda rastreada, backend-first).
+
 **Carpeta:** `./features/consent-registry/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-03
+**Estado:** 🟡 Parcial (cimiento local completo; sincronización central, cableado de consumidores y UI diferidos)
+**Última actualización:** 2026-07-04
 **Decisión Arquitectónica Asociada:** ADR-0143 (firehose gratuito) · ADR-0144 (cimiento #5)
 
 ## ¿Qué es esta feature?
@@ -70,9 +72,9 @@ Un veredicto de consentimiento (cubierto / no cubierto) por tipo de dato, y el r
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el consentimiento se captura local y se replica a la Cabina de Mando (es prueba legal central).
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría/Cumplimiento)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + subset V (`compliance_status_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Cumplimiento)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + subset V (`compliance_status_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Registro append-only (`event_sequence_id UNIQUE`) con Grupo I + Perfil D. Campos propios fuera del catálogo (marcados): versión de ToS aceptada, timestamp de aceptación, mapa de opt-outs por tipo. `STRICT`, UUIDv7, `audit_chain_hash` encadenado (ADR-0141).
 
