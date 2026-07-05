@@ -1,7 +1,9 @@
 # Institutional Report Engine
 
+> 🟡 **Parcial** 2026-07-05 · Orden de trabajo [STORY-034](../execution/STORY-034-institutional-report-engine.md) · Puerto + esquema completos: Core `domain/institutional_report_engine.rs` (`assemble_report`, `compute_report_signature` **reproducible** vía serialización canónica `BTreeMap`+`Sha256`, `metrics` como `i64` ×10⁸ cero `f64`), tabla `generated_reports` **append-only atómica** (migración `0013`, `event_sequence_id UNIQUE` + triggers, subset V `signature_hash` distinto del `audit_hash` de la fila), trazabilidad por `source_event_refs` a los eventos de #6 (ADR-0027), puerto `report_out`/`result_in`, CLI `verify institutional-report-engine`. Crate `crates/shared`. QA APTO (5+ mutaciones). Pendiente: render Tera→PDF/HTML + white-label, catálogo de productos (moonshot `institutional-report-products`), mapeo del `BacktestResult`/`RobustnessScore` reales (hoy placeholders), exposición por la API de terceros (#8).
+
 **Carpeta:** `./features/institutional-report-engine/`
-**Estado:** En Diseño
+**Estado:** 🟡 Parcial (puerto + firma reproducible + persistencia; render Tera, catálogo y API de terceros diferidos)
 **Última actualización:** 2026-07-03
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #7) · ADR-0101 (plantillas Tera) · ADR-0027 (audit trail)
 
