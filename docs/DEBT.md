@@ -26,7 +26,7 @@
   1. Regla permanente en skills `rust-engineer` + `qa-engineer` (transacción `BEGIN IMMEDIATE` + `busy_timeout` + reintento acotado; prueba de 2 escritores obligatoria en todo ledger). → **hecho 2026-07-04**.
   2. `consent-registry` (#5) nace correcto (arreglado en STORY-031 antes de cerrar).
   3. **STORY-032 de endurecimiento** para los ledgers ya commiteados (`audit_log` #0002, `usage_records` #0010), con su propio QA. Recomendado: entre #5 y #6.
-- **Estado:** En pago.
+- **Estado:** ✅ **Pagada** — [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md) (2026-07-05). Los 3 puntos del plan completados: regla permanente en skills (2026-07-04), `consent-registry` (#5) nació correcto (STORY-031), y `audit_events`+`usage_records` endurecidos con append atómico (`BEGIN IMMEDIATE` + reintento + `WriteContention`), QA APTO por mutación (quitar la transacción tumba las pruebas de concurrencia).
 
 ### DEBT-002 · `PlanLimits` duplicado (stub sellado de #2 vs. real de #3)
 - **Severidad:** 🟡 Baja
@@ -71,10 +71,13 @@
 - **Descripción:** `apply_consent_action`/`try_record_action_once` no impiden explícitamente que una `OPTOUT_CHANGE` sea el **primer** evento de un `owner_id` (sin `ACCEPT` previo). Si ocurriera, `accepted_version` queda `""`.
 - **Impacto actual:** inofensivo — `needs_reacceptance("", vigente)` es siempre `true` → el veredicto cae a `StaleVersion` (niega), nunca a `Covered`. Falla-seguro, no viola GDPR.
 - **Disparador de pago:** añadir una guarda explícita con error tipado (en vez de depender del efecto colateral) → plegado al alcance de **STORY-032**.
-- **Estado:** Abierta.
+- **Estado:** ✅ **Pagada** — [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md) (2026-07-05): guarda tipada `ConsentRepositoryError::OptoutBeforeAccept` que rechaza `OPTOUT_CHANGE` como primer evento antes de fusionar/persistir.
 
 ---
 
 ## Deudas pagadas
 
-_(ninguna aún — se moverán aquí con enlace a la Story que las saldó)_
+- **DEBT-001** (ledgers append-only sin transacción atómica) → saldada por [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md), 2026-07-05.
+- **DEBT-007** (`OPTOUT_CHANGE`-primera sin guarda) → saldada por [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md), 2026-07-05.
+
+> Nota: DEBT-001 y DEBT-007 se conservan arriba con su ficha completa y Estado ✅ Pagada (para preservar su historia); este índice apunta a la Story que las saldó.
