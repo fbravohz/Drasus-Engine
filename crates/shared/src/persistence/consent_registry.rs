@@ -75,6 +75,15 @@ pub enum ConsentRepositoryError {
     /// consent-registry.md`, regla "Atomicidad de ledgers append-only").
     #[error("no se pudo registrar el consentimiento tras {attempts} intentos por contención de escritura")]
     WriteContention { attempts: u32 },
+    /// DEBT-007: una acción `OPTOUT_CHANGE` llegó como la PRIMERA acción de
+    /// un `owner_id` (sin `ACCEPT`/estado previo). Antes, esta secuencia
+    /// caía al efecto colateral `accepted_version=""` -> se resolvía luego
+    /// como `StaleVersion` en `resolve_coverage`, sin dejar rastro explícito
+    /// del problema real (falta un `ACCEPT`). Se rechaza aquí, antes de
+    /// fusionar ni persistir nada -- la Shell debe registrar primero un
+    /// `ACCEPT` para este dueño.
+    #[error("OPTOUT_CHANGE no puede ser la primera acción registrada para el dueño '{owner_id}': falta un ACCEPT previo")]
+    OptoutBeforeAccept { owner_id: String },
 }
 
 /// Número máximo de intentos del append ante contención de escritura
@@ -288,6 +297,18 @@ impl<'a> ConsentRepository<'a> {
             accepted_version: row.tos_version.clone(),
             optout_map: row.optout_map.clone(),
         });
+
+        // DEBT-007 -- guarda explícita: OPTOUT_CHANGE como PRIMERA acción de
+        // este owner_id (sin ACCEPT/estado previo) es una secuencia
+        // inválida. Se rechaza aquí, ANTES de fusionar nada con
+        // apply_consent_action, para no depender del efecto colateral
+        // accepted_version="" -> StaleVersion (que no explica la causa
+        // real: falta un ACCEPT).
+        if input.action == ConsentAction::OptoutChange && previous_state.is_none() {
+            return Err(ConsentRepositoryError::OptoutBeforeAccept {
+                owner_id: input.owner_id.clone(),
+            });
+        }
 
         // Núcleo puro: fusiona el estado previo con la acción entrante.
         let action_input = ConsentActionInput {
@@ -723,6 +744,83 @@ mod tests {
 
         let latest = repo.load_latest_for_owner("owner-sin-eventos").await.expect("consulta debe tener éxito");
         assert!(latest.is_none());
+    }
+
+    // ── DEBT-007: OPTOUT_CHANGE como primera acción de un owner_id ──────────
+
+    /// CRITERIO DE CIERRE (DEBT-007): un `OPTOUT_CHANGE` como PRIMER evento
+    /// registrado para un `owner_id` (sin `ACCEPT` previo) debe rechazarse
+    /// con el error tipado [`ConsentRepositoryError::OptoutBeforeAccept`] --
+    /// NO debe caer al efecto colateral `accepted_version=""` ->
+    /// `StaleVersion`. Debe caerse (falso positivo de "pasa") si la guarda
+    /// se quitara: en ese caso `record_action` tendría éxito con
+    /// `accepted_version=""`, y este `assert!(matches!(...))` fallaría
+    /// porque el resultado sería `Ok`.
+    #[tokio::test]
+    async fn optout_change_as_first_action_for_owner_is_rejected_with_typed_error() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = ConsentRepository::new(&pool, &clock);
+
+        let mut changes = BTreeMap::new();
+        changes.insert("aggregation".to_string(), true);
+        let result = repo
+            .record_action(RecordConsentActionInput {
+                owner_id: "owner-sin-accept".to_string(),
+                institutional_tag: "DRASUS_LOCAL".to_string(),
+                node_id: "node-1".to_string(),
+                compliance_status_id: None,
+                action: ConsentAction::OptoutChange,
+                tos_version: None,
+                optout_changes: changes,
+            })
+            .await;
+
+        assert!(
+            matches!(
+                result,
+                Err(ConsentRepositoryError::OptoutBeforeAccept { owner_id }) if owner_id == "owner-sin-accept"
+            ),
+            "OPTOUT_CHANGE sin ACCEPT previo debe rechazarse con OptoutBeforeAccept, no persistir con StaleVersion"
+        );
+
+        // Ninguna fila debe haberse persistido: el rechazo ocurre ANTES del
+        // INSERT (la transacción se abre pero jamás se confirma).
+        let chain = repo.load_chain().await.expect("cargar cadena completa");
+        assert!(chain.is_empty(), "la secuencia inválida no debe dejar ninguna fila persistida");
+    }
+
+    /// Confirma que el camino EXISTENTE (OPTOUT_CHANGE tras un ACCEPT
+    /// previo) sigue funcionando sin cambios -- no regresiona la guarda de
+    /// DEBT-007 sobre el caso válido.
+    #[tokio::test]
+    async fn optout_change_after_accept_still_succeeds() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = ConsentRepository::new(&pool, &clock);
+
+        let mut initial = BTreeMap::new();
+        initial.insert("aggregation".to_string(), false);
+        repo.record_action(accept_input("owner-1", "v2", initial))
+            .await
+            .expect("aceptación inicial debe tener éxito");
+
+        clock.tick();
+        let mut changes = BTreeMap::new();
+        changes.insert("aggregation".to_string(), true);
+        let result = repo
+            .record_action(RecordConsentActionInput {
+                owner_id: "owner-1".to_string(),
+                institutional_tag: "DRASUS_LOCAL".to_string(),
+                node_id: "node-1".to_string(),
+                compliance_status_id: None,
+                action: ConsentAction::OptoutChange,
+                tos_version: None,
+                optout_changes: changes,
+            })
+            .await;
+
+        assert!(result.is_ok(), "OPTOUT_CHANGE tras un ACCEPT previo debe seguir funcionando");
     }
 
     // ── Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only") ──

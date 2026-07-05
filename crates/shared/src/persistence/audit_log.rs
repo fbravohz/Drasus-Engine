@@ -29,12 +29,23 @@ use crate::domain::clock::Clock;
 pub enum AuditLogError {
     /// La operación de SQLite subyacente falló.
     Database(sqlx::Error),
+    /// El append no pudo completarse tras agotar los reintentos ante
+    /// contención de escritura transitoria (otro escritor mantuvo el lock
+    /// de la base de datos más allá del `busy_timeout`, o hubo colisión
+    /// repetida al derivar `event_sequence_id`). El evento NO se descartó
+    /// en silencio -- se propaga este error tipado para que el llamador
+    /// decida reintentar a un nivel superior o alertar (regla "Atomicidad
+    /// de ledgers append-only", DEBT-001).
+    WriteContention { attempts: u32 },
 }
 
 impl std::fmt::Display for AuditLogError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AuditLogError::Database(err) => write!(f, "audit log database error: {err}"),
+            AuditLogError::WriteContention { attempts } => {
+                write!(f, "no se pudo agregar el evento de auditoría tras {attempts} intentos por contención de escritura")
+            }
         }
     }
 }
@@ -43,6 +54,7 @@ impl std::error::Error for AuditLogError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             AuditLogError::Database(err) => Some(err),
+            AuditLogError::WriteContention { .. } => None,
         }
     }
 }
@@ -51,6 +63,35 @@ impl From<sqlx::Error> for AuditLogError {
     fn from(err: sqlx::Error) -> Self {
         AuditLogError::Database(err)
     }
+}
+
+/// Número máximo de intentos del append ante contención de escritura
+/// transitoria antes de rendirse con [`AuditLogError::WriteContention`].
+/// Mismo valor y misma justificación que
+/// [`crate::persistence::consent_registry::MAX_RECORD_ATTEMPTS`]: con
+/// `busy_timeout` de 5s (ADR-0141 R2) el lock casi siempre se obtiene sin
+/// reintentar.
+const MAX_APPEND_ATTEMPTS: u32 = 5;
+
+/// Decide si un error de [`AuditLogRepository::append`] es una contención de
+/// escritura TRANSITORIA -- algo que reintentar (re-derivando el
+/// `event_sequence_id` y reinsertando) puede resolver, sin descartar el
+/// evento. Mismo criterio que
+/// `crate::persistence::consent_registry::is_transient_write_conflict`.
+fn is_transient_write_conflict(error: &AuditLogError) -> bool {
+    let AuditLogError::Database(sqlx::Error::Database(db)) = error else {
+        return false;
+    };
+
+    let message = db.message().to_lowercase();
+    // Lock ocupado: otro escritor tenía el lock de la BD / de la tabla.
+    if message.contains("database is locked") || message.contains("database table is locked") {
+        return true;
+    }
+
+    // Colisión de secuencia: mismo event_sequence_id derivado por dos
+    // escritores -- transitorio, re-derivar y reinsertar lo arregla.
+    db.is_unique_violation() && message.contains("event_sequence_id")
 }
 
 /// Repositorio de solo-apéndice para `audit_events`.
@@ -85,14 +126,76 @@ impl<'a> AuditLogRepository<'a> {
     /// Devuelve el [`AuditEvent`] ya persistido, incluyendo su
     /// `audit_hash` y `audit_chain_hash` calculados (TTR-001 "Salida":
     /// `log_id`, `audit_hash`).
+    ///
+    /// ## Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only")
+    ///
+    /// El *read-then-write* (leer la cola de la cadena y el `INSERT` final)
+    /// ocurre dentro de UNA sola transacción `BEGIN IMMEDIATE` -- ver
+    /// [`Self::try_append_once`]. Sin esa transacción, dos escritores
+    /// concurrentes derivarían el mismo `event_sequence_id`, el `UNIQUE`
+    /// rechazaría a uno y su evento se PERDERÍA. Ante contención transitoria
+    /// se reintenta hasta [`MAX_APPEND_ATTEMPTS`] veces re-derivando la
+    /// secuencia; el evento NUNCA se descarta en silencio (si se agotan los
+    /// reintentos se devuelve [`AuditLogError::WriteContention`]).
     pub async fn append(&self, content: AuditEventContent) -> Result<AuditEvent, AuditLogError> {
-        let previous = self.load_tail().await?;
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            match self.try_append_once(&content).await {
+                Ok(event) => return Ok(event),
+                Err(error) => {
+                    // Solo se reintenta ante contención de escritura
+                    // transitoria; cualquier otro error se propaga de
+                    // inmediato.
+                    if is_transient_write_conflict(&error) {
+                        if attempt < MAX_APPEND_ATTEMPTS {
+                            continue;
+                        }
+                        // Agotados los reintentos: error tipado, NUNCA
+                        // pérdida silenciosa del evento.
+                        return Err(AuditLogError::WriteContention { attempts: attempt });
+                    }
+                    return Err(error);
+                }
+            }
+        }
+    }
+
+    /// Un intento único del append, dentro de una transacción
+    /// `BEGIN IMMEDIATE`. Devuelve el error tal cual si algo falla -- el
+    /// bucle de [`Self::append`] decide si es transitorio y hay que
+    /// reintentar. `BEGIN IMMEDIATE` toma el lock de escritura de ENTRADA:
+    /// así ningún otro escritor puede intercalar entre la lectura de la cola
+    /// y el `INSERT`, y se evita el interbloqueo de upgrade que ocurriría si
+    /// dos transacciones DEFERRED intentaran subir de lectura a escritura a
+    /// la vez.
+    async fn try_append_once(&self, content: &AuditEventContent) -> Result<AuditEvent, AuditLogError> {
+        // Abre la transacción tomando el lock de escritura de inmediato.
+        let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
+
+        // Lectura (DENTRO de la transacción) -- la cola actual de la cadena
+        // GLOBAL, para asignar el siguiente event_sequence_id y encadenar el
+        // audit_hash.
+        let tail_row = sqlx::query(
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                    owner_id, institutional_tag, manifest_id, access_token_id, \
+                    process_id, session_id, node_id, \
+                    action_type, entity_type, entity_id, details_json \
+             FROM audit_events \
+             ORDER BY event_sequence_id DESC \
+             LIMIT 1",
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+        let previous = tail_row.map(row_to_event);
 
         let id = Uuid::new_v4().to_string();
         let created_at_ns = self.clock.timestamp_ns();
 
-        let event = chain_event(id, created_at_ns, content, previous.as_ref());
+        let event = chain_event(id, created_at_ns, content.clone(), previous.as_ref());
 
+        // Escritura (DENTRO de la transacción) -- el INSERT que cierra el
+        // read-then-write atómico.
         sqlx::query(
             "INSERT INTO audit_events (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -118,8 +221,12 @@ impl<'a> AuditLogRepository<'a> {
         .bind(&event.content.entity_type)
         .bind(&event.content.entity_id)
         .bind(&event.content.details_json)
-        .execute(self.pool)
+        .execute(&mut *tx)
         .await?;
+
+        // Confirma la transacción: recién aquí el lock de escritura se
+        // libera y la fila se hace visible a otros escritores.
+        tx.commit().await?;
 
         Ok(event)
     }
@@ -366,5 +473,85 @@ mod tests {
         assert_eq!(events[0].content.action_type, "ORDER_STATE_CHANGE");
         assert_eq!(events[1].content.action_type, "USER_VETO");
         assert!(events[0].event_sequence_id < events[1].event_sequence_id);
+    }
+
+    // ── Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only", DEBT-001) ──
+
+    /// CRITERIO DE CIERRE (DEBT-001): N escritores concurrentes sobre el
+    /// MISMO pool/ledger. La transacción `BEGIN IMMEDIATE` + reintento
+    /// acotado debe garantizar que NINGÚN evento se pierde y que la
+    /// secuencia queda densa (1..=N sin huecos ni duplicados) con la cadena
+    /// de hashes íntegra.
+    ///
+    /// Esta prueba DEBE poder caerse si se quita la transacción: con el
+    /// `SELECT ... ORDER BY event_sequence_id DESC LIMIT 1` y el `INSERT` en
+    /// sentencias sueltas (la forma vieja de `append`), dos tareas leen la
+    /// misma cola, derivan el mismo `event_sequence_id`, el `UNIQUE`
+    /// rechaza a una y su evento se pierde -> la aserción (a)
+    /// `chain.len()==N` o la (b) `1..=N` fallaría con
+    /// `UNIQUE constraint failed: audit_events.event_sequence_id`. Se usa
+    /// una BD en ARCHIVO temporal (nunca `:memory:`, donde cada conexión
+    /// sería una base distinta) para que la concurrencia entre conexiones
+    /// sea real.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn concurrent_appends_persist_every_event_without_gaps_or_lost_rows() {
+        use std::sync::Arc;
+
+        let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = temp_dir.path().join("audit_log_concurrency.sqlite");
+        let database_url = format!("sqlite://{}", db_path.display());
+        let pool = connect(&database_url).await.expect("conectar");
+        migrate(&pool).await.expect("migrar");
+
+        // Reloj compartido (atómico, thread-safe). Sin `tick`: todas las
+        // filas comparten timestamp -- válido, el orden lo fija
+        // event_sequence_id, no el reloj.
+        let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+
+        const N: i64 = 16;
+
+        // Lanza N tareas en paralelo, cada una agregando un evento DISTINTO
+        // (mismo entity_id, para poder verificar filtrado también).
+        let mut handles = Vec::new();
+        for i in 0..N {
+            let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
+            let clock_c = clock.clone();
+            handles.push(tokio::spawn(async move {
+                let repo = AuditLogRepository::new(&pool_c, clock_c.as_ref());
+                repo.append(sample_content("CONCURRENT_EVENT", &format!("order-{i}")))
+                    .await
+            }));
+        }
+
+        // (a) TODAS las tareas terminaron OK -- ningún evento se perdió por
+        // colisión de secuencia (una tarea que perdiera la carrera y no
+        // reintentara devolvería Err aquí).
+        for handle in handles {
+            handle
+                .await
+                .expect("la tarea no debe entrar en panic")
+                .expect("append debe tener éxito para cada escritor concurrente");
+        }
+
+        let repo = AuditLogRepository::new(&pool, clock.as_ref());
+        let chain = repo.load_chain().await.expect("cargar la cadena completa");
+
+        // (a) se persistieron TODAS las N filas.
+        assert_eq!(chain.len() as i64, N, "deben persistirse las N filas, sin ninguna pérdida");
+
+        // (b) los event_sequence_id son exactamente 1..=N (densa, sin
+        // huecos ni duplicados). `load_chain` ya ordena ascendente por la
+        // columna.
+        let sequence_ids: Vec<i64> = chain.iter().map(|event| event.event_sequence_id).collect();
+        let expected: Vec<i64> = (1..=N).collect();
+        assert_eq!(sequence_ids, expected, "los event_sequence_id deben ser 1..=N sin huecos ni duplicados");
+
+        // (c) la cadena queda íntegra: verify_chain recalcula cada
+        // audit_hash y cada enlace audit_chain_hash a partir del contenido
+        // persistido -- si la transacción no fuera atómica, un evento
+        // perdido rompería la densidad de (b) antes de siquiera llegar
+        // aquí; esta aserción confirma además que el contenido de cada fila
+        // es recomputable (integridad completa, no solo conteo).
+        assert_eq!(verify_chain(&chain), ChainVerificationResult::Valid);
     }
 }

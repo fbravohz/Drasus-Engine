@@ -47,6 +47,42 @@ pub enum UsageRepositoryError {
     /// dos cadenas canónicas -- error de integridad de datos.
     #[error("quota_verdict desconocido en la fila '{0}' de usage_records")]
     UnknownQuotaVerdict(String),
+    /// El registro de la operación no pudo completarse tras agotar los
+    /// reintentos ante contención de escritura transitoria (otro escritor
+    /// mantuvo el lock de la base de datos más allá del `busy_timeout`, o
+    /// hubo colisión repetida al derivar `event_sequence_id`). La operación
+    /// NO se descartó en silencio -- se propaga este error tipado para que
+    /// el llamador decida reintentar a un nivel superior o alertar (regla
+    /// "Atomicidad de ledgers append-only", DEBT-001).
+    #[error("no se pudo registrar la operación tras {attempts} intentos por contención de escritura")]
+    WriteContention { attempts: u32 },
+}
+
+/// Número máximo de intentos del registro ante contención de escritura
+/// transitoria antes de rendirse con [`UsageRepositoryError::WriteContention`].
+/// Mismo valor y misma justificación que
+/// [`crate::persistence::consent_registry::MAX_RECORD_ATTEMPTS`].
+const MAX_RECORD_OPERATION_ATTEMPTS: u32 = 5;
+
+/// Decide si un error de [`UsageRepository::record_operation`] es una
+/// contención de escritura TRANSITORIA -- algo que reintentar (re-derivando
+/// el `event_sequence_id` y reinsertando) puede resolver, sin descartar la
+/// operación. Mismo criterio que
+/// `crate::persistence::consent_registry::is_transient_write_conflict`.
+fn is_transient_write_conflict(error: &UsageRepositoryError) -> bool {
+    let UsageRepositoryError::Database(sqlx::Error::Database(db)) = error else {
+        return false;
+    };
+
+    let message = db.message().to_lowercase();
+    // Lock ocupado: otro escritor tenía el lock de la BD / de la tabla.
+    if message.contains("database is locked") || message.contains("database table is locked") {
+        return true;
+    }
+
+    // Colisión de secuencia: mismo event_sequence_id derivado por dos
+    // escritores -- transitorio, re-derivar y reinsertar lo arregla.
+    db.is_unique_violation() && message.contains("event_sequence_id")
 }
 
 /// Entrada para [`UsageRepository::record_operation`] -- todo lo que la
@@ -114,51 +150,6 @@ impl<'a> UsageRepository<'a> {
         Self { pool, clock }
     }
 
-    /// Carga la fila más reciente de la cadena GLOBAL (el
-    /// `event_sequence_id` más alto de TODA la tabla, no por dueño ni por
-    /// ciclo) -- necesaria para encadenar el `audit_hash` de la siguiente
-    /// fila, exactamente como
-    /// [`crate::persistence::audit_log::AuditLogRepository::load_tail`].
-    async fn load_tail(&self) -> Result<Option<UsageRecordRow>, UsageRepositoryError> {
-        let row = sqlx::query(
-            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
-                    owner_id, institutional_tag, node_id, compliance_status_id, \
-                    notional_per_op, cycle_accumulated, billing_cycle_id, instrument_id, quota_verdict \
-             FROM usage_records \
-             ORDER BY event_sequence_id DESC \
-             LIMIT 1",
-        )
-        .fetch_optional(self.pool)
-        .await?;
-
-        row.map(row_to_usage_record).transpose()
-    }
-
-    /// Suma el `notional_per_op` de todas las filas YA PERSISTIDAS de un
-    /// mismo `(owner_id, billing_cycle_id)` -- el acumulado del ciclo
-    /// ANTES de sumar la operación que se va a registrar ahora
-    /// (`docs/features/usage-metering.md` "Ciclo de Vida" - "Proceso":
-    /// "lo acumula en el ciclo vigente"). Un `billing_cycle_id` nuevo
-    /// (ciclo distinto) siempre arranca en cero -- así es como "el
-    /// acumulado se reinicia" sin borrar ninguna fila histórica.
-    async fn cycle_accumulated_so_far(
-        &self,
-        owner_id: &str,
-        billing_cycle_id: &str,
-    ) -> Result<i64, UsageRepositoryError> {
-        let row = sqlx::query(
-            "SELECT COALESCE(SUM(notional_per_op), 0) AS total \
-             FROM usage_records \
-             WHERE owner_id = ? AND billing_cycle_id = ?",
-        )
-        .bind(owner_id)
-        .bind(billing_cycle_id)
-        .fetch_one(self.pool)
-        .await?;
-
-        Ok(row.get::<i64, _>("total"))
-    }
-
     /// Registra UNA operación medida: calcula su nocional
     /// ([`compute_notional`]), lo suma al acumulado del ciclo vigente
     /// ([`accumulate`]), compara el nuevo acumulado contra `notional_limit`
@@ -168,26 +159,104 @@ impl<'a> UsageRepository<'a> {
     ///
     /// Es la ÚNICA forma de escribir en `usage_records` -- no existe
     /// `update`/`delete` en esta API (ver doc-comment del módulo).
+    ///
+    /// ## Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only")
+    ///
+    /// Aquí el *read-then-write* es MÁS ANCHO que en `audit_log::append`:
+    /// hay DOS lecturas que dependen del estado de la tabla (el acumulado
+    /// del ciclo `(owner_id, billing_cycle_id)` Y la cola GLOBAL para
+    /// encadenar el hash), y las DOS deben ver el mismo estado consistente
+    /// que el `INSERT` que sigue -- ver [`Self::try_record_operation_once`].
+    /// Si la acumulación se leyera fuera de la transacción, dos operaciones
+    /// concurrentes del MISMO dueño/ciclo leerían el mismo acumulado previo
+    /// y una pisaría el `cycle_accumulated` de la otra (además de arriesgar
+    /// la misma colisión de `event_sequence_id` que en `audit_log`). Ante
+    /// contención transitoria se reintenta hasta
+    /// [`MAX_RECORD_OPERATION_ATTEMPTS`] veces re-derivando ambas lecturas;
+    /// la operación NUNCA se descarta en silencio (si se agotan los
+    /// reintentos se devuelve [`UsageRepositoryError::WriteContention`]).
     pub async fn record_operation(
         &self,
         input: RecordOperationInput,
     ) -> Result<UsageRecordRow, UsageRepositoryError> {
         // Núcleo puro: nocional de esta operación (puede fallar por
         // tamaño/precio negativos o desborde -- ninguna fila se persiste
-        // si esto falla, `?` propaga antes de tocar disco).
+        // si esto falla, `?` propaga antes de tocar disco ni abrir
+        // transacción). No depende de ningún estado concurrente de la
+        // tabla, así que calcularlo una sola vez fuera del bucle de
+        // reintento es seguro.
         let notional_per_op = compute_notional(input.size, input.price)?;
 
-        // Acumulado del ciclo ANTES de esta operación + esta operación.
-        let previous_cumulative = self
-            .cycle_accumulated_so_far(&input.owner_id, &input.billing_cycle_id)
-            .await?;
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            match self.try_record_operation_once(&input, notional_per_op).await {
+                Ok(row) => return Ok(row),
+                Err(error) => {
+                    // Solo se reintenta ante contención de escritura
+                    // transitoria; cualquier otro error (nocional inválido,
+                    // veredicto desconocido, etc.) se propaga de inmediato.
+                    if is_transient_write_conflict(&error) {
+                        if attempt < MAX_RECORD_OPERATION_ATTEMPTS {
+                            continue;
+                        }
+                        // Agotados los reintentos: error tipado, NUNCA
+                        // pérdida silenciosa de la operación.
+                        return Err(UsageRepositoryError::WriteContention { attempts: attempt });
+                    }
+                    return Err(error);
+                }
+            }
+        }
+    }
+
+    /// Un intento único del registro, dentro de una transacción
+    /// `BEGIN IMMEDIATE`. Devuelve el error tal cual si algo falla -- el
+    /// bucle de [`Self::record_operation`] decide si es transitorio y hay
+    /// que reintentar. `BEGIN IMMEDIATE` toma el lock de escritura de
+    /// ENTRADA: así ningún otro escritor puede intercalar entre las DOS
+    /// lecturas (acumulado del ciclo + cola global) y el `INSERT`.
+    async fn try_record_operation_once(
+        &self,
+        input: &RecordOperationInput,
+        notional_per_op: i64,
+    ) -> Result<UsageRecordRow, UsageRepositoryError> {
+        // Abre la transacción tomando el lock de escritura de inmediato.
+        let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
+
+        // Lectura 1 (DENTRO de la transacción) -- acumulado del ciclo
+        // ANTES de esta operación. Un `billing_cycle_id` nuevo (ciclo
+        // distinto) siempre arranca en cero -- así es como "el acumulado se
+        // reinicia" sin borrar ninguna fila histórica.
+        let accumulated_row = sqlx::query(
+            "SELECT COALESCE(SUM(notional_per_op), 0) AS total \
+             FROM usage_records \
+             WHERE owner_id = ? AND billing_cycle_id = ?",
+        )
+        .bind(&input.owner_id)
+        .bind(&input.billing_cycle_id)
+        .fetch_one(&mut *tx)
+        .await?;
+        let previous_cumulative: i64 = accumulated_row.get("total");
         let cycle_accumulated = accumulate(previous_cumulative, notional_per_op)?;
 
         // Veredicto de cuota usando el notional_limit REAL de plan-tier-quota.
         let quota_verdict = detect_quota_crossing(cycle_accumulated, input.notional_limit);
 
-        // Posición en la cadena GLOBAL (mismo patrón que audit_log::append).
-        let previous = self.load_tail().await?;
+        // Lectura 2 (DENTRO de la transacción) -- posición en la cadena
+        // GLOBAL, para asignar el siguiente event_sequence_id y encadenar
+        // el audit_hash (mismo patrón que audit_log::try_append_once).
+        let tail_row = sqlx::query(
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                    owner_id, institutional_tag, node_id, compliance_status_id, \
+                    notional_per_op, cycle_accumulated, billing_cycle_id, instrument_id, quota_verdict \
+             FROM usage_records \
+             ORDER BY event_sequence_id DESC \
+             LIMIT 1",
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+        let previous = tail_row.map(row_to_usage_record).transpose()?;
         let (event_sequence_id, audit_chain_hash, previous_audit_hash) = match &previous {
             Some(prev) => (prev.event_sequence_id + 1, Some(prev.audit_hash.clone()), prev.audit_hash.clone()),
             None => (1, None, GENESIS_PREVIOUS_HASH.to_string()),
@@ -211,6 +280,8 @@ impl<'a> UsageRepository<'a> {
             quota_verdict,
         );
 
+        // Escritura (DENTRO de la transacción) -- el INSERT que cierra el
+        // read-then-write atómico.
         sqlx::query(
             "INSERT INTO usage_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -233,8 +304,12 @@ impl<'a> UsageRepository<'a> {
         .bind(&input.billing_cycle_id)
         .bind(&input.instrument_id)
         .bind(quota_verdict.as_str())
-        .execute(self.pool)
+        .execute(&mut *tx)
         .await?;
+
+        // Confirma la transacción: recién aquí el lock de escritura se
+        // libera y la fila se hace visible a otros escritores.
+        tx.commit().await?;
 
         Ok(UsageRecordRow {
             id,
@@ -243,14 +318,14 @@ impl<'a> UsageRepository<'a> {
             audit_hash,
             audit_chain_hash,
             event_sequence_id,
-            owner_id: input.owner_id,
-            institutional_tag: input.institutional_tag,
-            node_id: input.node_id,
-            compliance_status_id: input.compliance_status_id,
+            owner_id: input.owner_id.clone(),
+            institutional_tag: input.institutional_tag.clone(),
+            node_id: input.node_id.clone(),
+            compliance_status_id: input.compliance_status_id.clone(),
             notional_per_op,
             cycle_accumulated,
-            billing_cycle_id: input.billing_cycle_id,
-            instrument_id: input.instrument_id,
+            billing_cycle_id: input.billing_cycle_id.clone(),
+            instrument_id: input.instrument_id.clone(),
             quota_verdict,
         })
     }
@@ -657,5 +732,93 @@ mod tests {
             .expect("contar filas")
             .get(0);
         assert_eq!(count, 0, "ninguna fila debe persistirse si el nocional falla");
+    }
+
+    // ── Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only", DEBT-001) ──
+
+    /// CRITERIO DE CIERRE (DEBT-001): N escritores concurrentes del MISMO
+    /// dueño y MISMO ciclo. La transacción `BEGIN IMMEDIATE` + reintento
+    /// acotado debe garantizar que (a) ninguna fila se pierde, (b) los
+    /// `event_sequence_id` quedan densos (1..=N) y (c) el
+    /// `cycle_accumulated` de la ÚLTIMA fila es EXACTAMENTE la suma de
+    /// todos los `notional_per_op` -- ninguna acumulación pisada.
+    ///
+    /// Esta prueba DEBE poder caerse si se quita la transacción: con la
+    /// lectura del acumulado del ciclo y del `event_sequence_id` fuera de
+    /// una transacción (la forma vieja de `record_operation`), dos tareas
+    /// leerían el MISMO `previous_cumulative`, cada una calcularía su
+    /// propio `cycle_accumulated` sobre esa base y una pisaría el resultado
+    /// de la otra en la suma final (además de arriesgar la colisión de
+    /// `event_sequence_id`, igual que en `audit_log`). Se usa una BD en
+    /// ARCHIVO temporal (nunca `:memory:`) para que la concurrencia entre
+    /// conexiones sea real.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn concurrent_record_operations_accumulate_the_cycle_exactly_without_lost_rows() {
+        use std::sync::Arc;
+
+        let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = temp_dir.path().join("usage_metering_concurrency.sqlite");
+        let database_url = format!("sqlite://{}", db_path.display());
+        let pool = connect(&database_url).await.expect("conectar");
+        migrate(&pool).await.expect("migrar");
+
+        // Reloj compartido (atómico, thread-safe). Sin `tick`: todas las
+        // filas comparten timestamp -- válido, el orden lo fija
+        // event_sequence_id, no el reloj.
+        let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+
+        const N: i64 = 16;
+        // Cada operación: size=1e8 (1.0), price=$1,000.00 (1e8 * 1e11 en
+        // fixed-point ×1e8) -> nocional $1,000.00 exactos por operación.
+        const SIZE: i64 = 100_000_000;
+        const PRICE: i64 = 100_000_000_000;
+        let notional_limit = 1_000_000_000_000_000; // límite alto, no cruza en esta prueba.
+
+        // Lanza N tareas en paralelo, todas del MISMO owner_id y MISMO
+        // billing_cycle_id -- el caso que ejercita la sección "más ancha"
+        // del read-then-write (acumulación del ciclo).
+        let mut handles = Vec::new();
+        for _ in 0..N {
+            let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
+            let clock_c = clock.clone();
+            handles.push(tokio::spawn(async move {
+                let repo = UsageRepository::new(&pool_c, clock_c.as_ref());
+                repo.record_operation(sample_input("2026-07", SIZE, PRICE, notional_limit)).await
+            }));
+        }
+
+        // (a) TODAS las tareas terminaron OK -- ninguna operación se perdió
+        // por colisión de secuencia (una tarea que perdiera la carrera y no
+        // reintentara devolvería Err aquí).
+        for handle in handles {
+            handle
+                .await
+                .expect("la tarea no debe entrar en panic")
+                .expect("record_operation debe tener éxito para cada escritor concurrente");
+        }
+
+        let repo = UsageRepository::new(&pool, clock.as_ref());
+        let chain = repo.load_chain().await.expect("cargar la cadena completa");
+
+        // (a) se persistieron TODAS las N filas.
+        assert_eq!(chain.len() as i64, N, "deben persistirse las N filas, sin ninguna pérdida");
+
+        // (b) los event_sequence_id son exactamente 1..=N (densa, sin
+        // huecos ni duplicados).
+        let sequence_ids: Vec<i64> = chain.iter().map(|row| row.event_sequence_id).collect();
+        let expected: Vec<i64> = (1..=N).collect();
+        assert_eq!(sequence_ids, expected, "los event_sequence_id deben ser 1..=N sin huecos ni duplicados");
+
+        // (c) el cycle_accumulated de la ÚLTIMA fila (mayor event_sequence_id)
+        // debe ser EXACTAMENTE la suma de los N notional_per_op -- si dos
+        // escritores hubieran leído el mismo acumulado base fuera de la
+        // transacción, la suma final sería menor que N * notional_per_op.
+        let notional_per_op = chain[0].notional_per_op;
+        let last_row = chain.iter().max_by_key(|row| row.event_sequence_id).expect("la cadena no está vacía");
+        assert_eq!(
+            last_row.cycle_accumulated,
+            notional_per_op * N,
+            "el cycle_accumulated final debe ser la suma exacta de las N operaciones, sin ninguna pisada"
+        );
     }
 }
