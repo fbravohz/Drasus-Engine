@@ -5,7 +5,7 @@
 **Carpeta:** `./features/licensing-system/`  
 **Estado:** 🟡 Parcial (gate local completo; emisor central, `plan-tier-quota` real y UI diferidos)  
 **Última actualización:** 2026-07-04  
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones) · ADR-0143 (Soberanía Condicionada por Tier) · ADR-0144 (Substrato de Monetización, cimiento #2)
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones) · ADR-0143 (Soberanía Condicionada por Tier) · ADR-0144 (Substrato de Monetización, cimiento #2)
 
 > 🔶 **Enmendado por ADR-0143 (2026-07-03)** — el modelo dual Sovereign/Explorer se re-encuadra como el modelo de tiers de ADR-0143. **"Cero telemetría absoluta" queda derogado:** toda instancia mantiene un canal de control obligatorio (identidad/licencia/heartbeat); lo que el tier de pago obtiene es la **supresión en origen de la telemetría de trabajo**, no la ausencia total de canal. Esta feature es el **cimiento #2** del substrato: además de validar la licencia, actúa como el **gate** que ordena suprimir/reactivar la telemetría y cuenta las **activaciones simultáneas por tier**.
 
@@ -34,6 +34,15 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
   * Al aproximarse al límite sin conexión, la interfaz muestra notificaciones preventivas sugiriendo al usuario una conexión momentánea para el refresco del certificado de la licencia.
   * Si se supera el límite absoluto sin validación, el motor restringe la creación de nuevos backtests y operaciones en vivo hasta que se valide la firma.
 
+* **Transferencia de Licencia entre Máquinas (activaciones):**
+  * El usuario puede **desvincular** una máquina (huella de hardware) desde su Plano de Control para liberar un cupo de activación y reclamarlo en otra máquina (self-service, sin intervención del proveedor).
+  * La invalidación de la máquina desvinculada es autoritativa en la Cabina de Mando (adaptador de red diferido); localmente, la máquina liberada degrada su gate en el siguiente heartbeat.
+  * Un cupo liberado no se puede reclamar hasta pasado `TRANSFER_COOLDOWN`, evitando la rotación de una licencia por muchas máquinas.
+
+* **Cambio de Tier a Mitad de Ciclo (downgrade — garantía reduce-only):**
+  * Si el usuario baja de tier a mitad de ciclo, el nuevo límite aplica **hacia adelante**; el contador de nocional del ciclo (`usage-metering`, append-only) **no se reinicia** por el cambio.
+  * El `ExecutionGate` restringe **solo la exposición nueva o incremental**. **NUNCA bloquea el cierre de una posición abierta** (órdenes reduce-only): degradar un tier o alcanzar la cuota jamás atrapa el capital ya desplegado del usuario. El bloqueo por cuota/tier es sobre "abrir más", no sobre "salir".
+
 ---
 
 ## 3. Restricciones
@@ -41,6 +50,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 * **PROHIBIDO** realizar llamadas síncronas de validación de red en el bucle principal de ejecución de órdenes (*Hot-Path*).
 * **PROHIBIDO** almacenar claves privadas de firma de licencias dentro del ejecutable o código fuente del cliente.
 * **PROHIBIDO** deshabilitar el funcionamiento del actualizador de emergencia o de la auditoría local si la licencia expira.
+* **PROHIBIDO (FIJO)** que el `ExecutionGate` bloquee una orden **reduce-only** (de cierre): ningún estado de licencia, cuota o tier puede impedir salir de una posición abierta. El gate restringe abrir/incrementar exposición, jamás atrapa capital ya desplegado.
 * **Una sola instancia por máquina (FIJO):** corre **una** instancia de Drasus por máquina, identificada por su huella de hardware. Un segundo arranque en la misma máquina comparte la huella y NO cuenta como una segunda activación. Las *activaciones* del tier cuentan **máquinas distintas** (p. ej. 1 laptop personal + 2 nodos VPS headless), no procesos; esas máquinas se fusionan en **una sola interfaz** vía el Plano de Control del usuario (ADR-0119).
 
 ---
@@ -54,6 +64,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 | GRACE_PERIOD | 7 días | 0 - 30 días | Días adicionales de ejecución permitida tras vencer el heartbeat antes del bloqueo funcional. | CONFIG |
 | ACTIVATIONS_PER_TIER | Explorer 1 / Sovereign 3 | 1 - N | **Máquinas distintas** (por huella de hardware) autorizadas en simultáneo — una instancia por máquina. Explorer = 1; Sovereign = 3 (típico: 1 laptop personal + 2 nodos VPS headless), fusionadas en una sola interfaz (ADR-0119). El límite real por plan lo fija `plan-tier-quota`. | CONFIG |
 | SUPPRESS_WORK_TELEMETRY_ON_PAID | true | true/false | En Sovereign Tier al corriente, apaga en origen la emisión de telemetría de trabajo (ADR-0143). | FIJO |
+| TRANSFER_COOLDOWN | 7 días | 0 - 30 días | Enfriamiento tras liberar una activación (desvincular una máquina) antes de poder reclamar ese cupo en otra — frena la rotación abusiva de activaciones (una licencia rotando por muchas máquinas). | CONFIG |
 
 ---
 
@@ -117,7 +128,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 ## 8. Gobernanza y Estándares (Fijos)
 
 * **Local-First (ADR-0016):** 100% Local. La validación se realiza en la máquina del usuario; la red solo se utiliza asíncronamente para refrescar el token de heartbeat.
-* **Inundación de Fundaciones (ADR-0020 V2):**
+* **Inundación de Fundaciones (ADR-0020):**
   * **Perfil D (Ops / Auditoría):** Foco en Identidad del Hardware, Soberanía de los Datos del Cliente y Auditoría Local de Accesos.
   * **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, **`row_version`**. Tabla **mutable** (el heartbeat refresca la validez en sitio) → `row_version` para concurrencia optimista, NO `event_sequence_id UNIQUE` (ese patrón es solo para tablas append-only; ADR-0141). El historial de cambios de licencia va al `audit-log` existente, no a esta tabla.
   * **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `access_token_id`.

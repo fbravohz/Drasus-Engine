@@ -212,6 +212,7 @@ Proyectos de investigación avanzada y alta complejidad.
 | [**distributed-edge-execution**](./moonshots/distributed-edge-execution.md) | Topología de ejecución distribuida: un nodo satélite por bróker (geo-localizable) con control central Local-First, DR por S3 y split control/ejecución (ADR-0119). |
 | [**drl-parameter-tuning**](./moonshots/drl-parameter-tuning.md) | Ajuste de parámetros mediante Reinforcement Learning |
 | [**drl-portfolio-optimization**](./moonshots/drl-portfolio-optimization.md) | Es la optimización de portafolios usando DRL (Deep Reinforcement Learning). Entrena un agente que toma decisiones de asignación de capital dinámicas... |
+| [**encrypted-local-backup**](./moonshots/encrypted-local-backup.md) | Respaldo de la DB soberana del escritorio cifrado en el cliente (AES-256-GCM) hacia S3/R2: el proveedor almacena un blob que no puede leer — perk del tier de pago coherente con la soberanía (ADR-0143/0093). |
 | [**figma-style-canvas**](./moonshots/figma-style-canvas.md) | Es el lienzo de diseño visual tipo Figma que permite construir estrategias arrastrando nodos, conectando, scalando, anidando. Implementa un edito... |
 | [**fix-api-execution**](./moonshots/fix-api-execution.md) | Ejecución institucional FIX API, Edge Computing y simulación de impacto de mercado (SOR) |
 | [**fuzzy-logic-evaluator**](./moonshots/fuzzy-logic-evaluator.md) | Es el evaluador de lógica borrosa (fuzzy logic) que permite reglas suaves ("casi buy", "moderadamente bullish") en lugar de binarias. Implementa... |
@@ -274,7 +275,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0017**](./adr/ADR-0017.md) | Simulación de Alta Fidelidad Institutional |
 | [**ADR-0018**](./adr/ADR-0018.md) | Taxonomía y Topología del Pipeline (Los 8 Módulos) |
 | [**ADR-0019**](./adr/ADR-0019.md) | ~~Interoperabilidad Frontend-Backend (FFI/gRPC)~~ ⚠️ Superado por ADR-0029 |
-| [**ADR-0020 V2**](./adr/ADR-0020.md) | Principio de Inundación de Fundaciones V2 (Foundation Inundation) |
+| [**ADR-0020**](./adr/ADR-0020.md) | Principio de Inundación de Fundaciones V2 (Foundation Inundation) |
 | [**ADR-0021**](./adr/ADR-0021.md) | ~~Modelo de Decisión Dual (Autopilot con Veto)~~ ⚠️ Superado por ADR-0010 |
 | [**ADR-0022**](./adr/ADR-0022.md) | Pipeline No-Lineal (DAG Multiflujal) |
 | [**ADR-0023**](./adr/ADR-0023.md) | Dashboard Dinámico vs Arquitectura de Plugins |

@@ -27,6 +27,8 @@ El **contador de valor nocional en USD** por ciclo de facturación. Cada operaci
 - NUNCA se mide el margen ni el apalancamiento: se mide el **nocional** (ADR-0143/0144).
 - NUNCA se modifica un registro del libro: es append-only (`event_sequence_id`, sin `row_version`).
 - El nocional se guarda como entero escalado (×10⁸), nunca `REAL` (ADR-0141).
+- **Nocional en instrumentos no cotizados en USD (FX):** el nocional en USD se deriva de la **misma valoración que el motor ya produce** para ejecutar (precio de marca en la divisa de cotización → USD con la referencia FX presente en los datos de mercado al momento de ejecución). NUNCA se introduce un proveedor FX aparte ni se recotiza a posteriori: el tipo de cambio queda congelado con la operación (el libro es un hecho histórico inmutable).
+- **Autoridad de reconciliación (Gap de sync):** el libro se acumula local, pero la **Cabina de Mando es la fuente autoritativa de facturación** (ADR-0143). Ante conflicto entre instancias del mismo dueño, el veredicto del servidor gana y el libro local obedece — el local nunca sobrescribe al central. El mecanismo de envío es el adaptador de red diferido (puerto ahora, adaptador después, ADR-0144).
 
 ## Parámetros Configurables (ADR-0008)
 
@@ -72,9 +74,9 @@ El acumulado del ciclo + un veredicto de cuota (dentro / cruzada), persistidos a
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el libro se acumula local y se sincroniza a la Cabina de Mando por telemetría.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría/Cumplimiento)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V de gobernanza (`compliance_status_id` si aplica).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Cumplimiento)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V de gobernanza (`compliance_status_id` si aplica).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Libro append-only (`event_sequence_id UNIQUE`, sin `row_version`) con Grupo I + Perfil D. Campos propios fuera del catálogo (marcados): nocional por operación (entero ×10⁸), acumulado del ciclo, identificador de ciclo, veredicto de cuota. `STRICT`, UUIDv7, `audit_chain_hash` encadenado (ADR-0141).
 

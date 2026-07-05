@@ -51,7 +51,7 @@ Credenciales del usuario (correo+contraseña o token OAuth) y los identificadore
 Verifica la identidad contra la Cabina de Mando, deriva la huella de hardware, y vincula la instancia local a la cuenta.
 
 ### Salida
-Un identificador de cuenta estable (`owner_id`, ADR-0020 V2 Grupo II) cacheado localmente, con su estado de verificación.
+Un identificador de cuenta estable (`owner_id`, ADR-0020 Grupo II) cacheado localmente, con su estado de verificación.
 
 ## Tareas (TTRs)
 
@@ -74,13 +74,14 @@ Un identificador de cuenta estable (`owner_id`, ADR-0020 V2 Grupo II) cacheado l
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** la identidad vive en el plano central; el motor local solo cachea. Justificado: es cimiento de la Cabina de Mando.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`, `access_token_id`) + Hardware(IV: `node_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`, `access_token_id`) + Hardware(IV: `node_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla de cuenta con Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, **`row_version`**) + `owner_id`, `institutional_tag`, `access_token_id`, `node_id` (huella de hardware). **Tabla mutable → `row_version`, NO `event_sequence_id UNIQUE` (ADR-0141).** Campos propios fuera del catálogo (marcados como tales): estado de verificación de correo, proveedor OAuth. `STRICT`, UUIDv7 (ADR-0141). Perfil D.
 
 ## Dependencias y Bloqueantes
 
 - **Bloquea a:** `licensing-system`, `usage-metering`, `consent-registry` (todas necesitan `owner_id`).
+- **Anti-abuso multi-cuenta (grafo de colisión — diferido a la Cabina de Mando):** localmente esta feature solo **emite** la huella de hardware y una señal cuando N identidades comparten máquina (observable arriba). La **correlación cross-cuenta** — grafo de huellas → detección de granjas de cuentas gratuitas desde el mismo hardware, y (más adelante) patrones de comportamiento (mismos instrumentos/horarios/estrategias en cuentas distintas) — es responsabilidad del **servidor central**, diferida junto con él. El puerto ya expone la huella; el detector de colisión es un adaptador del plano central (puerto ahora, adaptador después, ADR-0144). La variante por comportamiento (ML) requiere volumen de datos y es trabajo lejano (EPIC-9+).
 - **Contrato de Integración UI (ADR-0117) — Ventana de Verificación:** su observable (cuenta vinculada + estado de verificación) queda visible en el panel de cuenta del cajón de ajustes; hasta que exista, se registra como deuda de integración contra la feature consumidora `licensing-system`.
