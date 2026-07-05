@@ -15,7 +15,7 @@
 ## 1. Especificación de origen
 - **Feature:** [`audit-log`](../features/audit-log.md) — TTR-001 (Registro de Evento Inmutable, Append-Only + hash chain).
 - **Fuera de alcance:** TTR-002 (Reconciliación de rastro Nautilus) — diferido a EPIC-2+ (ROADMAP).
-- **ADR(s):** ADR-0015 (audit-log como fuente de verdad), ADR-0005 (hash chain de versionado), ADR-0027 (Event Sourcing), ADR-0020 V2 (campos por perfil — perfil Auditoría).
+- **ADR(s):** ADR-0015 (audit-log como fuente de verdad), ADR-0005 (hash chain de versionado), ADR-0027 (Event Sourcing), ADR-0020 (campos por perfil — perfil Auditoría).
 
 ## 2. Objetivo (una frase llana)
 Un libro contable inmutable: cada evento se anexa y se encadena por hash, de modo que alterar un evento pasado se detecta de inmediato.
@@ -30,7 +30,7 @@ PASOS DE ARRANQUE: 1) Lee base/SKILL.md y declara que lo aplicarás. 2) Lee rust
 adopta el rol. 3) Lee features/audit-log.md COMPLETA — implementa SOLO TTR-001 (Registro de Evento
 Inmutable Append-Only + hash chain). TTR-002 (reconciliación Nautilus) está FUERA DE ALCANCE. 4) Lee
 los ADRs citados: ADR-0015 (audit-log fuente de verdad), ADR-0005 (hash chain), ADR-0027 (event sourcing).
-5) ADR-0020 V2 (actualizado): los 25 campos son contrato lógico con FILTRO POR PERFIL; la tabla de
+5) ADR-0020 (actualizado): los 25 campos son contrato lógico con FILTRO POR PERFIL; la tabla de
 audit-log usa el perfil Auditoría (grupo I universal + lo forense pertinente). NO calques 25 columnas.
 
 ORDEN: Implementar audit-log TTR-001.
@@ -48,7 +48,7 @@ CRITERIO DE CIERRE (lo auditaré yo mismo):
 - cargo build / cargo clippy / cargo test verdes, sin warnings nuevos.
 
 LÍMITES: Solo audit-log TTR-001. NO TTR-002. NO otras features. NO inventes campos fuera de audit-log.md
-y ADR-0020 V2 (perfil Auditoría); si algo es ambiguo, repórtalo como BLOQUEO con cita. NO toques docs/.
+y ADR-0020 (perfil Auditoría); si algo es ambiguo, repórtalo como BLOQUEO con cita. NO toques docs/.
 NO calques los 25 campos. Código en inglés.
 
 ENTREGABLE: 1) dónde ubicaste audit-log y por qué; 2) separación núcleo/cáscara (FCIS); 3) el test de
@@ -74,5 +74,5 @@ cargo build --workspace
 ## 7. Pendientes derivados / decisiones
 - **Finalización de STORY-003 (clock):** con audit-log ya disponible, el rastro de auditoría del reloj
   (ntp_sync_offset, virtual_process_id, delta real/virtual) pasa a ser implementable. Requiere ANTES que
-  el Architect defina el perfil de persistencia/auditoría de la entidad `clock` (ADR-0020 V2). Es el
+  el Architect defina el perfil de persistencia/auditoría de la entidad `clock` (ADR-0020). Es el
   siguiente paso para cerrar STORY-003 de 🟡 Parcial a ✅ Implementado.

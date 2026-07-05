@@ -82,7 +82,7 @@ Es el sistema puente que elimina el "código espagueti" y las "cajas negras" pro
 
 - **Local-First (ADR-0016):** 100% Local. Reporte determinista por plantilla sin runtimes externos; LLM local soberano (`candle`) opcional y embebido (ADR-0115).
 - **Fidelidad (ADR-0017):** Baja (Ruta de análisis estático, no corre en hot-path).
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
   - **Perfil IA / R&D:** Foco en Identidad + Soberanía IP.
   - Campos a inyectar: Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `version_node_id`, `logic_hash` (para anclar la ecuación simbólica nativa).
   - **Hooks Forenses:** Registro de varianza entre modelo opaco y ecuación final extraída.

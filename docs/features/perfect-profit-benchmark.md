@@ -3,7 +3,7 @@
 **Carpeta:** `./features/perfect-profit-benchmark/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-30
-**Decisión Arquitectónica Asociada:** ADR-0020 V2
+**Decisión Arquitectónica Asociada:** ADR-0020
 
 ---
 
@@ -81,7 +81,7 @@ El Perfect Profit Benchmark es un filtro de eficiencia del modelo (ME). Su misi�
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
     - Perfil: AI / R&D.
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.

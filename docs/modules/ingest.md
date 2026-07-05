@@ -28,11 +28,11 @@ crates/ingest/
 └── types.rs              # Tipos de entrada/salida: RawBar, ValidatedBar, RegimeLabel
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -183,7 +183,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`data-validator`](../features/data-validator.md) para garantizar la integridad física de las barras recibidas.
 *   **Reglas de Orquestación:**
     * Si la validación falla, se aborta la ingesta de la barra y se registra en `data_quality_logs`.
-    * Toda barra aceptada debe recibir un `audit_hash` del orquestador (ADR-0020 V2).
+    * Toda barra aceptada debe recibir un `audit_hash` del orquestador (ADR-0020).
 *   **Entrada:** `raw_market_data`.
 *   **Salida:** `validated_struct_bar`.
 *   **Precondición:** Suscripción al stream del broker activa.
@@ -193,7 +193,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`pit-data-validator`](../features/pit-data-validator.md) para certificar la ausencia de look-ahead bias.
 *   **Reglas de Orquestación:**
     * Verifica que el timestamp sea monótonamente creciente respecto al `last_persisted_bar`.
-    * Se debe inyectar el `process_id` del job de ingesta en cada registro (ADR-0020 V2).
+    * Se debe inyectar el `process_id` del job de ingesta en cada registro (ADR-0020).
 *   **Entrada:** `validated_struct_bar`.
 *   **Salida:** `pit_certified_bar`.
 *   **Precondición:** TTR-001 finalizado exitosamente.
@@ -203,7 +203,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`hmm-regime-detection`](../features/hmm-regime-detection.md) para asignar el contexto de mercado.
 *   **Reglas de Orquestación:**
     * Si el modelo HMM no tiene convergencia, asignar `REGIME_UNKNOWN`.
-    * El veredicto de régimen se vincula al `version_node_id` del modelo (ADR-0020 V2).
+    * El veredicto de régimen se vincula al `version_node_id` del modelo (ADR-0020).
 *   **Entrada:** `pit_certified_bar`, `regime_model`.
 *   **Salida:** `contextualized_bar` (Bar + RegimeID).
 *   **Precondición:** TTR-002 finalizado.
@@ -213,7 +213,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`data-sanitizer-pipeline`](../features/data-sanitizer-pipeline.md) para eliminar ruido estructural y valores atípicos.
 *   **Reglas de Orquestación:**
     * Debe ejecutarse antes de cualquier validación lógica pesada.
-    * Los cambios realizados por el sanitizer deben ser auditables vía `transformation_id` (ADR-0020 V2).
+    * Los cambios realizados por el sanitizer deben ser auditables vía `transformation_id` (ADR-0020).
 *   **Entrada:** `raw_binary_stream`.
 *   **Salida:** `sanitized_data`.
 *   **Precondición:** Recepción de datos crudos.
@@ -234,7 +234,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`sovereign-data-fetcher`](../features/sovereign-data-fetcher.md) para saturar el ancho de banda en descargas masivas.
 *   **Reglas de Orquestación:**
     * Debe priorizar la fuente Bulk si existe para el rango solicitado.
-    * El `process_id` del job de descarga debe ser único y persistente (ADR-0020 V2).
+    * El `process_id` del job de descarga debe ser único y persistente (ADR-0020).
 *   **Entrada:** `symbol_standard_request`.
 *   **Salida:** `raw_segmented_data` (Bulk files + API deltas).
 *   **Precondición:** Espacio en disco validado.
@@ -244,7 +244,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`hybrid-data-transformer`](../features/hybrid-data-transformer.md) para el procesamiento multihilo de millones de filas.
 *   **Reglas de Orquestación:**
     * Monitorea el uso de CPU para no bloquear otros pipelines (ADR-0012).
-    * Toda transformación debe quedar registrada bajo un `logic_hash` único (ADR-0020 V2).
+    * Toda transformación debe quedar registrada bajo un `logic_hash` único (ADR-0020).
 *   **Entrada:** `raw_segmented_data`.
 *   **Salida:** `transformed_dataframe` (Polars).
 *   **Precondición:** TTR-006 finalizado.
@@ -253,7 +253,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 ### **TTR-008: Orquestación de Normalización Multi-Broker (Normalization Layer)**
 *   **Descripción:** Invoca a [`data-normalization-layer`](../features/data-normalization-layer.md) para unificar esquemas de diferentes fuentes.
 *   **Reglas de Orquestación:**
-    * Valida que el `institutional_tag` sea correcto para el mapeo (ADR-0020 V2).
+    * Valida que el `institutional_tag` sea correcto para el mapeo (ADR-0020).
     * Escala precios a la precisión interna predefinida.
 *   **Entrada:** `transformed_dataframe`.
 *   **Salida:** `normalized_golden_source`.
@@ -264,7 +264,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`background-download-manager`](../features/background-download-manager.md) para informar estados a la UI.
 *   **Reglas de Orquestación:**
     * Emite latidos de progreso cada N ms a través del gRPC/WebSocket de orquestación.
-    * Vincula cada sesión de descarga al `owner_id` (ADR-0020 V2).
+    * Vincula cada sesión de descarga al `owner_id` (ADR-0020).
 *   **Entrada:** `download_job_status`.
 *   **Salida:** `ui_progress_updates`.
 *   **Precondición:** TTR-006 iniciado.
@@ -363,7 +363,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * Debe ejecutarse como paso opcional de enriquecimiento tras la normalización.
     * Si se solicita `auto_d`, el orquestador coordina la búsqueda iterativa del orden óptimo.
-    * La serie resultante se persiste en Parquet con el sufijo `_fracdiff` vinculado al `audit_hash` original (ADR-0020 V2).
+    * La serie resultante se persiste en Parquet con el sufijo `_fracdiff` vinculado al `audit_hash` original (ADR-0020).
 *   **Entrada:** `normalized_golden_source`.
 *   **Salida:** `stationary_memory_series`.
 *   **Precondición:** TTR-008 finalizado.
@@ -373,7 +373,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`visual-stockpicker-configurator`](../features/visual-stockpicker-configurator.md) para filtrar dinámicamente el universo de equities.
 *   **Reglas de Orquestación:**
     - Traduce los umbrales numéricos de los sliders de fundamentales/ADTV a consultas DuckDB en caliente.
-    - Registra el `source_id` del universo de activos seleccionado (ADR-0020 V2).
+    - Registra el `source_id` del universo de activos seleccionado (ADR-0020).
 *   **Entrada:** `universe_filter_parameters`.
 *   **Salida:** `filtered_asset_universe_list`.
 *   **Precondición:** Metadatos de activos disponibles en SQLite/Parquet.
@@ -402,7 +402,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * El acceso al proveedor externo se encapsula en el driver de la feature; ningún otro módulo golpea al proveedor directamente (Soberanía, ADR-0126).
     * Cada evento se sella con su instante de publicación vía [`clock`](../features/clock.md) y se valida anti-look-ahead con [`pit-data-validator`](../features/pit-data-validator.md) (ADR-0127).
-    * Una revisión nunca sobrescribe el first-print: se persiste como versión nueva vinculada por `parent_id` (ADR-0020 V2).
+    * Una revisión nunca sobrescribe el first-print: se persiste como versión nueva vinculada por `parent_id` (ADR-0020).
     * Prohibido persistir un score o sentimiento interpretado por el tercero (ADR-0125/0126).
 *   **Entrada:** `raw_fundamental_event` (hecho crudo + linaje del proveedor).
 *   **Salida:** `versioned_fundamental_event` (evento PIT, consultable as-of).
@@ -422,12 +422,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0002: Functional Core / Imperative Shell.
     - ADR-0013: Stack Tecnológico (NautilusTrader).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

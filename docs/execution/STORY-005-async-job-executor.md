@@ -18,7 +18,7 @@
 - **Feature:** [`async-job-executor`](../features/async-job-executor.md)
 - **TTR(s) EN ALCANCE:** TTR-ASYNC-EXECUTOR-001 (job queue Tokio+SQLite), -002 (worker pool), -003 (persistencia jobs/job_results), -004 (recuperación en startup ← **criterio de salida de EPIC-0**), -005 (progreso/estimación), -006 (cancelación).
 - **TTR(s) FUERA DE ALCANCE (secuenciados):** TTR-ASYNC-EXECUTOR-007 (integración con módulos costosos generate/validate/manage/incubate/feedback) — esos módulos no existen aún (EPIC-2+). Entra cuando existan.
-- **ADR(s):** ADR-0011 (operaciones asíncronas), ADR-0016 (Local-First), ADR-0020 V2 (contrato de campos por perfil), ADR-0003 (FCIS).
+- **ADR(s):** ADR-0011 (operaciones asíncronas), ADR-0016 (Local-First), ADR-0020 (contrato de campos por perfil), ADR-0003 (FCIS).
 
 ## 2. Objetivo (una frase llana)
 Una cola de trabajos costosos que se procesan en segundo plano y que, si el sistema se cae de golpe, no pierde ningún trabajo: al reiniciar los recupera del disco y los vuelve a encolar.
@@ -27,7 +27,7 @@ Una cola de trabajos costosos que se procesan en segundo plano y que, si el sist
 ```
 Eres el Rust-Engineer de Drasus Engine. Tarea STORY-005 (Épica 0, la pieza con el criterio de salida de la fase). STORY-001/002/003/004 ya aprobadas: existen el workspace FCIS, el pool SQLite con migraciones, el reloj (puerto Clock) y la bitácora append-only (AuditLogRepository).
 
-PASOS DE ARRANQUE: 1) Lee `.claude/skills/base/SKILL.md` y declara `[base/SKILL.md leído y activo]`. 2) Lee `.claude/skills/rust-engineer/SKILL.md`. 3) Lee `docs/features/async-job-executor.md` COMPLETO. 4) Lee los ADRs citados que necesites (ADR-0011 patrón async, ADR-0016 Local-First, ADR-0020 V2 campos por perfil). 5) Lee el código existente que vas a reusar como patrón, NO reinventes: `crates/shared/src/persistence/pool.rs` (connect/migrate), `migrations/0002_audit_log.sql` (patrón de migración por perfil), `crates/shared/src/persistence/audit_log.rs` (patrón de repositorio + uso del puerto Clock), `crates/shared/src/domain/clock.rs` y `crates/shared/src/lib.rs`/`public_interface.rs`.
+PASOS DE ARRANQUE: 1) Lee `.claude/skills/base/SKILL.md` y declara `[base/SKILL.md leído y activo]`. 2) Lee `.claude/skills/rust-engineer/SKILL.md`. 3) Lee `docs/features/async-job-executor.md` COMPLETO. 4) Lee los ADRs citados que necesites (ADR-0011 patrón async, ADR-0016 Local-First, ADR-0020 campos por perfil). 5) Lee el código existente que vas a reusar como patrón, NO reinventes: `crates/shared/src/persistence/pool.rs` (connect/migrate), `migrations/0002_audit_log.sql` (patrón de migración por perfil), `crates/shared/src/persistence/audit_log.rs` (patrón de repositorio + uso del puerto Clock), `crates/shared/src/domain/clock.rs` y `crates/shared/src/lib.rs`/`public_interface.rs`.
 
 ALCANCE (SOLO esto): TTR-001 (submit con persistencia antes del ack), TTR-002 (worker pool con límite max_concurrent_jobs), TTR-003 (persistencia jobs + job_results), TTR-004 (recuperación en startup), TTR-005 (progreso 0-100 + estimación), TTR-006 (cancelación). FUERA: TTR-007 (integración con módulos generate/validate/etc.) — esos módulos NO existen; NO los toques ni los crees.
 
@@ -35,7 +35,7 @@ UBICACIÓN: el executor es infraestructura transversal -> hogar `crates/shared` 
 - NÚCLEO (domain): la máquina de estados del job pura — transiciones válidas (QUEUED->RUNNING->COMPLETED/FAILED/CANCELLED, RUNNING->QUEUED en recuperación), validación de transición, cálculo de estimación de tiempo. Sin I/O, sin reloj real, sin UUID generado dentro del núcleo (se inyectan, como en audit_log.rs).
 - CÁSCARA (persistence/orchestrator): pool SQLite, generación de UUID, lectura del puerto Clock, el runtime Tokio, los workers, la cola en memoria, la recuperación en startup.
 
-PERSISTENCIA: crea la migración `migrations/0003_jobs.sql` con tablas `jobs` y `job_results`. Aplica el FILTRO DE RELEVANCIA POR PERFIL (ADR-0020 V2): Grupo I universal + EXACTAMENTE los campos que `async-job-executor.md` sección "Gobernanza y Estándares" lista (concurrencia: process_id/session_id/node_id; integridad: audit_chain_hash/logic_hash/event_sequence_id; soberanía: owner_id/access_token_id) + las columnas FUNCIONALES propias (uuid, user_id, job_type, parameters, state, progress, timestamps; y en job_results: job_uuid, result_data, error_message, completed_at). NO calques los 25 campos. `jobs` es mutable (state/progress se actualizan); `job_results` es APPEND-ONLY (sigue el patrón de triggers de `0002_audit_log.sql`: RAISE(ABORT) en UPDATE/DELETE). SQLite WAL. Migración idempotente.
+PERSISTENCIA: crea la migración `migrations/0003_jobs.sql` con tablas `jobs` y `job_results`. Aplica el FILTRO DE RELEVANCIA POR PERFIL (ADR-0020): Grupo I universal + EXACTAMENTE los campos que `async-job-executor.md` sección "Gobernanza y Estándares" lista (concurrencia: process_id/session_id/node_id; integridad: audit_chain_hash/logic_hash/event_sequence_id; soberanía: owner_id/access_token_id) + las columnas FUNCIONALES propias (uuid, user_id, job_type, parameters, state, progress, timestamps; y en job_results: job_uuid, result_data, error_message, completed_at). NO calques los 25 campos. `jobs` es mutable (state/progress se actualizan); `job_results` es APPEND-ONLY (sigue el patrón de triggers de `0002_audit_log.sql`: RAISE(ABORT) en UPDATE/DELETE). SQLite WAL. Migración idempotente.
 
 REGLAS DURAS de la feature:
 - El job se PERSISTE en SQLite ANTES de retornar el UUID (durabilidad; si no, un kill -9 entre el ack y el commit pierde el job).
@@ -49,7 +49,7 @@ CRITERIO DE SALIDA (el gate de toda la Épica 0) — DEBES demostrarlo con tests
 
 VALIDACIÓN GENERAL: `cargo build --workspace`, `cargo clippy --workspace --all-targets -- -D warnings` (CERO warnings), `cargo test -p shared` verde. Tests unitarios del núcleo (máquina de estados: transiciones válidas e inválidas) + los de integración de recuperación.
 
-LÍMITES: Solo STORY-005 (TTR-001..006). NO TTR-007. NO crees módulos de negocio. NO inventes campos fuera de async-job-executor.md / ADR-0020 V2 (si una columna del perfil es ambigua para `jobs` vs `job_results`, repórtalo como BLOQUEO con cita, NO la inventes). NO modifiques `docs/` (eso lo sella el Tech-Lead). NO cambies migraciones 0001/0002. Código y comentarios en inglés.
+LÍMITES: Solo STORY-005 (TTR-001..006). NO TTR-007. NO crees módulos de negocio. NO inventes campos fuera de async-job-executor.md / ADR-0020 (si una columna del perfil es ambigua para `jobs` vs `job_results`, repórtalo como BLOQUEO con cita, NO la inventes). NO modifiques `docs/` (eso lo sella el Tech-Lead). NO cambies migraciones 0001/0002. Código y comentarios en inglés.
 
 ENTREGABLE (repórtamelo): 1) dónde ubicaste el executor y la separación núcleo/cáscara; 2) el esquema de `0003_jobs.sql` (qué columnas, por qué, qué es append-only); 3) cómo garantizas "persistir antes del ack"; 4) la lista de tests (núcleo + recuperación) y qué prueba cada uno; 5) si lograste o no el test de kill -9 real y por qué; 6) salida de build/clippy/test; 7) ambigüedades/bloqueos.
 ```

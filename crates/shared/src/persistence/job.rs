@@ -1,6 +1,6 @@
 //! [SHELL] Repositorio de persistencia para el Async Job Executor
 //! (`docs/features/async-job-executor.md` TTR-ASYNC-EXECUTOR-001/003/004/006,
-//! ADR-0011, ADR-0020 V2).
+//! ADR-0011, ADR-0020).
 //!
 //! Envuelve las tablas `jobs` y `job_results` (migración `0003_jobs.sql`).
 //! Dueño del único I/O para jobs: lecturas/escrituras en SQLite,
@@ -85,7 +85,7 @@ impl From<crate::domain::job::InvalidTransition> for JobRepositoryError {
 }
 
 /// Un job nuevo para persistir (TTR-001 "Entrada": `JobRequest(job_type,
-/// parameters, user_id)`), más los metadatos de ADR-0020 V2 que provee el
+/// parameters, user_id)`), más los metadatos de ADR-0020 que provee el
 /// orquestador al momento del submit.
 #[derive(Debug, Clone)]
 pub struct NewJob {

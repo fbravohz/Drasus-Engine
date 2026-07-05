@@ -3,7 +3,7 @@
 **Carpeta:** `./features/quality-heatmap-generator/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones)
 
 ## ¿Qué es?
 
@@ -65,7 +65,7 @@ Es el componente responsable de auditar la integridad de los datos históricos y
 ### **TTR-002: Generador de Matriz Visual**
 - Desarrolla el servicio que traduce los hallazgos técnicos en coordenadas de color para el componente Heatmap de Flutter.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada escaneo de calidad genera un registro de persistencia filtrado para Datos:
 

@@ -63,7 +63,7 @@ Esta suite de indicadores avanzados se aleja de los promedios estáticos para ad
 - **Qué tiene que pasar:** Crear una capa de abstracción para Open Interest y calcular el HPI.
 - **Criterio de éxito:** Detectar divergencias de volumen 3-5 barras antes de un cambio de tendencia.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada cálculo de indicador porta el set de relevancia técnica para AI/R&D:
 

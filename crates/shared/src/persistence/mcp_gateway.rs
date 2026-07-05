@@ -4,7 +4,7 @@
 //! (append-only, forense) y de la tabla de configuración `mcp_gateway_config`
 //! (estado mutable del interruptor de producción).
 //!
-//! ADR-0020 V2, Perfil D (Ops/Auditoría): Grupo I + Grupo II + Grupo IV +
+//! ADR-0020, Perfil D (Ops/Auditoría): Grupo I + Grupo II + Grupo IV +
 //! 4 campos de dominio propio. Migración: `0005_mcp_gateway.sql`.
 
 use sqlx::{Row, SqlitePool};

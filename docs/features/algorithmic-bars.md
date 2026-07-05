@@ -69,11 +69,11 @@ Permite capturar la estructura micro del mercado que se pierde en las barras est
 *   **Entrada:** `multiple_symbol_streams`.
 *   **Salida:** `synchronized_algo_stream`.
 *   **Precondición:** Reloj del sistema sincronizado vía NTP (ADR-0013).
-*   **Postcondición:** Persistencia con `institutional_tag` y `process_id` (ADR-0020 V2).
+*   **Postcondición:** Persistencia con `institutional_tag` y `process_id` (ADR-0020).
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda barra algorítmica generada registra el set de relevancia técnica para Datos:
 

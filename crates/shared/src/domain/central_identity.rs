@@ -1,5 +1,5 @@
 //! [CORE] Lógica pura de Central Identity (`docs/features/central-identity.md`,
-//! ADR-0143, ADR-0144, ADR-0020 V2).
+//! ADR-0143, ADR-0144, ADR-0020).
 //!
 //! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004). Igual
 //! que en `audit_log`/`telemetry`, el `id` y el timestamp los inyecta la
@@ -33,7 +33,7 @@ pub enum HardwareFingerprintError {
     NoUsableIdentifiers,
 }
 
-/// Calcula la huella de hardware (`node_id` de Grupo IV, ADR-0020 V2) a
+/// Calcula la huella de hardware (`node_id` de Grupo IV, ADR-0020) a
 /// partir de una lista ordenada de identificadores de máquina (ej. UUID de
 /// placa madre, serial de disco, MAC address -- los recolecta la cáscara,
 /// nunca este módulo).
@@ -309,7 +309,7 @@ impl EmailVerificationStatus {
 /// serializado.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AccountIdentity {
-    /// Grupo II ADR-0020 V2: dueño de la cuenta (capital/IP). Para una
+    /// Grupo II ADR-0020: dueño de la cuenta (capital/IP). Para una
     /// cuenta retail individual, es su propio `id`.
     pub owner_id: String,
     /// Correo de la cuenta (no es un secreto -- es el identificador de
@@ -319,10 +319,10 @@ pub struct AccountIdentity {
     /// canónico -- ver [`EmailVerificationStatus::as_str`]).
     #[serde(serialize_with = "serialize_email_verification_status")]
     pub email_verification_status: EmailVerificationStatus,
-    /// Grupo IV ADR-0020 V2: huella de hardware determinista de la
+    /// Grupo IV ADR-0020: huella de hardware determinista de la
     /// instancia vinculada.
     pub node_id: String,
-    /// Grupo II ADR-0020 V2: entorno/etiqueta institucional.
+    /// Grupo II ADR-0020: entorno/etiqueta institucional.
     pub institutional_tag: String,
 }
 

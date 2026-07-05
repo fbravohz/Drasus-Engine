@@ -105,7 +105,7 @@ Proporciona un framework unificado y determinista para el cálculo del tamaño d
     - [ ] Un Manifest con Genoma de Riesgo y Gestión activo puede resolver `RISK_PER_TRADE` a un valor distinto por Gen de Condición de Estado, conservando la Paridad Bit-a-Bit entre backtest y live para cada valor resuelto.
 - **¿Qué no puede pasar?** El cambio de `SIZING_MODE` o de sus parámetros en LIVE nunca ocurre fuera del proceso de resolución de `wildcard_group` y re-compilación del Manifest (ADR-0043).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

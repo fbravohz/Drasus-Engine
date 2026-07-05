@@ -30,11 +30,11 @@ crates/generate/
 └── types.rs              # Tipos de entrada/salida: CandidateGenome, ParetoFront, GenerationConfig
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -200,7 +200,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * El fitness debe evaluarse usando el motor de backtesting certificado (ADR-0013).
     * **Simbiósis:** Si existe una tesis del DRL, el GA hereda su topología y optimiza únicamente los parámetros de seguridad/umbrales.
-    * Cada candidato generado debe incluir el `process_id` del job genético, su `parent_mutation_id` y el `logic_hash` de la tesis base (ADR-0020 V2).
+    * Cada candidato generado debe incluir el `process_id` del job genético, su `parent_mutation_id` y el `logic_hash` de la tesis base (ADR-0020).
 *   **Entrada:** `search_space_config`, `neural_thesis_payload` (opcional).
 *   **Salida:** `pareto_front_candidates`.
 *   **Precondición:** Datos de ingesta validados (Módulo `ingest`) disponibles.
@@ -220,7 +220,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`hmm-regime-detection`](../features/hmm-regime-detection.md) para filtrar candidatos según el clima de mercado.
 *   **Reglas de Orquestación:**
     * Solo candidatos con desempeño balanceado entre regímenes (o etiquetados explícitamente) pasan a validación.
-    * El etiquetado de régimen debe vincularse al `version_node_id` del modelo HMM (ADR-0020 V2).
+    * El etiquetado de régimen debe vincularse al `version_node_id` del modelo HMM (ADR-0020).
 *   **Entrada:** `pareto_front_candidates`, `market_regimes`.
 *   **Salida:** `regime_aware_candidates`.
 *   **Precondición:** TTR-001 finalizado.
@@ -251,7 +251,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * Se debe respetar el límite de VRAM (ADR-0032) activando el fallback a CPU/Rust SIMD/Rayon si es necesario.
     * **Delegación Táctica:** El motor propone la macro-lógica; delega la simetría de ejecución al motor genético para el ajuste de paridad con el broker.
-    * El `model_lineage_id` debe vincularse al `version_node_id` de la estrategia en el DAG (ADR-0020 V2).
+    * El `model_lineage_id` debe vincularse al `version_node_id` de la estrategia en el DAG (ADR-0020).
 *   **Entrada:** `normalized_market_data`, `reward_function_config`.
 *   **Salida:** `neural_alpha_thesis`.
 *   **Precondición:** Módulo `ingest` con datos normalizados disponibles.
@@ -264,7 +264,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * Traduce el grafo lógico en Árboles de Sintaxis Abstracta (AST) que operan sobre matrices vectorizadas (Hardware Accelerated).
     * Cada estrategia debe pasar el check de tipos estrictos antes de ser admitida en el databank.
-    * Genera el `design-manifest` (ADR-0020 V2) que blinda la IP y el contrato de ejecución inmutable.
+    * Genera el `design-manifest` (ADR-0020) que blinda la IP y el contrato de ejecución inmutable.
 *   **Entrada:** `raw_strategy_genome`.
 *   **Salida:** `validated_ast_manifest`.
 *   **Precondición:** TTR-001 o TTR-007 finalizados.
@@ -275,7 +275,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Gestiona la inserción de candidatos en el grafo de versiones [`strategy-versioning`](../features/strategy-versioning.md).
 *   **Reglas de Orquestación:**
     * No se permiten duplicados en el DAG (Content-Addressed Hashing).
-    * Toda nueva raíz de linaje debe portar el `institutional_tag` del experimento (ADR-0020 V2).
+    * Toda nueva raíz de linaje debe portar el `institutional_tag` del experimento (ADR-0020).
 *   **Entrada:** `regime_aware_candidates`.
 *   **Salida:** `version_hashes` (Sha256).
 *   **Precondición:** Reducción de duplicados finalizada.
@@ -285,7 +285,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`ai-dimensionality-suite`](../moonshots/ai-dimensionality-suite.md) para simplificar el espacio de búsqueda de alfas.
 *   **Reglas de Orquestación:**
     * Utiliza PCA o UMAP para detectar redundancia en los indicadores sugeridos.
-    * El proceso de reducción se vincula al `logic_hash` del experimento (ADR-0020 V2).
+    * El proceso de reducción se vincula al `logic_hash` del experimento (ADR-0020).
 *   **Entrada:** `raw_indicator_pool`.
 *   **Salida:** `selected_features_vector`.
 *   **Precondición:** TTR-002 (SQL Discovery) finalizado.
@@ -295,7 +295,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Utiliza [`feature-router`](../features/feature-router.md) para dirigir el flujo de datos hacia los diferentes motores de generación.
 *   **Reglas de Orquestación:**
     * Asegura que cada motor (NSGA/Simbólico nativo) reciba solo los datos necesarios para su transformación.
-    * Las rutas activas se registran en el `audit_hash` del job (ADR-0020 V2).
+    * Las rutas activas se registran en el `audit_hash` del job (ADR-0020).
 *   **Entrada:** `data_stream`, `engine_requirements`.
 *   **Salida:** `routed_data_payloads`.
 *   **Precondición:** Datos normalizados en `ingest` disponibles.
@@ -513,7 +513,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     *   Formular trabajos de minería basados en las configuraciones de espacio de búsqueda y distribuirlos asincrónicamente.
     *   Verificar los resultados recibidos mediante el motor de prueba de trabajo probabilístico antes de guardarlos en el Databank.
-    *   Registrar la firma digital del minero, el ID de hardware, y los metadatos de validación (ADR-0020 V2) en cada candidato inyectado.
+    *   Registrar la firma digital del minero, el ID de hardware, y los metadatos de validación (ADR-0020) en cada candidato inyectado.
 *   **Entrada:** `mining_job_spec`.
 *   **Salida:** `verified_mined_candidates`.
 *   **Precondición:** Protocolo de verificación probabilística de backtests activo en el servidor.
@@ -524,7 +524,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     *   Invoca a [`node-preview`](../features/node-preview.md) para recuperar el caché local de SQLite o despachar el micro-backtest si se requiere.
     *   Maneja eventos de invalidación reactiva sobre el AST e invalida de forma atómica en cascada los nodos dependientes.
-    *   Los metadatos se registran conforme al perfil IA / R&D (ADR-0020 V2).
+    *   Los metadatos se registran conforme al perfil IA / R&D (ADR-0020).
 *   **Entrada:** `node_selection_payload`, `ast_edit_event`.
 *   **Salida:** `cached_node_preview` (JSON blob) o `regeneration_job_id`.
 *   **Precondición:** Canvas del Strategy Inspector activo en Nivel 3.
@@ -586,7 +586,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * El método (Event Study / Surprise) se selecciona por tipo de evento de forma determinista (ADR-0125).
     * Consume el first-print y el consenso previo del [`fundamental-event-store`](../features/fundamental-event-store.md); prohibido usar cifras revisadas (ADR-0127).
-    * El `indicator_state_hash` del coeficiente se persiste para reproducibilidad (ADR-0020 V2).
+    * El `indicator_state_hash` del coeficiente se persiste para reproducibilidad (ADR-0020).
 *   **Entrada:** `versioned_fundamental_event`, serie de precio del activo.
 *   **Salida:** `impact_coefficient` (auditable y reproducible).
 *   **Precondición:** Eventos disponibles en el almacén PIT (TTR-023 de `ingest`).
@@ -628,12 +628,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Git-like (DAG).
     - ADR-0019: Interoperabilidad Rust (Optimización masiva).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 
@@ -651,7 +651,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 - ADR-0008: Configurabilidad Universal (todos los parámetros son ajustables)
 - ADR-0019: Interoperabilidad Rust (motor simbólico nativo/Rust SIMD-Rayon)
-- ADR-0020 V2: Inundación de Fundaciones
+- ADR-0020: Inundación de Fundaciones
 - ADR-0108: Arquitectura de Genomas Modulares por Dominio (TTR-040)
 
 ---

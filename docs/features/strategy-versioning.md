@@ -110,7 +110,7 @@ El Strategy Versioning implementa un sistema de historial completo similar a Git
 *   **Descripción:** Registra un nuevo snapshot de configuración como un nodo inmutable en el grafo (DAG).
 *   **Reglas de Negocio:**
     * El `version_hash` DEBE ser determinista basado en el contenido (Content-Addressed) (ADR-0005).
-    * Toda versión nueva DEBE incluir el `process_id` del generador/usuario (ADR-0020 V2).
+    * Toda versión nueva DEBE incluir el `process_id` del generador/usuario (ADR-0020).
 *   **Entrada:** `config_payload` (JSON), `parent_hash`, `branch_name`.
 *   **Salida:** `version_hash` (Sha256), `node_id`.
 *   **Precondición:** Hash del padre verificado y existente en el DAG.
@@ -120,7 +120,7 @@ El Strategy Versioning implementa un sistema de historial completo similar a Git
 *   **Descripción:** Agrega un `TestResult` al rastro inmutable. Si el sistema detecta que la versión actual es un cambio menor (ej: solo visualización), permite heredar los resultados de robustez (Monte Carlo) de la versión padre para ahorrar cómputo (ADR-0005).
 *   **Reglas de Negocio:**
     * NUNCA permitir el borrado de un test_result una vez persistido.
-    * Todo resultado de test debe incluir el `hardware_fingerprint` del ejecutor (ADR-0020 V2).
+    * Todo resultado de test debe incluir el `hardware_fingerprint` del ejecutor (ADR-0020).
 *   **Entrada:** `version_hash`, `test_payload`, `test_type`, `inherit_from_parent` (bool).
 *   **Postcondición:** El rastro de evidencia en `audit-log` confirma la integridad y el linaje de los resultados.
 
@@ -147,7 +147,7 @@ El Strategy Versioning implementa un sistema de historial completo similar a Git
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada nodo del Grafo de Versiones (DAG) registra el set de relevancia técnica para AI/R&D:
 
@@ -170,7 +170,7 @@ Cada nodo del Grafo de Versiones (DAG) registra el set de relevancia técnica pa
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Reproducible (DAG).
     - ADR-0016: Local-First (Soberanía de propiedad intelectual).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

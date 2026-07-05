@@ -80,9 +80,9 @@ Un registro multi-cuenta y, por cuenta, un track record verificado con su ámbit
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el track record se calcula donde están los datos (Plano de Ejecución); solo el resultado publicado (opt-in) viaja al servidor central. La conexión read-only y sus credenciales nunca salen del Plano de Ejecución.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V (`signature_hash` del track atestado).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V (`signature_hash` del track atestado).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Dos tablas: (1) registro de cuentas —tabla **mutable** (`row_version`, no `event_sequence_id`)— con Grupo I + Perfil D; campos propios fuera del catálogo (marcados): bróker/venue, apalancamiento, divisa, tipo de cuenta, estado de publicación, ámbito(s) de atestación, referencia **no secreta** a la conexión de bróker. (2) track record atestado con Grupo I + Perfil D; campos propios (marcados): tipo/ventana, `signature_hash`, ámbito, referencia a la cuenta. Montos monetarios como **entero ×10⁸** (ADR-0141), nunca `REAL`. `STRICT`, UUIDv7. Multi-tenancy real solo en la Cabina de Mando: se reutiliza `owner_id`, prohibido calcar `tenant_id` (ADR-0144).
 

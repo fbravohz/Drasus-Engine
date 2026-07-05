@@ -68,9 +68,9 @@ La **Suite de Dimensionalidad AI** agrupa algoritmos avanzados para la compresi�
 - **Qué tiene que pasar:** Entrenar un Autoencoder sobre los trades de estrategias aprobadas. Las nuevas candidatas pasan por el AE; si el error es alto, se sospecha de overfitting masivo.
 - **Criterio de éxito:** Identificación de outliers con una precisión del 90% en datasets de prueba con ruido inyectado.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada entrenamiento y proyección registra los campos necesarios para auditoría de modelos e integridad de datos:
 

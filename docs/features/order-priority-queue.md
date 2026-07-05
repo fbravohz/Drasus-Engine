@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/order-priority-queue/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0080, ADR-0020 V2
+**Decisiones Arquitectónicas Asociadas:** ADR-0080, ADR-0020
 
 ---
 
@@ -50,7 +50,7 @@ Se gestiona a través del objeto `OrderPriorityConfig`:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Hot-Path.
+- **Inundación de Fundaciones (ADR-0020):** Perfil Ops / Hot-Path.
     - **I. Identidad & Integridad (universal):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - Obligatorio incluir en cada guardado: `execution_latency_ms` (latencia total desde emisión hasta confirmación), `compliance_status_id` (veredicto de envío exitoso).
 - **Dependencias:** Utilizado primordialmente en `execute`.

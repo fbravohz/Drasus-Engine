@@ -133,8 +133,8 @@ También incluye preparación final para producción: documentación de arranque
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
+- **Inundación de Fundaciones (ADR-0020):** 
+    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020); NO el catálogo completo de 25 campos.
     - Metadatos de infraestructura: `node_id`, `session_id`, `execution_latency_ms` (Benchmark results), `audit_chain_hash`.
     - Integridad de Lógica: `logic_hash` (Code footprint), `process_id`.
     - Soberanía: `owner_id`, `manifest_id`.

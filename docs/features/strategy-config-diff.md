@@ -85,7 +85,7 @@ El `Strategy Config Diff` es una herramienta visual en la interfaz de usuario qu
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `version_node_id`, `parent_id`, `logic_hash`.
+- **Inundación de Fundaciones (ADR-0020):** Perfil IA / R&D. Registra `version_node_id`, `parent_id`, `logic_hash`.
 - **Rastro de Evidencia:** Emite alertas de desincronización de configuraciones al módulo de `feedback`.
 
 ---

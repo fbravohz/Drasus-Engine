@@ -68,9 +68,9 @@ Un documento institucional firmado y trazable, en el formato pedido.
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el reporte se genera donde están los datos (plano de ejecución); puede exponerse por la API de terceros.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II) + subset V (`signature_hash`, `compliance_status_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II) + subset V (`signature_hash`, `compliance_status_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla de reportes generados con Grupo I + Perfil D. Campos propios fuera del catálogo (marcados): tipo de reporte, `signature_hash`, referencia al resultado fuente. `STRICT`, UUIDv7 (ADR-0141).
 

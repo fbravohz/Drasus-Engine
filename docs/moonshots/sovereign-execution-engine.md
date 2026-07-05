@@ -43,5 +43,5 @@ Si este motor llegara a construirse, DEBE soportar cualquier clase de activo fin
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil Ops / Hot-Path: Identidad + Soberanía + Hardware + Latencia (Máximo 1ms en validación pre-trade; orden end-to-end ≤100ms).

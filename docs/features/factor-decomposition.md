@@ -66,7 +66,7 @@ Es el motor analítico encargado de realizar la **"Análisis Forense del Retorno
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. Los factores de riesgo y la sensibilidad del modelo son datos sensibles.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda descomposición registra el set de relevancia técnica para AI/R&D:
 

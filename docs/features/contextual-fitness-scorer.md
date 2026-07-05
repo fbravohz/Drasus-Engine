@@ -93,7 +93,7 @@ Motor de **fitness contextual multi-régimen**. En lugar de un único número es
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Hereda la del cálculo de métricas base.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil B IA/R&D)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil B IA/R&D)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

@@ -89,7 +89,7 @@ Es la pieza que decide, de forma **determinista**, **qué evento fundamental apl
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 **Perfil A. Datos / Ingest:** Identidad (I) + Linaje (III) + Hardware (IV).
 
@@ -121,7 +121,7 @@ Es la pieza que decide, de forma **determinista**, **qué evento fundamental apl
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% local; los vectores de exposición son dato sensible del usuario.
-- **Decisión Arquitectónica Asociada:** ADR-0128 (Relevancia y Normalización por Instrumento), ADR-0020 V2.
+- **Decisión Arquitectónica Asociada:** ADR-0128 (Relevancia y Normalización por Instrumento), ADR-0020.
 
 ---
 

@@ -49,7 +49,7 @@ Es el componente encargado de la integridad estructural de los datos de mercado.
 *   **Entrada:** `raw_bar_data` (Dict/Row).
 *   **Salida:** `is_valid` (bool), `error_code`.
 *   **Precondición:** Datos de entrada mapeados a campos estándar.
-*   **Postcondición:** Registro de la anomalía en `data_quality_logs` con `process_id` (ADR-0020 V2).
+*   **Postcondición:** Registro de la anomalía en `data_quality_logs` con `process_id` (ADR-0020).
 
 ### **TTR-002: Conversor Decimal-to-Integer (Tick-Safe)**
 *   **Descripción:** Convierte precios decimales a `int64` (centavos/ticks) para eliminar errores de coma flotante (ADR-0002).
@@ -59,11 +59,11 @@ Es el componente encargado de la integridad estructural de los datos de mercado.
 *   **Entrada:** `decimal_price`, `tick_size`.
 *   **Salida:** `integer_price` (int64).
 *   **Precondición:** `tick_size` verificado en los metadatos del instrumento.
-*   **Postcondición:** El rastro de auditoría incluye el `scaling_factor` utilizado (ADR-0020 V2).
+*   **Postcondición:** El rastro de auditoría incluye el `scaling_factor` utilizado (ADR-0020).
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reporte de validación y limpieza registra el set de relevancia técnica para ingesta:
 
@@ -85,7 +85,7 @@ Cada reporte de validación y limpieza registra el set de relevancia técnica pa
 - **Decisión Arquitectónica Asociada:**
     - ADR-0002: Arregrística entera para precios (int64).
     - ADR-0013: Stack Tecnológico (Nautilus ready).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

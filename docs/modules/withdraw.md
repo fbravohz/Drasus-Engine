@@ -28,11 +28,11 @@ crates/withdraw/
 └── types.rs              # Tipos de entrada/salida: DegradationAlert, RetirementReason, ArchivalConfirmation
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -131,7 +131,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`performance-monitor`](../features/performance-monitor.md) para detectar anomalías estadísticas en tiempo real.
 *   **Reglas de Orquestación:**
     * Si el Sharpe real cae un 30% bajo el baseline, la estrategia se marca automáticamente como `NEEDS_REVIEW`.
-    * Cada alerta generada debe incluir el `process_id` del monitor de riesgo (ADR-0020 V2).
+    * Cada alerta generada debe incluir el `process_id` del monitor de riesgo (ADR-0020).
 *   **Entrada:** `live_performance_feed`, `strategy_baseline`.
 *   **Salida:** `degradation_alert`.
 *   **Precondición:** Estrategia en estado `OPERATING`.
@@ -141,7 +141,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Gestiona la transición final de la estrategia en [`order-fsm`](../features/order-fsm.md) de `OPERATING` a `RETIRED`.
 *   **Reglas de Orquestación:**
     * No se permite el retiro sin un `ReasonCode` válido (Performance | Regime | User).
-    * El registro de retiro debe persistir el `audit_hash` final del PnL acumulado (ADR-0020 V2).
+    * El registro de retiro debe persistir el `audit_hash` final del PnL acumulado (ADR-0020).
 *   **Entrada:** `decommission_order`, `retirement_reason`.
 *   **Salida:** `archival_confirmation`.
 *   **Precondición:** Todas las posiciones de la estrategia cerradas en el broker.
@@ -151,7 +151,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`regime-guard`](../features/regime-guard.md) para verificar si el entorno sigue siendo apto.
 *   **Reglas de Orquestación:**
     * Si el régimen HMM cambia a un estado no apto para la estrategia, se fuerza la transición a `PAUSED`.
-    * El evento de desajuste se vincula al `version_node_id` del modelo de mercado actual (ADR-0020 V2).
+    * El evento de desajuste se vincula al `version_node_id` del modelo de mercado actual (ADR-0020).
 *   **Entrada:** `current_market_regime`, `strategy_regime_constraints`.
 *   **Salida:** `alignment_status` (ALIGNED | MISMATCH).
 *   **Precondición:** Feed de régimen de mercado actualizado (Módulo `ingest`).
@@ -232,12 +232,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento (Cierre de linaje).
     - ADR-0010: Hard Limits (Pausa por riesgo).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

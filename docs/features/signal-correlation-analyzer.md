@@ -176,7 +176,7 @@ Calcula matrices de correlación entre señales (señal vs señal) y entre seña
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

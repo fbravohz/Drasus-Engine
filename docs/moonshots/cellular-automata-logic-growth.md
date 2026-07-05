@@ -37,6 +37,6 @@ Generación de ramificaciones lógicas de estrategia mediante la matemática de 
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
-- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) por cada experimento de crecimiento.
+## Gobernanza y Estándares (ADR-0020)
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020) por cada experimento de crecimiento.
 - **Relegación:** Conservado como hipótesis de R&D no descartada. La función de poda operativa ya está cubierta por features de producción (`rule-ablation`, `vector-time-pruning`).

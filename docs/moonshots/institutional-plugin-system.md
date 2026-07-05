@@ -92,7 +92,7 @@ El sistema de plugins y su comercialización se rige de forma estricta por la **
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Ops / Auditoría
 | Categoría | Campo | Descripción |

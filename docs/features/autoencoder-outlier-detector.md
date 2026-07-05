@@ -131,7 +131,7 @@ El modelo neural se implementa con una arquitectura de perceptrón multicapa (ML
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

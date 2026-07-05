@@ -87,7 +87,7 @@ Permite empaquetar de forma automatizada y con un solo clic el Grafo de Lógica 
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Ops / Hot-Path
 | Categoría | Campo | Descripción |

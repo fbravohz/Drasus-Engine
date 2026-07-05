@@ -57,7 +57,7 @@ Motor de valoración de opciones financieras que calcula el precio teórico (fai
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil IA / R&D: Identidad + Soberanía + Pesos/Arquitectura + Hardware. Registro del modelo de pricing activo, la IV surface utilizada y las griegas calculadas.
 
 ---

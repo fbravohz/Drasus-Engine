@@ -36,5 +36,5 @@ Orquestador visual de **datos alternativos** que reemplaza la simple tabla de s�
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil Datos / Ingest: Identidad + Linaje de Datos + Hardware. Linaje obligatorio de cada fuente alternativa (proveedor, latencia de publicación, licencia).

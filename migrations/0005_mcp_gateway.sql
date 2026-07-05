@@ -1,5 +1,5 @@
 -- Migración 0005: Gateway MCP (docs/features/agentic-mcp-gateway.md, ADR-0123,
--- ADR-0020 V2 Perfil D — Ops/Auditoría)
+-- ADR-0020 Perfil D — Ops/Auditoría)
 --
 -- Crea dos tablas:
 --   - `permission_decisions`: log inmutable de cada decisión de permiso
@@ -17,7 +17,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS permission_decisions (
-    -- Grupo I: Identidad & Integridad (universal, ADR-0020 V2)
+    -- Grupo I: Identidad & Integridad (universal, ADR-0020)
     id                          TEXT    PRIMARY KEY NOT NULL, -- UUID v4
     created_at                  INTEGER NOT NULL,             -- Nanosegundos desde epoch
     updated_at                  INTEGER NOT NULL,             -- = created_at (append-only)

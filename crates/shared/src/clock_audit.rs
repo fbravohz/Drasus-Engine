@@ -5,7 +5,7 @@
 //! emiten a través del puerto existente del Audit Log
 //! ([`crate::domain::audit_log::AuditEventContent`] +
 //! [`crate::persistence::audit_log::AuditLogRepository::append`]) — no se
-//! crea ninguna tabla nueva (ADR-0020 V2 Perfil D, "Ops / Auditoría").
+//! crea ninguna tabla nueva (ADR-0020 Perfil D, "Ops / Auditoría").
 //!
 //! Este módulo hace I/O (escribe en SQLite a través de
 //! [`AuditLogRepository`]), por eso vive en la cáscara y no en
@@ -30,13 +30,13 @@
 //!
 //! - `entity_type` siempre es `"CLOCK"`; `entity_id` es el `session_id` de
 //!   la sesión activa (también viaja en el campo de catálogo
-//!   `session_id` del Grupo IV de ADR-0020 V2).
+//!   `session_id` del Grupo IV de ADR-0020).
 //! - `institutional_tag` (Grupo II) y `process_id` (Grupo IV) son campos
 //!   de catálogo obligatorios según el perfil "Ops / Auditoría" — ambos
 //!   los provee quien llama (el runtime dueño de la sesión activa).
 //! - Los tres campos antes huérfanos (`ntp_sync_offset`, el identificador
 //!   de proceso virtual de la simulación, y el delta acumulado
-//!   real/virtual) NO son columnas de catálogo de ADR-0020 V2: viajan
+//!   real/virtual) NO son columnas de catálogo de ADR-0020: viajan
 //!   como payload opaco `details_json` del evento, serializados con
 //!   `serde_json` usando un orden de claves estable (alfabético).
 //! - El Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`,
@@ -74,7 +74,7 @@ impl ClockMode {
 ///
 /// - `session_id` se convierte tanto en el `entity_id` del evento
 ///   (`entity_type = "CLOCK"`) como en su campo de catálogo `session_id`
-///   del Grupo IV de ADR-0020 V2 — "el campo canónico para agrupar un
+///   del Grupo IV de ADR-0020 — "el campo canónico para agrupar un
 ///   runtime" (TTR-002).
 /// - `institutional_tag` (Grupo II) y `process_id` (Grupo IV) son
 ///   obligatorios según el perfil "Ops / Auditoría" (audit-log.md
@@ -88,7 +88,7 @@ pub struct ClockAuditContext<'a> {
 }
 
 impl ClockAuditContext<'_> {
-    /// Construye los campos de catálogo "Ops / Auditoría" de ADR-0020 V2
+    /// Construye los campos de catálogo "Ops / Auditoría" de ADR-0020
     /// compartidos por los tres eventos del Clock, dejando que cada
     /// función `emit_*` complete `action_type` y `details_json`.
     fn base_content(&self, action_type: &str, details_json: String) -> AuditEventContent {
@@ -116,7 +116,7 @@ impl ClockAuditContext<'_> {
 ///
 /// `ntp_sync_offset_ns` es el delta NTP medido (ADR-0013), que viaja como
 /// payload opaco en `details_json`: `{"ntp_sync_offset_ns": <i64>}`. NO es
-/// un campo de catálogo de ADR-0020 V2.
+/// un campo de catálogo de ADR-0020.
 pub async fn emit_ntp_sync(
     repo: &AuditLogRepository<'_>,
     ctx: &ClockAuditContext<'_>,
@@ -154,7 +154,7 @@ pub async fn emit_mode_transition(
 /// simulación (TTR-002: "El identificador del proceso virtual de la
 /// simulación viaja como payload"). `real_virtual_delta_ns` es el delta
 /// acumulado entre tiempo real y virtual. Ninguno de los dos es un campo
-/// de catálogo de ADR-0020 V2; ambos viajan en `details_json`:
+/// de catálogo de ADR-0020; ambos viajan en `details_json`:
 /// `{"real_virtual_delta_ns": <i64>, "virtual_process_id": <string>}`.
 pub async fn emit_session_close(
     repo: &AuditLogRepository<'_>,

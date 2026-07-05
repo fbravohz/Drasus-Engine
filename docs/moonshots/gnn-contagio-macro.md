@@ -32,5 +32,5 @@ Modelado de mercados financieros como grafos dinámicos utilizando Graph Neural 
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
-- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para cada inferencia sobre la estructura del grafo macro.
+## Gobernanza y Estándares (ADR-0020)
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020) para cada inferencia sobre la estructura del grafo macro.

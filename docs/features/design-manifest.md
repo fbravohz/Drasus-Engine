@@ -91,7 +91,7 @@ Además de actuar como filtro, el Design Manifest opera como un **Envoltorio de 
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada veredicto de calidad registra el set de relevancia técnica para AI/R&D:
 

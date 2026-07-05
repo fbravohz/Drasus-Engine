@@ -18,7 +18,7 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 - [ ] **Inventory Reconstruction:** Tras un crash, el sistema lee el Event Store para recuperar órdenes abiertas y posiciones de broker en < 10s.
 - [ ] **User Veto Power (REVERT):** El usuario puede revertir cualquier acción ejecutada automáticamente por el Autopilot desde el Dashboard.
 - [ ] **Auto-Auditoría (P1):** Compara spreads reales en el momento del evento contra spreads esperados históricos (Pardo Profile).
-- [ ] **Compliance Ready:** Exporta el historial forense en formatos legibles para reguladores (ADR-0020 V2).
+- [ ] **Compliance Ready:** Exporta el historial forense en formatos legibles para reguladores (ADR-0020).
 
 ---
 
@@ -48,7 +48,7 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil D Ops/Auditoría)
 
 Es el registro forense en sí. Perfil D (Auditoría = I + II + IV + V Gobernanza/Cumplimiento):
 

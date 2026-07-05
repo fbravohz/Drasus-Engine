@@ -70,7 +70,7 @@ pub struct DrasusGateway {
     pool: SqlitePool,
     /// Identificador de sesión del agente MCP conectado (UUID v4 generado al arrancar).
     agent_session_id: StdArc<str>,
-    /// Hostname del nodo donde corre el Gateway (ADR-0020 V2, Grupo IV).
+    /// Hostname del nodo donde corre el Gateway (ADR-0020, Grupo IV).
     node_id: StdArc<str>,
 }
 
@@ -361,7 +361,7 @@ pub async fn run_mcp_server(pool: SqlitePool) -> anyhow::Result<()> {
     // UUID de la sesión de este servidor MCP (identifica al agente en el audit log).
     let agent_session_id = uuid::Uuid::new_v4().to_string();
 
-    // Hostname del nodo (Grupo IV de ADR-0020 V2).
+    // Hostname del nodo (Grupo IV de ADR-0020).
     let node_id = hostname::get()
         .map(|h| h.to_string_lossy().into_owned())
         .unwrap_or_else(|_| format!("node-pid-{}", std::process::id()));

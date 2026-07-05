@@ -50,7 +50,7 @@ Resuelve la frustrante curva de aprendizaje de ensamblar bloques visuales manual
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Soberanía Asistida:** Permite LLM en Cloud pero el backend de validación y la lógica final operan localmente.
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — linaje prompt→AST (II + III subset + IV).
+- **Inundación de Fundaciones (ADR-0020): Perfil B (IA / R&D)** — linaje prompt→AST (II + III subset + IV).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

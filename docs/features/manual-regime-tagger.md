@@ -92,7 +92,7 @@ Herramienta de **etiquetado visual manual de regímenes históricos**. Complemen
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Hereda la del backtest que evalúa cada zona.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil Ops/Auditoría)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil Ops/Auditoría)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

@@ -82,13 +82,13 @@ A diferencia de los agregadores estándar que se limitan a potencias de tiempo f
 *   **Entrada:** `source_data` (ticks/1m bars), `interval_seconds`, `anchor_point`.
 *   **Salida:** `aggregated_ohlcv` (Arrow/DataFrame).
 *   **Precondición:** Datos fuente validados por `data-validator`.
-*   **Postcondición:** Emisión de `audit_hash` del resultado final para reconciliación (ADR-0020 V2).
+*   **Postcondición:** Emisión de `audit_hash` del resultado final para reconciliación (ADR-0020).
 
 ### **TTR-002: Lógica de Continuidad y Relleno de Gaps**
 *   **Descripción:** Gestiona periodos sin actividad de mercado según la `GAP_FILL_POLICY`.
 *   **Reglas de Negocio:**
     * Si la política es `forward_fill`, la barra resultante debe marcarse con `is_synthetic=True`.
-    * Toda barra sintética debe incluir el `process_id` del job generador (ADR-0020 V2).
+    * Toda barra sintética debe incluir el `process_id` del job generador (ADR-0020).
 *   **Entrada:** `aggregated_ohlcv`, `gap_policy`.
 *   **Salida:** `continuous_ohlcv_stream`.
 *   **Precondición:** TTR-001 finalizado.
@@ -96,7 +96,7 @@ A diferencia de los agregadores estándar que se limitan a potencias de tiempo f
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada barra temporal regenerada registra el set de relevancia técnica para Datos:
 
@@ -117,7 +117,7 @@ Cada barra temporal regenerada registra el set de relevancia técnica para Datos
 - **Decisión Arquitectónica Asociada:**
     - ADR-0002: Desacoplamiento de Persistencia (Precios enteros).
     - ADR-0013: Stack Tecnológico (NautilusTrader ready).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

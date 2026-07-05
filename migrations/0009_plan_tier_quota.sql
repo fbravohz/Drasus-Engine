@@ -1,5 +1,5 @@
 -- Migración 0009: Plan / Tier / Quota (docs/features/plan-tier-quota.md,
--- ADR-0144, ADR-0143, ADR-0141, ADR-0020 V2, STORY-029)
+-- ADR-0144, ADR-0143, ADR-0141, ADR-0020, STORY-029)
 --
 -- Crea la tabla `plans`: cimiento #3 del substrato de monetización
 -- (ADR-0144). Cada fila es UN PLAN del catálogo -- dato, no código: define
@@ -19,7 +19,7 @@
 -- audita en `audit_events` (feature `audit-log` ya existente, migración
 -- 0002) -- esta tabla NO es su propio historial, solo el estado vigente.
 --
--- Perfil ADR-0020 V2 para esta tabla (Perfil D "Ops/Auditoría", declarado
+-- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", declarado
 -- en `docs/features/plan-tier-quota.md` §"Gobernanza y Estándares" y
 -- STORY-029 §3 -- SIN el subset de Grupo V que sí lleva `licenses`, porque
 -- un plan no es, en sí mismo, un veredicto forense):
@@ -36,7 +36,7 @@
 --     hardware de usuario).
 -- El Grupo III (Linaje Alpha & Datos) y el subset de Grupo V de gobernanza
 -- forense NO aplican (un plan no tiene linaje genómico ni es un veredicto
--- de cumplimiento) y se omiten a propósito (ADR-0020 V2 "Aplicación":
+-- de cumplimiento) y se omiten a propósito (ADR-0020 "Aplicación":
 -- "PROHIBIDO copy-paste masivo").
 --
 -- Columnas propias de la Feature (fuera del contrato de 25 campos):
@@ -76,7 +76,7 @@
 -- NOT EXISTS` hacen que volver a correr esta migración sea un no-op.
 
 CREATE TABLE IF NOT EXISTS plans (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2; row_version en vez
+    -- I. Identidad & Integridad (universal, ADR-0020; row_version en vez
     -- de event_sequence_id por ser tabla mutable, ADR-0141).
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUIDv7 (Uuid::now_v7())
     created_at         INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)

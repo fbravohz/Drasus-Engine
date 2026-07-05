@@ -86,7 +86,7 @@ Permite exportar y traducir de forma nativa la lógica del Grafo de Lógica visu
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Ops / Auditoría
 | Categoría | Campo | Descripción |

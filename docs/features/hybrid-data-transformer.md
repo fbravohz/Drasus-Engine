@@ -69,7 +69,7 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 
 - **Local-First (ADR-0016):** 100% Local (procesamiento In-Memory / Out-of-Core).
 - **Fidelidad (ADR-0017):** Alta (precisión float64).
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada ejecución de transformación registra el set de relevancia técnica para Datos:
 

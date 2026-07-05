@@ -34,7 +34,7 @@ Para asegurar que el pipeline sea reproducible y agnóstico, se definen los sigu
 ### Observabilidad
 
 - **Propiedades:** Latencia p99 < 100ms (NautilusTrader), Throughput competitivo (más rápido que MT5/SQX/QuantConnect en igual hardware vía Polars Native, sin KPI absoluto — ADR-0114), disponibilidad local 100%.
-- **Foundation Inundation (ADR-0020 V2):** Inyección de hooks tempranos para evitar refactorizaciones futuras. El esquema de base de datos es **Distribuidor y Basado en Requisitos**: cada Feature define su propio contrato de persistencia en su archivo `.md`, pero todas deben obedecer el **Contrato Global** definido en [ADR-0020 V2](../adr/ADR-0020.md).
+- **Foundation Inundation (ADR-0020):** Inyección de hooks tempranos para evitar refactorizaciones futuras. El esquema de base de datos es **Distribuidor y Basado en Requisitos**: cada Feature define su propio contrato de persistencia en su archivo `.md`, pero todas deben obedecer el **Contrato Global** definido en [ADR-0020](../adr/ADR-0020.md).
 - **Registro de eventos Estructurado:** Definido en [`telemetry.md`](../features/telemetry.md) (en JSON, rastreable).
 - **Métricas:** Latencia de ingesta, rendimiento de señales, órdenes por segundo, cambio de rendimiento, drawdown actual.
 * **Métricas Desacopladas por Módulo:** Cada módulo expone sus propias métricas de forma independiente; la feature `telemetry` las recolecta dinámicamente. 

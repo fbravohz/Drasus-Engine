@@ -121,7 +121,7 @@ El **Portfolio Backtest** es el componente de simulación avanzada encargado de 
 
 ## Gobernanza y Estándares (Fijos)
 
-### Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+### Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda corrida de simulación de portafolio registra los metadatos de relevancia técnica para AI/R&D (Perfil IA / R&D):
 

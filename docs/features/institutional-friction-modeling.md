@@ -74,7 +74,7 @@ El motor de **Institutional Friction Modeling** inyecta realismo probabilístico
 
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Institucional (Pardo Penetration).
-- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil B (IA / R&D)** — modela fricción institucional como parte del R&D de validación.
+- **Inundación de Fundaciones (ADR-0020):** **Perfil B (IA / R&D)** — modela fricción institucional como parte del R&D de validación.
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

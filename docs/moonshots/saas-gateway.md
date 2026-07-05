@@ -3,7 +3,7 @@
 **Carpeta:** `./moonshots/saas-gateway/`  
 **Estado:** Archivada como Moonshot  
 **Última actualización:** 2026-06-04  
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)  
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones)  
 
 ---
 
@@ -108,7 +108,7 @@ El Gateway central de acceso regula los flujos de comunicación externa en la nu
 ## 8. Gobernanza y Estándares (Fijos)
 
 * **Local-First (ADR-0016):** No aplica a esta feature de nube (exclusivo para modelo distribuido comercial SaaS).
-* **Inundación de Fundaciones (ADR-0020 V2):**
+* **Inundación de Fundaciones (ADR-0020):**
   * **Perfil Ops / Auditoría:** Enfoque en la Soberanía de los Datos de Acceso, Identidad de Conexión y Hardware del Gateway.
   * **Hooks Forenses:** Registro inmutable de eventos de acceso denegado por IP y usuario con marcas de tiempo.
 * **Contrato de Persistencia:**  

@@ -1,12 +1,12 @@
 -- Migración 0004: Telemetría (docs/features/telemetry.md TTR-001, ADR-0015,
--- ADR-0020 V2)
+-- ADR-0020)
 --
 -- Crea la tabla `telemetry_samples`: muestras de latencia de hot-path y de
 -- señal de vida (heartbeat) de los procesos en segundo plano (ADR-0015:
 -- la telemetría es evidencia de infraestructura, distinta del audit-log de
 -- negocio).
 --
--- Perfil de campos ADR-0020 V2 para esta tabla (perfil técnico, igual que
+-- Perfil de campos ADR-0020 para esta tabla (perfil técnico, igual que
 -- declara la tabla "Persistencia" de la Feature):
 --   - Grupo I  (Identidad & Integridad, UNIVERSAL): id, created_at,
 --     updated_at, audit_hash, audit_chain_hash, event_sequence_id.
@@ -16,7 +16,7 @@
 --     execution_latency_ms.
 -- Los Grupos restantes (Soberanía completa más allá de institutional_tag,
 -- Linaje Alpha más allá de logic_hash, Forense & Ejecución) NO aplican al
--- perfil de esta tabla y se omiten a propósito (ADR-0020 V2 "Aplicación":
+-- perfil de esta tabla y se omiten a propósito (ADR-0020 "Aplicación":
 -- "PROHIBIDO copy-paste masivo").
 --
 -- Columnas propias de la Feature (fuera del contrato de 25 campos, mismo
@@ -35,7 +35,7 @@
 -- NOT EXISTS` hacen que volver a correr esta migración sea un no-op.
 
 CREATE TABLE IF NOT EXISTS telemetry_samples (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2)
+    -- I. Identidad & Integridad (universal, ADR-0020)
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUID
     created_at         INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)
     updated_at         INTEGER NOT NULL,             -- Nanosegundos desde epoch; inmutable tras insertar => igual a created_at

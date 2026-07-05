@@ -154,7 +154,7 @@ Filtra señales de trading para detectar aquellas que son ortogonales (independi
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

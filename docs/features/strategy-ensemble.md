@@ -168,7 +168,7 @@ Orquesta canales (NSGA-II, Simbólico, HMM) en estrategias híbridas mediante **
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

@@ -3,7 +3,7 @@
 **Carpeta:** `./moonshots/monetization-stripe/`  
 **Estado:** Archivada como Moonshot  
 **Última actualización:** 2026-06-04  
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)  
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones)  
 
 ---
 
@@ -103,7 +103,7 @@ El sistema de monetización conecta el ecosistema de facturación externa (Strip
 ## 8. Gobernanza y Estándares (Fijos)
 
 * **Local-First (ADR-0016):** No aplica. Feature de control centralizado de facturación en la nube.
-* **Inundación de Fundaciones (ADR-0020 V2):**
+* **Inundación de Fundaciones (ADR-0020):**
   * **Perfil Ops / Auditoría:** Foco en la Soberanía de los Datos Financieros y la Identidad de Facturación.
   * **Hooks Forenses:** Registro de reintentos de webhooks y discrepancias de facturación en la base de datos analítica del backend de la nube.
 * **Contrato de Persistencia:**  

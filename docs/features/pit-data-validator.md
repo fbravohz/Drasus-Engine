@@ -105,7 +105,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 *   **Descripción:** Verifica relaciones lógicas (O<H, L<H, Close ∈ [L,H]) para evitar datos físicamente imposibles.
 *   **Reglas de Negocio:**
     * Los precios deben ser `int64` (centavos/ticks) para consistencia (ADR-0002).
-    * Toda barra invalidada DEBE incluir el `audit_hash` del dataset original (ADR-0020 V2).
+    * Toda barra invalidada DEBE incluir el `audit_hash` del dataset original (ADR-0020).
 *   **Entrada:** `ohlcv_data` (Arrow/DataFrame).
 *   **Salida:** `is_structurally_sound` (bool), `violation_report`.
 *   **Precondición:** Stream de datos cargado en memoria.
@@ -123,7 +123,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos:
 
@@ -145,7 +145,7 @@ Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos
 - **Decisión Arquitectónica Asociada:**
     - ADR-0013: Stack Tecnológico (Nautilus/Polars).
     - ADR-0017: Simulación de Alta Fidelidad (PIT-real).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

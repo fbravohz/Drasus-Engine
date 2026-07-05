@@ -68,7 +68,7 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 
 - **Local-First (ADR-0016):** 100% Local (lógica de transformación).
 - **Fidelidad (ADR-0017):** Alta (normalización sin pérdida de precisión).
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada mapeo de símbolo registra el set de relevancia técnica para Datos:
 

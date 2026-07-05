@@ -123,7 +123,7 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reporte de incubación y sesión activa registra el set de relevancia técnica. **Perfil B (IA/R&D), híbrido B+latencia** (lleva linaje III de la estrategia incubada + telemetría de latencia):
 

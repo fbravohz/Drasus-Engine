@@ -74,9 +74,9 @@ Un evento estructurado en el bus + en el event-store local, opcionalmente replic
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** emisión y persistencia local; envío al proveedor condicionado por tier.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`, `process_id`, `session_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`, `process_id`, `session_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Event-store append-only (`event_sequence_id UNIQUE`, `audit_chain_hash` encadenado, NULL en génesis) con Grupo I + Perfil D. Campo propio fuera del catálogo (marcado): tipo de evento (`TEXT` con `CHECK`), payload estructurado (`TEXT` con `json_valid`). El `CHECK` del tipo de evento incluye los subtipos nuevos de ADR-0145 (flujo de capital, snapshot de estado de cuenta) además de los previos. Montos monetarios (flujo de capital, equity/balance/margen del snapshot) como **entero ×10⁸**, nunca `REAL` (ADR-0141). Reutiliza el patrón de `audit-log`/`telemetry` (ADR-0141). `STRICT`, UUIDv7.
 

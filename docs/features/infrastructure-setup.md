@@ -65,7 +65,7 @@ Es como construir la cimentación de una casa antes de levantar las paredes.
 ### **TTR-002: Motor de Migraciones e Inundación de Esquemas (ADR-0006/0020)**
 *   **Descripción:** Sistema de persistencia evolutiva con hooks de auditoría institucional.
 *   **Reglas de Negocio:**
-    * Toda tabla DEBE incluir el Grupo I (universal) + los campos del Perfil Técnico que corresponda (Filtro de Relevancia, ADR-0020 V2); NUNCA los 25 campos calcados.
+    * Toda tabla DEBE incluir el Grupo I (universal) + los campos del Perfil Técnico que corresponda (Filtro de Relevancia, ADR-0020); NUNCA los 25 campos calcados.
     * Migraciones irreversibles (data-loss) requieren confirmación de `force` flag.
 *   **Entrada:** `MigrationsDir`, `SQLXSchemaDefinitions`.
 *   **Salida:** `DatabaseSchema (Ready)`.
@@ -85,8 +85,8 @@ Es como construir la cimentación de una casa antes de levantar las paredes.
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Las tablas base del sistema (`system_settings`, `jobs`, `logs`) aplican el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
+- **Inundación de Fundaciones (ADR-0020):** 
+    - Las tablas base del sistema (`system_settings`, `jobs`, `logs`) aplican el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020); NO el catálogo completo de 25 campos.
     - Metadatos de hardware y cimiento: `node_id`, `logic_hash`, `audit_chain_hash`, `event_sequence_id`.
     - Soberanía central: `owner_id`, `manifest_id`.
 
@@ -94,7 +94,7 @@ Es como construir la cimentación de una casa antes de levantar las paredes.
     - ADR-0003: Estructura Modular.
     - ADR-0011: Operaciones Asincrónicas.
     - ADR-0013: Stack Tecnológico (SQLite WAL).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

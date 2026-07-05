@@ -63,7 +63,7 @@ Componente de alta velocidad encargado de validar cada orden contra **11 filtros
 *   **Reglas de Negocio:**
     * Si CUALQUIER check falla, la orden se marca como `REJECTED` y no sale al broker.
     * El veredicto de robustez se valida contra el estado inmutable registrado para el hash de versión de la estrategia.
-    * El veredicto debe incluir el `audit_hash` del estado actual (ADR-0020 V2).
+    * El veredicto debe incluir el `audit_hash` del estado actual (ADR-0020).
 *   **Entrada:** `Order`, `AccountState`, `MarketState`.
 *   **Salida:** `bool` (is_safe), `error_code`, `failed_check_id`.
 *   **Precondición:** Memoria compartida con estados de cuenta actualizada.
@@ -73,7 +73,7 @@ Componente de alta velocidad encargado de validar cada orden contra **11 filtros
 *   **Descripción:** Garantiza que los checks se ejecuten en tiempo récord usando lógica vectorizada o Rust SIMD/Rayon.
 *   **Reglas de Negocio:**
     * NUNCA realizar I/O de disco o red dentro del pipeline de validación.
-    * Se debe registrar la `latency_ns` de cada check para auditoría institucional (ADR-0020 V2).
+    * Se debe registrar la `latency_ns` de cada check para auditoría institucional (ADR-0020).
 *   **Entrada:** `PerformanceProfiler`.
 *   **Salida:** `MetricsSummary`.
 *   **Precondición:** Motor de validación pre-compilado en el arranque del sistema.
@@ -81,7 +81,7 @@ Componente de alta velocidad encargado de validar cada orden contra **11 filtros
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda validación pre-milio registra el set de relevancia técnica para AI/R&D:
 
@@ -103,7 +103,7 @@ Toda validación pre-milio registra el set de relevancia técnica para AI/R&D:
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: FSM para registro de rechazos atómicos.
     - ADR-0010: Hard Limits (Checks de riesgo).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

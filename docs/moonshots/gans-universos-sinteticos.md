@@ -32,5 +32,5 @@ Generative Adversarial Networks (GANs) entrenadas para generar microestructura d
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
-- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para cada ciclo de entrenamiento e inferencia sintética.
+## Gobernanza y Estándares (ADR-0020)
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020) para cada ciclo de entrenamiento e inferencia sintética.

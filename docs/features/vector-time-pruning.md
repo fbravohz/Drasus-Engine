@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/vector-time-pruning/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0046, ADR-0020 V2, ADR-0108, ADR-0110
+**Decisiones Arquitectónicas Asociadas:** ADR-0046, ADR-0020, ADR-0108, ADR-0110
 
 ---
 
@@ -59,7 +59,7 @@ Convierte datos estadísticos anómalos (positivos o negativos) en vetos físico
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
     - Perfil: Ops / Auditoría.
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.

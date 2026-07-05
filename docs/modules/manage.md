@@ -28,11 +28,11 @@ crates/manage/
 └── types.rs              # Tipos de entrada/salida: PortfolioState, WeightsVector, RebalanceTrigger
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -163,7 +163,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * La suma de pesos DEBE ser exactamente 1.0 (100%).
     * La inyección de pesos para D-Score aplica normalizaciones basadas en la volatilidad macro para modular el riesgo de cola.
-    * Cada cálculo de rebalanceo debe registrar el `process_id` del job y el `audit_hash` correspondiente en la base de datos (ADR-0020 V2).
+    * Cada cálculo de rebalanceo debe registrar el `process_id` del job y el `audit_hash` correspondiente en la base de datos (ADR-0020).
 *   **Entrada:** `active_strategies_list`, `optimization_method`, `atr_multiplier`.
 *   **Salida:** `optimal_weights_vector`.
 *   **Precondición:** Estrategias promovidas desde el módulo `incubate` en estado `OPERATING`.
@@ -173,7 +173,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`portfolio-rules`](../features/portfolio-rules.md) para imponer límites soberanos al portafolio y validar las restricciones del challenge o gestión de capital global.
 *   **Reglas de Orquestación:**
     * Los límites del portafolio (Hard Limits, Drawdown Diario Regla de Medianoche, Trailing Drawdown, News Blackouts) invalidan cualquier límite de estrategia individual.
-    * Todo bloqueo de órdenes debe vincularse al `institutional_tag` de cumplimiento (ADR-0020 V2).
+    * Todo bloqueo de órdenes debe vincularse al `institutional_tag` de cumplimiento (ADR-0020).
 *   **Entrada:** `proposed_portfolio_state`, `hard_limits_config`, `challenge_profile`.
 *   **Salida:** `compliance_verdict` (ALLOW | BLOCK).
 *   **Precondición:** Pesos optimizados (TTR-001).
@@ -184,7 +184,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`hmm-regime-detection`](../features/hmm-regime-detection.md) para ajustar el perfil de riesgo según el mercado.
 *   **Reglas de Orquestación:**
     * En regímenes de `VOL_EXPANSION`, se deben aplicar factores de reducción de capital (De-risking).
-    * El ajuste de riesgo se registra con el `version_node_id` del modelo HMM (ADR-0020 V2).
+    * El ajuste de riesgo se registra con el `version_node_id` del modelo HMM (ADR-0020).
 *   **Entrada:** `current_market_regime`.
 *   **Salida:** `risk_multiplier_adjustment`.
 *   **Precondición:** Datos de mercado en tiempo real sincronizados.
@@ -458,7 +458,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 ### **TTR-035: Orquestación de Acceso Agéntico vía MCP (Cabina Dual — Permiso Condicionado)**
 *   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.
 *   **Reglas de Orquestación:**
-    * `manage` no separa una porción de producción en su lógica (los mismos TTR de pesos/reglas operan igual para cualquier portafolio); el permiso se condiciona al `institutional_tag` del portafolio objetivo de la llamada (ADR-0020 V2, ADR-0123).
+    * `manage` no separa una porción de producción en su lógica (los mismos TTR de pesos/reglas operan igual para cualquier portafolio); el permiso se condiciona al `institutional_tag` del portafolio objetivo de la llamada (ADR-0020, ADR-0123).
     * Si el objetivo tiene `institutional_tag = Demo`, la llamada se concede sin gate adicional.
     * Si el objetivo tiene `institutional_tag = Live`, la llamada se rechaza salvo que `PRODUCTION_OVERRIDE` esté activo en ese momento.
     * Toda llamada (concedida o rechazada) queda auditada con su procedencia agente (`agent_session_id`) y el `institutional_tag` evaluado.
@@ -481,12 +481,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Reproducible (Snapshots de pesos).
     - ADR-0010: Hard vs Soft Limits (Soberanía de reglas).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0108 / ADR-0111: Genoma de Portafolio y Correlación (TTR-034).
 
 ---

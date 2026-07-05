@@ -37,7 +37,7 @@ La Colmena es una propuesta de red de cómputo voluntario y distribuido diseñad
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 Esta característica opera bajo un perfil híbrido de **Datos/Ingest** e **IA/R&D**, requiriendo el registro mandatorio en base de datos de los siguientes campos de inundación de fundaciones:
 

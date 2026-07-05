@@ -18,23 +18,23 @@ Al añadir o modificar cualquier métrica técnica o de negocio en una Feature:
 Si un módulo requiere datos persistidos por otro módulo:
 1.  **PROHIBIDO** el acceso a la DB ajena.
 2.  Crear un Puerto de consulta en la `public_interface.rs` del módulo dueño.
-3.  El módulo consultor debe tratar el dato como inmutable y conforme al Contrato Global (ADR-0020 V2).
+3.  El módulo consultor debe tratar el dato como inmutable y conforme al Contrato Global (ADR-0020).
 
 ### 17.4 Protocolo de Neutralización del Masterplan (Legacy Extraction)
 Al extraer requisitos de documentos legacy (como el Masterplan):
 1.  Mapear a la Feature correspondiente o crear una nueva si no existe.
 2.  Integrar los TTRs bajo la regla de **Evolución Incremental (ADR-0014)**.
-3.  Ejecutar **Inundación de Fundaciones (ADR-0020 V2)** sobre el nuevo requerimiento de inmediato.
+3.  Ejecutar **Inundación de Fundaciones (ADR-0020)** sobre el nuevo requerimiento de inmediato.
 
 ### 17.5 Protocolo de Preservación de Performance (SLA Guard)
 Toda feature que impacte en el "Hot Path" (Ingest, Generate, Validate) debe ser auditada contra el criterio competitivo relativo (más rápido que MT5/SQX/QuantConnect en igual hardware, ADR-0114; sin KPI absoluto):
 1.  **Vectorización Obligatoria:** Uso de Polars/Arrow para manipulación masiva de datos.
 2.  **Native Compliance:** Cualquier loop secuencial debe ser implementado en Rust nativo optimizado.
-3.  **IO Inundation:** Los campos inyectados por ADR-0020 V2 deben escribirse mediante transacciones batch en SQLite WAL.
+3.  **IO Inundation:** Los campos inyectados por ADR-0020 deben escribirse mediante transacciones batch en SQLite WAL.
 
 ### 17.6 Protocolo de Madurez (Transition Audit)
 Al mover una Feature de estado `Especificación` a `Implementación`:
-1.  Auditar cumplimiento de Gobernanza (ADR-0016, 0017, ADR-0020 V2).
+1.  Auditar cumplimiento de Gobernanza (ADR-0016, 0017, ADR-0020).
 2.  Verificar que los TTRs no sean ambiguos y tengan criterios de éxito técnicos.
 3.  Asegurar que el orquestador del módulo posee los Puertos necesarios para la nueva lógica.
 
@@ -52,7 +52,7 @@ Ningún documento es una isla. Todo cambio técnico significativo conlleva una r
 
 ### 17.9 Protocolo de Inundación Institucional (Audit Readiness)
 Al crear o refactorizar cualquier entidad de persistencia (Tabla, Archivo Parquet, Evento):
-1.  **Inundación Obligatoria (selectiva por perfil):** Inyectar el **grupo I (Identidad & Integridad)** de forma universal en toda entidad, y el resto de los **25 campos del contrato lógico** de forma **selectiva según el Perfil Técnico** (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría), conforme a la tabla canónica de Filtro de Relevancia definida en [ADR-0020 V2](../adr/ADR-0020.md). El contrato es un vocabulario lógico obligatorio, no 25 columnas calcadas en cada tabla.
+1.  **Inundación Obligatoria (selectiva por perfil):** Inyectar el **grupo I (Identidad & Integridad)** de forma universal en toda entidad, y el resto de los **25 campos del contrato lógico** de forma **selectiva según el Perfil Técnico** (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría), conforme a la tabla canónica de Filtro de Relevancia definida en [ADR-0020](../adr/ADR-0020.md). El contrato es un vocabulario lógico obligatorio, no 25 columnas calcadas en cada tabla.
 
     > **Ejemplo concreto (dos capas que NO deben confundirse):** la tabla `foundation_master_fields` (migración 0001) es el **catálogo de referencia** con las 25 columnas — existe UNA sola vez en todo el sistema, no se replica. Las tablas propias de cada módulo/feature (ADR-0003: cada módulo es dueño de sus tablas) NUNCA tienen esas 25 columnas; tienen sus columnas de dominio + el Grupo I completo (6 columnas, universal) + solo los campos concretos de su Perfil Técnico. Ej: la tabla de `adaptive-volume-indicators` (Perfil B / IA-R&D) lleva sus valores de indicador + Grupo I + (`owner_id`, `institutional_tag`, `manifest_id` de II) + (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id` de III) + (`node_id`, `process_id`, `execution_latency_ms` de IV) — nada de Grupo V, porque su perfil no lo cubre.
 

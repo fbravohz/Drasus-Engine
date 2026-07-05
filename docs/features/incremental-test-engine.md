@@ -57,7 +57,7 @@ El **Incremental Test Engine** es un motor transversal de optimización computac
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
     - **I. Identidad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **III. Linaje:** `version_node_id`, `parent_id` (test padre del que deriva el incremental), `logic_hash`.
     - **IV. Hardware:** `execution_time_saved_ms`.

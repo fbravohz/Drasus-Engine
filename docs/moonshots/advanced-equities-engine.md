@@ -87,7 +87,7 @@ Proporciona soporte completo para la simulación y rebalanceo periódico de port
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Datos / Ingesta
 | Categoría | Campo | Descripción |

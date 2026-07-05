@@ -1,6 +1,6 @@
 //! [SHELL] Repositorio de persistencia para Plan / Tier / Quota
 //! (`docs/features/plan-tier-quota.md`, ADR-0143, ADR-0144, ADR-0141,
-//! ADR-0020 V2, migración `0009_plan_tier_quota.sql`, STORY-029).
+//! ADR-0020, migración `0009_plan_tier_quota.sql`, STORY-029).
 //!
 //! Envuelve la tabla `plans`. Dueño del único I/O para el catálogo de
 //! planes: lecturas/escrituras en SQLite, generación de UUIDv7 (ADR-0141) y

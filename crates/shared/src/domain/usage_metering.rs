@@ -1,6 +1,6 @@
 //! [CORE] Lógica pura de Usage Metering / Libro de Nocional
 //! (`docs/features/usage-metering.md`, ADR-0144, ADR-0143, ADR-0141,
-//! ADR-0020 V2, STORY-030).
+//! ADR-0020, STORY-030).
 //!
 //! Sin I/O, sin reloj de sistema, sin aleatoriedad sin semilla
 //! (ADR-0002/0004). Piezas de lógica pura que pide la Feature en su

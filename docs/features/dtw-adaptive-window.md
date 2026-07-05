@@ -137,7 +137,7 @@ Es un componente **reutilizable**: cualquier motor que necesite cortar historia 
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% local. El cálculo DTW corre sobre Parquet local vía el stack analítico existente.
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
     - Perfil: AI / R&D.
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.

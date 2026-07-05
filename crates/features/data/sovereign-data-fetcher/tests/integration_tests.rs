@@ -471,7 +471,7 @@ async fn delta_sync_retries_up_to_limit() {
 // ── CRITERIO 8: download_record_persisted_with_profile_a_fields ─────────────
 
 /// Verifica que el registro de descarga se persiste con todos los campos del
-/// Perfil A (ADR-0020 V2): Grupo I + Grupo III + Grupo IV + `source_endpoint`.
+/// Perfil A (ADR-0020): Grupo I + Grupo III + Grupo IV + `source_endpoint`.
 #[tokio::test]
 async fn download_record_persisted_with_profile_a_fields() {
     let (pool, _dir) = setup_db().await;

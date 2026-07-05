@@ -73,7 +73,7 @@ Es un analizador estadístico de permutación y remuestreo que opera en **tres m
 - **Modo TÓXICO:** Daily Survival Rate (% de días sin violación de límites), Worst Day Impact (pérdida del peor día simulado), Toxic Compliance Status (COMPLIANT / VIOLATION_RISK / TOXIC).
 - **Réplica de Estado de Riesgo (ADR-0109):** Distribución, por cada Gen de Acción del Genoma de Riesgo y Gestión, de cuántas veces y bajo qué secuencias se habría disparado, junto con el drawdown resultante de cada trayectoria de mutación.
 - **Modo Desfase Temporal (ADR-0111):** Distribución de correlación agregada, drawdown de cartera y Sharpe conjunto bajo desalineaciones temporales, junto con un veredicto de robustez de cartera (`portfolio_robustness_verdict`: COMPLIANT / CORRELATION_FRAGILE / RECHAZADA).
-- **Consolidado:** `robustness_verdict` (COMPLIANT / PROP_FIRM_FRAGILE / TOXIC / RECHAZADA) exportado e inundado en los fundamentos de persistencia (ADR-0020 V2) para consumo del `Pre-Trade Validator` (ADR-0095).
+- **Consolidado:** `robustness_verdict` (COMPLIANT / PROP_FIRM_FRAGILE / TOXIC / RECHAZADA) exportado e inundado en los fundamentos de persistencia (ADR-0020) para consumo del `Pre-Trade Validator` (ADR-0095).
 
 ### Contextos de Uso
 
@@ -126,7 +126,7 @@ Es un analizador estadístico de permutación y remuestreo que opera en **tres m
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reporte de robustez y simulación Monte Carlo registra el set de relevancia técnica para AI/R&D:
 

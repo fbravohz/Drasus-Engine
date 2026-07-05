@@ -346,8 +346,8 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. La cola de trabajos y sus resultados se gestionan íntegramente en el hardware local.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
+- **Inundación de Fundaciones (ADR-0020):** 
+    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020); NO el catálogo completo de 25 campos.
     - Metadatos de concurrencia e integridad: `process_id` (Worker ID), `session_id`, `node_id` (Hardware Fingerprint), `audit_chain_hash`, `logic_hash` (Executor version), `event_sequence_id`.
     - Soberanía: `owner_id`, `access_token_id`.
 

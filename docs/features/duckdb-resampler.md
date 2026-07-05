@@ -67,7 +67,7 @@ Es el motor analítico que permite crear temporalidades personalizadas (ej. 7m, 
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada remuestreo registra el set de relevancia técnica para Datos:
 

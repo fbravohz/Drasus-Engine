@@ -67,7 +67,7 @@ Abstrae la comunicación con brokers externos (Binance, IBKR, Oanda). Se apalanc
 *   **Descripción:** Enviar órdenes genéricas al broker y normalizar los fills recibidos.
 *   **Reglas de Negocio:**
     * Cada orden devuelta DEBE incluir el `broker_order_id` inmutable.
-    * Timestamps de fill deben convertirse a escala de nanosegundos (ADR-0020 V2).
+    * Timestamps de fill deben convertirse a escala de nanosegundos (ADR-0020).
 *   **Entrada:** Objeto `Order` (genérico).
 *   **Salida:** `FillEvent` (normalizado).
 *   **Precondición:** Sesión de trading OPERATING.
@@ -76,7 +76,7 @@ Abstrae la comunicación con brokers externos (Binance, IBKR, Oanda). Se apalanc
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda interacción con el conector registra el set de relevancia técnica para AI/R&D:
 
@@ -99,7 +99,7 @@ Toda interacción con el conector registra el set de relevancia técnica para AI
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: FSM para transiciones de órdenes.
     - ADR-0013: Stack NautilusTrader para conectividad nativa.
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

@@ -60,7 +60,7 @@ Es el componente encargado de ejecutar una estrategia en tiempo real sin riesgo 
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. El procesamiento de señales vivas debe ocurrir en el hardware local para asegurar fidelidad técnica.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda cuenta y trade virtual registra el set de relevancia técnica para AI/R&D:
 
@@ -74,7 +74,7 @@ Toda cuenta y trade virtual registra el set de relevancia técnica para AI/R&D:
 | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Dueño de la IP de la estrategia |
 | | `manifest_id` | ID del contrato de diseño legal |
-| | `institutional_tag` | Etiqueta de entorno (ADR-0020 V2) |
+| | `institutional_tag` | Etiqueta de entorno (ADR-0020) |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash de la lógica de trading inyectada |
 | | `data_snapshot_id` | Puntero al feed de datos vivos (L2) |
 | | `indicator_state_hash` | Snapshot del estado técnico T-0 |

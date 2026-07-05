@@ -64,7 +64,7 @@ Componente estadístico que valida la consistencia entre dos series de resultado
 ### **TTR-002: Reporte de Veredicto de Consistencia (Rastro del Juez)**
 *   **Descripción:** Genera el veredicto inmutable para la promoción o retiro de la estrategia.
 *   **Reglas de Negocio:**
-    * El veredicto DEBE incluir el `version_node_id` de la estrategia evaluada (ADR-0020 V2).
+    * El veredicto DEBE incluir el `version_node_id` de la estrategia evaluada (ADR-0020).
     * Si el veredicto es `DEGRADADO`, se debe sugerir un "Learning Constraint" para el módulo de `feedback`.
 *   **Entrada:** `drift_score`, `p_value`.
 *   **Salida:** `PardoVerdict` (APROBADO | REVISAR | RECHAZADO).
@@ -74,7 +74,7 @@ Componente estadístico que valida la consistencia entre dos series de resultado
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda comparación Pardo registra el set de relevancia técnica para AI/R&D:
 
@@ -98,7 +98,7 @@ Toda comparación Pardo registra el set de relevancia técnica para AI/R&D:
 - **Decisión Arquitectónica Asociada:**
     - ADR-0015: Arquitectura de Causalidad y Aprendizaje.
     - ADR-0017: Simulación de Alta Fidelidad.
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

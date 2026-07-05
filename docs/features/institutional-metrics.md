@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/institutional-metrics/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0009, ADR-0020 V2, ADR-0023, ADR-0047
+**Decisiones Arquitectónicas Asociadas:** ADR-0009, ADR-0020, ADR-0023, ADR-0047
 
 ---
 
@@ -53,7 +53,7 @@ Para evitar la "sobreingeniería", organizamos las métricas en capas lógicas:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil B (IA / R&D), híbrido B+latencia** (cálculo de métricas con extractor de microestructura sensible a latencia).
+- **Inundación de Fundaciones (ADR-0020):** **Perfil B (IA / R&D), híbrido B+latencia** (cálculo de métricas con extractor de microestructura sensible a latencia).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

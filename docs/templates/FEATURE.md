@@ -105,8 +105,8 @@ Describe entrada → proceso → salida, **sin detalles de implementación**. Ve
 
 - **Local-First (ADR-0016):** [100% Local | Justificar dependencia externa].
 - **Fidelidad (ADR-0017):** [Baja (Barras) | Alta (4-ticks) | Institucional (Slippage Dinámico)].
-- **Inundación de Fundaciones (ADR-0020 V2):**
-  - **OBLIGATORIO:** El **Grupo I (Identidad & Integridad)** es universal — va siempre, en toda tabla, con sus **6 campos completos**: `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`. No omitas ninguno (causa raíz del patrón P1: faltaban típicamente `updated_at` y `event_sequence_id`). Además, asigna a la feature UNO de los 4 Perfiles Técnicos de la **tabla canónica de ADR-0020 V2** (no la copies aquí, referénciala):
+- **Inundación de Fundaciones (ADR-0020):**
+  - **OBLIGATORIO:** El **Grupo I (Identidad & Integridad)** es universal — va siempre, en toda tabla, con sus **6 campos completos**: `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`. No omitas ninguno (causa raíz del patrón P1: faltaban típicamente `updated_at` y `event_sequence_id`). Además, asigna a la feature UNO de los 4 Perfiles Técnicos de la **tabla canónica de ADR-0020** (no la copies aquí, referénciala):
     - **A. Datos / Ingest:** Identidad + Linaje de Datos (III) + Hardware (IV).
     - **B. IA / R&D:** Identidad + Soberanía (II) + Pesos/Arquitectura, subset de III (IV).
     - **C. Ops / Hot-Path:** Identidad + Soberanía (II) + Hardware (IV) + Latencia, subset de V (≤1ms).
@@ -114,7 +114,7 @@ Describe entrada → proceso → salida, **sin detalles de implementación**. Ve
   - **PROHIBIDO copy-paste masivo:** de cada grupo asignado, toma solo los campos concretos relevantes para esta tabla — no el grupo completo.
   - **Hooks Forenses:** [Describir ganchos específicos: ej. latencia de DOM, linaje de genoma, firmas digitales].
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla `Categoría | Campo | Descripción` con el Grupo I completo + los campos concretos del Perfil elegido (ver [`backtest-engine.md`](../features/backtest-engine.md) como ejemplo de formato real).
 

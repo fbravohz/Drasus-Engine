@@ -97,7 +97,7 @@ Es el corazón determinista de la fusión fundamental: convierte un evento ya es
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 **Perfil C. Ops / Hot-Path:** Identidad (I) + Soberanía (II) + Hardware (IV) + Latencia, subset Ejecución (V).
 
@@ -130,7 +130,7 @@ Es el corazón determinista de la fusión fundamental: convierte un evento ya es
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% local; el cálculo no sale del nodo.
-- **Decisión Arquitectónica Asociada:** ADR-0125 (Frontera Determinista), ADR-0127 (PIT de Eventos), ADR-0020 V2.
+- **Decisión Arquitectónica Asociada:** ADR-0125 (Frontera Determinista), ADR-0127 (PIT de Eventos), ADR-0020.
 
 ---
 

@@ -93,7 +93,7 @@ Asistente visual de **auditoría topológica manual** de parámetros. El motor d
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Hereda la del motor de barrido subyacente.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil Ops/Auditoría)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil Ops/Auditoría)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

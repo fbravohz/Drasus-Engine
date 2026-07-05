@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/autopilot-metrics-provider/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0083, ADR-0020 V2
+**Decisiones Arquitectónicas Asociadas:** ADR-0083, ADR-0020
 
 ---
 
@@ -52,6 +52,6 @@ El proveedor expone los siguientes campos en su diccionario:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
     - Obligatorio incluir en cada guardado: `indicator_state_hash` (hash del estado completo de las métricas), `session_id` (identificador del runtime actual).
 - **Dependencias:** Utilizado primordialmente en `execute` y `feedback`.

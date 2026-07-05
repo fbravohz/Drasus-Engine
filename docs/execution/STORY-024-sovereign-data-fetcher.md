@@ -28,7 +28,7 @@
 ## 1. Especificación de origen (qué specs implementa)
 - **Feature:** [`sovereign-data-fetcher`](../features/sovereign-data-fetcher.md) — TTR-001 (descargador Bulk asíncrono) + TTR-002 (reconciliador Delta REST).
 - **TTR de módulo:** [`ingest`](../modules/ingest.md) TTR-006 (Orquestación de Descarga Híbrida).
-- **ADRs:** ADR-0034 (Ingesta Híbrida Soberana), ADR-0137 (feature hexagonal + puertos tipados), ADR-0002 (FCIS), ADR-0003/ADR-0006 (propiedad de datos + migraciones centralizadas), ADR-0020 V2 (contrato de persistencia, Perfil A), ADR-0016 (Local-First), ADR-0133 (pirámide de pruebas).
+- **ADRs:** ADR-0034 (Ingesta Híbrida Soberana), ADR-0137 (feature hexagonal + puertos tipados), ADR-0002 (FCIS), ADR-0003/ADR-0006 (propiedad de datos + migraciones centralizadas), ADR-0020 (contrato de persistencia, Perfil A), ADR-0016 (Local-First), ADR-0133 (pirámide de pruebas).
 - **ADRs añadidos por el barrido completo del Gate (2026-06-27):** ADR-0011 (patrón de trabajo asíncrono — la descarga es un Job durable con recuperación), ADR-0105 (datos pesados = Polars/Arrow, nunca `Vec<struct>` por millones de filas), ADR-0093 (seguridad soberana — credenciales AES-256-GCM; aquí solo aplica como diferido: esta Story usa datos públicos sin credenciales), ADR-0008 (parámetros configurables), ADR-0012 (concurrencia consciente de recursos). Ver §8 para el detalle del barrido.
 
 ## 2. Objetivo (una frase llana)
@@ -75,7 +75,7 @@ ESTRUCTURA (ADR-0137 + ADR-0002 FCIS):
 5. CÁSCARA (orchestrator): cliente HTTP asíncrono (usa `reqwest` con `rustls-tls`, NO openssl — TLS en Rust puro, portable), descompresor `.zip` (crate `zip`), escritura a sistema de archivos, concurrencia con `tokio` (ya en el workspace) respetando CONCURRENT_DOWNLOADS, reintentos de Bulk fallido y de Delta hasta DELTA_SYNC_RETRY. **Cada descarga es un TRABAJO ASÍNCRONO DURABLE** modelado con la infraestructura existente de `async-job-executor` (tipo `Job` en `shared`, ADR-0011 + SAD §8): `process_id` único y persistente (lo exige TTR-006), ciclo de estados QUEUED→RUNNING→DONE/FAILED en SQLite, y **recuperación automática al reiniciar** (una descarga Bulk interrumpida se reanuda, no se pierde). La concurrencia debe ser consciente de recursos para no saturar otros pipelines (ADR-0012). Todos los parámetros (CONCURRENT_DOWNLOADS, DELTA_SYNC_RETRY) son configurables, nunca hardcodeados (ADR-0008).
 
 ALCANCE DE FUENTES (ADR-0093, diferido): solo datos de mercado PÚBLICOS — volcados Bulk de Binance Vision + endpoints REST públicos de klines/trades, que NO requieren credenciales. El manejo seguro de credenciales de API (cifrado AES-256-GCM, ADR-0093) para fuentes autenticadas/privadas queda DIFERIDO a cuando exista `sovereign-security` y se añadan fuentes que lo necesiten. NO implementes gestión de claves en esta Story.
-6. PERSISTENCIA (Perfil A, ADR-0020 V2 + ADR-0006 migraciones centralizadas): crea la migración de la tabla del registro de descarga en la carpeta raíz `./migrations/` (cadena lineal centralizada, ADR-0006; el migrador es `sqlx::migrate!("../../migrations")` en `crates/shared/src/persistence/pool.rs`) con el siguiente número correlativo. Campos EXACTOS de la tabla de la feature: Grupo I (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id) + Grupo III (data_snapshot_id, logic_hash) + Grupo IV (node_id, process_id) + el campo propio de dominio `source_endpoint`. NO incluyas `execution_latency_ms` (es Grupo V, ajeno a Perfil A — la duración la lleva el `Job` de async-job-executor). El módulo de persistencia del crate usa el pool de `shared`, no crea su propio pool.
+6. PERSISTENCIA (Perfil A, ADR-0020 + ADR-0006 migraciones centralizadas): crea la migración de la tabla del registro de descarga en la carpeta raíz `./migrations/` (cadena lineal centralizada, ADR-0006; el migrador es `sqlx::migrate!("../../migrations")` en `crates/shared/src/persistence/pool.rs`) con el siguiente número correlativo. Campos EXACTOS de la tabla de la feature: Grupo I (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id) + Grupo III (data_snapshot_id, logic_hash) + Grupo IV (node_id, process_id) + el campo propio de dominio `source_endpoint`. NO incluyas `execution_latency_ms` (es Grupo V, ajeno a Perfil A — la duración la lleva el `Job` de async-job-executor). El módulo de persistencia del crate usa el pool de `shared`, no crea su propio pool.
 
 RESTRICCIONES (de la spec, son invariantes):
 - NUNCA usar REST para periodos que ya existen en volcados Bulk.
@@ -93,7 +93,7 @@ Al terminar, sella la feature (banner de implementación con fecha + enlace a es
 
 | Bloque | Archivo | Concepto enseñado |
 |---|---|---|
-| 1 | `migrations/0006_sovereign_data_fetcher.sql` | Perfil A ADR-0020 V2: qué campos llevan los registros de datos |
+| 1 | `migrations/0006_sovereign_data_fetcher.sql` | Perfil A ADR-0020: qué campos llevan los registros de datos |
 | 2 | `Cargo.toml` workspace | Cómo se añade un crate hexagonal al workspace |
 | 3 | `Cargo.toml` feature crate | Dependencias explícitas: `sqlx` en `[dependencies]`, no solo en `[dev-dependencies]` |
 | 4 | `src/domain.rs` | FCIS: lógica pura sin imports de I/O; enum para resultados de dominio |

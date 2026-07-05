@@ -1,4 +1,4 @@
-# TASK-006 · Auditoría de la Inundación de Fundaciones (ADR-0020 V2)
+# TASK-006 · Auditoría de la Inundación de Fundaciones (ADR-0020)
 
 | Campo | Valor |
 |---|---|
@@ -9,10 +9,10 @@
 | **Creada** | 2026-06-13 |
 
 ## Objetivo
-Verificar que el Filtro de Relevancia por Perfil (ADR-0020 V2) se aplicó bien en las 137 features y 8 módulos: cada tabla = Grupo I universal + solo los campos del Perfil Técnico (A/B/C/D) que le corresponden, sin calcar 25 ni meter campos de grupos ajenos. Origen: el usuario sospechó (correctamente) que durante los meses de redacción documental el filtro se aplicó de forma irregular.
+Verificar que el Filtro de Relevancia por Perfil (ADR-0020) se aplicó bien en las 137 features y 8 módulos: cada tabla = Grupo I universal + solo los campos del Perfil Técnico (A/B/C/D) que le corresponden, sin calcar 25 ni meter campos de grupos ajenos. Origen: el usuario sospechó (correctamente) que durante los meses de redacción documental el filtro se aplicó de forma irregular.
 
 ## Fuente de verdad (verificada coherente — NO tocar)
-- Tabla canónica de 4 perfiles: `docs/ADR.md` línea ~407 (ADR-0020 V2, "Resto por Filtro de Relevancia por Perfil").
+- Tabla canónica de 4 perfiles: `docs/ADR.md` línea ~407 (ADR-0020, "Resto por Filtro de Relevancia por Perfil").
 - Resumen en `architect/SKILL.md` (dice "el ADR gana si difieren"), `TEMPLATES.md` (referencia, no copia), `SAD.md` §1285-1287 (ejemplo de las dos capas). Todos coherentes.
 - Perfiles: **A. Datos/Ingest** = I + III + IV · **B. IA/R&D** = I + II + III subset + IV · **C. Ops/Hot-Path** = I + II + IV + V subset latencia · **D. Ops/Auditoría** = I + II + IV.
 - Grupo I universal (SIEMPRE): `id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id`.
@@ -105,7 +105,7 @@ Respuesta: **SÍ, hay candidatos transversales que probablemente deban entrar al
 Los perfiles son ACUMULATIVOS: B (I+II+III+IV) ⊇ D (I+II+IV). Una feature de R&D que también quiere rastro forense NO necesita ser "híbrida B+D" — B ya la cubre. El caso híbrido REAL es B vs C (no se contienen: B tiene III/linaje, C tiene V/latencia).
 
 ### Bloque 4 — Campos nuevos al catálogo: APROBADO escalar al Architect
-Los 3: `compliance_status_id`, `portfolio_container_id`, campo de linaje jerárquico (`parent_id`). El Architect (Opus) los registra en ADR-0020 V2 con su grupo, vía Mecanismo de Mantenimiento.
+Los 3: `compliance_status_id`, `portfolio_container_id`, campo de linaje jerárquico (`parent_id`). El Architect (Opus) los registra en ADR-0020 con su grupo, vía Mecanismo de Mantenimiento.
 
 ### Bloque 2 — Hot-Path con linaje: CERRADO (híbrido, mantener trazabilidad)
 Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido documentado, mantienen linaje (alineado con el mantra). Subdivisión confirmada:
@@ -136,7 +136,7 @@ Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido docu
 
 ### FASE 3 + 4 EJECUTADAS Y AUDITADAS (2026-06-13)
 **Architect (Opus, 1 invocación en background, 154 ediciones) — auditado por Tech-Lead.**
-- **ADR-0020 V2:** los 3 campos "nuevos" YA existían en el Set Maestro de 25 (no expuestos en subsets de perfil). Conteo se mantiene en **25**. Expuestos en la tabla canónica: `parent_id`→III (A, B); `portfolio_container_id`→V Gobernanza (C, D); `compliance_status_id`→V Cumplimiento (C, D). Con "Registro de Mantenimiento" fechado.
+- **ADR-0020:** los 3 campos "nuevos" YA existían en el Set Maestro de 25 (no expuestos en subsets de perfil). Conteo se mantiene en **25**. Expuestos en la tabla canónica: `parent_id`→III (A, B); `portfolio_container_id`→V Gobernanza (C, D); `compliance_status_id`→V Cumplimiento (C, D). Con "Registro de Mantenimiento" fechado.
 - **TEMPLATES.md (Fase 4, causa raíz):** Grupo I default ahora muestra los 6 campos explícitos + nota de P1.
 - **Bloques 1/2/3-P5 aplicados:** 11 reclasificaciones, 7 híbridos documentados, 15 contratos diseñados. Etiquetas de campo corregidas (ej. order-fsm `indicator_state_hash` III→V).
 - **P1 Grupo I:** completado en todo el corpus. **P4:** `source_id`→`data_snapshot_id`, etiquetas/typos corregidos.
@@ -149,7 +149,7 @@ Las 7 tienen linaje LEGÍTIMO (resultado forense-reproducible) → híbrido docu
 ## PLAN DE EJECUCIÓN (retomar en próxima sesión)
 **Decisión del usuario (2026-06-13): primero decidir diseño, luego corregir TODO junto.**
 
-1. **Fase 2 — Sesión de decisiones (Tech-Lead + Usuario):** revisar tabla A (reasignación de perfil) y tabla B (campos nuevos). El usuario aprueba/ajusta cada fila. Los campos nuevos aprobados → escalar al Architect (Opus) para registrarlos en ADR-0020 V2 vía Mecanismo de Mantenimiento.
+1. **Fase 2 — Sesión de decisiones (Tech-Lead + Usuario):** revisar tabla A (reasignación de perfil) y tabla B (campos nuevos). El usuario aprueba/ajusta cada fila. Los campos nuevos aprobados → escalar al Architect (Opus) para registrarlos en ADR-0020 vía Mecanismo de Mantenimiento.
 2. **Fase 3 — Corrección masiva uniforme (1 sola pasada, agentes Sonnet por lotes):** con los perfiles ya decididos: (a) completar Grupo I universal en TODO el corpus (P1, uniforme); (b) reasignar perfiles aprobados y limpiar campos de grupo ajeno (P2/P3); (c) diseñar contrato de las features sin tabla (P5); (d) aplicar campos nuevos donde corresponda.
 3. **Fase 4 — Arreglar la causa raíz:** corregir `TEMPLATES.md` y el ejemplo de referencia para que el Grupo I COMPLETO sea el default (evita que el patrón P1 se repita en features futuras).
 4. **Moonshots (41):** auditoría diferida — misma estrategia, sesión aparte (TASK futura).

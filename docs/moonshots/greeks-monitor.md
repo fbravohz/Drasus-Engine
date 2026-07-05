@@ -78,7 +78,7 @@ Motor de cálculo y monitoreo en tiempo real de las griegas de primer orden (Del
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil C (Ops / Hot-Path): Identidad + Soberanía + Hardware + Latencia. El cálculo de griegas en tiempo real opera en el hot path; latencia objetivo <5ms por recalculo.
 
 ---

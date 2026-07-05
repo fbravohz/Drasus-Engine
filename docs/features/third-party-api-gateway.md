@@ -71,9 +71,9 @@ La respuesta del puerto interno + el registro de uso de esa credencial.
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el gateway corre en el plano de ejecución o en la Cabina de Mando según el producto; nunca mueve cómputo al proveedor sin justificación.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `access_token_id`) + Hardware(IV: `node_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `access_token_id`) + Hardware(IV: `node_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla de credenciales de API + registro de uso (append-only) con Grupo I + Perfil D. Campos propios fuera del catálogo (marcados): endpoint invocado, ventana de rate-limit, credencial (referencia, nunca el secreto en claro — ADR-0093). `STRICT`, UUIDv7 (ADR-0141).
 

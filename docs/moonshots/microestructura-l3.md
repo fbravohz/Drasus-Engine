@@ -66,7 +66,7 @@ Explora la simulación y análisis de estrategias cuantitativas basadas en datos
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Datos / Ingesta
 | Categoría | Campo | Descripción |

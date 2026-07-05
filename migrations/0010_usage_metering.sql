@@ -1,5 +1,5 @@
 -- Migración 0010: Usage Metering / Libro de Nocional (docs/features/usage-metering.md,
--- ADR-0144, ADR-0143, ADR-0141, ADR-0020 V2, STORY-030)
+-- ADR-0144, ADR-0143, ADR-0141, ADR-0020, STORY-030)
 --
 -- Crea la tabla `usage_records`: cimiento #4 del substrato de monetización
 -- (ADR-0144). Cada fila es UNA OPERACIÓN medida -- registro append-only del
@@ -22,7 +22,7 @@
 -- intactas (el histórico se conserva -- usage-metering.md "Comportamientos
 -- Observables": "el acumulado se reinicia (el histórico se conserva)").
 --
--- Perfil ADR-0020 V2 para esta tabla (Perfil D "Ops/Auditoría", declarado en
+-- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", declarado en
 -- `docs/features/usage-metering.md` §"Gobernanza y Estándares" y STORY-030
 -- §3):
 --   - Grupo I  (Identidad & Integridad, UNIVERSAL, con event_sequence_id en
@@ -36,7 +36,7 @@
 --     estado de cumplimiento explícito (solo aplica si el gate de
 --     licenciamiento anotó uno al momento de la operación).
 -- El Grupo III (Linaje Alpha & Datos) NO aplica (una operación medida no
--- tiene linaje genómico) y se omite a propósito (ADR-0020 V2 "Aplicación":
+-- tiene linaje genómico) y se omite a propósito (ADR-0020 "Aplicación":
 -- "PROHIBIDO copy-paste masivo").
 --
 -- Columnas propias de la Feature (fuera del contrato de 25 campos,
@@ -66,7 +66,7 @@
 -- esta migración sea un no-op.
 
 CREATE TABLE IF NOT EXISTS usage_records (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2; event_sequence_id
+    -- I. Identidad & Integridad (universal, ADR-0020; event_sequence_id
     -- en vez de row_version por ser tabla APPEND-ONLY, ADR-0141).
     id                    TEXT    NOT NULL PRIMARY KEY, -- UUIDv7 (Uuid::now_v7())
     created_at            INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)

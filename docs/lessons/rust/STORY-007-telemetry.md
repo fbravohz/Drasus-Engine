@@ -39,7 +39,7 @@ Un **struct** agrupa varios datos relacionados bajo un solo nombre — el equiva
 pub struct TelemetrySample {
     pub id: String,
     pub created_at_ns: i64,
-    // ...campos "universales" (Grupo I, ADR-0020 V2)...
+    // ...campos "universales" (Grupo I, ADR-0020)...
     pub content: TelemetrySampleContent,  // <- envuelve al otro struct
 }
 ```

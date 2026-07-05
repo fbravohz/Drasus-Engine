@@ -1,5 +1,5 @@
 //! [CORE] Lógica pura de construcción de muestras de telemetría
-//! (`docs/features/telemetry.md` TTR-001, ADR-0015, ADR-0020 V2).
+//! (`docs/features/telemetry.md` TTR-001, ADR-0015, ADR-0020).
 //!
 //! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004). El
 //! `id` y `created_at_ns` los inyecta la cáscara (orquestador), el mismo
@@ -31,14 +31,14 @@ pub struct TelemetrySampleContent {
     pub metric_name: String,
     pub details_json: Option<String>,
 
-    // ADR-0020 V2 Grupo II: Soberanía.
+    // ADR-0020 Grupo II: Soberanía.
     pub institutional_tag: String,
 
-    // ADR-0020 V2 Grupo III: Pesos/Arquitectura.
+    // ADR-0020 Grupo III: Pesos/Arquitectura.
     pub logic_hash: Option<String>,
     pub session_id: Option<String>,
 
-    // ADR-0020 V2 Grupo IV: Infraestructura / Hardware.
+    // ADR-0020 Grupo IV: Infraestructura / Hardware.
     pub node_id: Option<String>,
     pub process_id: String,
     pub execution_latency_ms: Option<i64>,
@@ -47,12 +47,12 @@ pub struct TelemetrySampleContent {
 /// Una muestra de telemetría ya encadenada, lista para persistir (o ya
 /// persistida) en `telemetry_samples`.
 ///
-/// Los grupos de campos siguen el perfil técnico de ADR-0020 V2 (Grupo I,
+/// Los grupos de campos siguen el perfil técnico de ADR-0020 (Grupo I,
 /// universal + content) — mismo patrón que [`super::audit_log::AuditEvent`]
 /// envolviendo [`super::audit_log::AuditEventContent`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelemetrySample {
-    // I. Identidad & Integridad (universal, ADR-0020 V2).
+    // I. Identidad & Integridad (universal, ADR-0020).
     pub id: String,
     pub created_at_ns: i64,
     pub updated_at_ns: i64,

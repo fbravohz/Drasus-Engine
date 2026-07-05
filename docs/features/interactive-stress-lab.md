@@ -93,7 +93,7 @@ Panel de control **táctil y reactivo** que permite al analista deformar la curv
 - **Local-First (ADR-0016):** 100% Local. La reactividad exige cómputo en máquina del usuario.
 - **Fidelidad (ADR-0017):** Alta — reusa los modelos de fricción institucionales existentes.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil Ops/Auditoría)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil Ops/Auditoría)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

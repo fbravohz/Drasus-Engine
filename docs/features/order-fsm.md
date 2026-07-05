@@ -111,15 +111,15 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 *   **Reglas de Negocio:**
     * Toda transición DEBE registrar el `audit_hash` del estado anterior para garantizar inmutabilidad.
     * Las transiciones hacia estados terminales (REJECTED, CANCELLED, RETIRED) son irreversibles.
-*   **Entrada:** `order_id`, `target_state`, `reason`, `process_id` (ADR-0020 V2).
+*   **Entrada:** `order_id`, `target_state`, `reason`, `process_id` (ADR-0020).
 *   **Salida:** `bool` (success), `transition_metadata`.
 *   **Precondición:** Orden cargada en memoria con `audit_hash` verificado.
-*   **Postcondición:** Registro en `audit-log` con precisión de nanosegundos (ADR-0020 V2).
+*   **Postcondición:** Registro en `audit-log` con precisión de nanosegundos (ADR-0020).
 
 ### **TTR-002: Invariantes de Posición e Inundación Institucional**
 *   **Descripción:** Valida `available_margin >= 0` y `quantity > 0` antes de la persistencia atómica.
 *   **Reglas de Negocio:**
-    * Toda posición persistida DEBE incluir `institutional_tag` y `version_node_id` (ADR-0020 V2).
+    * Toda posición persistida DEBE incluir `institutional_tag` y `version_node_id` (ADR-0020).
     * Una violación de `available_margin` dispara una `CIRCUIT_BREAKER` alert (ADR-0010).
 *   **Entrada:** `Position` object (Pure Entity).
 *   **Salida:** `ValidationResult`.
@@ -140,13 +140,13 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
     * Default no bloqueante: `MAX_CONCURRENT_POSITIONS` permite concurrencia; fijarlo en uno reproduce el bloqueo clásico.
     * Cada apertura concurrente valida el margen sobre el **agregado** de posiciones de la estrategia (HARD, ADR-0010) y pasa el Pre-Trade Risk Gate (ADR-0025).
     * `SIGNAL_DEDUP_BARS` impone la separación mínima en velas entre entradas; una entrada en la misma vela de disparo se descarta.
-*   **Entrada:** Nueva señal de entrada, conjunto de posiciones abiertas de la estrategia, `process_id` (ADR-0020 V2).
+*   **Entrada:** Nueva señal de entrada, conjunto de posiciones abiertas de la estrategia, `process_id` (ADR-0020).
 *   **Salida:** Apertura concurrente aceptada, o descarte con motivo (bloqueo por límite / dedup / riesgo).
 *   **Precondición:** Gate de riesgo pre-trade disponible (ADR-0025).
 *   **Postcondición:** Posiciones concurrentes persistidas con margen agregado y P&L por ticket, auditadas.
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil C Hot-Path, híbrido C+III)
 
 Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legítimo (resultado forense-reproducible de cada transición de orden). El linaje se mantiene a propósito.
 
@@ -172,7 +172,7 @@ Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legít
     - ADR-0004: Máquina de Estados FSM (int64).
     - ADR-0010: Hard Limits (Cierre automático ante margen insuficiente).
     - ADR-0129: Entradas Concurrentes No Bloqueantes + De-duplicación de Señal.
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

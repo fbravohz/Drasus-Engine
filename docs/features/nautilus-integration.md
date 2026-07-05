@@ -52,9 +52,9 @@ Es la capa de adaptación que permite a Drasus Engine usar NautilusTrader como m
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
-Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020 V2), detallados en la tabla — NO el catálogo completo de 25 campos:
+Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020), detallados en la tabla — NO el catálogo completo de 25 campos:
 
 | Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
@@ -87,7 +87,7 @@ Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de
 - **Decisión Arquitectónica Asociada:**
     - ADR-0013: Stack Tecnológico (NautilusTrader).
     - ADR-0107: Integración Nativa con NautilusTrader v2 (Crates Rust, Sin Python, Sin Fork).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ## Preparación para Opciones (Post-MVP — ADR-0140)
 

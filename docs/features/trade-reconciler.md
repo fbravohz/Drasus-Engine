@@ -57,7 +57,7 @@ Componente encargado de la **Feedback de ejecución de la Operativa**. Su misió
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. La reconciliación de costos es un dato operativo sensible.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reporte de reconciliación registra el set de relevancia técnica para AI/R&D:
 

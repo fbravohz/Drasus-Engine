@@ -94,7 +94,7 @@ Es la pieza que convierte eventos puntuados en una **serie numérica de indicado
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 **Perfil C. Ops / Hot-Path:** Identidad (I) + Soberanía (II) + Hardware (IV) + Latencia, subset Ejecución (V).
 
@@ -127,7 +127,7 @@ Es la pieza que convierte eventos puntuados en una **serie numérica de indicado
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% local.
-- **Decisión Arquitectónica Asociada:** ADR-0128 (Normalización por Instrumento), ADR-0125 (Frontera Determinista), ADR-0020 V2.
+- **Decisión Arquitectónica Asociada:** ADR-0128 (Normalización por Instrumento), ADR-0125 (Frontera Determinista), ADR-0020.
 
 ---
 

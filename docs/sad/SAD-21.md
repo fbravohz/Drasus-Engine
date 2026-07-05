@@ -60,7 +60,7 @@ La capa **no** interpreta texto con opiniones. Convierte hechos medibles en núm
 ### Propiedades
 
 * **Alcance inicial:** eventos estructurados con medida objetiva (programados con consenso, o con reacción de precio observable). El texto libre / NLP queda en R&D (`moonshots`) hasta validarse.
-* **Reproducibilidad:** todo indicador es auditable — fórmula y datos de entrada trazados vía linaje (ADR-0020 V2).
+* **Reproducibilidad:** todo indicador es auditable — fórmula y datos de entrada trazados vía linaje (ADR-0020).
 * **Diferenciación:** la fusión fundamental determinista es una capacidad de categoría ausente en las herramientas puramente técnicas.
 
 ---

@@ -77,7 +77,7 @@ El traductor de compensación es una capa intermedia que actúa como envoltorio 
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Esta feature aplica el perfil de **Ops / Hot-Path**:
 

@@ -73,7 +73,7 @@ Aplicación de los pesos sobre la serie de precios. Debe usar Polars o Rust SIMD
 Lógica iterativa que busca el menor valor de $d$ que logre superar el umbral de ADF, maximizando la retención de memoria.
 
 ## Gobernanza y Estándares
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil A (Datos / Ingest)** — persiste series transformadas + linaje del orden $d$ (I + III + IV).
+- **Inundación de Fundaciones (ADR-0020): Perfil A (Datos / Ingest)** — persiste series transformadas + linaje del orden $d$ (I + III + IV).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

@@ -93,7 +93,7 @@ Es la puerta de entrada y el almacén de los **eventos del mundo**: publicacione
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 **Perfil A. Datos / Ingest:** Identidad (I) + Linaje (III) + Hardware (IV).
 
@@ -126,7 +126,7 @@ Es la puerta de entrada y el almacén de los **eventos del mundo**: publicacione
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** el hecho crudo se persiste local con linaje; el motor opera sobre lo ingestado sin estar en línea con el proveedor.
-- **Decisión Arquitectónica Asociada:** ADR-0126 (Sourcing y Soberanía), ADR-0127 (PIT de Eventos), ADR-0020 V2 (Inundación de Fundaciones).
+- **Decisión Arquitectónica Asociada:** ADR-0126 (Sourcing y Soberanía), ADR-0127 (PIT de Eventos), ADR-0020 (Inundación de Fundaciones).
 
 ---
 

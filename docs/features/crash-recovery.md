@@ -77,7 +77,7 @@ Módulo de contingencia ante fallos físicos de infraestructura (cortes de luz, 
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda restauración de sesión de emergencia registra el set de relevancia técnica:
 

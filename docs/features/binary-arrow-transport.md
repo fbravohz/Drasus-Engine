@@ -68,9 +68,9 @@ El **Transporte Binario Arrow** permite la transmisión de alta velocidad de gra
     - [ ] El frontend de Flutter recibe y decodifica el stream binario sin usar `JSON.parse`.
 * **¿Qué no puede pasar?** PROHIBIDO el uso de Base64 para el transporte de datos Arrow.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
-Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020 V2), detallados en la tabla — NO el catálogo completo de 25 campos:
+Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de Relevancia, ADR-0020), detallados en la tabla — NO el catálogo completo de 25 campos:
 
 | Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
@@ -79,7 +79,7 @@ Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de
 | `updated_at` | INT64 | Última modificación del buffer |
 | `audit_chain_hash` | VARCHAR | Hash de la cadena de integridad |
 | `owner_id` | UUID | Identificador del dueño del proceso |
-| `institutional_tag` | VARCHAR | Etiqueta de cumplimiento (ADR-0020 V2) |
+| `institutional_tag` | VARCHAR | Etiqueta de cumplimiento (ADR-0020) |
 | `manifest_id` | UUID | Referencia al Design Manifest origen |
 | `access_token_id` | UUID | Token que autorizó la transmisión |
 | `logic_hash` | VARCHAR | Hash del algoritmo de downsampling usado |

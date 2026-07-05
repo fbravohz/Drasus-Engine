@@ -17,7 +17,7 @@
 - **Feature:** [`worker-isolation-orchestrator`](../features/worker-isolation-orchestrator.md)
 - **TTR(s):** TTR-001 (Bridge de Memoria Compartida), TTR-002 (Watchdog de Procesos y Graceful Shutdown)
 - **Módulo:** [`shared`](../modules/) — plomería transversal (igual que `clock`, `audit-log`, `telemetry`, `async-job-executor`)
-- **ADR(s):** ADR-0013 (stack Rust puro — Python rechazado permanentemente), ADR-0020 V2 (Perfil D + linaje híbrido padre→worker), ADR-0016 (Local-First)
+- **ADR(s):** ADR-0013 (stack Rust puro — Python rechazado permanentemente), ADR-0020 (Perfil D + linaje híbrido padre→worker), ADR-0016 (Local-First)
 
 
 ## 2. Objetivo
@@ -105,7 +105,7 @@ Solo añade un campo `worker_pid` nullable (INTEGER) a la tabla jobs si necesita
 como migración 0005_worker_pid.sql (idempotente: IF NOT EXISTS). Si decides no persistir el PID
 en DB y solo tenerlo en memoria, no hay migración — documenta la decisión.
 
-Perfil de persistencia (ADR-0020 V2): el job de worker hereda el perfil D ya existente en
+Perfil de persistencia (ADR-0020): el job de worker hereda el perfil D ya existente en
 jobs/job_results (STORY-005). Los campos `parent_id` (linaje orquestador→worker) y `process_id`
 (OS PID del worker) de la spec salen de la persistencia cuando el job se cierra.
 

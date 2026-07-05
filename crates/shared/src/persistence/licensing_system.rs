@@ -1,6 +1,6 @@
 //! [SHELL] Repositorio de persistencia para Licensing System
 //! (`docs/features/licensing-system.md`, ADR-0143, ADR-0144, ADR-0141,
-//! ADR-0020 V2, migración `0008_licensing_system.sql`, STORY-028).
+//! ADR-0020, migración `0008_licensing_system.sql`, STORY-028).
 //!
 //! Envuelve la tabla `licenses`. Dueño del único I/O para activaciones de
 //! licencia: lecturas/escrituras en SQLite, generación de UUIDv7 (ADR-0141)

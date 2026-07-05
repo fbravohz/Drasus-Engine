@@ -126,7 +126,7 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** El canal MCP corre contra el mismo Core local; en modo SaaS hereda las garantías de `saas-gateway`.
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil D (Ops / Auditoría)** — Identidad (I) + Soberanía (II) + Hardware (IV).
+- **Inundación de Fundaciones (ADR-0020): Perfil D (Ops / Auditoría)** — Identidad (I) + Soberanía (II) + Hardware (IV).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |
@@ -143,7 +143,7 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
 
   Campos propios de la feature (fuera del catálogo canónico, específicos de este dominio): `agent_session_id` (sesión MCP del agente conectado), `requested_scope` (pipeline/frontera invocada), `permission_outcome` (concedido/denegado), `production_override_active` (estado del interruptor en el momento de la llamada).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

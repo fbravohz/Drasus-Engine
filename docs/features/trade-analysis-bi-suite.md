@@ -82,7 +82,7 @@ El `Trade Analysis BI Suite` es una colección integrada de gráficos estadísti
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
   - **Perfil D (Ops / Auditoría, persiste):** BI analítico sobre trades, no ingesta de mercado. Aplica el mantra "ante la duda, tenerlo": persiste los reportes de análisis.
   - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.

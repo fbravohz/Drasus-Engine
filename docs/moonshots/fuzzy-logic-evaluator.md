@@ -30,5 +30,5 @@ Extraído de la Visión "New-Era" de Drasus Engine. Este módulo permite pasar d
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
-- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2) para cada inferencia difusa y actualización de peso.
+## Gobernanza y Estándares (ADR-0020)
+- Registro del **Grupo I (universal) + Perfil IA/R&D** (ADR-0020) para cada inferencia difusa y actualización de peso.

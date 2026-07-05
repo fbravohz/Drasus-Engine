@@ -97,7 +97,7 @@ Para evitar la latencia y sobrecarga de memoria de los motores WebViews (Plotly/
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. Las consultas se realizan sobre el databank Parquet local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `version_node_id`, `logic_hash`, `node_id`.
+- **Inundación de Fundaciones (ADR-0020):** Perfil IA / R&D. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`, `version_node_id`, `logic_hash`, `node_id`.
 - **Rastro de Evidencia:** Emite logs de telemetría sobre la latencia de renderizado y el número de puntos escaneados para el módulo de `feedback`.
 
 ---

@@ -87,7 +87,7 @@ Es un motor de simulación alternativo que, en lugar de evaluar una estrategia c
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil IA / R&D
 | Categoría | Campo | Descripción |

@@ -65,7 +65,7 @@ El **Ruteador por Perfil de Volumen** es una capa de seguridad en la ejecución 
 - **Qué tiene que pasar:** Implementar la lógica que calcula el llenado (*fill*) proyectado sobre el perfil actual.
 - **Criterio de éxito:** Bloquear órdenes que tendrían un slippage > 2x el spread promedio.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil C Hot-Path, híbrido C+III)
 
 Híbrido: Perfil C (veto de liquidez <0.5ms) + linaje III legítimo (reproducibilidad del veredicto de ruteo).
 

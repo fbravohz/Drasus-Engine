@@ -98,7 +98,7 @@ A partir de ADR-0108, cada nodo `wildcard_group` queda etiquetado con su **domin
     - [ ] Activar simultáneamente 2+ dominios en `ACTIVE_GENOME_DOMAINS` produce Reglas Genómicas con Genes de Condición/Acción de ambos dominios en el mismo individuo evolutivo.
 * **¿Qué no puede pasar?** Una Regla Genómica no puede referenciar Genes de Condición o de Acción de un dominio que no figure en `ACTIVE_GENOME_DOMAINS`, ni exceder `MAX_CONDITIONS_PER_RULE`/`MAX_ACTIONS_PER_RULE`.
 
-## Persistencia (Filtro de Relevancia AI/R&D — ADR-0020 V2)
+## Persistencia (Filtro de Relevancia AI/R&D — ADR-0020)
 
 Cada genoma de estrategia compilado por este motor debe portar el set filtrado de metadatos para auditoría de diseño:
 
@@ -123,6 +123,6 @@ Cada genoma de estrategia compilado por este motor debe portar el set filtrado d
 | | `session_id` | Sesión de usuario activa |
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** El JSON generado incluye `logic_hash` y `manifest_id` mandatorios.
+- **Inundación de Fundaciones (ADR-0020):** El JSON generado incluye `logic_hash` y `manifest_id` mandatorios.
 - **IA Híbrida (ADR-0031/0113):** El esquema AST es la base de la regresión simbólica nativa (modo del motor NSGA-II); exportable a fórmulas matemáticas legibles.
 - **Genomas Modulares por Dominio (ADR-0108):** El AST_VERSION 4.0 etiqueta cada `wildcard_group` con su dominio genómico de origen (Señal, Riesgo y Gestión de Posición — ADR-0109, Régimen y Filtro de Entorno — ADR-0110, Portafolio y Correlación — ADR-0111). Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

@@ -55,7 +55,7 @@ Gestor del ciclo de vida terminal de los contratos de opciones: ejercicio volunt
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil C (Ops / Hot-Path): Identidad + Soberanía + Hardware + Latencia. El ejercicio/asignación genera órdenes en el hot path; la detección de vencimiento próximo es una operación de auditoría.
 
 ---

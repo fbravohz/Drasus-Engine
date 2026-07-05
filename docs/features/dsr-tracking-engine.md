@@ -57,7 +57,7 @@ Implementar el algoritmo de Welford para calcular media y varianza en un solo pa
 ## Gobernanza y Estándares
 
 - **Local-First (ADR-0016):** 100% Local (SQLite WAL).
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
     - **Perfil B (IA / R&D):** minería genética / varianza de Sharpe = R&D. B engloba el rastro de auditoría (B = I+II+III+IV ⊇ D = I+II+IV) y aporta el linaje. El Grupo I universal da la inmutabilidad del conteo $N$.
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.

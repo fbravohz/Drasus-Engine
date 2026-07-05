@@ -62,7 +62,7 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 ### **TTR-002: Ingestor Masivo Polars-CSV**
 - Desarrolla el puente que convierte el archivo plano a Parquet particionado usando el motor de Polars.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada importación manual registra el set de relevancia técnica:
 

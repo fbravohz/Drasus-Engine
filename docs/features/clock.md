@@ -5,7 +5,7 @@
 **Última actualización:** 2026-06-12
 
 > ✅ **Implementado** 2026-06-12 · Orden de trabajo [STORY-003](../execution/STORY-003-clock.md) · Núcleo determinista + cáscara `SystemClock` (Fase 1) + emisor de auditoría del reloj `clock_audit` (Fase 2: 3 eventos vía `AuditEventContent`). Auditado Tech-Lead: clippy `-D warnings` limpio, 28 tests verdes, FCIS y granularidad del hot-path verificados.
-> 🏗️ **Perfil de auditoría resuelto** 2026-06-12 · Architect (escalamiento §3): eventos del reloj → bitácora existente (`audit-log`) vía `AuditEventContent`, Perfil D; campos huérfanos (`ntp_sync_offset`, proceso virtual, delta real/virtual) reclasificados como payload de `details_json`, NO campos de catálogo. Sin cambios a ADR-0020 V2. Granularidad acotada a 3 eventos (ver "Gobernanza y Estándares").
+> 🏗️ **Perfil de auditoría resuelto** 2026-06-12 · Architect (escalamiento §3): eventos del reloj → bitácora existente (`audit-log`) vía `AuditEventContent`, Perfil D; campos huérfanos (`ntp_sync_offset`, proceso virtual, delta real/virtual) reclasificados como payload de `details_json`, NO campos de catálogo. Sin cambios a ADR-0020. Granularidad acotada a 3 eventos (ver "Gobernanza y Estándares").
 
 ---
 
@@ -97,17 +97,17 @@ El Clock es un puerto inyectado que proporciona el tiempo actual a cualquier mó
 *   **Entrada:** `request_type` (REAL | FAKE).
 *   **Salida:** `timestamp_ns` (int64).
 *   **Precondición:** Sincronización NTP verificada.
-*   **Postcondición:** Al verificarse la sincronía NTP en el arranque (NO en cada lectura — ver "Granularidad de Auditoría" abajo), emite UN evento de auditoría `CLOCK_NTP_SYNC` a través de la bitácora existente (`AuditEventContent`, audit-log.md). El `ntp_sync_offset` (delta NTP en ns, ADR-0013) NO es un campo del catálogo ADR-0020 V2: viaja como payload del evento dentro de `details_json` (campo opaco que ya expone `AuditEventContent`). Los campos del catálogo del evento son los de su Perfil Técnico (ver "Gobernanza y Estándares").
+*   **Postcondición:** Al verificarse la sincronía NTP en el arranque (NO en cada lectura — ver "Granularidad de Auditoría" abajo), emite UN evento de auditoría `CLOCK_NTP_SYNC` a través de la bitácora existente (`AuditEventContent`, audit-log.md). El `ntp_sync_offset` (delta NTP en ns, ADR-0013) NO es un campo del catálogo ADR-0020: viaja como payload del evento dentro de `details_json` (campo opaco que ya expone `AuditEventContent`). Los campos del catálogo del evento son los de su Perfil Técnico (ver "Gobernanza y Estándares").
 
 ### **TTR-002: Simulación de Reloj Determinista (Backtest-Ready)**
 *   **Descripción:** Proporciona un reloj controlado para simulaciones reproducibles 100%.
 *   **Reglas de Negocio:**
     * El reloj solo avanza mediante llamadas explícitas `advance(ns)`.
-    * Cada sesión de simulación se identifica con el `session_id` (Grupo IV del catálogo ADR-0020 V2), que es el campo canónico para agrupar un runtime — NO existe ningún `virtual_process_id` en el catálogo. El identificador del proceso virtual de la simulación viaja como payload dentro de `details_json` del evento de cierre de sesión.
+    * Cada sesión de simulación se identifica con el `session_id` (Grupo IV del catálogo ADR-0020), que es el campo canónico para agrupar un runtime — NO existe ningún `virtual_process_id` en el catálogo. El identificador del proceso virtual de la simulación viaja como payload dentro de `details_json` del evento de cierre de sesión.
 *   **Entrada:** `initial_timestamp_ns`, `step_ns`.
 *   **Salida:** `virtual_timestamp_ns`.
 *   **Precondición:** Modo de ejecución `SIMULATION` activo.
-*   **Postcondición:** Al cerrarse la sesión de simulación (NO en cada `advance` ni en cada lectura), emite UN evento de auditoría `CLOCK_SESSION_CLOSE` con la delta acumulada entre tiempo real y virtual como payload dentro de `details_json`. La delta real/virtual NO es un campo del catálogo ADR-0020 V2: es payload propio del evento del reloj.
+*   **Postcondición:** Al cerrarse la sesión de simulación (NO en cada `advance` ni en cada lectura), emite UN evento de auditoría `CLOCK_SESSION_CLOSE` con la delta acumulada entre tiempo real y virtual como payload dentro de `details_json`. La delta real/virtual NO es un campo del catálogo ADR-0020: es payload propio del evento del reloj.
 
 ---
 
@@ -130,12 +130,12 @@ El Clock es un puerto inyectado que proporciona el tiempo actual a cualquier mó
 ### Persistencia y Perfil de Auditoría
 El reloj NO tiene persistencia propia. Sus eventos auditables se emiten a través de la bitácora existente (`audit-log`, STORY-004) usando su interfaz `AuditEventContent` y su repositorio append-only — NO se crea una tabla nueva. Los timestamps que esos eventos llevan (`created_at`) los inyecta el propio reloj vía el puerto `Clock`, igual que para cualquier otro emisor.
 
-- **Perfil Técnico (ADR-0020 V2): D — Ops/Auditoría.** Los eventos del reloj son registro forense de sincronía/reconciliación temporal; encajan en el mismo perfil que `audit-log` (Grupo I universal + Grupo II Soberanía + Grupo IV Infraestructura). Los Grupos III (Linaje Alpha) y V (Forense de Ejecución) NO aplican y se omiten. PROHIBIDO copy-paste de los 25 campos.
+- **Perfil Técnico (ADR-0020): D — Ops/Auditoría.** Los eventos del reloj son registro forense de sincronía/reconciliación temporal; encajan en el mismo perfil que `audit-log` (Grupo I universal + Grupo II Soberanía + Grupo IV Infraestructura). Los Grupos III (Linaje Alpha) y V (Forense de Ejecución) NO aplican y se omiten. PROHIBIDO copy-paste de los 25 campos.
 - **Campos del catálogo que lleva cada evento del reloj** (los que `AuditEventContent` ya expone para el Perfil D):
     - Grupo I (lo asigna la bitácora al persistir): `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - Grupo II: `institutional_tag` (obligatorio), `owner_id`/`manifest_id`/`access_token_id` (opcionales).
     - Grupo IV: `process_id` (obligatorio), `session_id` (agrupa la sesión de simulación), `node_id` (opcional).
-- **Payload propio del reloj** (dentro de `details_json`, opaco al catálogo): `ntp_sync_offset` (delta NTP en ns), identificador del proceso virtual de simulación, y la delta acumulada real/virtual. Ninguno es campo del catálogo ADR-0020 V2.
+- **Payload propio del reloj** (dentro de `details_json`, opaco al catálogo): `ntp_sync_offset` (delta NTP en ns), identificador del proceso virtual de simulación, y la delta acumulada real/virtual. Ninguno es campo del catálogo ADR-0020.
 
 ### Granularidad de Auditoría (Crítico de Rendimiento)
 PROHIBIDO auditar cada lectura de `timestamp_ns()` / `advance(ns)`: se invocan en el hot-path millones de veces y auditarlas saturaría la bitácora. El conjunto MÍNIMO de eventos auditables del reloj es:
@@ -152,7 +152,7 @@ PROHIBIDO auditar cada lectura de `timestamp_ns()` / `advance(ns)`: se invocan e
 - ADR-0002: Desacoplamiento de Persistencia (Timestamps como int64).
 - ADR-0013: Stack Tecnológico (precisión NTP/timestamps; el `ntp_sync_offset` es dato de ADR-0013, no campo de catálogo).
 - ADR-0015: Arquitectura de Causalidad (el reloj emite a la bitácora, fuente de verdad para Feedback).
-- ADR-0020 V2: Inundación de Fundaciones — Perfil D (Ops/Auditoría).
+- ADR-0020: Inundación de Fundaciones — Perfil D (Ops/Auditoría).
 
 ---
 

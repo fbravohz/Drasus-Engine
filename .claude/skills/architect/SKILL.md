@@ -42,7 +42,7 @@ Al procesar cualquier bloque de información, **DEBES ejecutar OBLIGATORIAMENTE 
 3. **Formulación de ADRs (Architecture Decision Records):** Identifica decisiones técnicas. Cada ADR vive en su propio archivo: para uno nuevo, crea `docs/adr/ADR-XXXX.md` con el siguiente número correlativo y **añade su fila al índice `docs/ADR.md`**; para uno existente, edita su archivo `docs/adr/ADR-XXXX.md`. PROHIBIDO volcar el ADR completo dentro del índice `docs/ADR.md`. **OBLIGATORIO:** antes de cerrar este paso, ejecuta el Protocolo de Mantenimiento de ADRs (§⚠️ abajo).
 4. **Validación de la Implementación de ADRs:** Verifica que todo ADR aplicable posea su materialización en los documentos de Feature.
 5. **Extracción a Features (Componentes):** Define o actualiza los documentos de Features y sus TTRs siguiendo las plantillas. **OBLIGATORIO:** Si el cambio en el SAD/ADR afecta contractualmente una Feature existente, actualiza su especificación de inmediato.
-6. **Aplicación del ADR-0020 V2 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 V2 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
+6. **Aplicación del ADR-0020 (Filtro de Relevancia Técnica):** Asigna a la Feature UNO de los 4 Perfiles Técnicos de la tabla canónica en ADR-0020 (A. Datos/Ingest, B. IA/R&D, C. Ops/Hot-Path, D. Ops/Auditoría). Inyecta el Grupo I (universal) + únicamente los campos concretos de los grupos que ese perfil cubre. PROHIBIDO copy-paste masivo de los 25 campos completos en una Feature, módulo o tabla.
 7. **Emplazamiento de TTRs en Módulos (Orquestación):**
    - Por cada Feature nueva/refactorizada, **DEBES** inyectar un nuevo bloque TTR explícito (Ej: `### **TTR-XX: Orquestación de [Feature]**`) en los `/modules/*.md`. Añadir un enlace no es suficiente.
    - **Asignación de número (anti-duplicado):** Antes de crear un TTR nuevo, consulta la tabla resumen del módulo como registro de numeración. El número asignado es `max(TTR existentes en ese módulo) + 1`, excluyendo TTR-999. PROHIBIDO asignar un número sin verificar que no existe ya en ese módulo — causa conflictos irrecuperables en el cuerpo del documento.
@@ -124,7 +124,7 @@ Un ADR nuevo que **modifica, extiende, generaliza o reemplaza** una decisión pr
    - `Fábrica` → `Orchestrator`
    - `Autopilot` → `Execute`
    - `Cementerio` → `Retiro Emérito` / `Withdraw` / `Archivo Institucional`
-- **Filtro de Relevancia (ADR-0020 V2):** Resumen rápido — la **tabla canónica** vive en ADR-0020 V2 (sección "Resto por Filtro de Relevancia por Perfil"); si este resumen y el ADR alguna vez difieren, **el ADR gana** y este resumen debe corregirse de inmediato (CODI §17.8). Inyecta selectivamente:
+- **Filtro de Relevancia (ADR-0020):** Resumen rápido — la **tabla canónica** vive en ADR-0020 (sección "Resto por Filtro de Relevancia por Perfil"); si este resumen y el ADR alguna vez difieren, **el ADR gana** y este resumen debe corregirse de inmediato (CODI §17.8). Inyecta selectivamente:
    - A. Datos / Ingest: Identidad (I) + Linaje de Datos (III) + Hardware (IV).
    - B. AI / R&D: Identidad (I) + Soberanía (II) + Pesos/Arquitectura, subset III + Hardware (IV).
    - C. Ops / Hot-Path: Identidad (I) + Soberanía (II) + Hardware (IV) + Latencia, subset V (≤1ms).

@@ -30,11 +30,11 @@ crates/execute/
 └── types.rs              # Tipos de entrada/salida: Order, Fill, TacticalClearance, KillSwitchSignal
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -197,7 +197,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * El "Hot-Path" de validación debe completarse en < 1ms.
     * Si cualquier check falla, la orden es abortada y se emite un log a Flutter explicando qué regla bloqueó al agente.
-    * Cualquier rechazo debe vincularse al `audit_hash` del estado de cuenta actual (ADR-0020 V2).
+    * Cualquier rechazo debe vincularse al `audit_hash` del estado de cuenta actual (ADR-0020).
 *   **Entrada:** `proposed_order`.
 *   **Salida:** `tactical_clearance` (APPROVED | REJECTED).
 *   **Precondición:** Estrategia autorizada por el portafolio (Módulo `manage`).
@@ -210,7 +210,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * Utiliza marcas de tiempo de nanosegundos para la sincronización de fills (ADR-0013).
     * La ejecución ocurre estrictamente bajo el protocolo **Bar-Open Alignment** para paridad con backtesting.
-    * Cada orden enviada debe heredar el `process_id` de la señal generadora (ADR-0020 V2).
+    * Cada orden enviada debe heredar el `process_id` de la señal generadora (ADR-0020).
 *   **Entrada:** `authorized_order`.
 *   **Salida:** `broker_acknowledgment`, `fill_event`.
 *   **Precondición:** TTR-001 aprobado.
@@ -222,7 +222,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * El "Kill-Switch" tiene soberanía absoluta para ejecutar `FlattenAll()` cerrando todas las posiciones e ignorando el FSM de estrategia.
     * Orquesta la ejecución paralela inerte (Shadow Mode) sin volumen expuesto para auditoría de drift.
     * Enlaza la señal de pánico externa recibida de la **Emergency PWA** para ejecutar un barrido manual remoto seguro.
-    * Toda acción de emergencia debe inyectar la huella digital del hardware (`node_id`) en el log forense (ADR-0020 V2).
+    * Toda acción de emergencia debe inyectar la huella digital del hardware (`node_id`) en el log forense (ADR-0020).
 *   **Entrada:** `system_health_metrics`, `pwa_panic_signal`.
 *   **Salida:** `kill_switch_signal` (opcional).
 *   **Precondición:** Sesión de trading en vivo o shadow mode iniciada.
@@ -232,7 +232,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`telemetry`](../features/telemetry.md) para registrar la salud del motor de ejecución.
 *   **Reglas de Orquestación:**
     * Debe emitir latencias de red y uso de CPU por cada fill recibido.
-    * Los datos de telemetría deben vincularse a la `session_id` activa (ADR-0020 V2).
+    * Los datos de telemetría deben vincularse a la `session_id` activa (ADR-0020).
 *   **Entrada:** `system_status`, `fill_latencies`.
 *   **Salida:** `telemetry_stream`.
 *   **Precondición:** Motor de ejecución activo.
@@ -252,7 +252,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Utiliza [`nautilus-integration`](../features/nautilus-integration.md) para conectar el motor de ejecución con la infraestructura de baja latencia.
 *   **Reglas de Orquestación:**
     * El bridge debe garantizar que el estado interno coincida 1:1 con el ledger del broker.
-    * Todas las latencias de tránsito se registran en el campo `execution_latency_ms` (ADR-0020 V2).
+    * Todas las latencias de tránsito se registran en el campo `execution_latency_ms` (ADR-0020).
 *   **Entrada:** `execution_engine_commands`.
 *   **Salida:** `low_latency_execution_status`.
 *   **Precondición:** TTR-002 y TTR-005 finalizados.
@@ -264,7 +264,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`order-flow-microstructure`](../features/order-flow-microstructure.md) (parte en vivo OFI/DOM L2 del split ADR-0118) segundos antes del disparo táctico.
 *   **Reglas de Orquestación:**
     * Veta la orden si la absorción institucional (CVD) contradice la dirección de la señal.
-    * Registra el `event_sequence_id` del último tick procesado (ADR-0020 V2).
+    * Registra el `event_sequence_id` del último tick procesado (ADR-0020).
 *   **Entrada:** `proposed_trade`, `market_depth_snapshot`.
 *   **Salida:** `microstructure_clearance` (OK | REJECT).
 *   **Precondición:** TTR-001 (Tactical Check) en curso.
@@ -589,12 +589,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: FSM para atomicidad de estados.
     - ADR-0013: Stack Tecnológico (NautilusTrader).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0108 / ADR-0109: Genoma de Riesgo y Gestión de Posición (TTR-041).
 
 ---

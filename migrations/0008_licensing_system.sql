@@ -1,5 +1,5 @@
 -- Migración 0008: Licensing System (docs/features/licensing-system.md,
--- ADR-0143, ADR-0144, ADR-0141, ADR-0020 V2, STORY-028)
+-- ADR-0143, ADR-0144, ADR-0141, ADR-0020, STORY-028)
 --
 -- Crea la tabla `licenses`: cimiento #2 del substrato de monetización
 -- (ADR-0144). Cada fila es UNA ACTIVACIÓN -- la licencia de un `owner_id`
@@ -24,7 +24,7 @@
 -- en `audit_events` (feature `audit-log` ya existente, migración 0002) --
 -- esta tabla NO es su propio historial, solo el estado vigente.
 --
--- Perfil ADR-0020 V2 para esta tabla (Perfil D "Ops/Auditoría", declarado en
+-- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", declarado en
 -- `docs/features/licensing-system.md` §8 "Gobernanza y Estándares"):
 --   - Grupo I  (Identidad & Integridad, UNIVERSAL, con row_version en vez de
 --     event_sequence_id por ser tabla mutable, ADR-0141): id, created_at,
@@ -37,7 +37,7 @@
 --     archivo de licencia), compliance_status_id (veredicto vigente de la
 --     licencia).
 -- El Grupo III (Linaje Alpha & Datos) NO aplica (sin linaje genómico) y se
--- omite a propósito (ADR-0020 V2 "Aplicación": "PROHIBIDO copy-paste
+-- omite a propósito (ADR-0020 "Aplicación": "PROHIBIDO copy-paste
 -- masivo").
 --
 -- Columnas propias de la Feature (fuera del contrato de 25 campos, mismo
@@ -57,7 +57,7 @@
 -- NOT EXISTS` hacen que volver a correr esta migración sea un no-op.
 
 CREATE TABLE IF NOT EXISTS licenses (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2; row_version en vez
+    -- I. Identidad & Integridad (universal, ADR-0020; row_version en vez
     -- de event_sequence_id por ser tabla mutable, ADR-0141).
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUIDv7 (Uuid::now_v7())
     created_at         INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)

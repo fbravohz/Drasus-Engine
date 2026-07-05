@@ -75,7 +75,7 @@ El motor de **Volatility Stabilization** garantiza que las estrategias operen ba
 
 - **Local-First (ADR-0016):** 100% Local.
 - **Fidelidad (ADR-0017):** Institucional (Slippage Dinámico afectado por vol).
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil C (Ops / Hot-Path)** — escalado de exposición por volatilidad en ruta crítica (I + II + IV + V latencia).
+- **Inundación de Fundaciones (ADR-0020): Perfil C (Ops / Hot-Path)** — escalado de exposición por volatilidad en ruta crítica (I + II + IV + V latencia).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

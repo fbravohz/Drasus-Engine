@@ -1,10 +1,10 @@
 -- Migration 0006: Sovereign Data Fetcher — registro de descargas
--- (docs/features/sovereign-data-fetcher.md, ADR-0034, ADR-0020 V2 Perfil A)
+-- (docs/features/sovereign-data-fetcher.md, ADR-0034, ADR-0020 Perfil A)
 --
 -- Crea la tabla `sovereign_download_records`: el registro inmutable de cada
 -- descarga ejecutada por el fetcher híbrido (Bulk + Delta REST).
 --
--- Perfil ADR-0020 V2: Perfil A (Datos de Mercado).
+-- Perfil ADR-0020: Perfil A (Datos de Mercado).
 --   - Grupo I  (universal): id, created_at, updated_at, audit_hash,
 --     audit_chain_hash, event_sequence_id.
 --   - Grupo III (Linaje Alpha & Datos): data_snapshot_id, logic_hash.
@@ -19,7 +19,7 @@
 -- EXISTS — volver a correr esta migración es un no-op.
 
 CREATE TABLE IF NOT EXISTS sovereign_download_records (
-    -- ── Grupo I: Identidad & Integridad (universal, ADR-0020 V2) ─────────
+    -- ── Grupo I: Identidad & Integridad (universal, ADR-0020) ─────────
     id                TEXT    NOT NULL PRIMARY KEY,   -- UUID único del registro de descarga
     created_at        INTEGER NOT NULL,               -- Nanosegundos desde epoch (puerto Clock)
     updated_at        INTEGER NOT NULL,               -- Nanosegundos desde epoch; igual a created_at (registro inmutable)

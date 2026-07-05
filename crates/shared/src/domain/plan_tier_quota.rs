@@ -1,5 +1,5 @@
 //! [CORE] Lógica pura de Plan / Tier / Quota (`docs/features/plan-tier-quota.md`,
-//! ADR-0144, ADR-0143, ADR-0141, ADR-0020 V2, STORY-029).
+//! ADR-0144, ADR-0143, ADR-0141, ADR-0020, STORY-029).
 //!
 //! Sin I/O, sin reloj de sistema, sin aleatoriedad sin semilla
 //! (ADR-0002/0004). Piezas de lógica pura, tal como las pide la Feature en

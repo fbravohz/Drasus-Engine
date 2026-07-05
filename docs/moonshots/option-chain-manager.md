@@ -43,7 +43,7 @@ Gestor de la estructura completa de contratos de opciones disponibles para un su
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil A (Datos / Ingest): Identidad + Linaje de Datos + Hardware. Registro del proveedor de datos, timestamp de sincronización y hash de integridad de la cadena.
 
 ---

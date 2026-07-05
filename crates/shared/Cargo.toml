@@ -17,7 +17,7 @@ nix = { version = "0.29", features = ["signal", "process"] }
 anyhow = "1"
 # Derivación de Display + Error para tipos de error del Shell.
 thiserror = "1"
-# Hostname del nodo (Grupo IV ADR-0020 V2 — node_id del Gateway MCP).
+# Hostname del nodo (Grupo IV ADR-0020 — node_id del Gateway MCP).
 hostname = "0.4"
 # Firma/verificación asimétrica Ed25519 para licencias (ADR-0093 §3: la clave
 # privada de firma NUNCA vive en el cliente; el cliente solo verifica con la

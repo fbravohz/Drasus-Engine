@@ -1,6 +1,6 @@
 //! [SHELL] Repositorio de persistencia para Central Identity
 //! (`docs/features/central-identity.md`, ADR-0143, ADR-0144, ADR-0141,
-//! ADR-0020 V2, migración `0007_central_identity.sql`).
+//! ADR-0020, migración `0007_central_identity.sql`).
 //!
 //! Envuelve la tabla `accounts`. Dueño del único I/O para cuentas:
 //! lecturas/escrituras en SQLite, generación de UUIDv7 (ADR-0141: "PK
@@ -53,7 +53,7 @@ pub enum AccountRepositoryError {
 
 /// Una cuenta nueva para persistir (`docs/features/central-identity.md`
 /// "Ciclo de Vida": "Entrada": credenciales del usuario + identificadores de
-/// máquina), más los metadatos de ADR-0020 V2 que provee quien llama al
+/// máquina), más los metadatos de ADR-0020 que provee quien llama al
 /// momento de crearla.
 #[derive(Debug, Clone)]
 pub struct NewAccount {

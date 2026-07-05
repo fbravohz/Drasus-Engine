@@ -1,12 +1,12 @@
 -- Migration 0002: Audit Log (docs/features/audit-log.md TTR-001, ADR-0015,
--- ADR-0020 V2, ADR-0027)
+-- ADR-0020, ADR-0027)
 --
 -- Creates the `audit_events` table: the append-only, hash-chained record
 -- of every significant system event (ADR-0015: "Arquitectura de
 -- Causalidad" — the audit log is the source of truth for Feedback;
 -- ADR-0027: "Event Sourcing & Inventory Reconstruction").
 --
--- ADR-0020 V2 field profile for this table ("Ops / Auditoría: Identidad +
+-- ADR-0020 field profile for this table ("Ops / Auditoría: Identidad +
 -- Soberanía + Hardware", per architect/SKILL.md filter):
 --   - Group I  (Identidad & Integridad, UNIVERSAL): id, created_at,
 --     updated_at, audit_hash, audit_chain_hash, event_sequence_id.
@@ -16,7 +16,7 @@
 --     session_id, node_id.
 -- Groups III and V are NOT applicable to this table's profile (no Alpha
 -- lineage, no execution/forensic fields) and are intentionally omitted —
--- ADR-0020 V2 "Aplicación": "PROHIBIDO copy-paste masivo".
+-- ADR-0020 "Aplicación": "PROHIBIDO copy-paste masivo".
 --
 -- Feature-specific columns (docs/features/audit-log.md TTR-001 "Entrada"
 -- and "Restricciones" — mandatory fields: timestamp, action type, entity
@@ -35,7 +35,7 @@
 -- migration a no-op.
 
 CREATE TABLE IF NOT EXISTS audit_events (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2)
+    -- I. Identidad & Integridad (universal, ADR-0020)
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUID (TTR-001 "log_id")
     created_at         INTEGER NOT NULL,             -- Nanoseconds since epoch (Clock port)
     updated_at         INTEGER NOT NULL,             -- Nanoseconds since epoch; append-only => always equals created_at

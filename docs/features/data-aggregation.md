@@ -73,9 +73,9 @@ Anonimiza cada dato cubierto, lo suma a los agregados y verifica el tamaño mín
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** la anonimización previa ocurre donde está el dato; solo el agregado viaja. Datos crudos nunca salen hacia terceros.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil B (IA/R&D)** para los agregados (Identidad + Soberanía II + subset de Linaje III + Hardware IV) — el agregado es un producto de datos derivado.
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil B (IA/R&D)** para los agregados (Identidad + Soberanía II + subset de Linaje III + Hardware IV) — el agregado es un producto de datos derivado.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla de índices agregados con Grupo I + Perfil B. Campos propios fuera del catálogo (marcados): tipo de índice, ventana temporal, tamaño de cohorte, nivel de ruido aplicado. `STRICT`, UUIDv7 (ADR-0141). Referencia de linaje (`data_snapshot_id`) al conjunto fuente.
 

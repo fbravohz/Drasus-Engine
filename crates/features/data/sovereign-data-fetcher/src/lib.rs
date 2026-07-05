@@ -2,7 +2,7 @@
 //!
 //! **Dominio:** data
 //! **Primer consumidor (ADR-0118):** EPIC-1 (Ingest)
-//! **Perfil ADR-0020 V2:** A (Datos de Mercado)
+//! **Perfil ADR-0020:** A (Datos de Mercado)
 //!
 //! Primer crate hexagonal de dominio del proyecto (ADR-0137): expone solo sus
 //! puertos tipados a través de `public_interface`. La lógica pura vive en

@@ -24,7 +24,7 @@
 
 ### 22.3 Los Nueve Cimientos del Substrato (ADR-0144)
 
-Principio: *"construye la fontanería una vez, vende el agua de mil formas"* — Inundación de Fundaciones (ADR-0020 V2) aplicada al negocio. Cada cimiento = puerto tipado (ADR-0137) + esquema greenfield (ADR-0141/ADR-0020 V2) **ahora**; el producto concreto = adaptador **después**.
+Principio: *"construye la fontanería una vez, vende el agua de mil formas"* — Inundación de Fundaciones (ADR-0020) aplicada al negocio. Cada cimiento = puerto tipado (ADR-0137) + esquema greenfield (ADR-0141/ADR-0020) **ahora**; el producto concreto = adaptador **después**.
 
 1. **Identidad y Cuenta Central** — cuenta, verificación de correo, identidad federada.
 2. **Licenciamiento y Activación** — licencia por identidad, huella de hardware, activaciones por tier; gate local del ADR-0143.
@@ -38,7 +38,7 @@ Principio: *"construye la fontanería una vez, vende el agua de mil formas"* —
 
 ### 22.4 Mapa de dependencias
 
-El **Bus de Eventos Enriquecido** (#6) es la raíz: sin eventos estructurados no hay telemetría, ni agregación, ni reportes, ni billing. De él cuelgan el Audit Trail inmutable (ya construido), la Anonimización (#9) y el Licenciamiento (#2). Sobre esos se apoyan Reportes (#7), API de Terceros (#8) y Facturación (parte de #3/#4). Multi-tenancy real vive solo en la Cabina de Mando (no calcada en tablas locales; se reutiliza `owner_id`/`institutional_tag`, ADR-0020 V2 Grupo II).
+El **Bus de Eventos Enriquecido** (#6) es la raíz: sin eventos estructurados no hay telemetría, ni agregación, ni reportes, ni billing. De él cuelgan el Audit Trail inmutable (ya construido), la Anonimización (#9) y el Licenciamiento (#2). Sobre esos se apoyan Reportes (#7), API de Terceros (#8) y Facturación (parte de #3/#4). Multi-tenancy real vive solo en la Cabina de Mando (no calcada en tablas locales; se reutiliza `owner_id`/`institutional_tag`, ADR-0020 Grupo II).
 
 ### 22.5 Clasificación de modelos de monetización
 

@@ -33,5 +33,5 @@ Motor de inferencia bayesiana que intenta **proyectar el futuro** de una estrate
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil IA / R&D: Identidad + Soberanía + Pesos/Arquitectura + Hardware. Registro del modelo bayesiano y de su validación out-of-sample por cada predicción emitida.

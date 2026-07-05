@@ -34,6 +34,6 @@ Motor que calcula un **Conviction Score (0-100)** en tiempo real para cada seña
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil IA / R&D: Identidad + Soberanía + Pesos/Arquitectura + Hardware. Registro del modelo y de la calibración por cada score emitido.
 - **Consumido por (cuando madure):** `precision-sizing-models` (TTR-005, Kelly Dinámico por Conviction Score).

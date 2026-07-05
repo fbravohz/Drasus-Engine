@@ -85,7 +85,7 @@ El protector de última instancia del sistema. Su misión es la **Prevención de
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda alerta de riesgo y ejecución de Kill Switch registra el set de relevancia técnica:
 
@@ -107,7 +107,7 @@ Toda alerta de riesgo y ejecución de Kill Switch registra el set de relevancia 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0010: Reglas Dinámicas (Watchdog como ejecutor de Hard Limits).
     - ADR-0015: Arquitectura de Causalidad (Análisis de Causa Raízs de liquidación).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

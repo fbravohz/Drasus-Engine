@@ -1,5 +1,5 @@
 -- Migration 0003: Async Job Executor (docs/features/async-job-executor.md
--- TTR-ASYNC-EXECUTOR-001..006, ADR-0011, ADR-0020 V2)
+-- TTR-ASYNC-EXECUTOR-001..006, ADR-0011, ADR-0020)
 --
 -- Creates the `jobs` and `job_results` tables: the durable backing store for
 -- the three-phase async job pattern (Disparo -> Monitoreo -> Recuperación,
@@ -8,7 +8,7 @@
 -- inserted, is never modified -- async-job-executor.md "Restricciones":
 -- "NUNCA un job se modifica después de completar. Resultado es inmutable.").
 --
--- ADR-0020 V2 field profile for these tables (async-job-executor.md
+-- ADR-0020 field profile for these tables (async-job-executor.md
 -- "Gobernanza y Estándares"):
 --   - Group I  (Identidad & Integridad, UNIVERSAL): id, created_at,
 --     updated_at, audit_hash, audit_chain_hash, event_sequence_id.
@@ -19,9 +19,9 @@
 --   - Soberanía: owner_id, access_token_id.
 -- Groups III (Linaje Alpha, beyond logic_hash) and V (Forense & Ejecución)
 -- are NOT listed by the feature doc and are intentionally omitted --
--- ADR-0020 V2 "Aplicación": "PROHIBIDO copy-paste masivo".
+-- ADR-0020 "Aplicación": "PROHIBIDO copy-paste masivo".
 --
--- `job_results` carries Group I (universal, ADR-0020 V2: every entity
+-- `job_results` carries Group I (universal, ADR-0020: every entity
 -- carries it from its first migration) plus its own functional columns.
 -- The concurrency/integrity/sovereignty metadata (process_id, session_id,
 -- node_id, logic_hash, owner_id, access_token_id) describes the *job's*
@@ -46,7 +46,7 @@
 -- migration a no-op.
 
 CREATE TABLE IF NOT EXISTS jobs (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2). `id` IS the job's
+    -- I. Identidad & Integridad (universal, ADR-0020). `id` IS the job's
     -- UUID (TTR-001 "UUID único del job"), generated before the row is
     -- inserted (persist-before-ack, TTR-001 "Job se guarda ANTES de
     -- retornar UUID").
@@ -80,7 +80,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_state
     ON jobs (state);
 
 CREATE TABLE IF NOT EXISTS job_results (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2).
+    -- I. Identidad & Integridad (universal, ADR-0020).
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUID for this result row
     created_at         INTEGER NOT NULL,             -- Nanoseconds since epoch (Clock port); == completed_at
     updated_at         INTEGER NOT NULL,             -- Nanoseconds since epoch; append-only => always equals created_at

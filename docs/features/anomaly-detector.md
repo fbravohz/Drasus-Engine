@@ -64,7 +64,7 @@ Componente encargado de detectar comportamientos atípicos y fallos de modelo. S
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. El aprendizaje de anomalías es propiedad intelectual crítica.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda detección de anomalía registra el set de relevancia técnica para AI/R&D:
 

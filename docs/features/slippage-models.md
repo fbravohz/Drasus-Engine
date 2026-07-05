@@ -69,12 +69,12 @@ Es el componente que inyecta "realismo institucional" a las ejecuciones. Se apal
 *   **Entrada:** `order_qty`, `bar_volume`.
 *   **Salida:** `executable_qty`, `is_rejected`.
 *   **Precondición:** Modo de fidelidad `SIMULATED_TICKS` o superior activo.
-*   **Postcondición:** Inyección de `audit_hash` en el rastro de simulación (ADR-0020 V2).
+*   **Postcondición:** Inyección de `audit_hash` en el rastro de simulación (ADR-0020).
 
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 
@@ -97,7 +97,7 @@ Toda estimación de impacto registra el set de relevancia técnica para AI/R&D:
 - **Decisión Arquitectónica Asociada:**
     - ADR-0002: Arregrística entera para precios (int64).
     - ADR-0017: Simulación de Alta Fidelidad.
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

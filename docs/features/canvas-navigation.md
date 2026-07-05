@@ -146,7 +146,7 @@ Sin esta feature el Canvas no tiene memoria de posición ni transiciones suaves 
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. DuckDB consulta archivos Parquet locales para correlación Pearson.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil D (Ops / Auditoría) — persiste preferencias de viewport de sesión.
+- **Inundación de Fundaciones (ADR-0020):** Perfil D (Ops / Auditoría) — persiste preferencias de viewport de sesión.
 
 | Categoría | Campo | Descripción |
 |---|---|---|

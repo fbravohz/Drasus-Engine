@@ -121,7 +121,7 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 *   **Entrada:** `strategy_dna`, `ohlcv_data` (Arrow), `slippage_model`.
 *   **Salida:** `TradeLog`, `EquityCurve`.
 *   **Precondición:** Datos OHLCV con integridad verificada por hash.
-*   **Postcondición:** Emisión de `audit_hash` del resultado final (ADR-0020 V2).
+*   **Postcondición:** Emisión de `audit_hash` del resultado final (ADR-0020).
 
 ### **TTR-002: Cálculo de Métricas y Probabilidad de Overfitting**
 *   **Descripción:** Calcula Sharpe, MaxDD, DSR y PBO (Probability of Overfitting).
@@ -155,7 +155,7 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda ejecución de backtest y resultado registra el set de relevancia técnica para AI/R&D:
 
@@ -179,7 +179,7 @@ Toda ejecución de backtest y resultado registra el set de relevancia técnica p
 - **Decisión Arquitectónica Asociada:**
     - ADR-0013: Stack Tecnológico (NautilusTrader).
     - ADR-0017: Simulación de Alta Fidelidad.
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0107: Integración nativa NT v2 (ruta Event-Driven).
     - ADR-0114: Motor dual, ruta Express híbrida, modo elegido por el usuario y contrato de consistencia conservadora.
     - ADR-0129: Entradas Concurrentes No Bloqueantes + De-duplicación de Señal (N posiciones simuladas).

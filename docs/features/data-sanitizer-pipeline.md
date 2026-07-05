@@ -19,7 +19,7 @@ Es el guardian de la calidad de datos de Drasus Engine y el cerebro del Módulo 
 - [ ] **Capa 3: Outlier Scrubbing.** Elimina picos de precios imposibles (fat fingers) usando filtros de desviación estándar.
 - [ ] **Capa 4: OHLC Sanity (Integrity Check).** Valida que `High >= (Open, Close, Low)` y `Low <= (Open, Close, High)`. Si una vela falla esta validación, la fila es descartada e incluida en el `error_log`, o reparada si es posible.
 - [ ] **Capa 5: Volume & Spread Corroboration.** Filtra ticks con volumen cero o inconsistente. Si la diferencia entre Bid/Ask supera `SPREAD_SIGMA_THRESHOLD` (default 3σ), genera una alerta automática de anomalía de spread.
-- [ ] **Capa 6: Point-in-Time Injection & Parquet Final Inundation.** Reconstruye el mercado ignorando eventos que ocurrieron "en el futuro" respecto a la fecha de simulación, y escribe el rastro auditable (ADR-0020 V2) en el archivo de salida.
+- [ ] **Capa 6: Point-in-Time Injection & Parquet Final Inundation.** Reconstruye el mercado ignorando eventos que ocurrieron "en el futuro" respecto a la fecha de simulación, y escribe el rastro auditable (ADR-0020) en el archivo de salida.
 
 ## Restricciones
 
@@ -77,7 +77,7 @@ Es el guardian de la calidad de datos de Drasus Engine y el cerebro del Módulo 
 
 - **Local-First (ADR-0016):** 100% Local.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda sanitización registra el set de relevancia técnica para Datos:
 

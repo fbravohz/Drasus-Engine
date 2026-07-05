@@ -73,7 +73,7 @@ Implementar la validación automática mediante la inversión de señales de ent
 ## Gobernanza y Estándares
 
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — inferencia estadística sobre el linaje de generación ($N$ pruebas).
+- **Inundación de Fundaciones (ADR-0020): Perfil B (IA / R&D)** — inferencia estadística sobre el linaje de generación ($N$ pruebas).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

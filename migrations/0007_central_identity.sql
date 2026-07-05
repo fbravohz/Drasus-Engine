@@ -1,5 +1,5 @@
 -- Migración 0007: Central Identity (docs/features/central-identity.md,
--- ADR-0143, ADR-0144, ADR-0141, ADR-0020 V2)
+-- ADR-0143, ADR-0144, ADR-0141, ADR-0020)
 --
 -- Crea la tabla `accounts`: la cuenta local de usuario, cimiento #1 del
 -- substrato de monetización (ADR-0144). Es el ancla de la que dependen
@@ -13,7 +13,7 @@
 -- versión por fila, arranca en 1, se incrementa con cada UPDATE) en vez de
 -- `event_sequence_id UNIQUE` (ese patrón es solo para tablas append-only).
 --
--- Perfil ADR-0020 V2 para esta tabla (Perfil D "Ops/Auditoría", según
+-- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", según
 -- declara `docs/features/central-identity.md` "Persistencia"):
 --   - Grupo I  (Identidad & Integridad, UNIVERSAL, con la sustitución de
 --     row_version por event_sequence_id que exige ADR-0141 para tablas
@@ -24,7 +24,7 @@
 --   - Grupo IV (Infraestructura & Ops / "Hardware"): node_id (huella de
 --     hardware determinista, NO un hostname crudo).
 -- Los Grupos III y V NO aplican a esta tabla (sin linaje Alpha, sin
--- ejecución/forense) y se omiten a propósito (ADR-0020 V2 "Aplicación":
+-- ejecución/forense) y se omiten a propósito (ADR-0020 "Aplicación":
 -- "PROHIBIDO copy-paste masivo").
 --
 -- Columnas propias de la Feature (fuera del contrato de 25 campos, mismo
@@ -46,7 +46,7 @@
 -- NOT EXISTS` hacen que volver a correr esta migración sea un no-op.
 
 CREATE TABLE IF NOT EXISTS accounts (
-    -- I. Identidad & Integridad (universal, ADR-0020 V2; row_version en vez
+    -- I. Identidad & Integridad (universal, ADR-0020; row_version en vez
     -- de event_sequence_id por ser tabla mutable, ADR-0141).
     id                 TEXT    NOT NULL PRIMARY KEY, -- UUIDv7 (Uuid::now_v7())
     created_at         INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)

@@ -82,7 +82,7 @@ El `Monthly Performance Heatmap` es un componente visual analítico que muestra 
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Datos / Ingest. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id` (Grupo I universal).
+- **Inundación de Fundaciones (ADR-0020):** Perfil Datos / Ingest. Registra `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id` (Grupo I universal).
 - **Rastro de Evidencia:** Emite retornos mensuales consolidados para el módulo de `feedback`.
 
 ---

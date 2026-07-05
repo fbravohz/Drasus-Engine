@@ -4,7 +4,7 @@
 //! Implementa la matriz de permisos de ADR-0123 (Cabina Dual).
 //!
 //! Perfil de persistencia: Grupo I + Grupo II (Soberanía) + Grupo IV (Hardware)
-//! + 4 campos de dominio propio (ADR-0020 V2, Perfil D — Ops/Auditoría).
+//! + 4 campos de dominio propio (ADR-0020, Perfil D — Ops/Auditoría).
 
 use uuid::Uuid;
 
@@ -81,7 +81,7 @@ pub struct PermissionRequest {
 
 /// Decisión de permiso registrable (persistida en `permission_decisions`).
 ///
-/// Campos según ADR-0020 V2, Perfil D (Ops/Auditoría):
+/// Campos según ADR-0020, Perfil D (Ops/Auditoría):
 /// - Grupo I (Identidad & Integridad — universal, 6 campos)
 /// - Grupo II (Soberanía — `owner_id`, `institutional_tag`)
 /// - Grupo IV (Hardware — `node_id`, `process_id`)

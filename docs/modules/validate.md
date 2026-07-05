@@ -32,11 +32,11 @@ crates/validate/
 └── types.rs              # Tipos de entrada/salida: TestScore, RobustnessVerdict, ValidationReport
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -230,7 +230,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca al [`ast-compiler`](../features/ast-compiler.md) para validar la integridad del diseño visual antes de cualquier prueba.
 *   **Reglas de Orquestación:**
     * Coordina el uso del **Bloque Factory (AOT)** para nodos estándar y el **Escape-Hatch (JIT)** para lógica personalizada.
-    * Genera la firma de integridad (`manifest_id`) vinculada al `logic_hash` institucional (ADR-0020 V2).
+    * Genera la firma de integridad (`manifest_id`) vinculada al `logic_hash` institucional (ADR-0020).
 *   **Entrada:** `Visual_Graph_JSON`.
 *   **Salida:** `StrategyExecutableObject`, `manifest_id`.
 *   **Precondición:** Recepción de candidato desde MOD-02.
@@ -240,7 +240,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`pit-data-validator`](../features/pit-data-validator.md) para garantizar que el backtest es "limpio" de look-ahead bias.
 *   **Reglas de Orquestación:**
     * Si el dataset falla, se marca la validación como `DATA_CONTAMINATED` y se bloquea el proceso.
-    * Toda certificación PIT exitosa se registra con el `audit_hash` del dataset (ADR-0020 V2).
+    * Toda certificación PIT exitosa se registra con el `audit_hash` del dataset (ADR-0020).
 *   **Entrada:** `candidate_strategy`, `history_dataset`.
 *   **Salida:** `pit_certification_status`.
 *   **Precondición:** Estrategia en estado `TESTING`.
@@ -302,7 +302,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`nautilus-integration`](../features/nautilus-integration.md) para ejecutar el loop de eventos determinista.
 *   **Reglas de Orquestación:**
     * El kernel debe sincronizar los relojes de todos los componentes antes de iniciar la simulación.
-    * Cada tick procesado debe ser auditable vía `event_sequence_id` (ADR-0020 V2).
+    * Cada tick procesado debe ser auditable vía `event_sequence_id` (ADR-0020).
 *   **Entrada:** `simulation_config`, `data_feed`.
 *   **Salida:** `event_loop_status`.
 *   **Precondición:** Datos certificados (TTR-002) disponibles.
@@ -764,7 +764,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     *   Invoca a [`time-warp-debugger`](../features/time-warp-debugger.md) al cambiar el rango de fechas en la UI.
     *   Gestiona la poda de directorios Hive-style de forma transparente delegando la consulta a DuckDB en Rust y retornando Arrow tables.
-    *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020 V2).
+    *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020).
 *   **Entrada:** `pipeline_id`, `generation`, `start_date`, `end_date`.
 *   **Salida:** `trades` (Arrow array/pylist), `downsampled_equity_curve` (500 puntos), `query_stats` (partitions_scanned, latency_ms).
 *   **Precondición:** Selector de tiempo activo en la UI del módulo `validate`.
@@ -775,7 +775,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     *   Invoca a [`umap-scatter-visualizer`](../features/umap-scatter-visualizer.md) para recuperar y renderizar nativamente en la UI de Flutter los vectores Arrow provenientes de Rust.
     *   Mapea los IDs seleccionados por colisión de lazo y actualiza reactivamente la tabla de candidatos.
-    *   Los metadatos se registran conforme al perfil IA / R&D (ADR-0020 V2).
+    *   Los metadatos se registran conforme al perfil IA / R&D (ADR-0020).
 *   **Entrada:** `pipeline_id`, `generation`, `lasso_selection_polygon`.
 *   **Salida:** `umap_points` (Arrow table), `selected_strategy_ids`.
 *   **Precondición:** Ejecución evolutiva con resultados de embedding finalizados en backend.
@@ -787,7 +787,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     *   Invoca a [`toxicity-purifier`](../features/toxicity-purifier.md) para recuperar los KPIs de toxicidad por clúster del databank.
     *   Exige la confirmación multi-paso con previsualización de KPIs y la generación obligatoria de un `snapshot_id` en SQLite antes de despachar el comando de soft-delete (`is_purged=true`).
     *   Provee el canal FFI para mandar el comando de rollback restaurando el catálogo.
-    *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020 V2).
+    *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020).
 *   **Entrada:** `databank_path`, `cluster_label_to_purge`, `rollback_snapshot_id` (opcional).
 *   **Salida:** `toxicity_clusters_list`, `purge_status` (SUCCESS | ROLLBACK_SUCCESS), `new_snapshot_id`.
 *   **Precondición:** Módulo `validate` con análisis PCA completado.
@@ -837,12 +837,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento Reproducible (DAG).
     - ADR-0013: Stack Tecnológico (NautilusTrader).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0108 / ADR-0109 / ADR-0110 / ADR-0111: Compuertas de Robustez por Dominio Genómico (TTR-059).
 
 ---

@@ -78,7 +78,7 @@ Componente de coherencia de mercado encargado de imponer la compatibilidad entre
 - **Local-First (ADR-0016):** 100% Local. El análisis de coherencia debe ser instantáneo.
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0110):** El veredicto COMPATIBLE/INCOMPATIBLE es el Gen de Acción de máscara del Dominio de Régimen y Filtro de Entorno. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda evaluación de compatibilidad de régimen registra el set de relevancia técnica:
 

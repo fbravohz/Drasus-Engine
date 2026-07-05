@@ -9,7 +9,7 @@
 | **Estado** | ✅ Completada (cimiento local; adaptador central + UI diferidos) |
 | **Creada** | 2026-07-03 |
 | **Feature** | [`central-identity`](../features/central-identity.md) |
-| **ADRs** | ADR-0144 (cimiento #1) · ADR-0143 (tres planos) · ADR-0137 (puertos) · ADR-0141 (esquema) · ADR-0020 V2 (perfiles) · ADR-0093 (secretos) · ADR-0142 (CLI verify) |
+| **ADRs** | ADR-0144 (cimiento #1) · ADR-0143 (tres planos) · ADR-0137 (puertos) · ADR-0141 (esquema) · ADR-0020 (perfiles) · ADR-0093 (secretos) · ADR-0142 (CLI verify) |
 
 ## 1. Objetivo llano
 
@@ -30,7 +30,7 @@ En Docente el ingeniero implementa el bloque completo por su cuenta y además es
 - **Stack:** limpio (Rust + gRPC; sin tecnologías rechazadas).
 - **Typo de spec corregido** por el TL (`sp# Central Identity` → `# Central Identity`).
 - **Esquema (ADR-0141) — corrección obligatoria:** la tabla de cuenta es **mutable** (el estado de verificación de correo cambia, `updated_at` cambia). Por ADR-0141 debe llevar **`row_version`** (concurrencia optimista), NO `event_sequence_id UNIQUE` (ese patrón es solo para tablas append-only). El resto del Grupo I sí aplica. `STRICT`, UUIDv7, tipos canónicos.
-- **Perfil ADR-0020 V2:** Perfil D — Grupo I completo + II (`owner_id`, `institutional_tag`, `access_token_id`) + IV (`node_id` = huella de hardware). Campos propios fuera del catálogo, marcados: estado de verificación de correo (`TEXT` + `CHECK`), proveedor OAuth (`TEXT`).
+- **Perfil ADR-0020:** Perfil D — Grupo I completo + II (`owner_id`, `institutional_tag`, `access_token_id`) + IV (`node_id` = huella de hardware). Campos propios fuera del catálogo, marcados: estado de verificación de correo (`TEXT` + `CHECK`), proveedor OAuth (`TEXT`).
 - **Puerto (ADR-0137):** `identity_out` → `AccountIdentity` (tipo técnico del substrato, ya en el catálogo vía enmienda ADR-0144). Sin puertos de entrada de otros cimientos (es la raíz).
 - **Ubicación del crate — decisión del ingeniero en su Gate de Lectura:** `AccountIdentity` es un **tipo técnico de plomería** (análogo a `AuditEvent`/`TelemetrySample`), no un tipo de dominio del canvas. Aplica el criterio de ADR-0137: si califica como infraestructura crosscutting (tipo `textLabel`, ≥2 consumidores, sin puerto de Alpha en el canvas) → vive en `crates/shared`, siguiendo el patrón de `audit-log`/`telemetry`. Si tu lectura de ADR-0137 dicta lo contrario de forma clara → **párate y escálame** (no adivines). En Docente, explica tu decisión de ubicación.
 - **Clasificación UI (ADR-0117):** la feature toma input del usuario (registro/login) → tiene **Superficie propia** (panel de cuenta), pero su UI completa + la llamada real al servidor central son el **adaptador diferido**. Para ESTA Story el observable se verifica por **CLI (Canal #2, ADR-0142)**; la UI del panel de cuenta queda registrada como **deuda de integración** contra `licensing-system`.
@@ -43,7 +43,7 @@ En Docente el ingeniero implementa el bloque completo por su cuenta y además es
 > **Gate de Lectura Pre-Código:** confirma la ubicación del crate (ver §3 "Ubicación") y el patrón de `audit-log`/`telemetry` en `crates/shared` como referencia estructural.
 >
 > **Construye (cimiento local — la llamada al servidor central es un puerto con stub local):**
-> 1. **Migración greenfield** de la tabla de cuenta: Grupo I completo (ADR-0020 V2) + `owner_id`, `institutional_tag`, `access_token_id`, `node_id`; campos propios marcados (`email_verification_status TEXT` con `CHECK`, `oauth_provider TEXT`). **`row_version`** (tabla mutable, ADR-0141), NO `event_sequence_id UNIQUE`. `STRICT`, PK `TEXT` UUIDv7, timestamps `INTEGER` ns UTC. Baseline editable in-situ (greenfield).
+> 1. **Migración greenfield** de la tabla de cuenta: Grupo I completo (ADR-0020) + `owner_id`, `institutional_tag`, `access_token_id`, `node_id`; campos propios marcados (`email_verification_status TEXT` con `CHECK`, `oauth_provider TEXT`). **`row_version`** (tabla mutable, ADR-0141), NO `event_sequence_id UNIQUE`. `STRICT`, PK `TEXT` UUIDv7, timestamps `INTEGER` ns UTC. Baseline editable in-situ (greenfield).
 > 2. **Core (lógica pura, sin I/O):** derivación de la huella de hardware (hash determinista de identificadores de máquina); validación de formato de correo; verificación de firma de token OAuth (dado el material público). Determinismo bit-a-bit.
 > 3. **Shell:** persistencia de la cuenta; caché local de identidad con TTL (`IDENTITY_CACHE_TTL`, default 24 h) para operación offline; **puerto/trait para la verificación contra la Cabina de Mando con una implementación stub local** (crea/cachea la cuenta localmente; el adaptador real es futuro — coméntalo como tal).
 > 4. **`public_interface`:** el puerto `identity_out` que responde "¿quién es el dueño de esta instancia?" devolviendo `AccountIdentity` (identificador de cuenta + estado de verificación). Sin exponer secretos.

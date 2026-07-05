@@ -49,7 +49,7 @@ Constructor visual y programático de estrategias de opciones multi-pata (spread
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil C (Ops / Hot-Path): Identidad + Soberanía + Hardware + Latencia. La ejecución atómica de multi-pata opera en el hot path de ejecución.
 
 ---

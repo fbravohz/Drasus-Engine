@@ -68,7 +68,7 @@ Es un servicio de procesamiento en el backend que reduce el número de puntos de
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reducción visual registra el set de relevancia técnica:
 

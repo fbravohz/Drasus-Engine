@@ -1,8 +1,8 @@
--- Migration 0001: Foundation Master Fields (ADR-0020 V2)
+-- Migration 0001: Foundation Master Fields (ADR-0020)
 --
 -- Creates the `foundation_master_fields` table materializing the Global
 -- Persistence Contract: the mandatory set of 25 fields every entity
--- in Drasus Engine must carry from its very first migration (ADR-0020 V2,
+-- in Drasus Engine must carry from its very first migration (ADR-0020,
 -- "Foundation Inundation Principle V2").
 --
 -- This table is the anchor/reference implementation of the contract. Future
@@ -52,6 +52,6 @@ CREATE TABLE IF NOT EXISTS foundation_master_fields (
     signature_hash         TEXT                          -- HMAC signals
 );
 
--- Recovery/event-sourcing access path (ADR-0020 V2 Part I, ADR-0006 crash recovery).
+-- Recovery/event-sourcing access path (ADR-0020 Part I, ADR-0006 crash recovery).
 CREATE INDEX IF NOT EXISTS idx_foundation_master_fields_event_sequence_id
     ON foundation_master_fields (event_sequence_id);

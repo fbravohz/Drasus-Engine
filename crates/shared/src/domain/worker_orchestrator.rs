@@ -1,6 +1,6 @@
 //! [CORE] Lógica pura del orquestador de workers aislados.
 //! (`docs/features/worker-isolation-orchestrator.md` TTR-001/TTR-002,
-//! ADR-0013, ADR-0020 V2).
+//! ADR-0013, ADR-0020).
 //!
 //! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004).
 //! Sin imports de `std::process`, `std::fs`, `tokio`, `nix` ni `memmap2`.

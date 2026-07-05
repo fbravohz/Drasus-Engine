@@ -74,7 +74,7 @@ El puente de ejecución multiplataforma es un desacoplador de órdenes y capa de
 ---
 
 ## Gobernanza y Estándares (Fijos)
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Esta feature aplica el perfil de **Ops / Hot-Path**:
 

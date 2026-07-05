@@ -1,5 +1,5 @@
 //! [SHELL] Repositorio de solo-apéndice (append-only) para el Audit Log
-//! (`docs/features/audit-log.md` TTR-001, ADR-0006, ADR-0020 V2).
+//! (`docs/features/audit-log.md` TTR-001, ADR-0006, ADR-0020).
 //!
 //! Envuelve la tabla `audit_events` (migración `0002_audit_log.sql`). Es el
 //! único punto de I/O del audit log: lecturas/escrituras en SQLite,

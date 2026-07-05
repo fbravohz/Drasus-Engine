@@ -1,5 +1,5 @@
 //! [CORE] Lógica pura de la cadena de hashes del Audit Log
-//! (`docs/features/audit-log.md` TTR-001, ADR-0015, ADR-0020 V2, ADR-0027).
+//! (`docs/features/audit-log.md` TTR-001, ADR-0015, ADR-0020, ADR-0027).
 //!
 //! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004). La
 //! marca de tiempo (`created_at_ns`) y el identificador (`id`) los inyecta
@@ -8,7 +8,7 @@
 //! [`chain_event`] y [`verify_chain`] siempre produzcan exactamente el
 //! mismo resultado, byte por byte.
 //!
-//! ## Cadena de hashes ("blockchain-lite", ADR-0020 V2 `audit_chain_hash`)
+//! ## Cadena de hashes ("blockchain-lite", ADR-0020 `audit_chain_hash`)
 //!
 //! Cada [`AuditEvent`] guarda dos hashes:
 //! - `audit_hash`: SHA-256 sobre el contenido propio de este evento más el
@@ -39,7 +39,7 @@ pub const GENESIS_PREVIOUS_HASH: &str = "GENESIS";
 /// Contenido de un evento de auditoría, provisto por quien llama
 /// (`docs/features/audit-log.md` TTR-001 "Entrada": `action_type`,
 /// `entity_type`, `entity_id`, `details_json`, `process_id`; más los
-/// campos obligatorios de ADR-0020 V2 para el perfil "Ops / Auditoría":
+/// campos obligatorios de ADR-0020 para el perfil "Ops / Auditoría":
 /// `institutional_tag` es obligatorio según TTR-001; el resto del grupo
 /// Soberanía/Infraestructura es opcional, evento por evento).
 ///
@@ -55,14 +55,14 @@ pub struct AuditEventContent {
     pub entity_id: String,
     pub details_json: String,
 
-    // Perfil "Ops / Auditoría" de ADR-0020 V2 (Grupo II: Soberanía).
+    // Perfil "Ops / Auditoría" de ADR-0020 (Grupo II: Soberanía).
     pub owner_id: Option<String>,
     /// Obligatorio según TTR-001 ("Toda entrada DEBE incluir ... `institutional_tag`").
     pub institutional_tag: String,
     pub manifest_id: Option<String>,
     pub access_token_id: Option<String>,
 
-    // Perfil "Ops / Auditoría" de ADR-0020 V2 (Grupo IV: Infraestructura / "Hardware").
+    // Perfil "Ops / Auditoría" de ADR-0020 (Grupo IV: Infraestructura / "Hardware").
     /// Obligatorio según TTR-001 ("Toda entrada DEBE incluir `process_id` ...").
     pub process_id: String,
     pub session_id: Option<String>,
@@ -72,13 +72,13 @@ pub struct AuditEventContent {
 /// Un evento de auditoría ya encadenado, listo para agregarse a
 /// `audit_events` (o ya almacenado ahí).
 ///
-/// Los grupos de campos siguen el perfil "Ops / Auditoría" de ADR-0020 V2
+/// Los grupos de campos siguen el perfil "Ops / Auditoría" de ADR-0020
 /// (Grupo I universal + Grupo II Soberanía + Grupo IV Infraestructura),
 /// más los campos propios de la feature TTR-001 que vienen en
 /// [`AuditEventContent`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditEvent {
-    // I. Identidad & Integridad (universal, ADR-0020 V2).
+    // I. Identidad & Integridad (universal, ADR-0020).
     pub id: String,
     pub created_at_ns: i64,
     pub updated_at_ns: i64,
@@ -86,7 +86,7 @@ pub struct AuditEvent {
     pub audit_chain_hash: Option<String>,
     pub event_sequence_id: i64,
 
-    // Contenido de TTR-001 + Grupos II/IV de ADR-0020 V2.
+    // Contenido de TTR-001 + Grupos II/IV de ADR-0020.
     pub content: AuditEventContent,
 }
 

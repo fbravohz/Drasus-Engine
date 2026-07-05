@@ -67,9 +67,9 @@ Es un motor de orquestación de simulaciones diseñado para evaluar una estrateg
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
-Perfil **B (IA/R&D)**: Grupo I (universal) + Soberanía (II) + Pesos/Arquitectura, subset de III + Hardware (IV). Solo los campos relevantes para un reporte de backtest multi-activo (Filtro de Relevancia, ADR-0020 V2):
+Perfil **B (IA/R&D)**: Grupo I (universal) + Soberanía (II) + Pesos/Arquitectura, subset de III + Hardware (IV). Solo los campos relevantes para un reporte de backtest multi-activo (Filtro de Relevancia, ADR-0020):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

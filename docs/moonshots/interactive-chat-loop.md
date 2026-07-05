@@ -63,5 +63,5 @@ El `Interactive Chat Loop` es una interfaz conversacional integrada de estilo Ch
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local (Sovereign AI).
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `node_id`, `logic_hash`, `access_token_id`.
+- **Inundación de Fundaciones (ADR-0020):** Perfil IA / R&D. Registra `node_id`, `logic_hash`, `access_token_id`.
 - **Rastro de Evidencia:** Emite logs de comandos procesados al módulo de `feedback`.

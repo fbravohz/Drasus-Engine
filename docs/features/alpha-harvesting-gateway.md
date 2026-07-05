@@ -61,11 +61,11 @@ Permite incorporar "Alpha" descubierto por otros nodos sin revelar su código fu
 ## 8. Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. No llama "home" al origen.
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
   - **Perfil elegido:** B. Perfil IA / R&D
   - **Identidad (Grupo I completo):** `id` del import, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   - **Soberanía:** `institutional_tag` fijado como EXTERNAL_ALPHA.
   - **Pesos/Arquitectura:** `logic_hash` del AST importado verificado en base a firma criptográfica.
 
 ## 9. Decisión Arquitectónica Asociada
-- ADR-0020 V2.
+- ADR-0020.

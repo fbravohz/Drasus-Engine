@@ -49,7 +49,7 @@ Gateway de ingesta especializado en datos de opciones financieras: cadenas de ve
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil A (Datos / Ingest): Identidad + Linaje de Datos + Hardware. Registro del proveedor, timestamp de ingesta, hash de integridad y versionado PIT.
 
 ---

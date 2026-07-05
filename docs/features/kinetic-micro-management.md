@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/kinetic-micro-management/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0082, ADR-0020 V2, ADR-0108, ADR-0109
+**Decisiones Arquitectónicas Asociadas:** ADR-0082, ADR-0020, ADR-0108, ADR-0109
 
 ---
 
@@ -72,7 +72,7 @@ Se gestiona a través del objeto `KineticMicroManagementConfig`:
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):** **Perfil C (Ops / Hot-Path)** — gestión intra-trade en ruta crítica de ejecución.
+- **Inundación de Fundaciones (ADR-0020):** **Perfil C (Ops / Hot-Path)** — gestión intra-trade en ruta crítica de ejecución.
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

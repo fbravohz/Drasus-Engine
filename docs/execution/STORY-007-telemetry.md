@@ -20,7 +20,7 @@
 
 - **Feature:** [`telemetry`](../features/telemetry.md) — solo **TTR-001** (Buffer de Alta Velocidad). TTR-002 (Diseñador de Vistas de Correlación) queda fuera: necesita el módulo `feedback`, que no existe aún (ver §8).
 - **Módulo:** plomería transversal en `crates/shared` (ADR-0003) — mismo patrón que `clock` y `audit-log`, sin módulo de pipeline dueño.
-- **ADR(s):** ADR-0015 (Causalidad — la telemetría es evidencia de infraestructura, distinta del audit-log de negocio), ADR-0020 V2 (contrato de persistencia/perfiles), ADR-0003 (crate `shared`).
+- **ADR(s):** ADR-0015 (Causalidad — la telemetría es evidencia de infraestructura, distinta del audit-log de negocio), ADR-0020 (contrato de persistencia/perfiles), ADR-0003 (crate `shared`).
 
 ## 2. Objetivo (una frase llana)
 
@@ -76,7 +76,7 @@ DISEÑO DE PERSISTENCIA (decisión del Tech-Lead, por precedente directo de
 `migrations/0002_audit_log.sql` — revísalo como referencia de formato):
 - Tabla `telemetry_samples`, migración nueva `migrations/0004_telemetry.sql`,
   idempotente (`CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`).
-- Columnas del contrato canónico (ADR-0020 V2), exactamente las que la tabla
+- Columnas del contrato canónico (ADR-0020), exactamente las que la tabla
   "Persistencia" de `telemetry.md` ya declara — NO copies grupos completos, solo
   estas:
   - Grupo I (universal): `id`, `created_at`, `updated_at`, `audit_hash`,

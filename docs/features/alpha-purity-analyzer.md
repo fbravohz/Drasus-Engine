@@ -95,7 +95,7 @@ Se diferencia de sus features hermanas: `factor-decomposition` reparte el retorn
 - **Local-First (ADR-0016):** 100% Local. Los cálculos de regresión se realizan en el backend local, sin recurrir a servicios en la nube.
 - **Fidelidad (ADR-0017):** Alta. Los retornos se calculan sobre la serie de precios de cierre para mantener coherencia estadística.
 
-### Persistencia (Inundación de Fundaciones — ADR-0020 V2) — Perfil B (IA / R&D)
+### Persistencia (Inundación de Fundaciones — ADR-0020) — Perfil B (IA / R&D)
 
 Toda firma de pureza registra el Grupo I completo (universal) más los campos de relevancia técnica para IA/R&D:
 

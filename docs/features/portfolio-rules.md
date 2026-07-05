@@ -3,7 +3,7 @@
 **Carpeta:** `./features/portfolio-rules/`
 **Estado:** Especificación / Prioritario
 **Última actualización:** 2026-06-11
-**Decisiones Arquitectónicas Asociadas:** ADR-0010, ADR-0015, ADR-0020 V2, ADR-0079, ADR-0108, ADR-0111
+**Decisiones Arquitectónicas Asociadas:** ADR-0010, ADR-0015, ADR-0020, ADR-0079, ADR-0108, ADR-0111
 
 ---
 
@@ -66,7 +66,7 @@ Componente de gobernanza encargado de imponer los límites de seguridad globales
 *   **Entrada:** `rule_config`, `portfolio_state`, `order_intent`.
 *   **Salida:** `RuleVerdict` (APPROVED | BLOCKED | VETOED), `reason`.
 *   **Precondición:** Estado del portafolio actualizado en `equity-curve-tracker`.
-*   **Postcondición:** Registro inmutable del veto en `rule_violations` con `process_id` (ADR-0020 V2).
+*   **Postcondición:** Registro inmutable del veto en `rule_violations` con `process_id` (ADR-0020).
 
 ### **TTR-002: Monitor de Límites en Tiempo Real (SLA < 10ms)**
 *   **Descripción:** Evaluación de latencia ultra-baja para respuesta ante brecha de riesgo sistémico.
@@ -99,7 +99,7 @@ Componente de gobernanza encargado de imponer los límites de seguridad globales
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil C Hot-Path, híbrido C+III)
 
 Híbrido: Perfil C (check de riesgo en hot-path) + linaje III legítimo (reproducibilidad del veredicto de reglas).
 
@@ -130,7 +130,7 @@ Híbrido: Perfil C (check de riesgo en hot-path) + linaje III legítimo (reprodu
 - **Decisiones Arquitectónicas Asociadas:**
     - ADR-0010: Reglas Dinámicas (Hard Limits vs Soft Alerts).
     - ADR-0015: Arquitectura de Causalidad (Vetos como evidencia de fallo).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0079: Rules Wrappers for Portfolios & Universal Rules Injection (Challenge Mode).
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0111):** El `RuleVerdict` agregado de cartera (APROBADA/BLOQUEADA/VETADA por DD/Volatilidad) es un Gen de Condición de Estado del Dominio de Portafolio y Correlación. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.
 

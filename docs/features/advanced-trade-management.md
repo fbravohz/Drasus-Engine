@@ -2,7 +2,7 @@
 
 **Carpeta:** `./features/advanced-trade-management/`
 **Estado:** En Diseño
-**Decisiones Arquitectónicas Asociadas:** ADR-0081, ADR-0009, ADR-0020 V2, ADR-0108, ADR-0109, ADR-0129
+**Decisiones Arquitectónicas Asociadas:** ADR-0081, ADR-0009, ADR-0020, ADR-0108, ADR-0109, ADR-0129
 
 ---
 
@@ -90,7 +90,7 @@ El Grid Trading, Scaling In/Out y Trailing Stop son mecánicas de posición line
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
     - Obligatorio incluir en cada guardado: `indicator_state_hash` (estado técnico exacto al ajustar el stop), `source_signal_id` (vínculo causal con la señal original).
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0109):** Esta feature es Primitiva de Acción del Dominio de Riesgo y Gestión de Posición. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.
 - **Dependencias:** Utilizado primordialmente en `execute` y `manage`.

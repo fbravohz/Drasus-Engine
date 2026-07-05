@@ -74,7 +74,7 @@ Es el orquestador visual y técnico que permite gestionar las descargas de datos
 
 - **Local-First (ADR-0016):** 100% Local (gestión de archivos locales).
 - **Fidelidad (ADR-0017):** N/A (Feature de infraestructura).
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada job de descarga registra el set de relevancia técnica:
 

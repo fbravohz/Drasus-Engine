@@ -339,7 +339,7 @@ Ninguna violación detectada. El documento usa correctamente la terminología de
 
 - **Local-First (ADR-0016):** 100% Local (los datos se descargan y procesan en el disco del usuario).
 - **Fidelidad (ADR-0017):** Alta (maneja Ticks y Barras de 1M).
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada descarga registra el set de relevancia técnica para Datos:
 
@@ -357,4 +357,4 @@ Cada descarga registra el set de relevancia técnica para Datos:
 | | `process_id` | PID del worker de descarga |
 | **Campo propio (fuera del catálogo de 25)** | `source_endpoint` | URL/endpoint de la fuente Bulk o REST de la que provino el dato — provenance obligatorio para la soberanía de datos |
 
-> **Nota de perfil (ADR-0020 V2):** esta tabla es Perfil A (Datos) — usa Grupo I (universal) + Grupo III (Linaje) + Grupo IV (Hardware). El tiempo total de descarga **no** se persiste aquí (sería un campo de Grupo V, ajeno al Perfil A): la duración y el progreso del trabajo de descarga los lleva el registro del trabajo asíncrono (tipo `Job` de `async-job-executor`) y la telemetría del `background-download-manager`. `source_endpoint` es un campo propio de dominio (provenance), fuera del catálogo de 25, justificado por la soberanía de datos.
+> **Nota de perfil (ADR-0020):** esta tabla es Perfil A (Datos) — usa Grupo I (universal) + Grupo III (Linaje) + Grupo IV (Hardware). El tiempo total de descarga **no** se persiste aquí (sería un campo de Grupo V, ajeno al Perfil A): la duración y el progreso del trabajo de descarga los lleva el registro del trabajo asíncrono (tipo `Job` de `async-job-executor`) y la telemetría del `background-download-manager`. `source_endpoint` es un campo propio de dominio (provenance), fuera del catálogo de 25, justificado por la soberanía de datos.

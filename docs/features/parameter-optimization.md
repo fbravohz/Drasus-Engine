@@ -61,7 +61,7 @@ Busca los parámetros óptimos de una estrategia usando Grid Search (exhaustivo)
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. La búsqueda de parámetros es intensiva en cómputo y debe realizarse en el hardware del usuario.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

@@ -80,7 +80,7 @@ Es un módulo de validación avanzada que aplica técnicas de aprendizaje no sup
 
 ## Gobernanza y Estándares (Fijos)
 
-### Inundación de Fundaciones (ADR-0020 V2)
+### Inundación de Fundaciones (ADR-0020)
 - **Perfil AI / R&D:**
   - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía IP & Propiedad:** `owner_id`.

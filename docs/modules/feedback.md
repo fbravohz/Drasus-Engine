@@ -28,11 +28,11 @@ crates/feedback/
 └── types.rs              # Tipos de entrada/salida: ReconciliationReport, AnomalyReport, ContinuityVerdict
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -145,7 +145,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`trade-reconciler`](../features/trade-reconciler.md) para auditar fills reales vs teóricos.
 *   **Reglas de Orquestación:**
     * El proceso debe ejecutarse al cierre de cada sesión (EOD) o en cada fill (Real-Time).
-    * Toda discrepancia de slippage debe vincularse al `process_id` de la ejecución original (ADR-0020 V2).
+    * Toda discrepancia de slippage debe vincularse al `process_id` de la ejecución original (ADR-0020).
 *   **Entrada:** `actual_fills`, `expected_simulation_fills`.
 *   **Salida:** `reconciliation_report`.
 *   **Precondición:** Fills persistidos en el módulo `execute`.
@@ -155,7 +155,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca periódicamente a [`pardo-comparison`](../features/pardo-comparison.md) para certificar la supervivencia de la estrategia.
 *   **Reglas de Orquestación:**
     * Si el veredicto Pardo es negativo, emitir señal de `AUTO_WITHDRAW` al módulo `withdraw`.
-    * El veredicto debe incluir el `audit_hash` consolidado del historial de la estrategia (ADR-0020 V2).
+    * El veredicto debe incluir el `audit_hash` consolidado del historial de la estrategia (ADR-0020).
 *   **Entrada:** `live_vs_paper_metrics`.
 *   **Salida:** `continuity_verdict` (approved | deprecated).
 *   **Precondición:** Suficiente historial operativo (> 100 trades o > 30 días).
@@ -165,7 +165,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`anomaly-detector`](../features/anomaly-detector.md) para identificar fallos estructurales.
 *   **Reglas de Orquestación:**
     * Traducir anomalías detectadas en `negative_constraints` para el módulo `generate`.
-    * Inyectar el `version_node_id` del modelo detector en el reporte de anomalía (ADR-0020 V2).
+    * Inyectar el `version_node_id` del modelo detector en el reporte de anomalía (ADR-0020).
 *   **Entrada:** `execution_logs`, `market_volatility_context`.
 *   **Salida:** `anomaly_report`, `generation_constraints`.
 *   **Precondición:** Reporte de reconciliación (TTR-001) finalizado.
@@ -313,12 +313,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0005: Versionamiento (Feedback Loop).
     - ADR-0011: Observabilidad y Logs (Audit Trail).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
 
 ---
 

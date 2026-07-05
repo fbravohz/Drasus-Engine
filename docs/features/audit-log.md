@@ -16,7 +16,7 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 
 **Solución:** El Core nunca escribe logs. En su lugar, dispara eventos al puerto de auditoría injected. El Shell es quien persiste esos eventos de forma inmutable (append-only: solo agregar, nunca borrar ni modificar).
 
-**Resultado observable:** Auditoría completa del sistema basada en el **Principio de Inundación de Fundaciones (ADR-0020 V2)**. Cada evento incluye metadatos para cumplimiento institucional (Institutional Compliance) y reconciliación de Nautilus.
+**Resultado observable:** Auditoría completa del sistema basada en el **Principio de Inundación de Fundaciones (ADR-0020)**. Cada evento incluye metadatos para cumplimiento institucional (Institutional Compliance) y reconciliación de Nautilus.
 
 ---
 
@@ -95,7 +95,7 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 *   **Descripción:** Persiste eventos críticos con rastro de evidencia inmutable.
 *   **Reglas de Negocio:**
     * El `audit_hash` debe calcularse usando el hash de la fila anterior + contenido actual (encadenamiento).
-    * Toda entrada DEBE incluir `process_id` y `institutional_tag` (ADR-0020 V2).
+    * Toda entrada DEBE incluir `process_id` y `institutional_tag` (ADR-0020).
 *   **Entrada:** `action_type`, `entity_type`, `entity_id`, `details_json`, `process_id`.
 *   **Salida:** `log_id` (UUID), `audit_hash`.
 *   **Precondición:** Evento validado contra esquema de acción permitido.
@@ -129,7 +129,7 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020 V2) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, forense de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020 V2.
+- **Inundación de Fundaciones (ADR-0020) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, forense de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020.
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
@@ -147,12 +147,12 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 | | `session_id` | Agrupación de runtime (nullable) |
 | | `node_id` | ID del hardware físico (nullable) |
 
-- **Campos propios de la feature (TTR-001):** `action_type`, `entity_type`, `entity_id`, `details_json` — definidos en "Entrada"/"Restricciones" de este documento, no en ADR-0020 V2.
+- **Campos propios de la feature (TTR-001):** `action_type`, `entity_type`, `entity_id`, `details_json` — definidos en "Entrada"/"Restricciones" de este documento, no en ADR-0020.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0015: Arquitectura de Causalidad (Audit Log como fuente de verdad para Feedback).
     - ADR-0016: Local-First (Soberanía de datos de auditoría).
-    - ADR-0020 V2: Inundación de Fundaciones — Perfil D (Ops/Auditoría).
+    - ADR-0020: Inundación de Fundaciones — Perfil D (Ops/Auditoría).
 
 ---
 

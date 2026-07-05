@@ -84,7 +84,7 @@ Permite el intercambio y análisis cooperativo descentralizado de métricas y pa
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil IA / R&D
 | Categoría | Campo | Descripción |

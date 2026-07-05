@@ -248,8 +248,8 @@ Feature Router implementa un mecanismo para activar/desactivar features dinámic
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. La resolución de dependencias y activación de features ocurre en el arranque local.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
-    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020 V2); NO el catálogo completo de 25 campos.
+- **Inundación de Fundaciones (ADR-0020):** 
+    - Aplica el **Grupo I (universal)** + solo los campos de su Perfil Técnico listados abajo (Filtro de Relevancia, ADR-0020); NO el catálogo completo de 25 campos.
     - Metadatos de configuración y seguridad: `audit_chain_hash` (Secuencia de booteo), `logic_hash` (Kernel version), `node_id`, `access_token_id`.
     - Soberanía: `owner_id`, `manifest_id`.
 

@@ -69,7 +69,7 @@ El motor de detección de regímenes utiliza **Modelos Ocultos de Markov (HMM)**
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil B IA/R&D, híbrido B+latencia)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil B IA/R&D, híbrido B+latencia)
 
 Híbrido: Perfil B (IA/R&D, lleva linaje III) + latencia V legítima (clasificación ≤20ms en hot-path).
 

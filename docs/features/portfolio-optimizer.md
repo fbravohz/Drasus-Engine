@@ -235,7 +235,7 @@ Adicionalmente, incorpora el **Auto-Rebalancing Daemon** (scheduler nativo Tokio
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada reporte de rebalanceo y sesión de optimización registra el set de relevancia técnica. **Perfil B (IA/R&D), híbrido B+latencia** (lleva linaje III + latencia V <2ms del Voiding Gate):
 

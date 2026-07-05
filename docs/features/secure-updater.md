@@ -3,7 +3,7 @@
 **Carpeta:** `./features/secure-updater/`  
 **Estado:** Lista para implementar  
 **Última actualización:** 2026-06-04  
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)  
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones)  
 
 ---
 
@@ -115,7 +115,7 @@ El actualizador seguro gestiona el ciclo de vida de las actualizaciones de softw
 ## 8. Gobernanza y Estándares (Fijos)
 
 * **Local-First (ADR-0016):** 100% Local en su lógica de reconstrucción e instalación. Las peticiones de descarga se realizan asíncronamente.
-* **Inundación de Fundaciones (ADR-0020 V2):**
+* **Inundación de Fundaciones (ADR-0020):**
   * **Perfil D (Ops / Auditoría):** actualizador firmado; lo relevante es la trazabilidad forense de cada parche y su firma, no la latencia del hot-path de mercado.
   * **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
   * **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`.

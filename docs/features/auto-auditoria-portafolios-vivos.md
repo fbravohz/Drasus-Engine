@@ -92,7 +92,7 @@ La auto-auditoría de portafolios vivos es un sistema de monitoreo en tiempo rea
 - **Local-First (ADR-0016):** 100% Local. Todo el cálculo de expectativa y toma de decisiones defensivas reside en el nodo local.
 - **Fidelidad (ADR-0017):** Fidelidad máxima. Utiliza las cotizaciones en tiempo real del broker.
 
-### Perfil Ops / Hot-Path (ADR-0020 V2)
+### Perfil Ops / Hot-Path (ADR-0020)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

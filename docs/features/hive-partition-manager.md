@@ -66,7 +66,7 @@ Es el componente encargado de organizar físicamente los archivos Parquet en el 
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada escritura particionada registra el set de relevancia técnica:
 

@@ -34,5 +34,5 @@ Capa de ejecución institucional que conecta vía **FIX API** directamente con p
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil Ops / Hot-Path: Identidad + Soberanía + Hardware + Latencia (objetivo microsegundos). Registro de la ruta de ejecución y del proveedor de liquidez por cada orden.

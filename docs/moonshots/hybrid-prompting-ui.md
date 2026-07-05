@@ -62,5 +62,5 @@ El `Hybrid Prompting UI` es un asistente copiloto de autocompletado y sugerencia
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil IA / R&D. Registra `version_node_id`, `node_id`, `audit_chain_hash`.
+- **Inundación de Fundaciones (ADR-0020):** Perfil IA / R&D. Registra `version_node_id`, `node_id`, `audit_chain_hash`.
 - **Rastro de Evidencia:** Emite métricas de uso del copiloto al módulo de `feedback`.

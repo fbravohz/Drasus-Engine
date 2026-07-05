@@ -73,7 +73,7 @@ En lugar de almacenar objetos de estrategia gigantes (JSON AST) en cada iteraci�
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local (Soberanía Parquet + DuckDB).
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
     - **Perfil B (IA / R&D):** data lake R&D efímero (semillas genéticas), no ruta crítica de ejecución.
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.

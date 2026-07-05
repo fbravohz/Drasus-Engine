@@ -64,7 +64,7 @@ El Executable Container es un contrato técnico (Interface o Abstract Base Class
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. Los contenedores de ejecución residen en la base de datos local encryptada.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda cápsula de ejecución registra el set de relevancia técnica para AI/R&D:
 

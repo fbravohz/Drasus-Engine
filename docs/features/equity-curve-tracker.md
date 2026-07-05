@@ -189,7 +189,7 @@ Mantiene un registro barra-por-barra (o tick-por-tick) del capital, beneficio/p�
 
 ## Gobernanza y Estándares
 
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — tracking de equity con auditoría + linaje.
+- **Inundación de Fundaciones (ADR-0020): Perfil B (IA / R&D)** — tracking de equity con auditoría + linaje.
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

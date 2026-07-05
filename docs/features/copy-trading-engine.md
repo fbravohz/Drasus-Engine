@@ -149,7 +149,7 @@ La feature opera de forma híbrida: el relé corre de forma externa (VPS / Nube)
 ### Fidelidad (ADR-0017)
 Las señales replicadas deben modelarse con la fricción del broker local del copier (comisiones y spreads específicos del broker destino), calculando el impacto de slippage en tiempo real antes del disparo de la orden replicada.
 
-### Inundación de Fundaciones (ADR-0020 V2)
+### Inundación de Fundaciones (ADR-0020)
 Esta feature pertenece al perfil **Ops / Hot-Path**. Cada evento de copia y orden replicada en el copier debe registrar en SQLite los siguientes campos mandatorios de auditoría:
 *   `id` (UUID de la orden local)
 *   `created_at` (timestamp local de origen en nanosegundos)

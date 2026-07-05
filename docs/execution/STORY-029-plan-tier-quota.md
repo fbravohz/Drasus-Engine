@@ -9,7 +9,7 @@
 | **Estado** | ✅ Completada (catálogo local; sincronización central, re-cableado #2 y UI diferidos) |
 | **Creada** | 2026-07-04 |
 | **Feature** | [`plan-tier-quota`](../features/plan-tier-quota.md) |
-| **ADRs** | ADR-0144 (cimiento #3) · ADR-0143 (tiers) · ADR-0137 (puerto `PlanLimits`) · ADR-0141 (esquema/precios ×10⁸) · ADR-0020 V2 (Perfil D) · ADR-0008 (configurabilidad) · ADR-0093 (secretos) · ADR-0142 (CLI verify) |
+| **ADRs** | ADR-0144 (cimiento #3) · ADR-0143 (tiers) · ADR-0137 (puerto `PlanLimits`) · ADR-0141 (esquema/precios ×10⁸) · ADR-0020 (Perfil D) · ADR-0008 (configurabilidad) · ADR-0093 (secretos) · ADR-0142 (CLI verify) |
 
 ## 1. Objetivo llano
 
@@ -32,7 +32,7 @@ En Docente el ingeniero implementa el bloque completo por su cuenta y además es
 - **Stack:** limpio (Rust + CLI; sin tecnologías rechazadas).
 - **Esquema (ADR-0141) — regla obligatoria #1:** la tabla de planes es **mutable** (un plan cambia límite/precio en sitio; "en la siguiente revalidación se refleja"). Lleva **`row_version`** (concurrencia optimista), NO `event_sequence_id UNIQUE`. El historial de cambios de plan va al `audit-log`, no a esta tabla.
 - **Precios y nocional (ADR-0141) — regla obligatoria #2:** todo monto (precio del plan, límite de volumen nocional) se persiste como **entero escalado ×10⁸** (`INTEGER`), **NUNCA `REAL`**. Round-trip sin deriva de punto flotante.
-- **Perfil ADR-0020 V2:** Perfil D — Grupo I completo (con `row_version`) + II (`owner_id` del creador del plan, `institutional_tag`) + IV (`node_id`). Campos propios fuera del catálogo, marcados: `tier` (`TEXT` + `CHECK`), `notional_limit` (`INTEGER` ×10⁸), `max_activations` (`INTEGER`), `price` (`INTEGER` ×10⁸), `pricing_model` (`TEXT` + `CHECK`), conjunto de features habilitadas (codificación determinista — lista `TEXT` ordenada o tabla hija con FK; elige y justifica bajo ADR-0141, sin `REAL`).
+- **Perfil ADR-0020:** Perfil D — Grupo I completo (con `row_version`) + II (`owner_id` del creador del plan, `institutional_tag`) + IV (`node_id`). Campos propios fuera del catálogo, marcados: `tier` (`TEXT` + `CHECK`), `notional_limit` (`INTEGER` ×10⁸), `max_activations` (`INTEGER`), `price` (`INTEGER` ×10⁸), `pricing_model` (`TEXT` + `CHECK`), conjunto de features habilitadas (codificación determinista — lista `TEXT` ordenada o tabla hija con FK; elige y justifica bajo ADR-0141, sin `REAL`).
 - **Puerto (ADR-0137):** `plan_limits_out` → `PlanLimits` (cardinalidad `1..N`), ya en el catálogo vía enmienda ADR-0144. Consumido por `licensing-system` y `usage-metering`.
 - **Ubicación del crate — Gate de Lectura del ingeniero:** `PlanLimits` es **tipo técnico de plomería** (`textLabel`, ≥2 consumidores, sin puerto de Alpha en el canvas) → `crates/shared` (mismo criterio que `central-identity`/`licensing-system`). Confirma leyendo el patrón ya construido. Si tu lectura dicta lo contrario de forma clara → **párate y escálame**.
 - **Coherencia del plan (Core):** NUNCA un plan sin tier ni sin cuota declarada (feature §Restricciones) → la validación pura debe rechazarlo.

@@ -66,7 +66,7 @@ El **Optimizador Bayesiano** es un motor de búsqueda inteligente de parámetros
 - **Qué tiene que pasar:** Crear gráficos de contorno de 2D/3D que muestren la relación entre parámetros y fitness.
 - **Criterio de éxito:** Renderizado interactivo en la UI via WebGL.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada corrida de optimización inteligente registra el set de relevancia técnica para AI/R&D:
 

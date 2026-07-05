@@ -114,7 +114,7 @@ impl Default for JobExecutorConfig {
     }
 }
 
-/// Metadatos de ADR-0020 V2 que identifican la instancia/proceso del
+/// Metadatos de ADR-0020 que identifican la instancia/proceso del
 /// executor (`docs/features/async-job-executor.md` "Gobernanza y
 /// Estándares": `process_id`, `session_id`, `node_id`, `logic_hash`, más
 /// el `institutional_tag` obligatorio del audit log). Inyectado por
@@ -336,7 +336,7 @@ impl JobExecutor {
     /// Devuelve el UUID del job nuevo.
     pub async fn submit(&self, request: NewJob) -> Result<String, JobExecutorError> {
         // Estampa los metadatos de identidad del executor cuando quien
-        // llama no provee los suyos (ADR-0020 V2 "Gobernanza y Estándares").
+        // llama no provee los suyos (ADR-0020 "Gobernanza y Estándares").
         let request = NewJob {
             session_id: request.session_id.or_else(|| self.shared.identity.session_id.clone()),
             node_id: request.node_id.or_else(|| self.shared.identity.node_id.clone()),
@@ -655,7 +655,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::persistence::pool::{connect, migrate};
 
-    /// ADR-0020 V2 "Gobernanza y Estándares": identidad mínima para
+    /// ADR-0020 "Gobernanza y Estándares": identidad mínima para
     /// tests — sin significado de negocio, solo strings estables para
     /// estampar en jobs/eventos de auditoría.
     fn test_identity() -> ExecutorIdentity {

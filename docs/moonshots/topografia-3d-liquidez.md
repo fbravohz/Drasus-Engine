@@ -86,7 +86,7 @@ Es un modo de visualización avanzado que renderiza el historial del Order Book 
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Ops / Hot-Path
 | Categoría | Campo | Descripción |

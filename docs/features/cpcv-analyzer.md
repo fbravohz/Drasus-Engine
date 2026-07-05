@@ -83,7 +83,7 @@ Implementación del algoritmo de Lopez de Prado:
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. No se envían datos de optimización ni resultados a nubes externas.
-- **Inundación de Fundaciones (ADR-0020 V2):** 
+- **Inundación de Fundaciones (ADR-0020):** 
 Esta feature registra el set de relevancia técnica para **AI / R&D**:
 
 | Categoría | Campo | Descripción |

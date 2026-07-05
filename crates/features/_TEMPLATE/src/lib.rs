@@ -2,7 +2,7 @@
 //!
 //! **Dominio:** [data | generation | validation | execution | portfolio | lifecycle]
 //! **Primer consumidor (ADR-0118):** [EPIC-X]
-//! **Perfil ADR-0020 V2:** [A | B | C | D]
+//! **Perfil ADR-0020:** [A | B | C | D]
 //!
 //! Cada feature crate es un hexágono (ADR-0137): expone solo sus puertos
 //! tipados (`InputPorts` / `OutputPorts`) a través de `public_interface`.

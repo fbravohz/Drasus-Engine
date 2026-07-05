@@ -1,6 +1,6 @@
 # Registro de Decisiones de Arquitectura (ADR) — Índice
 
-Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idéntico** al monolito original; se partió para lectura por demanda (ver `CLAUDE.md` §3). Para leer un ADR concreto, abre su archivo; no hace falta cargar todos.
+Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concreto, abre su archivo; no hace falta cargar todos.
 
 | ADR | Decisión / Título |
 |-----|-------------------|
@@ -23,7 +23,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0017](./adr/ADR-0017.md) | Simulación de Alta Fidelidad Institutional |
 | [ADR-0018](./adr/ADR-0018.md) | Taxonomía y Topología del Pipeline (Los 8 Módulos) |
 | [ADR-0019](./adr/ADR-0019.md) | ~~Interoperabilidad Frontend-Backend (FFI/gRPC)~~ ⚠️ Superado por ADR-0029 |
-| [ADR-0020 V2](./adr/ADR-0020.md) | Principio de Inundación de Fundaciones V2 (Foundation Inundation) |
+| [ADR-0020](./adr/ADR-0020.md) | Principio de Inundación de Fundaciones V2 (Foundation Inundation) |
 | [ADR-0021](./adr/ADR-0021.md) | ~~Modelo de Decisión Dual (Autopilot con Veto)~~ ⚠️ Superado por ADR-0010 |
 | [ADR-0022](./adr/ADR-0022.md) | Pipeline No-Lineal (DAG Multiflujal) |
 | [ADR-0023](./adr/ADR-0023.md) | Dashboard Dinámico vs Arquitectura de Plugins |
@@ -140,12 +140,12 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). El contenido es **idé
 | [ADR-0134](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo Windows/Linux/macOS + Mobile/Web Cliente Delgado) y Detección de Muerte del Padre Portátil |
 | [ADR-0135](./adr/ADR-0135.md) | Sección `## Cáscara Visual` Obligatoria en Features con Superficie — Skill UI-Designer como Etapa 0.5 del Tech Lead |
 | [ADR-0136](./adr/ADR-0136.md) | Arquitectura Visual Unificada — Dashboard + Canvas [Forge/Reactor — TBD] · supersede ADR-0028 (ZUI 3 niveles nominados) |
-| [ADR-0137](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset · enmienda ADR-0002 + ADR-0118 · enmienda 2026-06-23: infra crosscutting vive en `crates/shared` (excepción acotada) |
-| [ADR-0138](./adr/ADR-0138.md) | Design System Centralization en UI (Flutter) — ThemeExtension + Widgets Primitivos · enmienda 2026-06-25: Tema Extensible (registro abierto de N propiedades — modos de superficie, color de fuente configurable, borde global = énfasis, selector híbrido) · enmienda 2026-06-29: Librería de Componentes Funcional, neutral al estilo y al proyecto (clases desnudas namespaced, sin `Glow*`/`Glass*`/`Drasus*`); galería = consumidora con mocks; índice `ui/COMPONENTS.md`; migración en STORY-025 |
+| [ADR-0137](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset · enmienda ADR-0002 + ADR-0118 |
+| [ADR-0138](./adr/ADR-0138.md) | Design System Centralization en UI (Flutter) — ThemeExtension + Widgets Primitivos |
 | [ADR-0139](./adr/ADR-0139.md) | Principio Rector General — Single Source of Truth para Contratos Reusables |
 | [ADR-0140](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
 | [ADR-0141](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet, pool, retención y convenciones |
 | [ADR-0142](./adr/ADR-0142.md) | Harness de Verificación sin UI — Canal #2: CLI First (`drasus verify` subcomando Clap en `crates/app`), gRPC Planificado (Spike + tonic + protos por dominio) |
-| [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor (enmienda ADR-0016/0030/0102, extiende ADR-0119/0033) |
+| [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor |
 | [ADR-0144](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después); clasifica modelos en cimiento/moonshot-zizaña/descartado |
-| [ADR-0145](./adr/ADR-0145.md) | Pilar de Cuentas Verificadas Drasus — Atestación soberana de ejecución + read-only al bróker + registro multi-cuenta (cimiento #10) + track record publicable; enmienda ADR-0143 (telemetría clase 5), acota ADR-0001 al monolito (portal en repo aparte) |
+| [ADR-0145](./adr/ADR-0145.md) | Pilar de Cuentas Verificadas Drasus — Atestación soberana de ejecución + read-only al bróker + registro multi-cuenta (cimiento #10) + track record publicable |

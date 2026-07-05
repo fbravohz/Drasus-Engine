@@ -64,7 +64,7 @@ Resuelve el problema de generar cientos de algoritmos rentables que terminan hac
 
 ## 8. Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
   - **Perfil IA / R&D:** Identidad + Linaje Genético + Hardware.
   - **Contrato de Persistencia:** Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `parent_id`, `version_node_id` (III) + `portfolio_container_id` (V Gobernanza, híbrido) + `process_id` (IV).
   - **Rastro de Evidencia:** El grado de correlación penalizado se registra en la bitácora de generación.

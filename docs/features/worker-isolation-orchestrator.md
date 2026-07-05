@@ -88,7 +88,7 @@ El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tare
 > **Cardinalidad:** `1` = exactamente uno · `0..1` = opcional · `0..N` = múltiple · `1..N` = al menos uno.
 > **Puerto interno (ADR-0137 Enmienda 2026-06-24):** `job_result_out` es un puerto interno — plomería `textLabel`, payload específico de esta feature, nunca cableable en el canvas. No requiere tipo de catálogo.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil D Ops/Auditoría de infraestructura)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil D Ops/Auditoría de infraestructura)
 
 Orquestación/aislamiento de procesos worker (infra), no hot-path de mercado → **Perfil D** (I + II + IV), con linaje de job padre-hijo documentado como híbrido legítimo (orquestador→worker):
 
@@ -111,4 +111,4 @@ Orquestación/aislamiento de procesos worker (infra), no hot-path de mercado →
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local (Headless support).
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil D + linaje híbrido. Cada proceso worker registra su `process_id` y su `parent_id` (orquestador) en el log de auditoría.
+- **Inundación de Fundaciones (ADR-0020):** Perfil D + linaje híbrido. Cada proceso worker registra su `process_id` y su `parent_id` (orquestador) en el log de auditoría.

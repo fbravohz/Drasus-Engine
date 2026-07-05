@@ -66,7 +66,7 @@ El **Manejador de Empaquetado de Flutter FFI** orquesta el ciclo de vida del bin
     - [ ] Al cerrar la aplicación, no quedan procesos de Rust huérfanos.
 * **¿Qué no puede pasar?** NUNCA dejar el puerto local expuesto a conexiones que no provengan de `127.0.0.1`.
 
-## Persistencia (Filtro de Relevancia Hardware — ADR-0020 V2)
+## Persistencia (Filtro de Relevancia Hardware — ADR-0020)
 
 Cada instancia y log de ejecución de la aplicación debe portar el set filtrado de metadatos para trazabilidad de infraestructura local:
 
@@ -88,5 +88,5 @@ Cada instancia y log de ejecución de la aplicación debe portar el set filtrado
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** El log de inicio registra el `manifest_id` y `hardware_hash`.
+- **Inundación de Fundaciones (ADR-0020):** El log de inicio registra el `manifest_id` y `hardware_hash`.
 

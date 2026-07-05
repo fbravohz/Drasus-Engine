@@ -1,5 +1,5 @@
 //! Contratos de datos del Sovereign Data Fetcher: configuración configurable
-//! y structs de persistencia (Perfil A, ADR-0020 V2).
+//! y structs de persistencia (Perfil A, ADR-0020).
 
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +35,7 @@ impl Default for FetcherConfig {
 
 /// Una fila de la tabla `sovereign_download_records` ya persistida.
 ///
-/// Contiene los campos del Perfil A (ADR-0020 V2):
+/// Contiene los campos del Perfil A (ADR-0020):
 /// Grupo I (Identidad & Integridad) + Grupo III (Linaje) + Grupo IV (Hardware)
 /// + el campo de dominio propio `source_endpoint`.
 #[derive(Debug, Clone, PartialEq, Eq)]

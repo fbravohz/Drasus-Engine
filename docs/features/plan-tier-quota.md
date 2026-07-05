@@ -71,9 +71,9 @@ El conjunto de límites vigentes (volumen nocional, activaciones, features) para
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** catálogo central, cacheado local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id` del creador del plan, `institutional_tag`) + Hardware(IV: `node_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id` del creador del plan, `institutional_tag`) + Hardware(IV: `node_id`).
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Tabla de planes con Grupo I + Perfil D. Campos propios fuera del catálogo (marcados): tier, límite de volumen nocional (entero ×10⁸), activaciones máximas, precio (entero ×10⁸), conjunto de features. Enums (`tier`, `pricing_model`) con `CHECK`; `STRICT`; UUIDv7 (ADR-0141).
 

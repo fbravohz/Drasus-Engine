@@ -1,5 +1,5 @@
 //! [CORE] Lógica pura de Licensing System (`docs/features/licensing-system.md`,
-//! ADR-0143, ADR-0144, ADR-0141, ADR-0093, ADR-0020 V2, STORY-028).
+//! ADR-0143, ADR-0144, ADR-0141, ADR-0093, ADR-0020, STORY-028).
 //!
 //! Sin I/O, sin reloj de sistema, sin aleatoriedad sin semilla
 //! (ADR-0002/0004). El reloj lo inyecta quien llama (puerto `Clock`); la
@@ -287,7 +287,7 @@ pub fn evaluate_heartbeat_status(
 }
 
 /// Proyecta un [`HeartbeatStatus`] a su `compliance_status_id` persistido
-/// (Grupo V, ADR-0020 V2) -- `Fresh`/`RecheckWindow` cuentan como "al
+/// (Grupo V, ADR-0020) -- `Fresh`/`RecheckWindow` cuentan como "al
 /// corriente" (`ACTIVE`); solo `Expired` es lo que la Feature llama
 /// "vencido".
 pub fn heartbeat_status_to_compliance_status_id(status: HeartbeatStatus) -> &'static str {

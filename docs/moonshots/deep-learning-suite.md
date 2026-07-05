@@ -69,7 +69,7 @@ La **Suite de Aprendizaje Profundo** proporciona los bloques de construcción pa
 - **Qué tiene que pasar:** Desarrollar un cliente gRPC que envíe prompts anonimizados (con alias y IDs lógicos en lugar de fórmulas explícitas) a APIs de modelos frontera (GPT-4o).
 - **Criterio de éxito:** Respuestas completadas e integradas a la UI local en < 3s, con 100% de datos sensibles anonimizados en origen.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada entrenamiento e inferencia de Deep Learning registra el set de relevancia técnica para AI/R&D:
 

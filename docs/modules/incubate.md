@@ -30,11 +30,11 @@ crates/incubate/
 └── types.rs              # Tipos de entrada/salida: IncubationSession, VirtualFill, DriftVerdict
 ```
 
-### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020 V2)
+### Vocabulario de Persistencia — Catálogo de 25 Campos (ADR-0020)
 
-Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 V2 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
+Esta tabla es el **catálogo de referencia completo** del Contrato Global de ADR-0020 (vocabulario lógico, no esquema literal). La migración 0001 crea la tabla ancla `foundation_master_fields` con estas 25 columnas como referencia ÚNICA del sistema — este módulo NO la replica.
 
-Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020 V2) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
+Las tablas propias de este módulo (una por feature/TTR, en sus propias migraciones) llevan: el **Grupo I (Identidad & Integridad, 6 primeras filas) de forma universal y obligatoria**, más solo los campos concretos de los Grupos II–V que correspondan al **Perfil Técnico** de cada feature (Filtro de Relevancia, tabla canónica en ADR-0020) — nunca el catálogo completo. Cada feature documenta su selección en su propia sección "Contrato de Persistencia" (`features/*.md`).
 
 | Categoría | Campo | Descripción |
 |---|---|---|
@@ -141,7 +141,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Inicia la sesión de trading virtual invocando a [`paper-trader`](../features/paper-trader.md).
 *   **Reglas de Orquestación:**
     * El motor debe utilizar la precisión de ejecución espejo (Slippage + Latencia simulada).
-    * Se debe inyectar el `process_id` del worker de incubación en cada orden virtual (ADR-0020 V2).
+    * Se debe inyectar el `process_id` del worker de incubación en cada orden virtual (ADR-0020).
 *   **Entrada:** `approved_strategy`, `live_data_stream`.
 *   **Salida:** `virtual_trade_fills`.
 *   **Precondición:** Estrategia en estado `INCUBATING`.
@@ -151,7 +151,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca periódicamente a [`pardo-comparison`](../features/pardo-comparison.md) para medir el Drift vs Backtest.
 *   **Reglas de Orquestación:**
     * Si el Drift excede `MAX_SHARPE_DRIFT`, disparar alerta de `PAUSE_INCUBATION`.
-    * El veredicto de consistencia debe incluir el `audit_hash` del baseline histórico (ADR-0020 V2).
+    * El veredicto de consistencia debe incluir el `audit_hash` del baseline histórico (ADR-0020).
 *   **Entrada:** `virtual_performance`, `backtest_baseline`.
 *   **Salida:** `consistency_verdict` (STABLE | DRIFTED).
 *   **Precondición:** TTR-001 acumulando datos vivos (> 30 días).
@@ -161,7 +161,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Delega el control de transiciones a [`order-fsm`](../features/order-fsm.md).
 *   **Reglas de Orquestación:**
     * Toda transición de estado virtual debe ser auditable y coincidir con la lógica live.
-    * Las órdenes deben persistir en el DAG con `version_node_id` de la sesión (ADR-0020 V2).
+    * Las órdenes deben persistir en el DAG con `version_node_id` de la sesión (ADR-0020).
 *   **Entrada:** `virtual_order_event`.
 *   **Salida:** `fsm_state_transition`.
 *   **Precondición:** TTR-001 procesando eventos de mercado.
@@ -173,7 +173,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * El orquestador evalúa barra a barra el desvío MAE en el Sandbox de Cuarentena (7 días). Dispara eutanasia predictiva si excede el umbral (+15% MAE flotante).
     * Dibuja y proyecta las bandas estadísticas (1, 2, 3 sigmas) basadas en Monte Carlo en caliente.
     * Si la equidad cruza el límite inferior (-1 sigma), marca de forma inmediata la estrategia con la Broken Strategy Flag, cerrando posiciones virtuales/reales vía [`order-fsm`](../features/order-fsm.md) en <1ms.
-    * Asegura que los datos de la sesión sobrevivan a reinicios del sistema y emite eventos inmutables de cambio de estado atados a un identificador único (ADR-0020 V2).
+    * Asegura que los datos de la sesión sobrevivan a reinicios del sistema y emite eventos inmutables de cambio de estado atados a un identificador único (ADR-0020).
 *   **Entrada:** `session_control_command`, `live_data_stream`, `monte_carlo_distribution`.
 *   **Salida:** `updated_session_status`, `consistency_metrics` (Return/Drawdown Efficiency), `kill_switch_trigger`.
 *   **Precondición:** Módulo `incubate` activo y estrategia en estado `INCUBATING`.
@@ -291,11 +291,11 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Gobernanza y Estándares (Fijos)
 
-- **Inundación de Fundamentos (ADR-0020 V2):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020 V2) — nunca el catálogo completo.
+- **Inundación de Fundamentos (ADR-0020):** El catálogo de los 25 campos maestros está en la sección "Épica 0: Esqueleto Fundacional" de este documento (referencia, no esquema). Toda entidad persistida por este módulo incluye el Grupo I de forma universal; los Grupos II–V se aplican solo en los campos que el Perfil Técnico de cada feature exige (Filtro de Relevancia, ADR-0020) — nunca el catálogo completo.
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0017: Simulación de Alta Fidelidad (Paper Trading).
-    - ADR-0020 V2: Inundación de Fundaciones.
+    - ADR-0020: Inundación de Fundaciones.
     - ADR-0010: Hard Limits (aplicados a paper trading).
 
 ---

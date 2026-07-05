@@ -59,7 +59,7 @@ Componente de vigilancia encargado de detectar la degradación del rendimiento e
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local. Los datos de rendimiento propio son confidenciales.
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda evaluación de performance y detección de drift registra el set de relevancia técnica:
 

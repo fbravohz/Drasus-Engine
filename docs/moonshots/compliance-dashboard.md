@@ -63,5 +63,5 @@ El `Compliance Dashboard` es un panel de auditoría diseñado para cumplir de fo
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `audit_hash`, `compliance_status_id`.
+- **Inundación de Fundaciones (ADR-0020):** Perfil Ops / Auditoría. Registra `id`, `created_at`, `audit_hash`, `compliance_status_id`.
 - **Rastro de Evidencia:** Emite veredictos de conformidad para el módulo de `feedback`.

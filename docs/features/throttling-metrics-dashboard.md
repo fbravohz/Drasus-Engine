@@ -80,7 +80,7 @@ El `Throttling Metrics Dashboard` provee visualización en tiempo real y diagnó
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2):** Perfil Ops / Hot-Path. Registra `process_id`, `node_id`, `execution_latency_ms`. Latencia de telemetría máxima de 1ms.
+- **Inundación de Fundaciones (ADR-0020):** Perfil Ops / Hot-Path. Registra `process_id`, `node_id`, `execution_latency_ms`. Latencia de telemetría máxima de 1ms.
 - **Rastro de Evidencia:** Emite métricas agregadas de latencia al módulo de `feedback`.
 
 ---

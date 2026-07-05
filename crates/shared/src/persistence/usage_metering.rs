@@ -1,6 +1,6 @@
 //! [SHELL] Repositorio de persistencia APPEND-ONLY para Usage Metering /
 //! Libro de Nocional (`docs/features/usage-metering.md`, ADR-0143,
-//! ADR-0144, ADR-0141, ADR-0020 V2, migración `0010_usage_metering.sql`,
+//! ADR-0144, ADR-0141, ADR-0020, migración `0010_usage_metering.sql`,
 //! STORY-030).
 //!
 //! Envuelve la tabla `usage_records`. Dueño del único I/O de este cimiento:

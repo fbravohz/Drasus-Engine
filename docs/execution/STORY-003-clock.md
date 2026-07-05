@@ -14,7 +14,7 @@
 
 ## 1. Especificación de origen
 - **Feature:** [`clock`](../features/clock.md) — TTR-001 (timestamp ns), TTR-002 (reloj determinista backtest-ready)
-- **ADR(s):** ADR-0003 (FCIS), ADR-0020 V2 (contrato de campos por perfil)
+- **ADR(s):** ADR-0003 (FCIS), ADR-0020 (contrato de campos por perfil)
 
 ## 2. Objetivo (una frase llana)
 Un reloj que funciona en modo real y en modo determinista, para que todo backtest dé exactamente el mismo resultado con las mismas entradas.
@@ -25,7 +25,7 @@ Eres el Rust-Engineer de Drasus Engine. Tarea STORY-003 de la Épica 0. STORY-00
 
 PASOS DE ARRANQUE: 1) Lee base/SKILL.md y declara. 2) Lee rust-engineer/SKILL.md. 3) Lee features/clock.md
 COMPLETA (TTR-001 timestamp ns, TTR-002 reloj determinista) — ese es el alcance. 4) Lee los ADRs que cite.
-Si menciona persistencia, ADR-0020 V2 (actualizado): 25 campos = contrato lógico con filtro por perfil,
+Si menciona persistencia, ADR-0020 (actualizado): 25 campos = contrato lógico con filtro por perfil,
 NO 25 columnas calcadas; grupo I universal, resto según perfil. NO calques 25 columnas.
 
 ORDEN: Implementar clock según TTR-001 y TTR-002.
@@ -99,7 +99,7 @@ grep -nE "SystemTime|::now\(\)" crates/shared/src/orchestrator.rs
 
 ## 6. Registro de ejecución (bitácora)
 - 2026-06-12 · Rust-Engineer (Sonnet) · **APROBADO (Fase 1, núcleo)** · Auditoría Tech-Lead: build + clippy 0 warnings; 10 tests verdes incluyendo determinismo bit-a-bit; FCIS verificado (`domain/clock.rs` sin acceso a reloj real; `orchestrator.rs` con `SystemTime::now()`). `Clock` (trait), `DeterministicClock` (núcleo), `SystemClock` (cáscara) en `crates/shared`.
-- 2026-06-12 · Architect (Opus, escalamiento §3) · **Perfil de auditoría resuelto** · Citas huérfanas de `clock.md` corregidas: `ntp_sync_offset`/proceso virtual/delta real-virtual son payload de `details_json`, no campos del catálogo. Perfil D. 3 eventos auditables definidos. Sin cambios a ADR-0020 V2.
+- 2026-06-12 · Architect (Opus, escalamiento §3) · **Perfil de auditoría resuelto** · Citas huérfanas de `clock.md` corregidas: `ntp_sync_offset`/proceso virtual/delta real-virtual son payload de `details_json`, no campos del catálogo. Perfil D. 3 eventos auditables definidos. Sin cambios a ADR-0020.
 - 2026-06-12 · Rust-Engineer (Sonnet) · **APROBADO (Fase 2, rastro de auditoría)** · Nuevo módulo de cáscara `crates/shared/src/clock_audit.rs`: `emit_ntp_sync`/`emit_mode_transition`/`emit_session_close` emiten vía `AuditLogRepository::append`; payload en `details_json` con `serde_json`; dep `serde_json` añadida a `shared`. Auditoría Tech-Lead (verificación independiente): clippy `--workspace --all-targets -- -D warnings` limpio; 28 tests verdes (21+7); FCIS verificado (`domain/clock.rs` sin referencia a auditoría); granularidad verificada (hot-path `timestamp_ns`/`advance`/`tick` no emite); `verify_chain` sigue `Valid` tras emitir.
 
 ## 7. Pendientes derivados / decisiones

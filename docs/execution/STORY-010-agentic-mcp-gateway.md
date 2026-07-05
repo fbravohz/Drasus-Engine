@@ -22,7 +22,7 @@
   - **TTR-003 (storage only):** persistencia del estado `production_override_active` en SQLite; sin UI (llega con SPIKE-006/EPIC-0 Flutter).
   - **TTR-005 (completo):** cada decisión de permiso queda registrada en tabla `permission_decisions` con procedencia agente + campos de dominio propio.
 - **TTR-004 diferido:** aceptación de términos SaaS depende de `saas-gateway` → EPIC-9+.
-- **ADR-0020 V2 — Perfil D (Ops/Auditoría):** Grupo I (6 campos universales) + Grupo II (Soberanía: `owner_id`, `institutional_tag`) + Grupo IV (Hardware: `node_id`, `process_id`) + 4 campos de dominio propio documentados en la spec (`agent_session_id`, `requested_scope`, `permission_outcome`, `production_override_active`).
+- **ADR-0020 — Perfil D (Ops/Auditoría):** Grupo I (6 campos universales) + Grupo II (Soberanía: `owner_id`, `institutional_tag`) + Grupo IV (Hardware: `node_id`, `process_id`) + 4 campos de dominio propio documentados en la spec (`agent_session_id`, `requested_scope`, `permission_outcome`, `production_override_active`).
 
 ## 2. Objetivo (una frase llana)
 
@@ -128,7 +128,7 @@ pub struct PermissionRequest {
 
 // Decisión registrable
 pub struct PermissionDecision {
-    // Grupo I (6 campos universales ADR-0020 V2)
+    // Grupo I (6 campos universales ADR-0020)
     pub id: Uuid,
     pub created_at: i64,
     pub updated_at: i64,
@@ -198,7 +198,7 @@ Implementa `crates/shared/src/persistence/mcp_gateway.rs` y la migración SQLite
 **Migración `migrations/0005_mcp_gateway.sql`:**
 
 ```sql
--- Tabla de decisiones de permiso del Gateway MCP (Perfil D — ADR-0020 V2)
+-- Tabla de decisiones de permiso del Gateway MCP (Perfil D — ADR-0020)
 CREATE TABLE IF NOT EXISTS permission_decisions (
     -- Grupo I: Identidad & Integridad (universal)
     id                       TEXT    PRIMARY KEY NOT NULL,

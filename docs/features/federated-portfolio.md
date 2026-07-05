@@ -122,7 +122,7 @@ El **Federated Portfolio** es una arquitectura avanzada que permite la coexisten
 
 ## Gobernanza y Estándares (Fijos)
 
-### Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+### Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda transacción y cambio de estado del portafolio federado registra los metadatos de relevancia técnica. **Perfil C (Ops / Hot-Path)** (I + II + IV + V latencia/gobernanza):
 

@@ -87,7 +87,7 @@ Permite a creadores de estrategias empaquetar, encriptar y monetizar subgrafos c
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 
 ### Perfil Ops / Auditoría
 | Categoría | Campo | Descripción |

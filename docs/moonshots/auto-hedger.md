@@ -34,5 +34,5 @@ Motor que pasa de la advertencia pasiva (matriz de correlación en rojo) a la **
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
+## Gobernanza y Estándares (ADR-0020)
 - Perfil IA / R&D: Identidad + Soberanía + Pesos/Arquitectura + Hardware. Registro del escenario objetivo (intervalo/condiciones) y de la validación out-of-sample del parche.

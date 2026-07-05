@@ -83,7 +83,7 @@ El `Efficiency & Incubation Dashboard` es la interfaz de visualización y contro
 
 ## Gobernanza y Estándares (Fijos)
 - **Local-First (ADR-0016):** 100% Local.
-- **Inundación de Fundaciones (ADR-0020 V2): Perfil B (IA / R&D)** — guarda la configuración del dashboard de eficiencia (II + III subset + IV).
+- **Inundación de Fundaciones (ADR-0020): Perfil B (IA / R&D)** — guarda la configuración del dashboard de eficiencia (II + III subset + IV).
 
   | Categoría | Campo | Descripción |
   | :--- | :--- | :--- |

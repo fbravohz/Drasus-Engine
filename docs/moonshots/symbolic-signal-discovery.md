@@ -60,8 +60,8 @@ Es el laboratorio de descubrimiento de señales basado en **Regresión Simbólic
 
 ---
 
-## Gobernanza y Estándares (ADR-0020 V2)
-- Toda sesión de descubrimiento simbólico registra el **Grupo I (universal) + Perfil IA/R&D** (ADR-0020 V2).
+## Gobernanza y Estándares (ADR-0020)
+- Toda sesión de descubrimiento simbólico registra el **Grupo I (universal) + Perfil IA/R&D** (ADR-0020).
 - Metadatos: `logic_hash` (config del motor simbólico nativo), `audit_chain_hash`, `model_lineage_id`.
 
 ## Dependencias

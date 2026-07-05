@@ -94,7 +94,7 @@ El sistema de disparadores de pipelines basado en eventos permite automatizar la
 - **Local-First (ADR-0016):** 100% Local. Las reglas, la base de datos de disparadores y la ejecución de los pipelines ocurren exclusivamente en la máquina del usuario.
 - **Fidelidad (ADR-0017):** No aplica de manera directa, pero los pipelines disparados invocan los motores de backtesting con la fidelidad correspondiente.
 
-### Perfil Ops / Auditoría (ADR-0020 V2)
+### Perfil Ops / Auditoría (ADR-0020)
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

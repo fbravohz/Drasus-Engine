@@ -66,7 +66,7 @@ Crear la lógica que permita al módulo de `feedback` preguntar: "¿Cuál era la
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Toda serie de telemetría porta el set de relevancia técnica:
 

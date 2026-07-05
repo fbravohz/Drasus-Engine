@@ -38,7 +38,7 @@ El Databank Manager es el almacén centralizado de Alpha de Drasus Engine. Utili
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada inserción en el Databank registra el set de relevancia técnica para AI/R&D:
 

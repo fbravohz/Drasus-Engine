@@ -91,7 +91,7 @@ El NPF bruto produce señales falsas cuando las transacciones son patas de estra
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Hot-Path, híbrido C+III)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil C Hot-Path, híbrido C+III)
 
 Híbrido: Perfil C (Ops/Hot-Path) + linaje III legítimo (snapshot DOM/tick reproducible).
 

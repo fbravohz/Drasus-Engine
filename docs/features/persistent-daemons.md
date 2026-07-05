@@ -72,7 +72,7 @@ Esta feature implementa hilos de ejecución de larga duración en Rust (Tokio ta
     - [ ] Si fuerzo la detención del proceso, el sistema lanza una alerta visual y sonora en < 2 segundos.
     - [ ] Hay un log que registra cada latido de vida exitoso.
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2 · Perfil C Ops/Hot-Path)
+## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil C Ops/Hot-Path)
 
 Daemon de ejecución real (core pinning, latencia crítica) → Perfil C (I + II + IV + V latencia):
 

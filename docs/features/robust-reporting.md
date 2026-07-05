@@ -3,7 +3,7 @@
 **Carpeta:** `./features/robust-reporting/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-29
-**Decisión Arquitectónica Asociada:** ADR-0020 V2 (Inundación de Fundaciones)
+**Decisión Arquitectónica Asociada:** ADR-0020 (Inundación de Fundaciones)
 
 ## 1. ¿Qué es esta feature?
 
@@ -86,7 +86,7 @@ Es una exportación offline y soberana que no depende de interfaces web pesadas.
 ## 8. Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016):** 100% Local. Los recursos web (JS/CSS) están incrustados inline.
-- **Inundación de Fundaciones (ADR-0020 V2):**
+- **Inundación de Fundaciones (ADR-0020):**
   - **Perfil D (Ops / Auditoría):** reportes/exportación forense (la etiqueta "C. Auditoría" era mixta e inválida).
   - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash` (del contenido estático), `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía & Propiedad:** `owner_id` (visible en metadata), `institutional_tag`.
@@ -94,4 +94,4 @@ Es una exportación offline y soberana que no depende de interfaces web pesadas.
   - **V. Forense (Gobernanza, cuando aplica):** `risk_audit_id`, `signature_hash` del reporte sellado.
 
 ## 9. Decisión Arquitectónica Asociada
-- ADR-0020 V2.
+- ADR-0020.

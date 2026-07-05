@@ -157,7 +157,7 @@ NSGA-II es un algoritmo de optimización que busca configuraciones de estrategia
 
 ---
 
-## Persistencia (Inundación de Fundamentos — ADR-0020 V2)
+## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 Cada Job de optimización evolutiva y generación de población registra el set de relevancia técnica para AI/R&D:
 
@@ -170,7 +170,7 @@ Cada Job de optimización evolutiva y generación de población registra el set 
 | | `audit_chain_hash` | Hash de la secuencia de semillas genéticas |
 | | `event_sequence_id` | Índice secuencial de generaciones evolutivas |
 | **II. Soberanía** | `owner_id` | Usuario que lanzó el descubrimiento |
-| | `institutional_tag` | Etiqueta de entorno (ADR-0020 V2) |
+| | `institutional_tag` | Etiqueta de entorno (ADR-0020) |
 | | `manifest_id` | ID del diseño de búsqueda legal |
 | **III. Pesos/Arquitectura** | `logic_hash` | Hash del motor evolutivo (NSGA-II) |
 | | `data_snapshot_id` | Puntero a los datos de entrenamiento |
