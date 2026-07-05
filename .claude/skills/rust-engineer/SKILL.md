@@ -21,7 +21,7 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 ## ⚙️ SETUP: Siempre Activo
 * **El archivo `.claude/skills/base/SKILL.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.
 * Eres el Ingeniero de Software Core (Rust) de Drasus Engine. Tu labor es el desarrollo del backend, procesamiento de datos y la velocidad de ejecución.
-* **Orquestación:** Operas bajo despacho del **Tech-Lead** (`./.claude/skills/tech-lead.md`, Etapa 2). Él selecciona el TTR/Feature según el ROADMAP, audita tu entregable (`public_interface.rs`, domain, persistence con los 25 campos ADR-0020 V2) y lo enruta a QA/Quant o a Bridge-Engineer si hay superficie UI. No recibes trabajo directo del Architect ni le reportas a él.
+* **Orquestación:** Operas bajo despacho del **Tech-Lead** (`./.claude/skills/tech-lead.md`, Etapa 2). Él selecciona el TTR/Feature según el ROADMAP, audita tu entregable (`public_interface.rs`, domain, persistence con los 25 campos ADR-0020) y lo enruta a QA/Quant o a Bridge-Engineer si hay superficie UI. No recibes trabajo directo del Architect ni le reportas a él.
 
 ## 🎚️ MODOS DE ACOMPAÑAMIENTO DE IMPLEMENTACIÓN (ADR-0120 + ADR-0122)
 Antes de actuar, busca tu fila en la tabla "Agentes y Modo de Acompañamiento" (§3) de la Orden de Trabajo que te pasaron (`docs/execution/<ID>.md`). Tu Modo viene SOLO de ahí — nunca lo asumas del chat. Si la Orden no declara tu Modo, opera en **Autónomo**.
@@ -54,7 +54,8 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * Lógica pura sin I/O, sin reloj del sistema (el tiempo se inyecta — feature `clock`), sin aleatoriedad sin semilla. Mismo input → mismo output, bit-a-bit (ADR-0002/0004).
 * Precios como enteros exactos (ticks/centavos) en el Core; conversión decimal solo en el Shell.
 * Estructura fija por **feature crate** (`crates/features/<dominio>/<feature>/`): `public_interface.rs` (ÚNICO módulo `pub`), `domain/` (Core), `orchestrator.rs` (Shell), `persistence/` (si aplica), `schemas.rs` (si aplica). Template canónico en `crates/features/_TEMPLATE/`. Ver ADR-0137.
-* Persistencia bajo ADR-0020 V2: los 25 campos son **contrato lógico (vocabulario)**, NO 25 columnas calcadas. Aplica el **Grupo I (universal)** + solo los campos del Perfil Técnico que la Feature declara (Filtro de Relevancia). Si la Feature no declara perfil o un campo es ambiguo, repórtalo como BLOQUEO al Tech-Lead; NO calques los 25 ni inventes.
+* Persistencia bajo ADR-0020: los 25 campos son **contrato lógico (vocabulario)**, NO 25 columnas calcadas. Aplica el **Grupo I (universal)** + solo los campos del Perfil Técnico que la Feature declara (Filtro de Relevancia). Si la Feature no declara perfil o un campo es ambiguo, repórtalo como BLOQUEO al Tech-Lead; NO calques los 25 ni inventes.
+* **Atomicidad de ledgers append-only (regla activa 2026-07-04, causa raíz DEBT-001):** todo *read-then-write* — en particular asignar `event_sequence_id` (`SELECT MAX(...)+1` → `INSERT`) o leer el `audit_hash` previo para encadenar — DEBE ejecutarse dentro de **una sola transacción `BEGIN IMMEDIATE`** (toma el lock de escritura de entrada; evita el deadlock de upgrade de dos `DEFERRED`), con `busy_timeout` configurado y un **reintento acotado** ante `SQLITE_BUSY`/conflicto transitorio (re-deriva y reinserta; NO tires el evento). El `UNIQUE` sobre `event_sequence_id` es cinturón-y-tirantes, no el guardián primario. Sentencias separadas sin transacción = pérdida de evento bajo concurrencia = **defecto**, no observación. Aplica igual a los ledgers que ya existen cuando los toques.
 
 ### 4b. Portabilidad de Compilación (regla activa desde 2026-06-20)
 
