@@ -31,6 +31,9 @@
 //! - `telemetry`: repositorio para `telemetry_samples` (insertar por lote,
 //!   purgar por corte, consultar por `metric_name` + rango) —
 //!   `docs/features/telemetry.md` TTR-001, migración `0004_telemetry.sql`.
+//! - `usage_metering`: repositorio APPEND-ONLY (con `event_sequence_id`,
+//!   ADR-0141) para la tabla `usage_records` (`docs/features/usage-metering.md`,
+//!   ADR-0143, ADR-0144, migración `0010_usage_metering.sql`). STORY-030.
 
 pub mod audit_log;
 pub mod central_identity;
@@ -40,3 +43,4 @@ pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod pool;
 pub mod telemetry;
+pub mod usage_metering;

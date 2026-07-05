@@ -12,8 +12,9 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_licensing_system,
-    verify_plan_tier_quota, CentralIdentityVerifyInput, ExecutorIdentity, JobExecutor,
-    JobExecutorConfig, LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
+    verify_plan_tier_quota, verify_usage_metering, CentralIdentityVerifyInput, ExecutorIdentity,
+    JobExecutor, JobExecutorConfig, LicensingSystemVerifyInput, PlanTierQuotaVerifyInput,
+    SystemClock, UsageMeteringVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -57,11 +58,12 @@ enum Commands {
     ///   drasus verify central-identity --input '{"email":"a@b.com"}'
     ///   drasus verify licensing-system --input '{"tier":"SOVEREIGN"}'
     ///   drasus verify plan-tier-quota --input '{"tier":"FREE"}'
+    ///   drasus verify usage-metering --input '{"tier":"FREE","operations":[{"size":250000000,"price":4000000000000}]}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -248,10 +250,44 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Usage Metering (STORY-030, vive en `shared` -- ver ADR-0137) ──────
+        "usage-metering" => {
+            // A diferencia de plan-tier-quota, aquí `operations` es
+            // obligatorio (sin operaciones no hay nada que medir) -- por
+            // eso `drasus verify usage-metering` SIN --input no es válido.
+            let input: UsageMeteringVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "usage-metering requiere --input con al menos {{\"operations\":[{{\"size\":...,\"price\":...}}]}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_usage_metering(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("UsageMeteringVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering"
             );
             std::process::exit(1);
         }

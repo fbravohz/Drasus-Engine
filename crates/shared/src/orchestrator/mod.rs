@@ -29,6 +29,10 @@
 //! - `telemetry`: el buffer de alta velocidad -- cola en memoria no
 //!   bloqueante + tarea de fondo que vacía a SQLite por lotes
 //!   (`docs/features/telemetry.md` TTR-001, ADR-0015).
+//! - `usage_metering`: composición del puerto `usage_out` -- consume el
+//!   `PlanLimits` REAL de `plan_tier_quota` (#3) para resolver el
+//!   veredicto de cuota de cada operación medida (`docs/features/usage-metering.md`,
+//!   ADR-0143, ADR-0144). STORY-030.
 
 pub mod central_identity;
 pub mod job_executor;
@@ -36,6 +40,7 @@ pub mod licensing_system;
 pub mod mcp_server;
 pub mod plan_tier_quota;
 pub mod telemetry;
+pub mod usage_metering;
 pub mod worker_runner;
 
 use std::sync::atomic::{AtomicI64, Ordering};

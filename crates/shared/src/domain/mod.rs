@@ -32,6 +32,11 @@
 //! - `telemetry`: construcción pura de muestras de latencia/heartbeat y la
 //!   decisión de poda por ventana de retención (`docs/features/telemetry.md`
 //!   TTR-001, ADR-0015, ADR-0020 V2).
+//! - `usage_metering`: cálculo de nocional (tamaño × precio, entero
+//!   escalado ×10⁸ con reescalado ×10¹⁶→×10⁸), acumulación por ciclo,
+//!   detección de cruce de umbral y hash de auditoría encadenado por
+//!   `event_sequence_id` (`docs/features/usage-metering.md`, ADR-0143,
+//!   ADR-0144, ADR-0141). STORY-030.
 
 pub mod audit_log;
 pub mod central_identity;
@@ -42,4 +47,5 @@ pub mod logic;
 pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod telemetry;
+pub mod usage_metering;
 pub mod worker_orchestrator;

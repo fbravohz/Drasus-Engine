@@ -138,6 +138,35 @@
 //! ([`plan_tier_quota`]) en vez de aplanarse a este nivel superior: el
 //! doc-comment de `plan_tier_quota` explica por qué (colisión de nombre
 //! `PlanLimits` con el stub aún vigente en `licensing_system`).
+//!
+//! ## Usage Metering / Libro de Nocional (`docs/features/usage-metering.md`,
+//! ## ADR-0143, ADR-0144, STORY-030)
+//!
+//! Cimiento #4 del substrato de monetización: el libro append-only de
+//! nocional en USD por ciclo de facturación. Primer cimiento que consume
+//! un puerto REAL de otro cimiento -- [`orchestrator::usage_metering::record_metered_operation`]
+//! resuelve el `PlanLimits` REAL de `plan_tier_quota` (#3), no un stub.
+//!
+//! - [`domain::usage_metering::compute_notional`]: nocional de una
+//!   operación, reescalado ×10¹⁶→×10⁸ con `i128` y redondeo explícito --
+//!   EL punto de correctitud crítico de esta Story.
+//! - [`domain::usage_metering::accumulate`] /
+//!   [`domain::usage_metering::detect_quota_crossing`] /
+//!   [`domain::usage_metering::derive_billing_cycle_id`]: acumulación por
+//!   ciclo, veredicto de cuota y derivación del ciclo mensual.
+//! - [`domain::usage_metering::MeteredOperation`]: entrada mínima de
+//!   metering (placeholder hasta que el `Order` real de `execute`/EPIC-5
+//!   exista).
+//! - [`domain::usage_metering::UsageRecord`]: el tipo de puerto
+//!   `usage_out` (acumulado + veredicto, sin secretos ADR-0093).
+//! - [`persistence::usage_metering::UsageRepository`][]: repositorio
+//!   APPEND-ONLY (`event_sequence_id`, ADR-0141) para `usage_records`
+//!   (migración `0010_usage_metering.sql`).
+//! - [`orchestrator::usage_metering::record_metered_operation`][]: la
+//!   composición completa -- resuelve `PlanLimits` REAL + deriva el ciclo
+//!   + persiste append-only.
+//! - [`verify_usage_metering`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify usage-metering --input '{"tier":"FREE","operations":[...]}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -622,6 +651,216 @@ pub mod plan_tier_quota {
     pub use crate::persistence::plan_tier_quota::{
         NewPlan, Plan, PlanRepository, PlanRepositoryError,
     };
+}
+
+// ── Usage Metering (STORY-030, vive en `shared` -- ver ADR-0137) ───────────
+
+pub use crate::domain::usage_metering::{
+    accumulate, compute_notional, compute_usage_audit_hash, derive_billing_cycle_id,
+    detect_quota_crossing, MeteredOperation, NotionalError, QuotaVerdict, UsageRecord,
+    AMOUNT_SCALE,
+};
+pub use crate::orchestrator::usage_metering::{record_metered_operation, RecordMeteredOperationError};
+pub use crate::persistence::usage_metering::{
+    RecordOperationInput, UsageRecordRow, UsageRepository, UsageRepositoryError,
+};
+
+/// Una operación de entrada para la verificación de Usage Metering vía CLI
+/// -- espejo mínimo de [`MeteredOperation`] pero con campos `String`/`i64`
+/// deserializables directamente desde JSON (`MeteredOperation` toma
+/// `&str`, no apto para deserializar con ownership propio).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MeteredOperationVerifyInput {
+    /// Tamaño operado, `INTEGER` escalado ×10⁸.
+    pub size: i64,
+    /// Precio de ejecución, `INTEGER` escalado ×10⁸.
+    pub price: i64,
+    #[serde(default = "default_verify_instrument_id")]
+    pub instrument_id: String,
+}
+
+fn default_verify_instrument_id() -> String {
+    "BTCUSDT".to_string()
+}
+
+/// Input para la verificación de Usage Metering vía CLI
+/// (`docs/features/usage-metering.md`, STORY-030). Se deserializa desde
+/// el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify usage-metering --input
+/// '{"tier":"FREE","operations":[{"size":250000000,"price":4000000000000}]}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct UsageMeteringVerifyInput {
+    /// `"FREE"` o `"PAID"` (mismo vocabulario que `plan_tier_quota::PlanTier`).
+    #[serde(default = "default_plan_tier")]
+    pub tier: String,
+    /// Las operaciones a registrar, EN ORDEN, contra el mismo dueño y el
+    /// mismo ciclo -- cada una se acumula sobre la anterior.
+    pub operations: Vec<MeteredOperationVerifyInput>,
+}
+
+/// Output de la verificación de Usage Metering. Siempre serializa a JSON
+/// válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que expone
+/// el puerto `usage_out` tras la ÚLTIMA operación registrada -- ningún
+/// secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct UsageMeteringVerifyOutput {
+    pub ok: bool,
+    pub tier: Option<String>,
+    pub billing_cycle_id: Option<String>,
+    pub cycle_accumulated: Option<i64>,
+    pub quota_verdict: Option<String>,
+    /// Cuántas operaciones se registraron con éxito antes de reportar (o
+    /// antes de que una fallara).
+    pub operations_recorded: usize,
+    pub error: Option<String>,
+}
+
+impl UsageMeteringVerifyOutput {
+    fn from_error(operations_recorded: usize, msg: String) -> Self {
+        Self {
+            ok: false,
+            tier: None,
+            billing_cycle_id: None,
+            cycle_accumulated: None,
+            quota_verdict: None,
+            operations_recorded,
+            error: Some(msg),
+        }
+    }
+
+    fn from_record(tier: plan_tier_quota::PlanTier, record: UsageRecord, operations_recorded: usize) -> Self {
+        Self {
+            ok: true,
+            tier: Some(tier.as_str().to_string()),
+            billing_cycle_id: Some(record.billing_cycle_id),
+            cycle_accumulated: Some(record.cycle_accumulated),
+            quota_verdict: Some(record.quota_verdict.as_str().to_string()),
+            operations_recorded,
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Usage Metering con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real + catálogo REAL de
+/// plan-tier-quota), recorriendo el camino completo del cimiento #4:
+/// siembra el catálogo Free/Paid real (#3), registra CADA operación de
+/// `input.operations` EN ORDEN (acumulando sobre la misma cuenta y el
+/// mismo ciclo vigente) vía [`record_metered_operation`], y reporta el
+/// `UsageRecord` resultante de la ÚLTIMA operación -- ejercitando Core ->
+/// Shell -> puerto tal como lo recorrería un usuario real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify usage-metering --input
+/// '{"tier":"FREE","operations":[{"size":250000000,"price":4000000000000}]}'`
+pub async fn verify_usage_metering(input: UsageMeteringVerifyInput) -> UsageMeteringVerifyOutput {
+    let tier = match plan_tier_quota::PlanTier::from_str_value(&input.tier) {
+        Some(tier) => tier,
+        None => {
+            return UsageMeteringVerifyOutput::from_error(
+                0,
+                format!("tier desconocido: '{}' -- se esperaba FREE o PAID", input.tier),
+            )
+        }
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_central_identity / verify_licensing_system / verify_plan_tier_quota).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-usage-metering-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return UsageMeteringVerifyOutput::from_error(
+            0,
+            format!("no se pudo crear el directorio temporal de verificación: {e}"),
+        );
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return UsageMeteringVerifyOutput::from_error(
+                0,
+                format!("no se pudo crear la BD temporal de verificación: {e}"),
+            )
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return UsageMeteringVerifyOutput::from_error(
+            0,
+            format!("error al aplicar migraciones en la BD temporal: {e}"),
+        );
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Paso 1 -- siembra el catálogo REAL de plan-tier-quota (#3) si esta
+    // BD temporal todavía no lo tiene. Sin esto, record_metered_operation
+    // fallaría con PlanNotFound -- el cableado real exige que el catálogo
+    // exista, no hay fallback silencioso a un stub.
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+    if let Err(e) = plan_tier_quota::seed_default_catalog(
+        &pool,
+        clock.as_ref(),
+        "drasus-system",
+        &node_id,
+        "DRASUS_LOCAL_VERIFY",
+        &plan_tier_quota::LocalStubPlanCatalogConfig::default(),
+    )
+    .await
+    {
+        return UsageMeteringVerifyOutput::from_error(0, format!("fallo al sembrar el catálogo: {e}"));
+    }
+
+    // Paso 2 -- registra cada operación EN ORDEN, acumulando sobre la
+    // misma cuenta y el mismo ciclo vigente (fuera del hot-path: esta
+    // función SÍ hace lecturas/escrituras de BD local).
+    let owner_id = "verify-usage-metering-owner";
+    let mut last_record: Option<UsageRecord> = None;
+    for (index, operation) in input.operations.iter().enumerate() {
+        let result = record_metered_operation(
+            &pool,
+            clock.as_ref(),
+            owner_id,
+            "DRASUS_LOCAL_VERIFY",
+            &node_id,
+            tier,
+            MeteredOperation {
+                size: operation.size,
+                price: operation.price,
+                instrument_id: &operation.instrument_id,
+            },
+        )
+        .await;
+
+        match result {
+            Ok(record) => last_record = Some(record),
+            Err(e) => {
+                return UsageMeteringVerifyOutput::from_error(
+                    index,
+                    format!("fallo al registrar la operación #{index}: {e}"),
+                )
+            }
+        }
+    }
+
+    match last_record {
+        Some(record) => UsageMeteringVerifyOutput::from_record(tier, record, input.operations.len()),
+        // Sin operaciones en el input: no hay nada que reportar como
+        // UsageRecord, pero tampoco es un error -- el catálogo se sembró
+        // y el tier es válido, simplemente no se registró ninguna operación.
+        None => UsageMeteringVerifyOutput::from_error(
+            0,
+            "no se proveyó ninguna operación en 'operations' -- nada que registrar".to_string(),
+        ),
+    }
 }
 
 /// Input para la verificación de Plan / Tier / Quota vía CLI
