@@ -19,6 +19,10 @@
 //!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
 //!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
 //!   STORY-028.
+//! - `institutional_report_engine`: composición del puerto `report_out` --
+//!   lee el reloj inyectado, ensambla el reporte (Core), calcula su firma
+//!   reproducible y lo persiste append-only atómico
+//!   (`docs/features/institutional-report-engine.md`, ADR-0144). STORY-034.
 //! - `job_executor`: la cáscara del Async Job Executor -- pool de workers
 //!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
 //!   y recuperación en startup (`docs/features/async-job-executor.md`
@@ -41,6 +45,7 @@
 pub mod central_identity;
 pub mod consent_registry;
 pub mod enriched_domain_events;
+pub mod institutional_report_engine;
 pub mod job_executor;
 pub mod licensing_system;
 pub mod mcp_server;

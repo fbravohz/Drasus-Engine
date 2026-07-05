@@ -409,3 +409,17 @@ impl TypedPort for AccountIdentity {
     fn canvas_color() -> &'static str { "#8492B0" }
     fn cardinality() -> &'static str { "1" }
 }
+
+/// Marcador de tipo de puerto para el catálogo (ADR-0137, enmienda
+/// 2026-07-03). El dato real que circula por este puerto es
+/// `crate::domain::institutional_report_engine::InstitutionalReport`
+/// (mismo patrón de nombres duplicados-por-módulo que `AccountIdentity`
+/// arriba: el marcador vive en `types`, el struct con los campos reales
+/// vive en `domain`).
+#[derive(Debug, Clone)]
+pub struct InstitutionalReport;
+impl TypedPort for InstitutionalReport {
+    fn type_id() -> &'static str { "InstitutionalReport" }
+    fn canvas_color() -> &'static str { "#8492B0" }
+    fn cardinality() -> &'static str { "1" }
+}

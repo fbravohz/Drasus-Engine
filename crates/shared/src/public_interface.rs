@@ -1715,3 +1715,204 @@ pub async fn verify_enriched_domain_events(
         error: None,
     }
 }
+
+// ── Institutional Report Engine (STORY-034, vive en `shared` -- ver ADR-0137) ─
+
+/// Submódulo público del cimiento #7 (`docs/features/institutional-report-engine.md`,
+/// ADR-0144, ADR-0101, ADR-0027, STORY-034).
+///
+/// Expone los dos puertos de la Feature (ADR-0137): `report_out`
+/// (`InstitutionalReport` ensamblado + firmado + persistido, Output 1) y
+/// `result_in` (entrada mínima de reporte -- placeholder hasta que
+/// `BacktestResult`/`RobustnessScore` reales existan, Input 1..N). Vive
+/// bajo su propio submódulo en vez de aplanarse a este nivel superior, por
+/// simetría con `enriched_domain_events` y `plan_tier_quota`.
+///
+/// **Guardarraíl ADR-0093:** ningún tipo re-exportado aquí modela un
+/// secreto -- ni el reporte ni sus métricas pueden portar credenciales de
+/// bróker, IPs live o claves de firma (verificado por el test
+/// `assembled_report_json_does_not_leak_secret_looking_fields` del Core).
+///
+/// **Render Tera diferido (ADR-0101):** este submódulo NO depende de Tera
+/// -- Tera no está en el workspace. El "reporte" es la serialización
+/// canónica JSON (`report_body`); el render a PDF/HTML es un adaptador
+/// posterior sobre este mismo puerto.
+pub mod institutional_report_engine {
+    // report_out: el ensamblado puro del Core + su serialización canónica +
+    // su firma reproducible + el hash de auditoría de la fila del ledger.
+    pub use crate::domain::institutional_report_engine::{
+        assemble_report, compute_report_audit_hash, compute_report_signature, AssembleReportInput,
+        InstitutionalReport, ReportType,
+    };
+    // La composición completa (lee el reloj, ensambla, firma, persiste
+    // append-only atómico).
+    pub use crate::orchestrator::institutional_report_engine::{
+        generate_report, GenerateReportError, ReportGenerationIdentity,
+    };
+    pub use crate::persistence::institutional_report_engine::{
+        GeneratedReportRepository, GeneratedReportRepositoryError, GeneratedReportRow,
+        RecordGeneratedReportInput,
+    };
+}
+
+/// Input para la verificación de Institutional Report Engine vía CLI
+/// (`docs/features/institutional-report-engine.md`, STORY-034). Se
+/// deserializa desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// `metrics` son ENTEROS escalados ×10⁸ (ADR-0141) -- exactamente lo que
+/// persiste el Core, sin `f64` en ningún punto del camino.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify institutional-report-engine --input
+/// '{"report_type":"VALIDATION","metrics":{"sharpe_e8":150000000,"max_drawdown_e8":-8000000},"source_event_refs":["evt-1","evt-2"]}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InstitutionalReportEngineVerifyInput {
+    /// `"VALIDATION"`, `"BACKTEST"`, `"EXECUTION"`, `"STRESS_TEST"`,
+    /// `"MODEL_VALIDATION"`, `"BACKTEST_CERTIFICATION"` o
+    /// `"DRAWDOWN_FORENSICS"` (mismo vocabulario que
+    /// `institutional_report_engine::ReportType::as_str`).
+    pub report_type: String,
+    /// Métricas nombradas del resultado a reportar, `i64` escalados ×10⁸.
+    pub metrics: std::collections::BTreeMap<String, i64>,
+    /// Referencia de texto libre al resultado fuente (opcional).
+    #[serde(default)]
+    pub source_result_ref: Option<String>,
+    /// Ids de eventos del event-store (#6) / audit-log que este reporte
+    /// cita (trazabilidad, ADR-0027).
+    #[serde(default)]
+    pub source_event_refs: Vec<String>,
+}
+
+/// Output de la verificación de Institutional Report Engine. Siempre
+/// serializa a JSON válido (ADR-0142). Si `ok` es `true`, refleja
+/// EXACTAMENTE lo que expone el puerto `report_out` tras persistir el
+/// reporte -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InstitutionalReportEngineVerifyOutput {
+    pub ok: bool,
+    pub report_type: Option<String>,
+    /// La firma REPRODUCIBLE del contenido del reporte -- distinta de
+    /// `audit_hash` (integridad de la fila del ledger).
+    pub signature_hash: Option<String>,
+    pub audit_hash: Option<String>,
+    pub event_sequence_id: Option<i64>,
+    /// `true` si la fila persistida es la génesis (`audit_chain_hash` NULL).
+    pub is_genesis: Option<bool>,
+    /// El contenido JSON canónico completo del reporte persistido -- el
+    /// mismo string que `signature_hash` hashea.
+    pub report_body: Option<String>,
+    /// Los `source_event_refs` tal cual quedaron persistidos (JSON string).
+    pub source_event_refs: Option<String>,
+    pub error: Option<String>,
+}
+
+impl InstitutionalReportEngineVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            report_type: None,
+            signature_hash: None,
+            audit_hash: None,
+            event_sequence_id: None,
+            is_genesis: None,
+            report_body: None,
+            source_event_refs: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_row(row: institutional_report_engine::GeneratedReportRow) -> Self {
+        Self {
+            ok: true,
+            report_type: Some(row.report_type),
+            signature_hash: Some(row.signature_hash),
+            audit_hash: Some(row.audit_hash.clone()),
+            event_sequence_id: Some(row.event_sequence_id),
+            is_genesis: Some(row.audit_chain_hash.is_none()),
+            report_body: Some(row.report_body),
+            source_event_refs: Some(row.source_event_refs),
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Institutional Report Engine con adaptadores
+/// reales (BD SQLite temporal + reloj de sistema real), recorriendo el
+/// camino completo del cimiento #7: construye la entrada mínima de reporte
+/// desde el JSON del usuario, ensambla el reporte (Core), calcula su firma
+/// reproducible y lo persiste append-only atómico vía
+/// [`institutional_report_engine::generate_report`] -- ejercitando Core ->
+/// Shell -> puerto tal como lo recorrería un adaptador de producto real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify institutional-report-engine --input
+/// '{"report_type":"VALIDATION","metrics":{"sharpe_e8":150000000,"max_drawdown_e8":-8000000},"source_event_refs":["evt-1","evt-2"]}'`
+pub async fn verify_institutional_report_engine(
+    input: InstitutionalReportEngineVerifyInput,
+) -> InstitutionalReportEngineVerifyOutput {
+    let report_type = match institutional_report_engine::ReportType::from_str_value(&input.report_type) {
+        Some(report_type) => report_type,
+        None => {
+            return InstitutionalReportEngineVerifyOutput::from_error(format!(
+                "report_type desconocido: '{}' -- se esperaba VALIDATION, BACKTEST, EXECUTION, \
+                 STRESS_TEST, MODEL_VALIDATION, BACKTEST_CERTIFICATION o DRAWDOWN_FORENSICS",
+                input.report_type
+            ))
+        }
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_enriched_domain_events / verify_consent_registry).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-institutional-report-engine-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return InstitutionalReportEngineVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return InstitutionalReportEngineVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return InstitutionalReportEngineVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+
+    let identity = institutional_report_engine::ReportGenerationIdentity {
+        owner_id: "verify-institutional-report-engine-owner".to_string(),
+        institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+        node_id,
+        compliance_status_id: None,
+    };
+
+    let assemble_input = institutional_report_engine::AssembleReportInput {
+        report_type,
+        metrics: input.metrics,
+        source_result_ref: input.source_result_ref,
+        source_event_refs: input.source_event_refs,
+        // Sobrescrito dentro de generate_report con el reloj real -- el
+        // valor aquí es un placeholder sin efecto.
+        generated_at_ns: 0,
+    };
+
+    match institutional_report_engine::generate_report(&pool, clock.as_ref(), identity, assemble_input).await {
+        Ok(row) => InstitutionalReportEngineVerifyOutput::from_row(row),
+        Err(e) => InstitutionalReportEngineVerifyOutput::from_error(format!("fallo al generar el reporte: {e}")),
+    }
+}

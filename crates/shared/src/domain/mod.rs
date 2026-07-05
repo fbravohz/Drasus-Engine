@@ -16,6 +16,13 @@
 //!   de cobertura por tipo de dato (`ConsentVerdict`) y hash de auditoría
 //!   encadenado por `event_sequence_id` (`docs/features/consent-registry.md`,
 //!   ADR-0143, ADR-0144, ADR-0141). STORY-031.
+//! - `institutional_report_engine`: ensamblado puro de reportes
+//!   institucionales, serialización canónica del reporte, firma de
+//!   integridad REPRODUCIBLE (`compute_report_signature`) y hash de
+//!   auditoría encadenado por `event_sequence_id` de la fila del ledger
+//!   (`compute_report_audit_hash`), distinto en rol de la firma
+//!   (`docs/features/institutional-report-engine.md`, ADR-0144, ADR-0027,
+//!   ADR-0141, ADR-0020, ADR-0093). STORY-034.
 //! - `job`: la máquina de estados de jobs asíncronos -- transiciones
 //!   válidas, progreso y estimación de tiempo restante
 //!   (`docs/features/async-job-executor.md`
@@ -48,6 +55,7 @@ pub mod central_identity;
 pub mod clock;
 pub mod consent_registry;
 pub mod enriched_domain_events;
+pub mod institutional_report_engine;
 pub mod job;
 pub mod licensing_system;
 pub mod logic;

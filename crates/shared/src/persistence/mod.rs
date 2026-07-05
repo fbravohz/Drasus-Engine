@@ -21,6 +21,10 @@
 //! - `consent_registry`: repositorio APPEND-ONLY (con `event_sequence_id`,
 //!   ADR-0141) para la tabla `consent_records` (`docs/features/consent-registry.md`,
 //!   ADR-0143, ADR-0144, migración `0011_consent_registry.sql`). STORY-031.
+//! - `institutional_report_engine`: repositorio APPEND-ONLY (con
+//!   `event_sequence_id`, ADR-0141) para la tabla `generated_reports`
+//!   (`docs/features/institutional-report-engine.md`, ADR-0144, ADR-0027,
+//!   migración `0013_generated_reports.sql`). STORY-034.
 //! - `job`: repositorio para las tablas `jobs` y `job_results` del Async
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
@@ -42,6 +46,7 @@ pub mod audit_log;
 pub mod central_identity;
 pub mod consent_registry;
 pub mod enriched_domain_events;
+pub mod institutional_report_engine;
 pub mod job;
 pub mod licensing_system;
 pub mod mcp_gateway;
