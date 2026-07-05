@@ -41,6 +41,7 @@
 pub mod audit_log;
 pub mod central_identity;
 pub mod consent_registry;
+pub mod enriched_domain_events;
 pub mod job;
 pub mod licensing_system;
 pub mod mcp_gateway;

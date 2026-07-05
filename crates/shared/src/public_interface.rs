@@ -1273,3 +1273,445 @@ pub async fn verify_consent_registry(input: ConsentRegistryVerifyInput) -> Conse
 
     ConsentRegistryVerifyOutput::from_verdict(verdict, input.actions.len())
 }
+
+// ── Enriched Domain Events (STORY-033, vive en `shared` -- ver ADR-0137) ────
+
+/// Submódulo público del cimiento #6 (`docs/features/enriched-domain-events.md`,
+/// ADR-0144, ADR-0145, STORY-033) -- la raíz del substrato de monetización.
+///
+/// Expone los dos puertos de la Feature (ADR-0137): `event_out`
+/// (`EnrichedDomainEvent` persistido, Output 1..N) y `gate_in`
+/// (`ExecutionGate` consumido, Input 1). Vive bajo su propio submódulo en
+/// vez de aplanarse a este nivel superior, por simetría con
+/// `plan_tier_quota` y para agrupar el catálogo de tipos de evento (que es
+/// grande) bajo un espacio de nombres claro.
+///
+/// **Guardarraíl ADR-0093:** ningún tipo re-exportado aquí modela un
+/// secreto -- ni el evento ni su payload pueden portar credenciales de
+/// bróker, IPs live o claves de firma (verificado por el test
+/// `no_payload_variant_leaks_secret_looking_fields` del Core).
+pub mod enriched_domain_events {
+    // event_out: el catálogo de eventos del Core + su serialización canónica
+    // + el hash encadenado + la decisión de replicación.
+    pub use crate::domain::enriched_domain_events::{
+        compute_event_audit_hash, decide_replication, AccountSnapshotPayload,
+        BacktestCompletedPayload, CapitalFlowPayload, CapitalFlowSign, CorrelationChangePayload,
+        DrawdownDetectedPayload, EnrichedDomainEvent, LiquidityStressPayload, OrderExecutedPayload,
+        OrderSide, RegimeDetectedPayload,
+    };
+    // La composición completa (recibe evento + gate real, deriva replicate,
+    // persiste append-only atómico).
+    pub use crate::orchestrator::enriched_domain_events::{
+        record_domain_event, EventEmissionIdentity,
+    };
+    pub use crate::persistence::enriched_domain_events::{
+        DomainEventRepository, DomainEventRepositoryError, DomainEventRow, RecordDomainEventInput,
+    };
+    // gate_in: el tipo de puerto de entrada -- se consume el ExecutionGate
+    // REAL de licensing-system (#2), no un stub.
+    pub use crate::domain::licensing_system::ExecutionGate;
+}
+
+/// El evento de entrada para la verificación de Enriched Domain Events vía
+/// CLI -- un enum etiquetado por `type` que refleja el catálogo del Core
+/// (`docs/features/enriched-domain-events.md`, STORY-033). Los enums del
+/// Core (`OrderSide`, `CapitalFlowSign`) llegan aquí como `String` para que
+/// el JSON del usuario sea legible; se convierten en
+/// [`DomainEventVerifyEvent::into_domain_event`].
+///
+/// Los montos son `i64` escalados ×10⁸ (ADR-0141) -- exactamente los mismos
+/// enteros que porta el Core, sin `f64` en ningún punto del camino.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
+pub enum DomainEventVerifyEvent {
+    OrderExecuted {
+        instrument_id: String,
+        /// `"BUY"` o `"SELL"`.
+        side: String,
+        quantity: i64,
+        price: i64,
+        #[serde(default)]
+        slippage: i64,
+        #[serde(default)]
+        fill_time_ns: i64,
+        broker: String,
+        notional: i64,
+        account_id: String,
+        #[serde(default)]
+        realized_pnl: i64,
+        #[serde(default)]
+        mae: i64,
+        #[serde(default)]
+        mfe: i64,
+        #[serde(default)]
+        duration_ns: i64,
+    },
+    CapitalFlow {
+        account_id: String,
+        /// `"DEPOSIT"`, `"WITHDRAWAL"` o `"TRANSFER"`.
+        sign: String,
+        amount: i64,
+        currency: String,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+    AccountSnapshot {
+        account_id: String,
+        equity: i64,
+        balance: i64,
+        margin_available: i64,
+        margin_required: i64,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+    BacktestCompleted {
+        sharpe: i64,
+        drawdown: i64,
+        pbo: i64,
+        regime: String,
+    },
+    RegimeDetected {
+        instrument_id: String,
+        regime_label: String,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+    DrawdownDetected {
+        account_id: String,
+        drawdown_pct: i64,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+    LiquidityStress {
+        instrument_id: String,
+        severity: String,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+    CorrelationChange {
+        instrument_a: String,
+        instrument_b: String,
+        correlation: i64,
+        #[serde(default)]
+        timestamp_ns: i64,
+    },
+}
+
+impl DomainEventVerifyEvent {
+    /// Convierte la entrada de CLI en el `EnrichedDomainEvent` del Core,
+    /// validando los strings de enum (`side`, `sign`). Devuelve `Err(String)`
+    /// con un mensaje legible si un enum no es reconocido -- nunca hace
+    /// panic sobre input del usuario.
+    fn into_domain_event(self) -> Result<enriched_domain_events::EnrichedDomainEvent, String> {
+        use enriched_domain_events::{
+            AccountSnapshotPayload, BacktestCompletedPayload, CapitalFlowPayload, CapitalFlowSign,
+            CorrelationChangePayload, DrawdownDetectedPayload, EnrichedDomainEvent,
+            LiquidityStressPayload, OrderExecutedPayload, OrderSide, RegimeDetectedPayload,
+        };
+
+        match self {
+            DomainEventVerifyEvent::OrderExecuted {
+                instrument_id, side, quantity, price, slippage, fill_time_ns, broker, notional,
+                account_id, realized_pnl, mae, mfe, duration_ns,
+            } => {
+                let side = OrderSide::from_str_value(&side)
+                    .ok_or_else(|| format!("side desconocido: '{side}' -- se esperaba BUY o SELL"))?;
+                Ok(EnrichedDomainEvent::OrderExecuted(OrderExecutedPayload {
+                    instrument_id, side, quantity, price, slippage, fill_time_ns, broker, notional,
+                    account_id, realized_pnl, mae, mfe, duration_ns,
+                }))
+            }
+            DomainEventVerifyEvent::CapitalFlow { account_id, sign, amount, currency, timestamp_ns } => {
+                let sign = CapitalFlowSign::from_str_value(&sign).ok_or_else(|| {
+                    format!("sign desconocido: '{sign}' -- se esperaba DEPOSIT, WITHDRAWAL o TRANSFER")
+                })?;
+                Ok(EnrichedDomainEvent::CapitalFlow(CapitalFlowPayload {
+                    account_id, sign, amount, currency, timestamp_ns,
+                }))
+            }
+            DomainEventVerifyEvent::AccountSnapshot {
+                account_id, equity, balance, margin_available, margin_required, timestamp_ns,
+            } => Ok(EnrichedDomainEvent::AccountSnapshot(AccountSnapshotPayload {
+                account_id, equity, balance, margin_available, margin_required, timestamp_ns,
+            })),
+            DomainEventVerifyEvent::BacktestCompleted { sharpe, drawdown, pbo, regime } => {
+                Ok(EnrichedDomainEvent::BacktestCompleted(BacktestCompletedPayload {
+                    sharpe, drawdown, pbo, regime,
+                }))
+            }
+            DomainEventVerifyEvent::RegimeDetected { instrument_id, regime_label, timestamp_ns } => {
+                Ok(EnrichedDomainEvent::RegimeDetected(RegimeDetectedPayload {
+                    instrument_id, regime_label, timestamp_ns,
+                }))
+            }
+            DomainEventVerifyEvent::DrawdownDetected { account_id, drawdown_pct, timestamp_ns } => {
+                Ok(EnrichedDomainEvent::DrawdownDetected(DrawdownDetectedPayload {
+                    account_id, drawdown_pct, timestamp_ns,
+                }))
+            }
+            DomainEventVerifyEvent::LiquidityStress { instrument_id, severity, timestamp_ns } => {
+                Ok(EnrichedDomainEvent::LiquidityStress(LiquidityStressPayload {
+                    instrument_id, severity, timestamp_ns,
+                }))
+            }
+            DomainEventVerifyEvent::CorrelationChange { instrument_a, instrument_b, correlation, timestamp_ns } => {
+                Ok(EnrichedDomainEvent::CorrelationChange(CorrelationChangePayload {
+                    instrument_a, instrument_b, correlation, timestamp_ns,
+                }))
+            }
+        }
+    }
+}
+
+/// Input para la verificación de Enriched Domain Events vía CLI
+/// (`docs/features/enriched-domain-events.md`, STORY-033). Se deserializa
+/// desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify enriched-domain-events --input
+/// '{"tier":"FREE","event":{"type":"CapitalFlow","account_id":"acc-1","sign":"DEPOSIT","amount":100000000000,"currency":"USD"}}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct EnrichedDomainEventsVerifyInput {
+    /// El tier que gobierna la supresión de telemetría (ADR-0143). `"FREE"`
+    /// (gratuito -> Explorer, no suprime -> replica) o `"PAID"` (pago al
+    /// corriente -> Sovereign, suprime -> no replica). También se aceptan
+    /// los nombres de licencia crudos `"EXPLORER"`/`"SOVEREIGN"`.
+    #[serde(default = "default_domain_event_tier")]
+    pub tier: String,
+    /// El evento a construir, persistir y observar.
+    pub event: DomainEventVerifyEvent,
+}
+
+fn default_domain_event_tier() -> String {
+    "FREE".to_string()
+}
+
+/// Output de la verificación de Enriched Domain Events. Siempre serializa a
+/// JSON válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que
+/// expone el puerto `event_out` tras persistir el evento -- ningún secreto
+/// (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct EnrichedDomainEventsVerifyOutput {
+    pub ok: bool,
+    /// El tier resuelto (`"EXPLORER"` o `"SOVEREIGN"`).
+    pub tier: Option<String>,
+    /// `true` si el gate real suprime telemetría de trabajo -- espejo del
+    /// campo del `ExecutionGate` que gobernó la decisión.
+    pub suppress_work_telemetry: Option<bool>,
+    /// La decisión derivada: `true` = el evento se replica al proveedor;
+    /// `false` = solo local. Es el inverso de `suppress_work_telemetry`.
+    pub replicate: Option<bool>,
+    pub event_type: Option<String>,
+    /// El payload JSON canónico persistido (string, tal cual quedó en la BD).
+    pub payload: Option<String>,
+    pub event_sequence_id: Option<i64>,
+    /// `true` si la fila persistida es la génesis (`audit_chain_hash` NULL).
+    pub is_genesis: Option<bool>,
+    pub audit_hash: Option<String>,
+    pub error: Option<String>,
+}
+
+impl EnrichedDomainEventsVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            tier: None,
+            suppress_work_telemetry: None,
+            replicate: None,
+            event_type: None,
+            payload: None,
+            event_sequence_id: None,
+            is_genesis: None,
+            audit_hash: None,
+            error: Some(msg),
+        }
+    }
+}
+
+/// Traduce el `tier` del input (`FREE`/`PAID`, o los crudos
+/// `EXPLORER`/`SOVEREIGN`) al [`LicenseTier`] de `licensing-system`.
+/// `FREE` -> `Explorer` (gratuito, nunca suprime), `PAID` -> `Sovereign`
+/// (pago al corriente, suprime). Devuelve `None` si no reconoce el valor.
+fn resolve_domain_event_tier(value: &str) -> Option<LicenseTier> {
+    match value.to_uppercase().as_str() {
+        "FREE" | "EXPLORER" => Some(LicenseTier::Explorer),
+        "PAID" | "SOVEREIGN" => Some(LicenseTier::Sovereign),
+        _ => None,
+    }
+}
+
+/// Ejecuta la verificación de Enriched Domain Events con adaptadores reales
+/// (BD SQLite temporal + reloj de sistema real + el `ExecutionGate` REAL de
+/// `licensing-system` #2), recorriendo el camino completo del cimiento #6:
+/// construye una licencia de desarrollo firmada para el tier pedido, deriva
+/// el `ExecutionGate` real (no un stub), compone el evento del catálogo,
+/// deriva `replicate` y lo persiste append-only atómico vía
+/// [`enriched_domain_events::record_domain_event`], y reporta la fila
+/// persistida -- ejercitando Core -> Shell -> puerto tal como lo recorrería
+/// el motor real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify enriched-domain-events --input
+/// '{"tier":"FREE","event":{"type":"CapitalFlow","account_id":"acc-1","sign":"DEPOSIT","amount":100000000000,"currency":"USD"}}'`
+pub async fn verify_enriched_domain_events(
+    input: EnrichedDomainEventsVerifyInput,
+) -> EnrichedDomainEventsVerifyOutput {
+    let tier = match resolve_domain_event_tier(&input.tier) {
+        Some(tier) => tier,
+        None => {
+            return EnrichedDomainEventsVerifyOutput::from_error(format!(
+                "tier desconocido: '{}' -- se esperaba FREE o PAID (o EXPLORER/SOVEREIGN)",
+                input.tier
+            ))
+        }
+    };
+
+    // Construye el evento del Core ANTES de tocar la BD -- así un input mal
+    // formado (side/sign inválido) falla rápido y barato.
+    let event = match input.event.into_domain_event() {
+        Ok(event) => event,
+        Err(msg) => return EnrichedDomainEventsVerifyOutput::from_error(msg),
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón que
+    // verify_licensing_system / verify_consent_registry).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-enriched-domain-events-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return EnrichedDomainEventsVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return EnrichedDomainEventsVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return EnrichedDomainEventsVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Paso 1 -- gate_in: construye el ExecutionGate REAL de #2 (no un stub),
+    // recorriendo el mismo camino que verify_licensing_system: vincula una
+    // identidad local, emite+activa una licencia de desarrollo firmada para
+    // el tier, obtiene PlanLimits del stub y deriva el gate.
+    let machine_identifiers = vec![hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string())];
+    let identity_verifier =
+        crate::orchestrator::central_identity::LocalStubCentralIdentityVerifier::new(&pool, clock.as_ref());
+    let identity = match identity_verifier
+        .verify_identity(crate::orchestrator::central_identity::IdentityVerificationRequest {
+            email: "verify-enriched-domain-events@drasus.local".to_string(),
+            oauth_provider: None,
+            machine_identifiers,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+        })
+        .await
+    {
+        Ok(identity) => identity,
+        Err(e) => return EnrichedDomainEventsVerifyOutput::from_error(format!("fallo al vincular identidad: {e}")),
+    };
+
+    let issuer = LocalStubLicenseIssuer::new();
+    let now_ns = clock.timestamp_ns();
+    let signed = issuer.issue_license(IssueLicenseRequest {
+        owner_id: identity.owner_id.clone(),
+        node_id: identity.node_id.clone(),
+        tier,
+        issued_at_ns: now_ns,
+        heartbeat_expires_at_ns: now_ns + DEFAULT_HEARTBEAT_INTERVAL_NS,
+    });
+
+    let license_repo = LicenseRepository::new(&pool, clock.as_ref());
+    let license = match license_repo
+        .activate(NewLicenseActivation {
+            owner_id: identity.owner_id.clone(),
+            institutional_tag: identity.institutional_tag.clone(),
+            access_token_id: None,
+            node_id: identity.node_id.clone(),
+            license_id: signed.license_id.clone(),
+            process_id: Some(format!("drasus-pid-{}", std::process::id())),
+            signature_hash: signed.signature_hex.clone(),
+            tier,
+            issued_at_ns: signed.issued_at_ns,
+            heartbeat_expires_at_ns: signed.heartbeat_expires_at_ns,
+            compliance_status_id: "ACTIVE".to_string(),
+        })
+        .await
+    {
+        Ok(license) => license,
+        Err(e) => return EnrichedDomainEventsVerifyOutput::from_error(format!("fallo al activar licencia: {e}")),
+    };
+
+    let plan_limits_provider = LocalStubPlanLimitsProvider::default();
+    let plan_limits = plan_limits_provider.plan_limits_for(&identity.owner_id, tier).await;
+
+    let heartbeat_config = HeartbeatConfig::default();
+    let gate = match build_execution_gate(
+        &pool,
+        clock.as_ref(),
+        &identity.node_id,
+        &license,
+        &signed.signature_hex,
+        &signed.public_key_hex,
+        &heartbeat_config,
+        &plan_limits,
+    )
+    .await
+    {
+        Ok(gate) => gate,
+        Err(e) => return EnrichedDomainEventsVerifyOutput::from_error(format!("fallo al construir el gate: {e}")),
+    };
+
+    let suppress = gate.suppress_work_telemetry;
+
+    // Paso 2 -- event_out: compone el evento + el gate real, deriva replicate
+    // y persiste append-only atómico.
+    let identity_for_event = enriched_domain_events::EventEmissionIdentity {
+        owner_id: identity.owner_id.clone(),
+        institutional_tag: identity.institutional_tag.clone(),
+        node_id: identity.node_id.clone(),
+        process_id: format!("drasus-pid-{}", std::process::id()),
+        session_id: None,
+    };
+
+    let row = match enriched_domain_events::record_domain_event(
+        &pool,
+        clock.as_ref(),
+        identity_for_event,
+        &gate,
+        event,
+    )
+    .await
+    {
+        Ok(row) => row,
+        Err(e) => return EnrichedDomainEventsVerifyOutput::from_error(format!("fallo al persistir el evento: {e}")),
+    };
+
+    EnrichedDomainEventsVerifyOutput {
+        ok: true,
+        tier: Some(tier.as_str().to_string()),
+        suppress_work_telemetry: Some(suppress),
+        replicate: Some(row.replicate),
+        event_type: Some(row.event_type),
+        payload: Some(row.payload),
+        event_sequence_id: Some(row.event_sequence_id),
+        is_genesis: Some(row.audit_chain_hash.is_none()),
+        audit_hash: Some(row.audit_hash),
+        error: None,
+    }
+}

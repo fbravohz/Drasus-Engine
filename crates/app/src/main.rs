@@ -12,10 +12,10 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
-    verify_licensing_system, verify_plan_tier_quota, verify_usage_metering,
-    CentralIdentityVerifyInput, ConsentRegistryVerifyInput, ExecutorIdentity, JobExecutor,
-    JobExecutorConfig, LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
-    UsageMeteringVerifyInput,
+    verify_enriched_domain_events, verify_licensing_system, verify_plan_tier_quota,
+    verify_usage_metering, CentralIdentityVerifyInput, ConsentRegistryVerifyInput,
+    EnrichedDomainEventsVerifyInput, ExecutorIdentity, JobExecutor, JobExecutorConfig,
+    LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock, UsageMeteringVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -61,11 +61,12 @@ enum Commands {
     ///   drasus verify plan-tier-quota --input '{"tier":"FREE"}'
     ///   drasus verify usage-metering --input '{"tier":"FREE","operations":[{"size":250000000,"price":4000000000000}]}'
     ///   drasus verify consent-registry --input '{"current_version":"v2","actions":[{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}],"query":{"data_type":"aggregation"}}'
+    ///   drasus verify enriched-domain-events --input '{"tier":"FREE","event":{"type":"CapitalFlow","account_id":"acc-1","sign":"DEPOSIT","amount":100000000000,"currency":"USD"}}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -322,10 +323,44 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Enriched Domain Events (STORY-033, vive en `shared` -- ver ADR-0137) ──
+        "enriched-domain-events" => {
+            // `event` es obligatorio (no hay un evento por defecto que
+            // verificar); `tier` sí tiene default (FREE) -- por eso el input
+            // mínimo es solo el objeto `event`.
+            let input: EnrichedDomainEventsVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "enriched-domain-events requiere --input con al menos {{\"event\":{{\"type\":\"CapitalFlow\",...}}}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_enriched_domain_events(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("EnrichedDomainEventsVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events"
             );
             std::process::exit(1);
         }

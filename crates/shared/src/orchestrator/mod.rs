@@ -40,6 +40,7 @@
 
 pub mod central_identity;
 pub mod consent_registry;
+pub mod enriched_domain_events;
 pub mod job_executor;
 pub mod licensing_system;
 pub mod mcp_server;
