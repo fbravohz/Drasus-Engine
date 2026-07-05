@@ -1,7 +1,9 @@
-ccccc# Enriched Domain Events
+# Enriched Domain Events
+
+> 🟡 **Parcial** 2026-07-05 · Orden de trabajo [STORY-033](../execution/STORY-033-enriched-domain-events.md) · Cimiento local completo: event-store append-only **atómico** `domain_events` (migración `0012`, `event_sequence_id UNIQUE` + triggers anti UPDATE/DELETE, Grupo I + Perfil D), Core `domain/enriched_domain_events.rs` (enum `EnrichedDomainEvent` de 8 variantes con los **3 de ADR-0145** — flujo de capital, snapshot de cuenta, orden reforzada; montos `i64` ×10⁸, serialización canónica `BTreeMap`, `decide_replication`, hash encadenado), Shell append-only atómico (`BEGIN IMMEDIATE` + reintento + `WriteContention`) que consume el `ExecutionGate` **real** de #2 para derivar `replicate`, puerto `event_out`/`gate_in`, CLI `verify enriched-domain-events`. Crate `crates/shared` (excepción bendecida ADR-0137). QA APTO (5 mutaciones). Pendiente: fan-out al bus (ADR-0085), envío a la Cabina de Mando (adaptador de red diferido) y mapeo de las acciones reales de `execute` (EPIC-5).
 
 **Carpeta:** `./features/enriched-domain-events/`
-**Estado:** En Diseño
+**Estado:** 🟡 Parcial (event-store local completo; bus, envío al proveedor y mapeo de `execute` diferidos)
 **Última actualización:** 2026-07-03
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #6) · ADR-0085 (bus) · ADR-0027 (event sourcing) · ADR-0143 (supresión por tier) · **ADR-0145 (enriquecimiento para Cuentas Verificadas: flujo de capital + snapshot de cuenta + refuerzo de orden)**
 
