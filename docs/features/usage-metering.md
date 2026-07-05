@@ -1,8 +1,10 @@
 # Usage Metering (Libro de Nocional)
 
+> 🟡 **Parcial** 2026-07-04 · Orden de trabajo [STORY-030](../execution/STORY-030-usage-metering.md) · Cimiento local completo: migración `0010_usage_metering.sql` (Grupo I append-only con `event_sequence_id UNIQUE` + triggers anti UPDATE/DELETE + Perfil D acotado), Core puro (`domain/usage_metering.rs`: `compute_notional` con reescalado ×10¹⁶→×10⁸ en `i128` y redondeo explícito, `accumulate`, `detect_quota_crossing`, `derive_billing_cycle_id` sin dependencia de calendario externa, hash de auditoría encadenado por `event_sequence_id`), Shell (`persistence/usage_metering.rs`: repositorio APPEND-ONLY sin `update`/`delete`, acumulación por ciclo vía `SUM` filtrado; `orchestrator/usage_metering.rs`: consumo REAL de `PlanLimits` de `plan-tier-quota` #3 — primer cableado real entre cimientos del substrato), puerto `usage_out` → `UsageRecord` en `public_interface::usage_metering` (submódulo, más re-exports planos), CLI `verify usage-metering` (ADR-0142). Crate: `crates/shared` (excepción bendecida ADR-0137). Pendiente: mapeo del `Order` real (módulo `execute`/EPIC-5, hoy placeholder → se modela `MeteredOperation` mínimo), emisión real a `feedback`/telemetría, SVF (Canal #1) + galería del panel de consumo (deuda rastreada, backend-first).
+
 **Carpeta:** `./features/usage-metering/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-03
+**Estado:** 🟡 Parcial (cimiento local completo; mapeo de `Order` real, emisión a `feedback` y UI diferidos)
+**Última actualización:** 2026-07-04
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #4) · ADR-0143 (tiers)
 
 ## ¿Qué es esta feature?
