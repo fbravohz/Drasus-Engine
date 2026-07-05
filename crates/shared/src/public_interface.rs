@@ -28,7 +28,7 @@
 //!
 //! - [`AuditEventContent`]: el payload del evento (`action_type`,
 //!   `entity_type`, `entity_id`, `details_json`, más los campos del
-//!   perfil "Ops / Auditoría" de ADR-0020 V2 — `process_id` e
+//!   perfil "Ops / Auditoría" de ADR-0020 — `process_id` e
 //!   `institutional_tag` son obligatorios).
 //! - [`AuditEvent`]: un evento persistido y encadenado por hash
 //!   (`audit_hash`, `audit_chain_hash`, `event_sequence_id`).
@@ -100,7 +100,7 @@
 //!   memoria no bloqueante (`record_latency`/`record_heartbeat`), siembra
 //!   de la cadena al iniciar (`bootstrap`), vaciado por lotes en segundo
 //!   plano (`spawn_flush_task`) y poda (`purge`). Reusa [`ExecutorIdentity`]
-//!   del Async Job Executor — mismo perfil de campos ADR-0020 V2, no se
+//!   del Async Job Executor — mismo perfil de campos ADR-0020, no se
 //!   duplica el tipo.
 //!
 //! ## Central Identity (`docs/features/central-identity.md`, ADR-0143,
@@ -167,6 +167,36 @@
 //!   + persiste append-only.
 //! - [`verify_usage_metering`]: harness CLI (Canal #2, ADR-0142) --
 //!   `cargo run -p app -- verify usage-metering --input '{"tier":"FREE","operations":[...]}'`.
+//!
+//! ## Consent Registry / Registro de Consentimiento ToS (`docs/features/consent-registry.md`,
+//! ## ADR-0143, ADR-0144, ADR-0141, STORY-031)
+//!
+//! Cimiento #5 del substrato de monetización: el registro append-only y
+//! versionado de aceptación de ToS, con granularidad opt-in/opt-out por
+//! tipo de dato -- la columna vertebral legal (GDPR) del firehose gratuito
+//! (ADR-0143) y de `data-aggregation` (#9).
+//!
+//! - [`domain::consent_registry::needs_reacceptance`]: compara la versión
+//!   aceptada contra la vigente (`REACCEPT_ON_VERSION_CHANGE`, FIJO).
+//! - [`domain::consent_registry::resolve_coverage`]: EL punto de
+//!   correctitud legal -- decide `Covered`/`NotCovered{reason}` para un
+//!   tipo de dato; el default es SIEMPRE negar.
+//! - [`domain::consent_registry::apply_consent_action`]: EL punto de
+//!   modelado crítico -- fusiona el estado vigente con una acción nueva
+//!   (aceptar versión / cambiar opt-outs) produciendo el snapshot
+//!   COMPLETO que se persiste como fila-evento nueva (event-sourcing).
+//! - [`domain::consent_registry::ConsentVerdict`]: el tipo de puerto
+//!   `consent_out` (acumulado + veredicto, sin secretos ADR-0093).
+//! - [`persistence::consent_registry::ConsentRepository`][]: repositorio
+//!   APPEND-ONLY (`event_sequence_id`, ADR-0141) para `consent_records`
+//!   (migración `0011_consent_registry.sql`).
+//! - [`orchestrator::consent_registry::record_consent_action`] /
+//!   [`orchestrator::consent_registry::resolve_consent_verdict`][]: la
+//!   composición completa -- registrar un evento y resolver el veredicto
+//!   de cobertura.
+//! - [`verify_consent_registry`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify consent-registry --input
+//!   '{"current_version":"v2","actions":[...],"query":{"data_type":"aggregation"}}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -1015,4 +1045,231 @@ pub async fn verify_plan_tier_quota(input: PlanTierQuotaVerifyInput) -> PlanTier
             "los límites recién guardados ya no están vigentes en la caché (inesperado)".to_string(),
         ),
     }
+}
+
+// ── Consent Registry (STORY-031, vive en `shared` -- ver ADR-0137) ─────────
+
+pub use crate::domain::consent_registry::{
+    apply_consent_action, compute_consent_audit_hash, needs_reacceptance, parse_optout_map,
+    resolve_coverage, ConsentAction, ConsentActionInput, ConsentState, ConsentVerdict,
+    NotCoveredReason, OptoutMapError,
+};
+pub use crate::orchestrator::consent_registry::{record_consent_action, resolve_consent_verdict};
+pub use crate::persistence::consent_registry::{
+    ConsentRecordRow, ConsentRepository, ConsentRepositoryError, RecordConsentActionInput,
+};
+
+/// Una acción de consentimiento de entrada para la verificación vía CLI --
+/// espejo de [`ConsentActionInput`] pero con `optout_map` (no
+/// `optout_changes`) para que el JSON del usuario sea legible: cada acción
+/// trae el mapa de cambios de opt-out que quiere aplicar sobre el estado
+/// vigente (`docs/features/consent-registry.md`, STORY-031).
+///
+/// Uso típico de cada elemento de `actions`:
+/// `{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConsentActionVerifyInput {
+    /// `"ACCEPT"`, `"REACCEPT"` u `"OPTOUT_CHANGE"` (mismo vocabulario que
+    /// `ConsentAction::as_str`).
+    pub action: String,
+    /// Versión de ToS que se acepta -- solo relevante para
+    /// `ACCEPT`/`REACCEPT`; se omite (o se manda `null`) en
+    /// `OPTOUT_CHANGE`.
+    #[serde(default)]
+    pub tos_version: Option<String>,
+    /// Cambios de opt-out a fusionar sobre el estado vigente -- solo las
+    /// claves que cambian, el resto del mapa previo se conserva
+    /// ([`apply_consent_action`]).
+    #[serde(default)]
+    pub optout_map: std::collections::BTreeMap<String, bool>,
+}
+
+/// La consulta de cobertura a resolver DESPUÉS de aplicar todas las
+/// `actions` -- `(data_type, current_version)` (`current_version` viaja a
+/// nivel de [`ConsentRegistryVerifyInput`], no aquí, porque es la MISMA
+/// versión vigente contra la que se registraron las acciones).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConsentQueryVerifyInput {
+    pub data_type: String,
+}
+
+/// Input para la verificación de Consent Registry vía CLI
+/// (`docs/features/consent-registry.md`, STORY-031). Se deserializa desde
+/// el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify consent-registry --input
+/// '{"current_version":"v2","actions":[{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}],"query":{"data_type":"aggregation"}}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConsentRegistryVerifyInput {
+    /// La versión de ToS vigente contra la que se evalúan tanto las
+    /// acciones registradas como la consulta final.
+    pub current_version: String,
+    /// Las acciones a registrar, EN ORDEN, contra el mismo dueño -- cada
+    /// una se fusiona sobre el snapshot que dejó la anterior.
+    pub actions: Vec<ConsentActionVerifyInput>,
+    /// La consulta de cobertura a resolver tras registrar todas las
+    /// acciones.
+    pub query: ConsentQueryVerifyInput,
+}
+
+/// Output de la verificación de Consent Registry. Siempre serializa a
+/// JSON válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que
+/// expone el puerto `consent_out` -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConsentRegistryVerifyOutput {
+    pub ok: bool,
+    /// `"COVERED"` o `"NOT_COVERED"`.
+    pub verdict: Option<String>,
+    /// Presente solo si `verdict` es `"NOT_COVERED"`:
+    /// `"STALE_VERSION"` | `"OPTED_OUT"` | `"NO_CONSENT"`.
+    pub reason: Option<String>,
+    /// Cuántas acciones se registraron con éxito antes de resolver la
+    /// consulta (o antes de que una fallara).
+    pub actions_recorded: usize,
+    pub error: Option<String>,
+}
+
+impl ConsentRegistryVerifyOutput {
+    fn from_error(actions_recorded: usize, msg: String) -> Self {
+        Self {
+            ok: false,
+            verdict: None,
+            reason: None,
+            actions_recorded,
+            error: Some(msg),
+        }
+    }
+
+    fn from_verdict(verdict: ConsentVerdict, actions_recorded: usize) -> Self {
+        let (verdict_str, reason_str) = match &verdict {
+            ConsentVerdict::Covered => ("COVERED".to_string(), None),
+            ConsentVerdict::NotCovered(reason) => {
+                let reason_str = match reason {
+                    NotCoveredReason::StaleVersion => "STALE_VERSION",
+                    NotCoveredReason::OptedOut => "OPTED_OUT",
+                    NotCoveredReason::NoConsent => "NO_CONSENT",
+                };
+                ("NOT_COVERED".to_string(), Some(reason_str.to_string()))
+            }
+        };
+        Self {
+            ok: true,
+            verdict: Some(verdict_str),
+            reason: reason_str,
+            actions_recorded,
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Consent Registry con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real), recorriendo el camino
+/// completo del cimiento #5: registra CADA acción de `input.actions` EN
+/// ORDEN (fusionando sobre el mismo dueño vía [`record_consent_action`]),
+/// y resuelve la consulta final vía [`resolve_consent_verdict`] --
+/// ejercitando Core -> Shell -> puerto tal como lo recorrería un usuario
+/// real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify consent-registry --input
+/// '{"current_version":"v2","actions":[{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}],"query":{"data_type":"aggregation"}}'`
+pub async fn verify_consent_registry(input: ConsentRegistryVerifyInput) -> ConsentRegistryVerifyOutput {
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_usage_metering / verify_plan_tier_quota).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-consent-registry-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return ConsentRegistryVerifyOutput::from_error(
+            0,
+            format!("no se pudo crear el directorio temporal de verificación: {e}"),
+        );
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return ConsentRegistryVerifyOutput::from_error(
+                0,
+                format!("no se pudo crear la BD temporal de verificación: {e}"),
+            )
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return ConsentRegistryVerifyOutput::from_error(
+            0,
+            format!("error al aplicar migraciones en la BD temporal: {e}"),
+        );
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+    let owner_id = "verify-consent-registry-owner";
+
+    // Paso 1 -- registra cada acción EN ORDEN, fusionando sobre el mismo
+    // dueño (fuera del hot-path: esta función SÍ hace lecturas/escrituras
+    // de BD local).
+    for (index, action) in input.actions.iter().enumerate() {
+        let parsed_action = match ConsentAction::from_str_value(&action.action) {
+            Some(a) => a,
+            None => {
+                return ConsentRegistryVerifyOutput::from_error(
+                    index,
+                    format!(
+                        "acción #{index} desconocida: '{}' -- se esperaba ACCEPT, REACCEPT u OPTOUT_CHANGE",
+                        action.action
+                    ),
+                )
+            }
+        };
+
+        let result = record_consent_action(
+            &pool,
+            clock.as_ref(),
+            RecordConsentActionInput {
+                owner_id: owner_id.to_string(),
+                institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+                node_id: node_id.clone(),
+                compliance_status_id: None,
+                action: parsed_action,
+                tos_version: action.tos_version.clone(),
+                optout_changes: action.optout_map.clone(),
+            },
+        )
+        .await;
+
+        if let Err(e) = result {
+            return ConsentRegistryVerifyOutput::from_error(
+                index,
+                format!("fallo al registrar la acción #{index}: {e}"),
+            );
+        }
+    }
+
+    // Paso 2 -- resuelve la consulta final tras aplicar todas las acciones.
+    let verdict = match resolve_consent_verdict(
+        &pool,
+        clock.as_ref(),
+        owner_id,
+        &input.query.data_type,
+        &input.current_version,
+    )
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            return ConsentRegistryVerifyOutput::from_error(
+                input.actions.len(),
+                format!("fallo al resolver el veredicto de consentimiento: {e}"),
+            )
+        }
+    };
+
+    ConsentRegistryVerifyOutput::from_verdict(verdict, input.actions.len())
 }

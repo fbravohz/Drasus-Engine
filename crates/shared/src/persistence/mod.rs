@@ -18,6 +18,9 @@
 //! - `central_identity`: repositorio MUTABLE (con `row_version`, ADR-0141)
 //!   para la tabla `accounts` (`docs/features/central-identity.md`,
 //!   ADR-0143, ADR-0144, migración `0007_central_identity.sql`). STORY-027.
+//! - `consent_registry`: repositorio APPEND-ONLY (con `event_sequence_id`,
+//!   ADR-0141) para la tabla `consent_records` (`docs/features/consent-registry.md`,
+//!   ADR-0143, ADR-0144, migración `0011_consent_registry.sql`). STORY-031.
 //! - `job`: repositorio para las tablas `jobs` y `job_results` del Async
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
@@ -37,6 +40,7 @@
 
 pub mod audit_log;
 pub mod central_identity;
+pub mod consent_registry;
 pub mod job;
 pub mod licensing_system;
 pub mod mcp_gateway;

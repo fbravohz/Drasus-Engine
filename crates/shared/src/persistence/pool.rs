@@ -13,6 +13,7 @@
 //!   correrlo contra una base de datos ya migrada es un no-op (ADR-0006).
 
 use std::str::FromStr;
+use std::time::Duration;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use sqlx::SqlitePool;
@@ -28,6 +29,14 @@ use sqlx::SqlitePool;
 pub async fn connect(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(database_url)?
         .journal_mode(SqliteJournalMode::Wal)
+        // Espera hasta 5s a que se libere el lock de escritura antes de
+        // fallar con "database is locked" (ADR-0141 R2). Sin esto, dos
+        // escritores concurrentes que compiten por el lock de un ledger
+        // append-only (p. ej. abrir `BEGIN IMMEDIATE`) fallarían de
+        // inmediato en vez de esperar su turno; con esto, se serializan
+        // limpiamente y el reintento acotado de la capa de repositorio solo
+        // actúa como red de seguridad, no como camino normal.
+        .busy_timeout(Duration::from_secs(5))
         .create_if_missing(true);
 
     SqlitePoolOptions::new().connect_with(options).await
@@ -50,7 +59,7 @@ mod tests {
     use sqlx::Row;
 
     /// Criterio de cierre de W2: la migración 0001 aplica los 25 campos
-    /// maestros (ADR-0020 V2) sobre una base de datos SQLite en modo WAL,
+    /// maestros (ADR-0020) sobre una base de datos SQLite en modo WAL,
     /// y volver a correrla es idempotente.
     #[tokio::test]
     async fn migration_0001_applies_in_wal_mode_and_is_idempotent() {
@@ -72,9 +81,9 @@ mod tests {
         migrate(&pool).await.expect("migrate (1st run)");
 
         // Confirma que la tabla de fundación existe con los 25 campos
-        // maestros (ADR-0020 V2) más el rowid implícito -> verifica el
+        // maestros (ADR-0020) más el rowid implícito -> verifica el
         // conteo de columnas y una muestra representativa de nombres de
-        // columna de cada uno de los 5 grupos de ADR-0020 V2.
+        // columna de cada uno de los 5 grupos de ADR-0020.
         let columns = sqlx::query(
             "SELECT name FROM pragma_table_info('foundation_master_fields')",
         )

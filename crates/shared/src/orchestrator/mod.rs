@@ -11,6 +11,10 @@
 //! - `central_identity`: caché de identidad con TTL + puerto de
 //!   verificación central con stub local (`docs/features/central-identity.md`,
 //!   ADR-0143, ADR-0144). STORY-027.
+//! - `consent_registry`: composición del puerto `consent_out` -- registrar
+//!   un evento de consentimiento y resolver el veredicto de cobertura por
+//!   tipo de dato (`docs/features/consent-registry.md`, ADR-0143,
+//!   ADR-0144). STORY-031.
 //! - `licensing_system`: emisor de licencias de desarrollo (stub Ed25519),
 //!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
 //!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
@@ -35,6 +39,7 @@
 //!   ADR-0143, ADR-0144). STORY-030.
 
 pub mod central_identity;
+pub mod consent_registry;
 pub mod job_executor;
 pub mod licensing_system;
 pub mod mcp_server;

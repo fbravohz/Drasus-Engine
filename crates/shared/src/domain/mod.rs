@@ -3,7 +3,7 @@
 //! Sin I/O, sin reloj de sistema, sin azar sin semilla (ADR-0002/0004).
 //!
 //! - `audit_log`: construcción y verificación de la cadena de hashes del
-//!   Audit Log (`docs/features/audit-log.md` TTR-001, ADR-0015, ADR-0020 V2,
+//!   Audit Log (`docs/features/audit-log.md` TTR-001, ADR-0015, ADR-0020,
 //!   ADR-0027).
 //! - `central_identity`: huella de hardware determinista, validación de
 //!   formato de correo, verificación de firma OAuth y el hash de auditoría
@@ -11,6 +11,11 @@
 //!   ADR-0143, ADR-0144, ADR-0141). STORY-027.
 //! - `clock`: el puerto `Clock` y la implementación de reloj determinista
 //!   (lista para backtest) (W3, `docs/features/clock.md` TTR-001/TTR-002).
+//! - `consent_registry`: fusión pura de una acción de consentimiento sobre
+//!   el estado vigente (event-sourcing con snapshot completo), resolución
+//!   de cobertura por tipo de dato (`ConsentVerdict`) y hash de auditoría
+//!   encadenado por `event_sequence_id` (`docs/features/consent-registry.md`,
+//!   ADR-0143, ADR-0144, ADR-0141). STORY-031.
 //! - `job`: la máquina de estados de jobs asíncronos -- transiciones
 //!   válidas, progreso y estimación de tiempo restante
 //!   (`docs/features/async-job-executor.md`
@@ -31,7 +36,7 @@
 //!   STORY-029.
 //! - `telemetry`: construcción pura de muestras de latencia/heartbeat y la
 //!   decisión de poda por ventana de retención (`docs/features/telemetry.md`
-//!   TTR-001, ADR-0015, ADR-0020 V2).
+//!   TTR-001, ADR-0015, ADR-0020).
 //! - `usage_metering`: cálculo de nocional (tamaño × precio, entero
 //!   escalado ×10⁸ con reescalado ×10¹⁶→×10⁸), acumulación por ciclo,
 //!   detección de cruce de umbral y hash de auditoría encadenado por
@@ -41,6 +46,7 @@
 pub mod audit_log;
 pub mod central_identity;
 pub mod clock;
+pub mod consent_registry;
 pub mod job;
 pub mod licensing_system;
 pub mod logic;

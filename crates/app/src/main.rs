@@ -11,10 +11,11 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
-    create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_licensing_system,
-    verify_plan_tier_quota, verify_usage_metering, CentralIdentityVerifyInput, ExecutorIdentity,
-    JobExecutor, JobExecutorConfig, LicensingSystemVerifyInput, PlanTierQuotaVerifyInput,
-    SystemClock, UsageMeteringVerifyInput,
+    create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
+    verify_licensing_system, verify_plan_tier_quota, verify_usage_metering,
+    CentralIdentityVerifyInput, ConsentRegistryVerifyInput, ExecutorIdentity, JobExecutor,
+    JobExecutorConfig, LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
+    UsageMeteringVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -59,11 +60,12 @@ enum Commands {
     ///   drasus verify licensing-system --input '{"tier":"SOVEREIGN"}'
     ///   drasus verify plan-tier-quota --input '{"tier":"FREE"}'
     ///   drasus verify usage-metering --input '{"tier":"FREE","operations":[{"size":250000000,"price":4000000000000}]}'
+    ///   drasus verify consent-registry --input '{"current_version":"v2","actions":[{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}],"query":{"data_type":"aggregation"}}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -284,10 +286,46 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Consent Registry (STORY-031, vive en `shared` -- ver ADR-0137) ────
+        "consent-registry" => {
+            // `current_version`, `actions` y `query` no tienen defaults
+            // razonables (no existe una "versión de ToS vigente" por
+            // defecto ni un "tipo de dato" a consultar por defecto) -- por
+            // eso `drasus verify consent-registry` SIN --input no es
+            // válido, igual que central-identity y usage-metering.
+            let input: ConsentRegistryVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "consent-registry requiere --input con al menos {{\"current_version\":\"...\",\"actions\":[...],\"query\":{{\"data_type\":\"...\"}}}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_consent_registry(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("ConsentRegistryVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry"
             );
             std::process::exit(1);
         }
@@ -322,7 +360,7 @@ async fn run_start(db_path: &str) {
     // Core — en tests se sustituye por DeterministicClock sin cambiar nada.
     let clock = Arc::new(SystemClock::default());
 
-    // Identidad del proceso: metadatos ADR-0020 V2 del executor.
+    // Identidad del proceso: metadatos ADR-0020 del executor.
     // `process_id` identifica esta instancia en el audit log y como
     // `worker_id` en las transiciones de jobs.
     let identity = ExecutorIdentity {
