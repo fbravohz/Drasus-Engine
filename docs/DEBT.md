@@ -65,6 +65,30 @@
 - **Disparador de pago:** TASK futura, fuera del camino crítico.
 - **Estado:** Abierta.
 
+### DEBT-008 · `enriched-domain-events` (#6) sin fan-out al bus (ADR-0085)
+- **Severidad:** 🟡 Baja
+- **Origen:** STORY-033 (`enriched-domain-events`).
+- **Descripción:** el cimiento #6 persiste cada evento en el event-store append-only local (atómico), pero **no lo publica al bus** (ADR-0085). Hoy la Shell escribe a la tabla; el `event_out` fan-out a los consumidores vivos (medición, agregación, reportes) no está cableado.
+- **Impacto actual:** nulo — los consumidores del substrato (#4, #7, #9) leen del event-store por puerto, no del bus; el bus solo se necesita para reacción en tiempo real (feedback, telemetría).
+- **Disparador de pago:** al cablear el primer consumidor que exija push en vivo (módulo `feedback` / telemetría), o al construir el bus como infraestructura. Distinto del **adaptador de red a la Cabina de Mando**, que vive en el ROADMAP (no aquí).
+- **Estado:** Abierta.
+
+### DEBT-009 · Placeholders de tipos del guantelete en #7 (`BacktestResult`/`RobustnessScore`)
+- **Severidad:** 🟡 Baja
+- **Origen:** STORY-034 (`institutional-report-engine`).
+- **Descripción:** `institutional-report-engine` (#7) consume `BacktestResult`/`RobustnessScore` que hoy son **placeholders** (`pub struct X;` en `types/mod.rs`); el reporte se arma con un input mínimo (`metrics: BTreeMap<String,i64>`). La firma es reproducible y correcta, pero el mapeo desde los tipos **reales** del guantelete de validación/ejecución no existe todavía porque esos tipos aún no están construidos.
+- **Impacto actual:** ninguno de correctitud — el puerto y la firma son estables; es un mapeo pendiente, no un bug.
+- **Disparador de pago:** cuando el guantelete produzca los tipos reales (EPIC de validación/ejecución), mapear `result_in` → `metrics` sin tocar la firma.
+- **Estado:** Abierta.
+
+### DEBT-010 · Render Tera→PDF/HTML no cableado en #7
+- **Severidad:** 🟡 Baja
+- **Origen:** STORY-034 (`institutional-report-engine`).
+- **Descripción:** #7 produce hoy la **estructura firmada** del reporte (JSON canónico + `signature_hash`); el render a PDF/HTML con plantilla Tera (ADR-0101) y white-label **no** se añadió (Tera no está como dependencia). El catálogo de productos (stress/validación/forense/certificación) es un moonshot aparte (`institutional-report-products`), NO esta deuda.
+- **Impacto actual:** ninguno — el dato firmado y trazable ya existe; falta la capa de presentación.
+- **Disparador de pago:** al primer cliente que pida el documento renderado, o al construir el moonshot de productos de reporte.
+- **Estado:** Abierta.
+
 ### DEBT-007 · `OPTOUT_CHANGE` como primera acción sin guarda explícita
 - **Severidad:** 🟡 Baja (falla-seguro)
 - **Origen:** observación de QA en STORY-031 (`consent-registry`).
