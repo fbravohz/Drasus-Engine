@@ -1,8 +1,10 @@
 # Third-Party API Gateway
 
+> 🟡 **Parcial** 2026-07-06 · Orden de trabajo [STORY-035](../execution/STORY-035-third-party-api-gateway.md) · Cimiento local completo: dos tablas (migración `0014`) — `api_credentials` **MUTABLE** (`row_version`, concurrencia optimista → `VersionConflict`, `credential_hash` SHA-256 nunca en claro ADR-0093, `status` ACTIVE/REVOKED con `CHECK`) y `api_usage_records` **APPEND-ONLY atómica** (`event_sequence_id UNIQUE` + triggers anti UPDATE/DELETE, `BEGIN IMMEDIATE` + reintento + `WriteContention`). Core `domain/third_party_api_gateway.rs` (`hash_api_credential`, `authenticate` con revocación-gana-primero, `compute_rate_limit` de borde exacto `<`, `decide_gateway_outcome` de cuatro puertas, hashes de auditoría encadenados). Orquestador `handle_gateway_request` que consume el `consent_out` **REAL** de #5 (`resolve_consent_verdict`, default-deny GDPR) — nunca un stub. Puerto `api_request_in`/`api_response_out`, CLI `verify third-party-api-gateway`. Crate `crates/shared`. QA APTO (mutación: 45 cazados, huecos no bloqueantes → DEBT-011). Pendiente: servidor gRPC público (tonic/mTLS/protos = Canal #3, ADR-0142, diferido al ROADMAP) y delegación real a los puertos internos (#7 report, #9 feeds, `execute`).
+
 **Carpeta:** `./features/third-party-api-gateway/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-03
+**Estado:** 🟡 Parcial (puerto + esquema + auth/rate-limit/consentimiento local completos; servidor gRPC público y delegación real diferidos)
+**Última actualización:** 2026-07-06
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #8) · ADR-0142 (gRPC/CLI) · ADR-0093 (seguridad)
 
 ## ¿Qué es esta feature?
