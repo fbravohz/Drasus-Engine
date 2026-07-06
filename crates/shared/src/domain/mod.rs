@@ -16,6 +16,12 @@
 //!   de cobertura por tipo de dato (`ConsentVerdict`) y hash de auditoría
 //!   encadenado por `event_sequence_id` (`docs/features/consent-registry.md`,
 //!   ADR-0143, ADR-0144, ADR-0141). STORY-031.
+//! - `data_aggregation`: ruido gaussiano de privacidad diferencial con RNG
+//!   sembrado (Box-Muller), hash unidireccional de topología de estrategia
+//!   (SHA-256), verificación de k-anonimato y agregación de índices
+//!   vendibles con hash de auditoría encadenado por `event_sequence_id`
+//!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, ADR-0143,
+//!   ADR-0141). STORY-036.
 //! - `institutional_report_engine`: ensamblado puro de reportes
 //!   institucionales, serialización canónica del reporte, firma de
 //!   integridad REPRODUCIBLE (`compute_report_signature`) y hash de
@@ -59,6 +65,7 @@ pub mod audit_log;
 pub mod central_identity;
 pub mod clock;
 pub mod consent_registry;
+pub mod data_aggregation;
 pub mod enriched_domain_events;
 pub mod institutional_report_engine;
 pub mod job;

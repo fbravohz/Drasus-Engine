@@ -226,6 +226,33 @@
 //! - [`verify_third_party_api_gateway`]: harness CLI (Canal #2, ADR-0142)
 //!   -- `cargo run -p app -- verify third-party-api-gateway --input
 //!   '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'`.
+//!
+//! ## Data Anonymization & Aggregation (`docs/features/data-aggregation.md`,
+//! ## ADR-0144, ADR-0102, ADR-0143, ADR-0141, ADR-0093, STORY-036)
+//!
+//! Cimiento #9 del substrato de monetización: convierte eventos de
+//! ejecución individuales en índices agregados vendibles (sentimiento,
+//! régimen, fricción de bróker, correlación) donde ningún usuario es
+//! reconocible -- ruido gaussiano de privacidad diferencial con RNG
+//! SEMBRADO e inyectado (nunca entropía del sistema), hash unidireccional
+//! de topología de estrategia (SHA-256, ADR-0102) y k-anonimato con
+//! supresión FIJA por debajo de `MIN_COHORT_SIZE`. El pipeline de venta
+//! externa y la exposición por la API de terceros (#8) quedan diferidos.
+//!
+//! - [`data_aggregation::apply_differential_privacy`]: ruido gaussiano
+//!   determinista (Box-Muller) -- misma semilla, mismo resultado siempre.
+//! - [`data_aggregation::hash_strategy_topology`]: topología cruda ->
+//!   SHA-256 hex, irreversible.
+//! - [`data_aggregation::aggregate_index`]: EL punto de modelado crítico
+//!   -- suma los valores cubiertos, aplica el ruido y verifica
+//!   k-anonimato; `None` si suprime.
+//! - [`data_aggregation::run_aggregation`]: la composición completa --
+//!   resuelve el `consent_out` REAL de `consent-registry` (#5) evento por
+//!   evento, respeta la separación de canales interno/externo
+//!   (`EXTERNAL_SALE_ENABLED`) y persiste el snapshot append-only atómico.
+//! - [`verify_data_aggregation`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify data-aggregation --input
+//!   '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -2200,5 +2227,312 @@ pub async fn verify_third_party_api_gateway(
     {
         Ok(response) => ThirdPartyApiGatewayVerifyOutput::from_response(response),
         Err(e) => ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al procesar la solicitud: {e}")),
+    }
+}
+
+// ── Data Anonymization & Aggregation (STORY-036, vive en `shared` -- ver ADR-0137) ──
+
+pub mod data_aggregation {
+    // apply_differential_privacy / hash_strategy_topology / meets_k_anonymity
+    // / aggregate_index: el Core -- ruido DP con RNG sembrado, hash
+    // unidireccional de topología, k-anonimato y el hash de auditoría
+    // encadenado.
+    pub use crate::domain::data_aggregation::{
+        aggregate_index, apply_differential_privacy, compute_aggregate_audit_hash,
+        hash_strategy_topology, meets_k_anonymity, AggregatedIndex, Channel, IndexType,
+    };
+    // La composición completa: gate de consentimiento REAL de #5 evento por
+    // evento, separación de canales y persistencia append-only atómica.
+    pub use crate::orchestrator::data_aggregation::{
+        run_aggregation, AggregationEventInput, AggregationOutcome, AggregationRunConfig,
+        DataAggregationError, DATA_AGGREGATION_CONSENT_DATA_TYPE,
+    };
+    pub use crate::persistence::data_aggregation::{
+        AggregatedIndexRepository, AggregatedIndexRepositoryError, AggregatedIndexRow,
+        RecordAggregatedIndexInput,
+    };
+}
+
+/// Un evento candidato de entrada para la verificación vía CLI -- espejo
+/// de [`data_aggregation::AggregationEventInput`] pero con el estado de
+/// consentimiento a SEMBRAR (`consent`, texto) en vez de un `owner_id` que
+/// el usuario tendría que inventar coherente con una BD que no ve
+/// (`docs/features/data-aggregation.md`, STORY-036).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DataAggregationEventVerifyInput {
+    pub metric_e8: i64,
+    /// `"COVERED"` (se siembra un ACCEPT sin opt-out) | `"OPTED_OUT"` (se
+    /// siembra un ACCEPT con opt-out explícito del tipo de dato de
+    /// agregación) | cualquier otro valor / ausente -> `"NO_CONSENT"` (no
+    /// se siembra ningún evento de consentimiento para este owner --
+    /// resuelve al default-deny real de `consent-registry`).
+    #[serde(default = "default_event_consent_state")]
+    pub consent: String,
+}
+
+fn default_event_consent_state() -> String {
+    "COVERED".to_string()
+}
+
+/// Input para la verificación de Data Aggregation vía CLI (`docs/features/
+/// data-aggregation.md`, STORY-036). Se deserializa desde el JSON que pasa
+/// el usuario con `--input '...'`.
+///
+/// El harness siembra un `owner_id` sintético distinto por cada evento
+/// (`verify-data-aggregation-owner-{índice}`) y, según `consent`, registra
+/// por adelantado el evento de consentimiento REAL correspondiente
+/// (`consent-registry`, #5) -- así el único factor que decide el
+/// desenlace observable es lo que el usuario pasó en `--input`, igual que
+/// `verify_third_party_api_gateway`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify data-aggregation --input
+/// '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DataAggregationVerifyInput {
+    #[serde(default = "default_index_type")]
+    pub index_type: String,
+    #[serde(default = "default_time_window")]
+    pub time_window: String,
+    #[serde(default = "default_channel")]
+    pub channel: String,
+    pub min_cohort: i64,
+    #[serde(default = "default_noise_level_e8")]
+    pub noise_level_e8: i64,
+    pub seed: u64,
+    #[serde(default = "default_consent_version")]
+    pub consent_version: String,
+    #[serde(default)]
+    pub external_sale_enabled: bool,
+    pub events: Vec<DataAggregationEventVerifyInput>,
+}
+
+fn default_index_type() -> String {
+    "SENTIMENT".to_string()
+}
+
+fn default_time_window() -> String {
+    "2026-W27".to_string()
+}
+
+fn default_channel() -> String {
+    "INTERNAL".to_string()
+}
+
+fn default_noise_level_e8() -> i64 {
+    1_000_000
+}
+
+/// Output de la verificación de Data Aggregation. Siempre serializa a
+/// JSON válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que
+/// expone el puerto `aggregate_out` cuando se publica -- ningún dato
+/// crudo (ADR-0093/0102).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DataAggregationVerifyOutput {
+    pub ok: bool,
+    /// `"PUBLISHED"`, `"SUPPRESSED_BY_COHORT_SIZE"` o
+    /// `"EXTERNAL_CHANNEL_DISABLED"`.
+    pub outcome: Option<String>,
+    pub index_type: Option<String>,
+    pub time_window: Option<String>,
+    pub channel: Option<String>,
+    pub cohort_size: Option<i64>,
+    pub noise_level_e8: Option<i64>,
+    pub metric_value_e8: Option<i64>,
+    pub error: Option<String>,
+}
+
+impl DataAggregationVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            outcome: None,
+            index_type: None,
+            time_window: None,
+            channel: None,
+            cohort_size: None,
+            noise_level_e8: None,
+            metric_value_e8: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_outcome(outcome: data_aggregation::AggregationOutcome) -> Self {
+        match outcome {
+            data_aggregation::AggregationOutcome::Published(row) => Self {
+                ok: true,
+                outcome: Some("PUBLISHED".to_string()),
+                index_type: Some(row.index_type.as_str().to_string()),
+                time_window: Some(row.time_window.clone()),
+                channel: Some(row.channel.as_str().to_string()),
+                cohort_size: Some(row.cohort_size),
+                noise_level_e8: Some(row.noise_level_e8),
+                metric_value_e8: Some(row.metric_value_e8),
+                error: None,
+            },
+            data_aggregation::AggregationOutcome::SuppressedByCohortSize => Self {
+                ok: true,
+                outcome: Some("SUPPRESSED_BY_COHORT_SIZE".to_string()),
+                index_type: None,
+                time_window: None,
+                channel: None,
+                cohort_size: None,
+                noise_level_e8: None,
+                metric_value_e8: None,
+                error: None,
+            },
+            data_aggregation::AggregationOutcome::ExternalChannelDisabled => Self {
+                ok: true,
+                outcome: Some("EXTERNAL_CHANNEL_DISABLED".to_string()),
+                index_type: None,
+                time_window: None,
+                channel: None,
+                cohort_size: None,
+                noise_level_e8: None,
+                metric_value_e8: None,
+                error: None,
+            },
+        }
+    }
+}
+
+/// Ejecuta la verificación de Data Aggregation con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real + el `consent_out` REAL de
+/// `consent-registry` #5): siembra, por cada evento de `--input`, un
+/// `owner_id` sintético distinto y su consentimiento real correspondiente,
+/// y ejercita [`data_aggregation::run_aggregation`] -- Core -> Shell ->
+/// puerto, tal como lo recorrería el orquestador de producción.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify data-aggregation --input
+/// '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'`
+pub async fn verify_data_aggregation(input: DataAggregationVerifyInput) -> DataAggregationVerifyOutput {
+    let Some(index_type) = data_aggregation::IndexType::from_str_value(&input.index_type) else {
+        return DataAggregationVerifyOutput::from_error(format!(
+            "index_type no reconocido: '{}'. Valores válidos: SENTIMENT, REGIME, BROKER_FRICTION, CORRELATION",
+            input.index_type
+        ));
+    };
+    let Some(channel) = data_aggregation::Channel::from_str_value(&input.channel) else {
+        return DataAggregationVerifyOutput::from_error(format!(
+            "channel no reconocido: '{}'. Valores válidos: INTERNAL, EXTERNAL",
+            input.channel
+        ));
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_third_party_api_gateway / verify_consent_registry).
+    let temp_dir = std::env::temp_dir().join(format!("drasus-verify-data-aggregation-{}", uuid::Uuid::new_v4()));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return DataAggregationVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return DataAggregationVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return DataAggregationVerifyOutput::from_error(format!("error al aplicar migraciones en la BD temporal: {e}"));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+
+    // Paso 1 -- siembra un owner_id sintético distinto por cada evento y,
+    // según `consent`, registra por adelantado el consentimiento REAL
+    // correspondiente (consent_out de #5, nunca un stub).
+    let mut events = Vec::with_capacity(input.events.len());
+    for (index, event) in input.events.iter().enumerate() {
+        let owner_id = format!("verify-data-aggregation-owner-{index}");
+
+        match event.consent.as_str() {
+            "COVERED" => {
+                let mut optout_changes = std::collections::BTreeMap::new();
+                optout_changes.insert(data_aggregation::DATA_AGGREGATION_CONSENT_DATA_TYPE.to_string(), false);
+                if let Err(e) = record_consent_action(
+                    &pool,
+                    clock.as_ref(),
+                    RecordConsentActionInput {
+                        owner_id: owner_id.clone(),
+                        institutional_tag: default_institutional_tag(),
+                        node_id: node_id.clone(),
+                        compliance_status_id: None,
+                        action: ConsentAction::Accept,
+                        tos_version: Some(input.consent_version.clone()),
+                        optout_changes,
+                    },
+                )
+                .await
+                {
+                    return DataAggregationVerifyOutput::from_error(format!(
+                        "fallo al registrar el consentimiento COVERED del evento {index}: {e}"
+                    ));
+                }
+            }
+            "OPTED_OUT" => {
+                let mut optout_changes = std::collections::BTreeMap::new();
+                optout_changes.insert(data_aggregation::DATA_AGGREGATION_CONSENT_DATA_TYPE.to_string(), true);
+                if let Err(e) = record_consent_action(
+                    &pool,
+                    clock.as_ref(),
+                    RecordConsentActionInput {
+                        owner_id: owner_id.clone(),
+                        institutional_tag: default_institutional_tag(),
+                        node_id: node_id.clone(),
+                        compliance_status_id: None,
+                        action: ConsentAction::Accept,
+                        tos_version: Some(input.consent_version.clone()),
+                        optout_changes,
+                    },
+                )
+                .await
+                {
+                    return DataAggregationVerifyOutput::from_error(format!(
+                        "fallo al registrar el consentimiento OPTED_OUT del evento {index}: {e}"
+                    ));
+                }
+            }
+            _ => {
+                // "NO_CONSENT" o cualquier otro valor: NO se siembra
+                // ningún evento -- resuelve a NotCovered(NoConsent), el
+                // default-deny real de consent-registry.
+            }
+        }
+
+        events.push(data_aggregation::AggregationEventInput {
+            owner_id,
+            metric_e8: event.metric_e8,
+            raw_topology: None,
+        });
+    }
+
+    let config = data_aggregation::AggregationRunConfig {
+        index_type,
+        time_window: input.time_window.clone(),
+        channel,
+        min_cohort: input.min_cohort,
+        noise_level_e8: input.noise_level_e8,
+        seed: input.seed,
+        consent_version: input.consent_version.clone(),
+        external_sale_enabled: input.external_sale_enabled,
+        owner_id: "verify-data-aggregation-aggregator".to_string(),
+        institutional_tag: default_institutional_tag(),
+        node_id,
+        data_snapshot_id: Some(format!("verify-snapshot-{}", uuid::Uuid::new_v4())),
+    };
+
+    match data_aggregation::run_aggregation(&pool, clock.as_ref(), &events, &config).await {
+        Ok(outcome) => DataAggregationVerifyOutput::from_outcome(outcome),
+        Err(e) => DataAggregationVerifyOutput::from_error(format!("fallo al ejecutar la agregación: {e}")),
     }
 }

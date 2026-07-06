@@ -21,6 +21,10 @@
 //! - `consent_registry`: repositorio APPEND-ONLY (con `event_sequence_id`,
 //!   ADR-0141) para la tabla `consent_records` (`docs/features/consent-registry.md`,
 //!   ADR-0143, ADR-0144, migración `0011_consent_registry.sql`). STORY-031.
+//! - `data_aggregation`: repositorio APPEND-ONLY ATÓMICO (con
+//!   `event_sequence_id`, ADR-0141) para la tabla `aggregated_indexes`
+//!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, migración
+//!   `0015_data_aggregation.sql`). STORY-036.
 //! - `institutional_report_engine`: repositorio APPEND-ONLY (con
 //!   `event_sequence_id`, ADR-0141) para la tabla `generated_reports`
 //!   (`docs/features/institutional-report-engine.md`, ADR-0144, ADR-0027,
@@ -50,6 +54,7 @@
 pub mod audit_log;
 pub mod central_identity;
 pub mod consent_registry;
+pub mod data_aggregation;
 pub mod enriched_domain_events;
 pub mod institutional_report_engine;
 pub mod job;

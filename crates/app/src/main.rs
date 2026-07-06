@@ -12,10 +12,11 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
-    verify_enriched_domain_events, verify_institutional_report_engine, verify_licensing_system,
-    verify_plan_tier_quota, verify_third_party_api_gateway, verify_usage_metering,
-    CentralIdentityVerifyInput, ConsentRegistryVerifyInput, EnrichedDomainEventsVerifyInput,
-    ExecutorIdentity, InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
+    verify_data_aggregation, verify_enriched_domain_events, verify_institutional_report_engine,
+    verify_licensing_system, verify_plan_tier_quota, verify_third_party_api_gateway,
+    verify_usage_metering, CentralIdentityVerifyInput, ConsentRegistryVerifyInput,
+    DataAggregationVerifyInput, EnrichedDomainEventsVerifyInput, ExecutorIdentity,
+    InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
     LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
     ThirdPartyApiGatewayVerifyInput, UsageMeteringVerifyInput,
 };
@@ -66,11 +67,12 @@ enum Commands {
     ///   drasus verify enriched-domain-events --input '{"tier":"FREE","event":{"type":"CapitalFlow","account_id":"acc-1","sign":"DEPOSIT","amount":100000000000,"currency":"USD"}}'
     ///   drasus verify institutional-report-engine --input '{"report_type":"VALIDATION","metrics":{"sharpe_e8":150000000,"max_drawdown_e8":-8000000},"source_event_refs":["evt-1","evt-2"]}'
     ///   drasus verify third-party-api-gateway --input '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'
+    ///   drasus verify data-aggregation --input '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -433,10 +435,46 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Data Anonymization & Aggregation (STORY-036, vive en `shared` -- ver ADR-0137) ──
+        "data-aggregation" => {
+            // `min_cohort`, `seed` y `events` no tienen defaults razonables
+            // (no existe un tamaño mínimo de cohorte ni una semilla "por
+            // defecto" que tenga sentido demostrar) -- por eso `drasus
+            // verify data-aggregation` SIN --input no es válido, igual que
+            // third-party-api-gateway.
+            let input: DataAggregationVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "data-aggregation requiere --input con al menos {{\"min_cohort\":5,\"seed\":42,\"events\":[...]}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_data_aggregation(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("DataAggregationVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation"
             );
             std::process::exit(1);
         }

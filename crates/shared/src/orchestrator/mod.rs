@@ -15,6 +15,12 @@
 //!   un evento de consentimiento y resolver el veredicto de cobertura por
 //!   tipo de dato (`docs/features/consent-registry.md`, ADR-0143,
 //!   ADR-0144). STORY-031.
+//! - `data_aggregation`: composición del flujo completo del cimiento #9 --
+//!   gate de consentimiento REAL de `consent-registry` (#5) evento por
+//!   evento, delegación al Core (ruido + k-anonimato), separación de
+//!   canales interno/externo y persistencia append-only atómica
+//!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, ADR-0143).
+//!   STORY-036.
 //! - `licensing_system`: emisor de licencias de desarrollo (stub Ed25519),
 //!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
 //!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
@@ -49,6 +55,7 @@
 
 pub mod central_identity;
 pub mod consent_registry;
+pub mod data_aggregation;
 pub mod enriched_domain_events;
 pub mod institutional_report_engine;
 pub mod job_executor;
