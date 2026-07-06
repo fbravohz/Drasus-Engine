@@ -8,7 +8,7 @@
 | Canal | Qué es | Estado |
 |---|---|---|
 | **#1 — Flutter / SVF** | Tab en el *Banco de Verificación* de la app que ejercita el backend **real por FFI**; se prueba con el ratón. | Parcial (solo `sovereign-data-fetcher`) |
-| **#2 — CLI `verify`** (ADR-0142) | `cargo run -p app -- verify <feature> --input '<json>'`; imprime el observable en JSON. | Activo (8 features del substrato + `sovereign-data-fetcher`) |
+| **#2 — CLI `verify`** (ADR-0142) | `cargo run -p app -- verify <feature> --input '<json>'`; imprime el observable en JSON. | Activo (9 features del substrato + `sovereign-data-fetcher`) |
 | **#3 — API de red / Postman** | Colección Postman/grpcurl contra el servidor gRPC público. | ⛔ **No implementado** (ver §Pendientes) |
 | **Automatizado** | `cargo test` + `cargo llvm-cov`; la red de seguridad, no la prueba manual. | Activo |
 
@@ -182,6 +182,20 @@ cargo test -p shared third_party_api_gateway
 Campos: `credential` (secreto en claro, solo se hashea) · `endpoint` · `rate_limit_per_window` · `requests_in_window`.
 
 - **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel de administración de API. · **Canal #3 (servidor gRPC público):** ⛔ diferido al ROADMAP (tonic/mTLS/protos = Canal #3, ADR-0142); esta feature ES su futuro proveedor.
+
+### `data-aggregation` — cimiento #9  ✅ backend · ⏳ SVF/galería
+
+**Puerto:** `event_in`/`consent_in`/`aggregate_out` → índice anonimizado (ruido DP **determinista con semilla** + k-anonimato + hash unidireccional). Consume el `consent_out` **real** de #5. Datos crudos **nunca** salen (ADR-0093/0102). Requiere `--input`.
+
+```bash
+# min_cohort no alcanzado (1 evento < 5) → supresión; sube el nº de eventos para publicar
+cargo run -p app -- verify data-aggregation --input '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'
+cargo test -p shared data_aggregation
+```
+
+Campos: `seed` (semilla del RNG, determinismo) · `min_cohort` (k-anonimato) · `external_sale_enabled` · `events: [{metric_e8 (×10⁸), consent}]`.
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel de índices agregados + tamaño de cohorte. · **Canal #3:** vía #8 (diferido).
 
 ---
 

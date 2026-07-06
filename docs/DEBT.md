@@ -97,6 +97,14 @@
 - **Disparador de pago:** test de contención forzada (mock de `SQLITE_BUSY`) que ejercite reintento exitoso y agotamiento (`WriteContention`), + aserción de `audit_hash` cambiado en `revoke`. Barato; se pliega a la tanda de endurecimiento de tests o a la auditoría retroactiva.
 - **Estado:** Abierta.
 
+### DEBT-012 · Huecos de cobertura en `data-aggregation` (#9)
+- **Severidad:** 🟡 Baja (test-coverage / diseño placeholder, no correctitud)
+- **Origen:** gate de QA con mutación en STORY-036 (18 mutantes sobrevivientes).
+- **Descripción:** tres huecos: (a) **fórmula del ruido Box-Muller no fijada** — 10 mutantes sobre la matemática de `apply_differential_privacy` (`*`→`+`/`/`, `+`→`-`) sobreviven porque los tests aseguran determinismo + que difiere del crudo + que la semilla participa, pero **no** el valor exacto con un test de valor-dorado; (b) **ruta de reintento no ejercitada** — `is_transient_write_conflict` + los límites del loop de `record_index` no se prueban (WAL+`busy_timeout` hace esperar, no fallar) — **mismo problema sistémico que DEBT-011**; (c) **hash de topología calculado y descartado** — `run_aggregation` hace `let _ = hash_strategy_topology(raw)` pero no persiste ninguna columna de topología (es un placeholder de la disciplina ADR-0102 hasta que la topología sea una dimensión real de agregación).
+- **Impacto actual:** nulo de correctitud — la propiedad crítica (ningún índice se pierde, append atómico) SÍ está probada (la mutación manual de `BEGIN IMMEDIATE` tumba la prueba de 16 escritores); k-anonimato, consentimiento, canales y guardarraíl de datos crudos SÍ están cazados. Es cobertura/diseño placeholder.
+- **Disparador de pago:** (a) test de valor-dorado del ruido con semilla fija; (b) test de contención forzada (compartido con DEBT-011, `SQLITE_BUSY` simulado); (c) al cablear la topología como dimensión real (persistir `topology_hash`) o eliminar el cálculo muerto.
+- **Estado:** Abierta.
+
 ### DEBT-007 · `OPTOUT_CHANGE` como primera acción sin guarda explícita
 - **Severidad:** 🟡 Baja (falla-seguro)
 - **Origen:** observación de QA en STORY-031 (`consent-registry`).

@@ -1,9 +1,11 @@
 # Data Anonymization & Aggregation
 
+> 🟡 **Parcial** 2026-07-06 · Orden de trabajo [STORY-036](../execution/STORY-036-data-aggregation.md) · Cimiento local completo: tabla `aggregated_indexes` **append-only atómica** (migración `0015`, `event_sequence_id UNIQUE` + triggers, Grupo I + **Perfil B** con linaje `data_snapshot_id`), Core `domain/data_aggregation.rs` (`apply_differential_privacy` con **RNG sembrado inyectado** — Box-Muller, cero aleatoriedad del sistema; `meets_k_anonymity` FIJO con supresión → `None`; `hash_strategy_topology` SHA-256 unidireccional; `aggregate_index` suma+ruido+k-anon; montos `i64` ×10⁸), orquestador `run_aggregation` que consume el `consent_out` **REAL** de #5 (`resolve_consent_verdict`, default-deny — excluye no-cubiertos/opt-out) y separa canal `INTERNAL`/`EXTERNAL` (`EXTERNAL_SALE_ENABLED`), puerto `event_in`/`consent_in`/`aggregate_out`, CLI `verify data-aggregation`. Guardarraíl estructural: datos crudos nunca en la salida (ADR-0093/0102). Crate `crates/shared`. **QA APTO** (mutación: 35 cazados + `BEGIN IMMEDIATE` manual; huecos no bloqueantes → DEBT-012). Pendiente: pipeline de venta externa (moonshot `aggregated-data-feeds`), exposición por API de red (#8) y adaptador del firehose interno del tier gratuito.
+
 **Carpeta:** `./features/data-aggregation/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-03
-**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #9) · ADR-0102 (anonimización) · ADR-0143 (tiers) · consentimiento
+**Estado:** 🟡 Parcial (Core anonimización + agregación + k-anon + esquema + gate de consentimiento local completos; venta externa y API de red diferidas)
+**Última actualización:** 2026-07-06
+**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #9) · ADR-0102 (anonimización) · ADR-0143 (tiers) · ADR-0002 (determinismo/RNG sembrado) · consentimiento
 
 ## ¿Qué es esta feature?
 
