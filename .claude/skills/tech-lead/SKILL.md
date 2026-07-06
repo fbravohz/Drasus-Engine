@@ -240,6 +240,18 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
   * Si es bug numérico de implementación → regresas a Rust-Engineer.
   * Si es defecto de diseño/fórmula → escalas a Architect (ver §3).
 
+**Barrido de Cierre Documental (OBLIGATORIO al cerrar cada iteración/Story — regla del usuario 2026-07-06)**
+* Trigger: tras APTO de QA/Quant y ANTES de proponer commits. Una Story NO está cerrada hasta que TODOS los documentos que su avance toca reflejan el estado nuevo. No basta con actualizar el que tienes enfrente: **haces un barrido activo** de todos los registros vivos y verificas —documento por documento— que ninguno quedó rezagado con información previa.
+* Checklist mínimo del barrido (marca cada uno como actualizado o "N/A, por qué"):
+  1. **Sello de la feature** (`docs/features/<feature>.md`): banner de estado (🟢/🟡/🔴) + `Estado:` + `Última actualización:` + qué quedó pendiente/diferido.
+  2. **Orden de trabajo** (`docs/execution/STORY-XXX.md`): §7 registro de ejecución (entrega, tu auditoría, veredicto QA) + §8 deudas/diferidos.
+  3. **`docs/DEBT.md`**: abre/actualiza/salda cada `DEBT-XXX` que la iteración generó o pagó (regla "si no está aquí, no está rastreada"). Los huecos que reporte el QA van aquí.
+  4. **`docs/TEST.md`**: si la feature expone `verify` (Canal #2), SVF (Canal #1) o API (Canal #3), **añade/actualiza su bloque** con el comando e input reales (fuente de verdad = `crates/app/src/main.rs`, no inventes formatos). Revisa además que features cerradas en iteraciones previas no hayan quedado sin su bloque (backfill).
+  5. **`.claude/state/tech-lead/PROGRESS.md`** + Registro de Estado del ROADMAP: cierre + siguiente paso.
+  6. **`.claude/memory/`** (memoria curada + índice `MEMORY.md`): destila el estado/decisión durable; actualiza contadores de progreso (ej. "substrato N/10").
+  7. **Documentos del Architect** (`README.md`, `ROADMAP.md`, `ADR`, `SAD`): NO los editas tú; si detectas que quedaron desactualizados por este avance, lo **escalas** al Architect, no lo corriges.
+* Regla de cierre: si al barrer encuentras un documento vivo (de tu dominio) que describe un estado anterior al real, actualizarlo es parte del cierre, no trabajo opcional. Deja constancia del barrido en `PROGRESS.md`.
+
 **Etapa 7 — Retroalimentación: ¿QUÉ APRENDIMOS Y CÓMO MEJORAMOS? (OBLIGATORIA al cerrar cada iteración/Story — regla del usuario 2026-06-27)**
 * Trigger: tras cerrar un TTR/Story (Etapa 5/6 con APTO) y ANTES de volver a Etapa 0.
 * Propósito: convertir los errores de la iteración (tuyos, del Architect o de cualquier ingeniero) en mejoras permanentes de los skills. No es un postmortem narrativo; es acción concreta sobre los `SKILL.md`.
