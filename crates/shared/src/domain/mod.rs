@@ -44,6 +44,11 @@
 //! - `telemetry`: construcción pura de muestras de latencia/heartbeat y la
 //!   decisión de poda por ventana de retención (`docs/features/telemetry.md`
 //!   TTR-001, ADR-0015, ADR-0020).
+//! - `third_party_api_gateway`: hash de credencial de API (SHA-256,
+//!   ADR-0093), autenticación con revocación prioritaria, ventana de
+//!   rate-limit determinista y composición de las cuatro puertas de la
+//!   decisión de delegación (`docs/features/third-party-api-gateway.md`,
+//!   ADR-0143, ADR-0144, ADR-0141). STORY-035.
 //! - `usage_metering`: cálculo de nocional (tamaño × precio, entero
 //!   escalado ×10⁸ con reescalado ×10¹⁶→×10⁸), acumulación por ciclo,
 //!   detección de cruce de umbral y hash de auditoría encadenado por
@@ -62,5 +67,6 @@ pub mod logic;
 pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod telemetry;
+pub mod third_party_api_gateway;
 pub mod usage_metering;
 pub mod worker_orchestrator;

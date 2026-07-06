@@ -37,6 +37,11 @@
 //! - `telemetry`: el buffer de alta velocidad -- cola en memoria no
 //!   bloqueante + tarea de fondo que vacía a SQLite por lotes
 //!   (`docs/features/telemetry.md` TTR-001, ADR-0015).
+//! - `third_party_api_gateway`: composición del flujo completo del gateway
+//!   -- autentica, cuenta el uso en la ventana vigente, resuelve el
+//!   `consent_out` REAL de `consent-registry` (#5) y persiste el registro
+//!   de uso (`docs/features/third-party-api-gateway.md`, ADR-0143,
+//!   ADR-0144). STORY-035.
 //! - `usage_metering`: composición del puerto `usage_out` -- consume el
 //!   `PlanLimits` REAL de `plan_tier_quota` (#3) para resolver el
 //!   veredicto de cuota de cada operación medida (`docs/features/usage-metering.md`,
@@ -51,6 +56,7 @@ pub mod licensing_system;
 pub mod mcp_server;
 pub mod plan_tier_quota;
 pub mod telemetry;
+pub mod third_party_api_gateway;
 pub mod usage_metering;
 pub mod worker_runner;
 

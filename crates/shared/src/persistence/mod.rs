@@ -38,6 +38,11 @@
 //! - `telemetry`: repositorio para `telemetry_samples` (insertar por lote,
 //!   purgar por corte, consultar por `metric_name` + rango) —
 //!   `docs/features/telemetry.md` TTR-001, migración `0004_telemetry.sql`.
+//! - `third_party_api_gateway`: repositorio MUTABLE (con `row_version`,
+//!   ADR-0141) para `api_credentials` + repositorio APPEND-ONLY (con
+//!   `event_sequence_id`) para `api_usage_records`
+//!   (`docs/features/third-party-api-gateway.md`, ADR-0143, ADR-0144,
+//!   migración `0014_api_gateway.sql`). STORY-035.
 //! - `usage_metering`: repositorio APPEND-ONLY (con `event_sequence_id`,
 //!   ADR-0141) para la tabla `usage_records` (`docs/features/usage-metering.md`,
 //!   ADR-0143, ADR-0144, migración `0010_usage_metering.sql`). STORY-030.
@@ -53,4 +58,5 @@ pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod pool;
 pub mod telemetry;
+pub mod third_party_api_gateway;
 pub mod usage_metering;

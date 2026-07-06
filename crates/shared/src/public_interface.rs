@@ -196,7 +196,36 @@
 //!   de cobertura.
 //! - [`verify_consent_registry`]: harness CLI (Canal #2, ADR-0142) --
 //!   `cargo run -p app -- verify consent-registry --input
-//!   '{"current_version":"v2","actions":[...],"query":{"data_type":"aggregation"}}'`.
+//!   '{"current_version":"v2","actions":[...],"query":{"data_type":"aggregation"}}'`
+//!
+//! ## Third-Party API Gateway (`docs/features/third-party-api-gateway.md`,
+//! ## ADR-0143, ADR-0144, ADR-0142, ADR-0093, STORY-035)
+//!
+//! Cimiento #8 del substrato de monetización: la puerta de entrada
+//! autenticada para terceros. Convierte cada capacidad interna
+//! (certificación, feeds, ruteo) en un producto vendible por API sin
+//! reabrir el core -- valida la credencial (hash SHA-256, NUNCA en claro,
+//! ADR-0093), limita la tasa por ventana, consulta el `consent_out` REAL
+//! de `consent-registry` (#5) y decide delegar (o no), sin cablear la
+//! delegación real a los puertos internos (diferida, STORY-035 §8). El
+//! servidor gRPC/tonic + mTLS + protos por dominio también quedan
+//! diferidos -- el Core y el esquema son el contrato.
+//!
+//! - [`third_party_api_gateway::authenticate`] / [`third_party_api_gateway::
+//!   hash_api_credential`]: autenticación con revocación prioritaria sobre
+//!   un hash correcto.
+//! - [`third_party_api_gateway::compute_rate_limit`]: la ventana de
+//!   rate-limit determinista, borde exacto.
+//! - [`third_party_api_gateway::decide_gateway_outcome`]: EL punto de
+//!   modelado crítico -- compone las cuatro puertas (autenticación,
+//!   endpoint habilitado, rate-limit, consentimiento) en la
+//!   `ThirdPartyResponse` final.
+//! - [`third_party_api_gateway::handle_gateway_request`]: la composición
+//!   completa -- resuelve el `consent_out` REAL de #5 (no un stub) y
+//!   persiste el registro de uso.
+//! - [`verify_third_party_api_gateway`]: harness CLI (Canal #2, ADR-0142)
+//!   -- `cargo run -p app -- verify third-party-api-gateway --input
+//!   '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -1914,5 +1943,262 @@ pub async fn verify_institutional_report_engine(
     match institutional_report_engine::generate_report(&pool, clock.as_ref(), identity, assemble_input).await {
         Ok(row) => InstitutionalReportEngineVerifyOutput::from_row(row),
         Err(e) => InstitutionalReportEngineVerifyOutput::from_error(format!("fallo al generar el reporte: {e}")),
+    }
+}
+
+// ── Third-Party API Gateway (STORY-035, vive en `shared` -- ver ADR-0137) ──
+
+/// Submódulo público del cimiento #8 (`docs/features/third-party-api-gateway.md`,
+/// ADR-0144, ADR-0142, ADR-0093, STORY-035) -- la puerta de entrada
+/// autenticada para terceros.
+///
+/// Expone los dos puertos de la Feature (ADR-0137): `api_request_in`
+/// (`ThirdPartyRequest`, Input `0..N`) y `api_response_out`
+/// (`ThirdPartyResponse`, Output `0..N`). Vive bajo su propio submódulo en
+/// vez de aplanarse a este nivel superior, por simetría con
+/// `enriched_domain_events` y `institutional_report_engine`.
+///
+/// **Guardarraíl ADR-0093:** ningún tipo re-exportado aquí modela el
+/// secreto de la credencial en claro -- el test
+/// `third_party_response_json_never_leaks_the_presented_secret` del Core
+/// lo verifica sobre un caso concreto.
+///
+/// **Servidor gRPC/tonic + mTLS + protos diferidos (STORY-035 §8):** este
+/// submódulo NO depende de tonic -- tonic no está en el workspace. El
+/// Core + el esquema son el contrato; el servidor público es un adaptador
+/// posterior sobre estos mismos puertos.
+pub mod third_party_api_gateway {
+    // api_request_in / api_response_out: el catálogo del Core + las cuatro
+    // puertas de decisión + el hash de auditoría encadenado de ambas tablas.
+    pub use crate::domain::third_party_api_gateway::{
+        authenticate, compute_api_credential_audit_hash, compute_api_usage_audit_hash,
+        compute_rate_limit, decide_gateway_outcome, hash_api_credential, is_endpoint_enabled,
+        AuthDenialReason, AuthVerdict, CredentialStatus, GatewayOutcome, RateLimitVerdict,
+        ThirdPartyRequest, ThirdPartyResponse,
+    };
+    // La composición completa (autentica, cuenta la ventana, resuelve
+    // consent_out REAL de #5, decide y persiste).
+    pub use crate::orchestrator::third_party_api_gateway::{
+        handle_gateway_request, HandleGatewayRequestError, API_GATEWAY_CONSENT_DATA_TYPE,
+    };
+    pub use crate::persistence::third_party_api_gateway::{
+        ApiCredentialRepository, ApiCredentialRepositoryError, ApiCredentialRow,
+        ApiUsageRepository, ApiUsageRepositoryError, ApiUsageRow, NewApiCredential,
+        RecordApiUsageInput,
+    };
+}
+
+/// Input para la verificación de Third-Party API Gateway vía CLI
+/// (`docs/features/third-party-api-gateway.md`, STORY-035). Se deserializa
+/// desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// El harness crea una credencial fresca en la BD temporal con el secreto
+/// y los límites dados, SIEMBRA `requests_in_window` solicitudes `ALLOWED`
+/// previas (para poder demostrar el borde del rate-limit desde la CLI sin
+/// tener que invocar el comando repetidas veces) y registra por adelantado
+/// un consentimiento `ACCEPT` que cubre el gateway para `consent_version` --
+/// así el único factor que decide el desenlace observable es lo que el
+/// usuario pasó en `--input`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify third-party-api-gateway --input
+/// '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ThirdPartyApiGatewayVerifyInput {
+    /// El secreto crudo de la credencial de API -- solo viaja en memoria
+    /// para hashearse (ADR-0093); el harness lo usa también para hashear
+    /// la credencial que siembra, así que el mismo valor autentica.
+    pub credential: String,
+    /// El endpoint a invocar -- el harness lo habilita de antemano en la
+    /// credencial sembrada.
+    pub endpoint: String,
+    #[serde(default = "default_rate_limit_per_window")]
+    pub rate_limit_per_window: i64,
+    /// Cuántas solicitudes `ALLOWED` previas sembrar en la ventana vigente
+    /// ANTES de ejercitar la solicitud real -- el vehículo para demostrar
+    /// el borde exacto del rate-limit desde la CLI.
+    #[serde(default)]
+    pub requests_in_window: i64,
+    #[serde(default = "default_window_seconds")]
+    pub window_seconds: i64,
+    #[serde(default = "default_consent_version")]
+    pub consent_version: String,
+}
+
+fn default_rate_limit_per_window() -> i64 {
+    100
+}
+
+fn default_window_seconds() -> i64 {
+    60
+}
+
+fn default_consent_version() -> String {
+    "v1".to_string()
+}
+
+/// Output de la verificación de Third-Party API Gateway. Siempre serializa
+/// a JSON válido (ADR-0142). Si `ok` es `true`, refleja EXACTAMENTE lo que
+/// expone el puerto `api_response_out` -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ThirdPartyApiGatewayVerifyOutput {
+    pub ok: bool,
+    /// `"ALLOWED"`, `"RATE_LIMITED"` o `"DENIED"`.
+    pub outcome: Option<String>,
+    /// El endpoint interno al que se delegaría -- `Some(...)` solo cuando
+    /// `outcome == "ALLOWED"`.
+    pub delegate_to: Option<String>,
+    pub denial_reason: Option<String>,
+    pub error: Option<String>,
+}
+
+impl ThirdPartyApiGatewayVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            outcome: None,
+            delegate_to: None,
+            denial_reason: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_response(response: third_party_api_gateway::ThirdPartyResponse) -> Self {
+        Self {
+            ok: true,
+            outcome: Some(response.outcome.as_str().to_string()),
+            delegate_to: response.delegate_to,
+            denial_reason: response.denial_reason,
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Third-Party API Gateway con adaptadores
+/// reales (BD SQLite temporal + reloj de sistema real + el `consent_out`
+/// REAL de `consent-registry` #5), recorriendo el camino completo del
+/// cimiento #8: crea una credencial fresca con el secreto e endpoint
+/// pedidos, siembra `requests_in_window` usos previos `ALLOWED`, registra
+/// por adelantado el consentimiento que cubre el gateway, y ejercita
+/// [`third_party_api_gateway::handle_gateway_request`] -- ejercitando Core
+/// -> Shell -> puerto tal como lo recorrería un tercero real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify third-party-api-gateway --input
+/// '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'`
+pub async fn verify_third_party_api_gateway(
+    input: ThirdPartyApiGatewayVerifyInput,
+) -> ThirdPartyApiGatewayVerifyOutput {
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_consent_registry / verify_enriched_domain_events).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-third-party-api-gateway-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return ThirdPartyApiGatewayVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return ThirdPartyApiGatewayVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return ThirdPartyApiGatewayVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+    let owner_id = "verify-third-party-api-gateway-owner";
+
+    // Paso 1 -- siembra una credencial ACTIVA con el secreto e endpoint
+    // pedidos (fuera del hot-path: esta función SÍ hace lecturas/escrituras
+    // de BD local).
+    let credential_repo = third_party_api_gateway::ApiCredentialRepository::new(&pool, clock.as_ref());
+    let credential = match credential_repo
+        .create(third_party_api_gateway::NewApiCredential {
+            owner_id: owner_id.to_string(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            credential_hash: third_party_api_gateway::hash_api_credential(&input.credential),
+            rate_limit_per_window: input.rate_limit_per_window,
+            window_seconds: input.window_seconds,
+            endpoints_enabled: vec![input.endpoint.clone()],
+        })
+        .await
+    {
+        Ok(credential) => credential,
+        Err(e) => return ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al crear la credencial: {e}")),
+    };
+
+    // Paso 2 -- siembra `requests_in_window` usos ALLOWED previos, para que
+    // el borde del rate-limit sea observable desde un solo comando de CLI.
+    let usage_repo = third_party_api_gateway::ApiUsageRepository::new(&pool, clock.as_ref());
+    for _ in 0..input.requests_in_window {
+        if let Err(e) = usage_repo
+            .record_usage(third_party_api_gateway::RecordApiUsageInput {
+                owner_id: owner_id.to_string(),
+                access_token_id: None,
+                node_id: node_id.clone(),
+                credential_id: credential.id.clone(),
+                endpoint: input.endpoint.clone(),
+                outcome: third_party_api_gateway::GatewayOutcome::Allowed,
+            })
+            .await
+        {
+            return ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al sembrar uso previo: {e}"));
+        }
+    }
+
+    // Paso 3 -- registra por adelantado el consentimiento que cubre el
+    // gateway para `consent_version` -- consent_out REAL de #5, no un stub.
+    let mut optout_changes = std::collections::BTreeMap::new();
+    optout_changes.insert(
+        third_party_api_gateway::API_GATEWAY_CONSENT_DATA_TYPE.to_string(),
+        false,
+    );
+    if let Err(e) = record_consent_action(
+        &pool,
+        clock.as_ref(),
+        RecordConsentActionInput {
+            owner_id: owner_id.to_string(),
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            node_id: node_id.clone(),
+            compliance_status_id: None,
+            action: ConsentAction::Accept,
+            tos_version: Some(input.consent_version.clone()),
+            optout_changes,
+        },
+    )
+    .await
+    {
+        return ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al registrar el consentimiento: {e}"));
+    }
+
+    // Paso 4 -- ejercita el flujo completo del gateway con el MISMO
+    // secreto que se hasheó al crear la credencial.
+    match third_party_api_gateway::handle_gateway_request(
+        &pool,
+        clock.as_ref(),
+        &input.credential,
+        &input.endpoint,
+        &input.consent_version,
+    )
+    .await
+    {
+        Ok(response) => ThirdPartyApiGatewayVerifyOutput::from_response(response),
+        Err(e) => ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al procesar la solicitud: {e}")),
     }
 }

@@ -13,10 +13,11 @@ use clap::{Parser, Subcommand};
 use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
     verify_enriched_domain_events, verify_institutional_report_engine, verify_licensing_system,
-    verify_plan_tier_quota, verify_usage_metering, CentralIdentityVerifyInput,
-    ConsentRegistryVerifyInput, EnrichedDomainEventsVerifyInput, ExecutorIdentity,
-    InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
-    LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock, UsageMeteringVerifyInput,
+    verify_plan_tier_quota, verify_third_party_api_gateway, verify_usage_metering,
+    CentralIdentityVerifyInput, ConsentRegistryVerifyInput, EnrichedDomainEventsVerifyInput,
+    ExecutorIdentity, InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
+    LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
+    ThirdPartyApiGatewayVerifyInput, UsageMeteringVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -64,11 +65,12 @@ enum Commands {
     ///   drasus verify consent-registry --input '{"current_version":"v2","actions":[{"action":"ACCEPT","tos_version":"v2","optout_map":{"aggregation":false}}],"query":{"data_type":"aggregation"}}'
     ///   drasus verify enriched-domain-events --input '{"tier":"FREE","event":{"type":"CapitalFlow","account_id":"acc-1","sign":"DEPOSIT","amount":100000000000,"currency":"USD"}}'
     ///   drasus verify institutional-report-engine --input '{"report_type":"VALIDATION","metrics":{"sharpe_e8":150000000,"max_drawdown_e8":-8000000},"source_event_refs":["evt-1","evt-2"]}'
+    ///   drasus verify third-party-api-gateway --input '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -395,10 +397,46 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Third-Party API Gateway (STORY-035, vive en `shared` -- ver ADR-0137) ──
+        "third-party-api-gateway" => {
+            // `credential` y `endpoint` no tienen defaults razonables (no
+            // existe un secreto "por defecto" que autenticar ni un
+            // endpoint por defecto que invocar) -- por eso `drasus verify
+            // third-party-api-gateway` SIN --input no es válido, igual que
+            // central-identity y usage-metering.
+            let input: ThirdPartyApiGatewayVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "third-party-api-gateway requiere --input con al menos {{\"credential\":\"...\",\"endpoint\":\"...\"}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_third_party_api_gateway(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("ThirdPartyApiGatewayVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway"
             );
             std::process::exit(1);
         }
