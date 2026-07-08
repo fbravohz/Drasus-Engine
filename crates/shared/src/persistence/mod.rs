@@ -25,6 +25,12 @@
 //!   `event_sequence_id`, ADR-0141) para la tabla `aggregated_indexes`
 //!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, migración
 //!   `0015_data_aggregation.sql`). STORY-036.
+//! - `instance_continuity`: repositorio APPEND-ONLY ATÓMICO (con
+//!   `event_sequence_id`, ADR-0141) para `instance_backups` + repositorio
+//!   MUTABLE (con `custody_epoch`, concurrencia optimista a nivel de
+//!   instancia) para `custody_state` (`docs/features/instance-continuity.md`,
+//!   ADR-0146 cimiento #11, ADR-0093, migración
+//!   `0017_instance_continuity.sql`). STORY-039.
 //! - `institutional_report_engine`: repositorio APPEND-ONLY (con
 //!   `event_sequence_id`, ADR-0141) para la tabla `generated_reports`
 //!   (`docs/features/institutional-report-engine.md`, ADR-0144, ADR-0027,
@@ -32,6 +38,11 @@
 //! - `job`: repositorio para las tablas `jobs` y `job_results` del Async
 //!   Job Executor (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/003/004/006, migración `0003_jobs.sql`).
+//! - `master_account_hierarchy`: repositorio MUTABLE (con `row_version`,
+//!   ADR-0141) para `account_hierarchy` + repositorio APPEND-ONLY ATÓMICO
+//!   (con `event_sequence_id`) para `override_attestations`
+//!   (`docs/features/master-account-hierarchy.md`, ADR-0147 cimiento #12,
+//!   ADR-0093, migración `0018_master_account_hierarchy.sql`). STORY-040.
 //! - `licensing_system`: repositorio MUTABLE (con `row_version`, ADR-0141)
 //!   para la tabla `licenses` (`docs/features/licensing-system.md`,
 //!   ADR-0143, ADR-0144, migración `0008_licensing_system.sql`). STORY-028.
@@ -50,18 +61,26 @@
 //! - `usage_metering`: repositorio APPEND-ONLY (con `event_sequence_id`,
 //!   ADR-0141) para la tabla `usage_records` (`docs/features/usage-metering.md`,
 //!   ADR-0143, ADR-0144, migración `0010_usage_metering.sql`). STORY-030.
+//! - `verified_account_registry`: repositorio MUTABLE (con `row_version`,
+//!   ADR-0141) para `verified_accounts` + repositorio APPEND-ONLY ATÓMICO
+//!   (con `event_sequence_id`) para `attested_track_records`
+//!   (`docs/features/verified-account-registry.md`, ADR-0145 cimiento #10,
+//!   ADR-0093, migración `0016_verified_account_registry.sql`). STORY-037.
 
 pub mod audit_log;
 pub mod central_identity;
 pub mod consent_registry;
 pub mod data_aggregation;
 pub mod enriched_domain_events;
+pub mod instance_continuity;
 pub mod institutional_report_engine;
 pub mod job;
 pub mod licensing_system;
+pub mod master_account_hierarchy;
 pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod pool;
 pub mod telemetry;
 pub mod third_party_api_gateway;
 pub mod usage_metering;
+pub mod verified_account_registry;

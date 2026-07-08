@@ -13,12 +13,14 @@ use clap::{Parser, Subcommand};
 use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
     verify_data_aggregation, verify_enriched_domain_events, verify_institutional_report_engine,
-    verify_licensing_system, verify_plan_tier_quota, verify_third_party_api_gateway,
-    verify_usage_metering, CentralIdentityVerifyInput, ConsentRegistryVerifyInput,
+    verify_instance_continuity, verify_licensing_system, verify_master_account_hierarchy,
+    verify_plan_tier_quota, verify_third_party_api_gateway, verify_usage_metering,
+    verify_verified_account_registry, CentralIdentityVerifyInput, ConsentRegistryVerifyInput,
     DataAggregationVerifyInput, EnrichedDomainEventsVerifyInput, ExecutorIdentity,
-    InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
-    LicensingSystemVerifyInput, PlanTierQuotaVerifyInput, SystemClock,
-    ThirdPartyApiGatewayVerifyInput, UsageMeteringVerifyInput,
+    InstanceContinuityVerifyInput, InstitutionalReportEngineVerifyInput, JobExecutor,
+    JobExecutorConfig, LicensingSystemVerifyInput, MasterAccountHierarchyVerifyInput,
+    PlanTierQuotaVerifyInput, SystemClock, ThirdPartyApiGatewayVerifyInput,
+    UsageMeteringVerifyInput, VerifiedAccountRegistryVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -68,11 +70,14 @@ enum Commands {
     ///   drasus verify institutional-report-engine --input '{"report_type":"VALIDATION","metrics":{"sharpe_e8":150000000,"max_drawdown_e8":-8000000},"source_event_refs":["evt-1","evt-2"]}'
     ///   drasus verify third-party-api-gateway --input '{"credential":"sk-demo-123","endpoint":"CERTIFY","rate_limit_per_window":100,"requests_in_window":100}'
     ///   drasus verify data-aggregation --input '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'
+    ///   drasus verify verified-account-registry --input '{"account":{"broker":"ICMarkets","currency":"USD","account_type":"OWN"},"consent":"COVERED","events":[{"type":"CapitalFlow","sign":"DEPOSIT","amount_e8":35000000000},{"type":"OrderExecuted","pnl_e8":15000000000}]}'
+    ///   drasus verify instance-continuity --input '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'
+    ///   drasus verify master-account-hierarchy --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -471,10 +476,118 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Verified Account Registry (STORY-037, vive en `shared` -- ver ADR-0137) ──
+        "verified-account-registry" => {
+            // `account.broker`/`account.currency`/`account.account_type` y
+            // `events` no tienen defaults razonables (no existe una cuenta
+            // "por defecto" que verificar) -- por eso `drasus verify
+            // verified-account-registry` SIN --input no es válido, igual
+            // que central-identity y usage-metering.
+            let input: VerifiedAccountRegistryVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "verified-account-registry requiere --input con al menos {{\"account\":{{\"broker\":\"...\",\"currency\":\"...\",\"account_type\":\"OWN\"}},\"events\":[...]}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_verified_account_registry(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("VerifiedAccountRegistryVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
+        // ── Instance Continuity (STORY-039, vive en `shared` -- ver ADR-0137) ──
+        "instance-continuity" => {
+            // `master_secret`, `plaintext`, `nonce_seed`, `custody` y
+            // `my_node_id` no tienen defaults razonables (no existe un
+            // secreto maestro "por defecto" que derivar) -- por eso `drasus
+            // verify instance-continuity` SIN --input no es válido, igual
+            // que central-identity y usage-metering.
+            let input: InstanceContinuityVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "instance-continuity requiere --input con al menos {{\"master_secret\":\"...\",\"plaintext\":\"...\",\"nonce_seed\":42,\"custody\":{{\"titular_node_id\":\"...\",\"custody_epoch\":1}},\"my_node_id\":\"...\"}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_instance_continuity(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("InstanceContinuityVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
+        // ── Master Account Hierarchy (STORY-040, vive en `shared` -- ver ADR-0137) ──
+        "master-account-hierarchy" => {
+            // `parent_owner_id`, `child_owner_id`, `node_id`, `command_kind`
+            // y `target_ref` no tienen defaults razonables (no existe un
+            // fondo/hija "por defecto" que verificar) -- por eso `drasus
+            // verify master-account-hierarchy` SIN --input no es válido,
+            // igual que verified-account-registry e instance-continuity.
+            let input: MasterAccountHierarchyVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "master-account-hierarchy requiere --input con al menos {{\"parent_owner_id\":\"...\",\"child_owner_id\":\"...\",\"node_id\":\"...\",\"command_kind\":\"ARCHIVE\",\"target_ref\":\"...\"}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_master_account_hierarchy(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("MasterAccountHierarchyVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy"
             );
             std::process::exit(1);
         }

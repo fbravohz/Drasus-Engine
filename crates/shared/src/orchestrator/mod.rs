@@ -25,6 +25,12 @@
 //!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
 //!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
 //!   STORY-028.
+//! - `instance_continuity`: composición del cimiento #11 -- filtra secretos
+//!   del delta a respaldar, cifra con la clave derivada + el nonce
+//!   inyectado, persiste el registro de respaldos append-only atómico y el
+//!   gate de titularidad exclusiva por `custody_epoch`
+//!   (`docs/features/instance-continuity.md`, ADR-0146, ADR-0093).
+//!   STORY-039.
 //! - `institutional_report_engine`: composición del puerto `report_out` --
 //!   lee el reloj inyectado, ensambla el reporte (Core), calcula su firma
 //!   reproducible y lo persiste append-only atómico
@@ -33,6 +39,13 @@
 //!   de Tokio, cola en memoria, generación de UUID, lecturas de [`Clock`]
 //!   y recuperación en startup (`docs/features/async-job-executor.md`
 //!   TTR-ASYNC-EXECUTOR-001/002/004/005/006, ADR-0011).
+//! - `master_account_hierarchy`: composición del cimiento #12 -- vincula
+//!   hija a fondo, emite el override desde el fondo (resuelve el
+//!   `consent_out` REAL de `consent-registry` #5, decide y encadena la
+//!   fila ISSUER) y lo recibe/ejecuta en la hija (re-valida localmente,
+//!   aplica el efecto "eliminar = archivar" y encadena la fila EXECUTOR)
+//!   (`docs/features/master-account-hierarchy.md`, ADR-0147, ADR-0093).
+//!   STORY-040.
 //! - `mcp_server`: servidor MCP sobre stdio (ADR-0123, STORY-010) — expone
 //!   las operaciones de `shared` como herramientas MCP y registra cada
 //!   decisión de permiso en `permission_decisions`.
@@ -52,19 +65,28 @@
 //!   `PlanLimits` REAL de `plan_tier_quota` (#3) para resolver el
 //!   veredicto de cuota de cada operación medida (`docs/features/usage-metering.md`,
 //!   ADR-0143, ADR-0144). STORY-030.
+//! - `verified_account_registry`: composición del flujo completo del
+//!   cimiento #10 -- registrar cuenta (default PRIVATE), calcular y firmar
+//!   el track por ámbito de atestación, y el gate de publicación con el
+//!   `consent_out` REAL de `consent-registry` (#5)
+//!   (`docs/features/verified-account-registry.md`, ADR-0145, ADR-0093).
+//!   STORY-037.
 
 pub mod central_identity;
 pub mod consent_registry;
 pub mod data_aggregation;
 pub mod enriched_domain_events;
+pub mod instance_continuity;
 pub mod institutional_report_engine;
 pub mod job_executor;
 pub mod licensing_system;
+pub mod master_account_hierarchy;
 pub mod mcp_server;
 pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod third_party_api_gateway;
 pub mod usage_metering;
+pub mod verified_account_registry;
 pub mod worker_runner;
 
 use std::sync::atomic::{AtomicI64, Ordering};

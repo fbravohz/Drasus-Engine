@@ -47,6 +47,11 @@ pub struct LocalStubPlanCatalogConfig {
     /// $1,000,000.00/mes -> `100_000_000_000_000`).
     pub paid_notional_limit: i64,
     pub paid_max_activations: i64,
+    /// Cuentas maestras hijas permitidas por tier (STORY-042, cuota #12/#14).
+    /// Free no puede crear hijas (`0`); Paid puede hasta `5` en el stub. El
+    /// valor real por tier lo fija la Cabina de Mando (proveedor), no el fondo.
+    pub free_max_child_accounts: i64,
+    pub paid_max_child_accounts: i64,
     /// Precio del plan Paid, INTEGER escalado ×10⁸ (default $49.00/mes ->
     /// `4_900_000_000`).
     pub paid_price: i64,
@@ -59,6 +64,8 @@ impl Default for LocalStubPlanCatalogConfig {
             free_max_activations: 1,
             paid_notional_limit: 100_000_000_000_000,
             paid_max_activations: 3,
+            free_max_child_accounts: 0,
+            paid_max_child_accounts: 5,
             paid_price: 4_900_000_000,
         }
     }
@@ -88,6 +95,7 @@ pub async fn seed_default_catalog(
             tier: PlanTier::Free,
             notional_limit: config.free_notional_limit,
             max_activations: config.free_max_activations,
+            max_child_accounts: config.free_max_child_accounts,
             price: 0,
             pricing_model: PricingModel::Flat,
             features_enabled: vec![],
@@ -103,6 +111,7 @@ pub async fn seed_default_catalog(
             tier: PlanTier::Paid,
             notional_limit: config.paid_notional_limit,
             max_activations: config.paid_max_activations,
+            max_child_accounts: config.paid_max_child_accounts,
             price: config.paid_price,
             pricing_model: PricingModel::Flat,
             features_enabled: vec!["priority_support".to_string()],
@@ -209,6 +218,7 @@ pub async fn build_plan_limits_for_tier(
         tier: plan.tier,
         notional_limit: plan.notional_limit,
         max_activations: plan.max_activations,
+        max_child_accounts: plan.max_child_accounts,
         features_enabled: &plan.features_enabled,
     }))
 }
@@ -297,7 +307,7 @@ mod tests {
     // ── CRITERIO #9 (Orden §5): caché con TTL usando reloj determinista ─────
 
     fn sample_limits() -> PlanLimits {
-        PlanLimits { notional_limit: 1_000_000_000_000, max_activations: 1, features_enabled: vec![] }
+        PlanLimits { notional_limit: 1_000_000_000_000, max_activations: 1, max_child_accounts: 0, features_enabled: vec![] }
     }
 
     #[test]
@@ -335,7 +345,7 @@ mod tests {
         let clock: Arc<dyn Clock> = det_clock.clone();
         let cache = PlanLimitsCache::new(clock, PlanLimitsCacheConfig { ttl_ns: 1_000 });
 
-        let paid_limits = PlanLimits { notional_limit: 100_000_000_000_000, max_activations: 3, features_enabled: vec![] };
+        let paid_limits = PlanLimits { notional_limit: 100_000_000_000_000, max_activations: 3, max_child_accounts: 5, features_enabled: vec![] };
 
         cache.set(PlanTier::Free, sample_limits());
         det_clock.advance(500);

@@ -59,6 +59,13 @@
 --     cómo lee el adaptador de billing este catálogo; el catálogo es el
 --     mismo para ambos modelos (plan-tier-quota.md "Comportamientos
 --     Observables").
+--   - max_child_accounts: cuántas cuentas maestras hijas puede crear un
+--     fondo bajo `master-account-hierarchy` (cimiento #12). INTEGER de
+--     conteo simple (×1, NO ×10⁸ -- no es un monto monetario, es un número
+--     de cuentas). `0` es válido en sí mismo: un plan sin derecho a abrir
+--     cuentas hijas (STORY-042, ADR-0149). Quién fija este número es
+--     autoridad de la Cabina de Mando del proveedor (diferida, ADR-0143):
+--     el fondo dueño de las cuentas hijas NUNCA se autoconcede este límite.
 --   - features_enabled: conjunto de features habilitadas, codificado como
 --     JSON de una lista de strings ORDENADA alfabéticamente y sin
 --     duplicados (ver `domain::plan_tier_quota::canonical_features_json`)
@@ -102,7 +109,9 @@ CREATE TABLE IF NOT EXISTS plans (
     price                 INTEGER NOT NULL CHECK (price >= 0),
     pricing_model         TEXT    NOT NULL CHECK (pricing_model IN ('FLAT', 'VOLUME')),
     -- Lista JSON ordenada alfabéticamente de features habilitadas (ver comentario arriba).
-    features_enabled      TEXT    NOT NULL DEFAULT '[]' CHECK (json_valid(features_enabled))
+    features_enabled      TEXT    NOT NULL DEFAULT '[]' CHECK (json_valid(features_enabled)),
+    -- Cuentas maestras hijas (#12) que este plan permite crear; conteo (×1), NUNCA ×10⁸. `0` = sin derecho a cuentas hijas.
+    max_child_accounts    INTEGER NOT NULL DEFAULT 0 CHECK (max_child_accounts >= 0)
 ) STRICT;
 
 -- Índice del lado propietario (ADR-0141: consistente con el resto de

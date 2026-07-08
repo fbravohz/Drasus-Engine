@@ -27,6 +27,14 @@ ed25519-dalek = { version = "2", features = ["rand_core"] }
 # licencias de desarrollo (Shell) para generar el par de claves de prueba;
 # la verificación (Core) es pura y no lo necesita. STORY-028.
 rand = "0.8"
+# Cifrado autenticado AES-256-GCM (ADR-0093, cimiento #11 instance-continuity):
+# el Core cifra/descifra el blob de respaldo con la clave derivada del
+# secreto maestro -- NUNCA la clave ni el secreto salen del Core. STORY-039.
+aes-gcm = "0.10"
+# KDF estándar (Argon2id) para derivar la clave de cifrado desde el secreto
+# maestro del usuario -- resistente a fuerza bruta sobre una frase de paso
+# de baja entropía humana (ADR-0093, cimiento #11). STORY-039.
+argon2 = "0.5"
 # SDK oficial MCP para Rust (modelcontextprotocol/rust-sdk).
 # "server"       → ServerHandler + transport-async-rw + schemars (integrado).
 # "transport-io" → transport stdio (stdin/stdout de Tokio).

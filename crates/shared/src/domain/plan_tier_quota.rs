@@ -163,6 +163,12 @@ pub struct PlanCandidate<'a> {
     pub price: i64,
     pub pricing_model: PricingModel,
     pub features_enabled: &'a [String],
+    /// Cuántas cuentas maestras hijas (`master-account-hierarchy`, #12)
+    /// puede crear un fondo bajo este plan. `0` es un valor VÁLIDO (plan
+    /// sin derecho a cuentas hijas) -- no entra en la regla "ambas cuotas
+    /// en cero es inválido" de [`PlanValidationError::MissingQuota`], que
+    /// sigue evaluando solo `notional_limit`/`max_activations` (STORY-042).
+    pub max_child_accounts: i64,
 }
 
 /// Por qué un [`PlanCandidate`] no pasa [`validate_plan`].
@@ -183,6 +189,11 @@ pub enum PlanValidationError {
     NegativeMaxActivations,
     #[error("el precio no puede ser negativo")]
     NegativePrice,
+    /// STORY-042: la cuota de cuentas maestras hijas es un conteo -- nunca
+    /// puede ser negativa, aunque `0` (sin derecho a cuentas hijas) sí es
+    /// válido.
+    #[error("la cuota de cuentas maestras hijas no puede ser negativa")]
+    NegativeMaxChildAccounts,
 }
 
 /// Valida la coherencia de un [`PlanCandidate`] -- tier presente, al menos
@@ -211,6 +222,12 @@ pub fn validate_plan(candidate: &PlanCandidate<'_>) -> Result<(), PlanValidation
     if candidate.price < 0 {
         return Err(PlanValidationError::NegativePrice);
     }
+    // STORY-042: `max_child_accounts` es un conteo -- `0` es válido (plan
+    // sin cuentas hijas), pero negativo es un error de datos, igual que
+    // las demás cuotas de arriba.
+    if candidate.max_child_accounts < 0 {
+        return Err(PlanValidationError::NegativeMaxChildAccounts);
+    }
 
     // Guarda #2: ambas cuotas en cero -> el plan no otorga ningún acceso
     // real, lo cual la Feature declara explícitamente como inválido.
@@ -235,13 +252,16 @@ pub struct PlanSnapshot<'a> {
     pub notional_limit: i64,
     pub max_activations: i64,
     pub features_enabled: &'a [String],
+    /// Cuota de cuentas maestras hijas (#12) del plan ya cargado -- ver
+    /// [`PlanCandidate::max_child_accounts`] (STORY-042).
+    pub max_child_accounts: i64,
 }
 
 /// El tipo de puerto `PlanLimits` (ADR-0137 catálogo, enmienda 2026-07-03):
 /// "Límites vigentes de un plan (volumen nocional, activaciones, features
 /// habilitadas)".
 ///
-/// **Guardarraíl ADR-0093 (estructural):** este struct SOLO tiene los tres
+/// **Guardarraíl ADR-0093 (estructural):** este struct SOLO tiene los
 /// campos de abajo -- ninguna credencial de bróker, IP de servidor live, ni
 /// secreto de ningún tipo. El test
 /// [`tests::plan_limits_json_never_leaks_secret_fields`] fija la lista
@@ -255,6 +275,10 @@ pub struct PlanLimits {
     pub max_activations: i64,
     /// Features del catálogo habilitadas para este plan.
     pub features_enabled: Vec<String>,
+    /// Cuántas cuentas maestras hijas (`master-account-hierarchy`, #12)
+    /// puede crear un fondo bajo este plan -- `0` significa sin derecho a
+    /// cuentas hijas (STORY-042).
+    pub max_child_accounts: i64,
 }
 
 /// Resuelve los límites vigentes de un plan ya cargado -- "¿qué límites
@@ -265,6 +289,7 @@ pub fn resolve_limits(snapshot: &PlanSnapshot<'_>) -> PlanLimits {
         notional_limit: snapshot.notional_limit,
         max_activations: snapshot.max_activations,
         features_enabled: snapshot.features_enabled.to_vec(),
+        max_child_accounts: snapshot.max_child_accounts,
     }
 }
 
@@ -277,6 +302,13 @@ pub fn resolve_limits(snapshot: &PlanSnapshot<'_>) -> PlanLimits {
 /// `licensing_system::compute_license_audit_hash` -- la cadena es POR
 /// PLAN (cada fila de `plans` encadena sus propias versiones), no una
 /// cadena global entre todos los planes.
+///
+/// `max_child_accounts` entra en el hash (STORY-042) por la misma razón
+/// que `notional_limit`/`max_activations`: es una cuota del plan cuyo valor
+/// debe quedar sellado en la cadena de auditoría -- si quedara fuera del
+/// hash, una alteración de la cuota de cuentas hijas (directa en disco o vía
+/// una futura revisión en sitio) no rompería la cadena y pasaría
+/// inadvertida.
 #[allow(clippy::too_many_arguments)]
 pub fn compute_plan_audit_hash(
     id: &str,
@@ -290,6 +322,7 @@ pub fn compute_plan_audit_hash(
     price: i64,
     pricing_model: PricingModel,
     features_enabled_json: &str,
+    max_child_accounts: i64,
 ) -> String {
     const SEP: char = '\u{1F}';
 
@@ -310,6 +343,7 @@ pub fn compute_plan_audit_hash(
     push(&price.to_string());
     push(pricing_model.as_str());
     push(features_enabled_json);
+    push(&max_child_accounts.to_string());
 
     let mut hasher = Sha256::new();
     hasher.update(buffer.as_bytes());
@@ -327,6 +361,7 @@ mod tests {
             tier: Some(PlanTier::Free),
             notional_limit: 1_000_000_000_000, // $10,000.00 * 1e8
             max_activations: 1,
+            max_child_accounts: 0,
             price: 0,
             pricing_model: PricingModel::Flat,
             features_enabled: features,
@@ -400,11 +435,13 @@ mod tests {
             tier: PlanTier::Free,
             notional_limit: 1_000_000_000_000,
             max_activations: 1,
+            max_child_accounts: 0,
             features_enabled: &features,
         };
         let limits = resolve_limits(&snapshot);
         assert_eq!(limits.notional_limit, 1_000_000_000_000);
         assert_eq!(limits.max_activations, 1);
+        assert_eq!(limits.max_child_accounts, 0);
         assert_eq!(limits.features_enabled, vec!["basic_backtest".to_string()]);
     }
 
@@ -415,11 +452,13 @@ mod tests {
             tier: PlanTier::Paid,
             notional_limit: 100_000_000_000_000,
             max_activations: 3,
+            max_child_accounts: 5,
             features_enabled: &features,
         };
         let limits = resolve_limits(&snapshot);
         assert_eq!(limits.notional_limit, 100_000_000_000_000);
         assert_eq!(limits.max_activations, 3);
+        assert_eq!(limits.max_child_accounts, 5);
     }
 
     // ── CRITERIO #8 (Orden §5): guardarraíl ADR-0093 -- sin secretos ────────
@@ -432,6 +471,7 @@ mod tests {
         let limits = PlanLimits {
             notional_limit: 1_000_000_000_000,
             max_activations: 1,
+            max_child_accounts: 0,
             features_enabled: vec!["basic_backtest".to_string()],
         };
 
@@ -443,8 +483,8 @@ mod tests {
 
         assert_eq!(
             keys,
-            vec!["features_enabled", "max_activations", "notional_limit"],
-            "PlanLimits solo puede exponer estas tres claves (ADR-0093)"
+            vec!["features_enabled", "max_activations", "max_child_accounts", "notional_limit"],
+            "PlanLimits solo puede exponer estas cuatro claves (ADR-0093)"
         );
 
         let json_string = json.to_string();
@@ -511,10 +551,10 @@ mod tests {
     #[test]
     fn compute_plan_audit_hash_is_deterministic() {
         let hash_a = compute_plan_audit_hash(
-            "id-1", 1_000, 1, None, "owner-1", PlanTier::Free, 1_000_000_000_000, 1, 0, PricingModel::Flat, "[]",
+            "id-1", 1_000, 1, None, "owner-1", PlanTier::Free, 1_000_000_000_000, 1, 0, PricingModel::Flat, "[]", 0,
         );
         let hash_b = compute_plan_audit_hash(
-            "id-1", 1_000, 1, None, "owner-1", PlanTier::Free, 1_000_000_000_000, 1, 0, PricingModel::Flat, "[]",
+            "id-1", 1_000, 1, None, "owner-1", PlanTier::Free, 1_000_000_000_000, 1, 0, PricingModel::Flat, "[]", 0,
         );
         assert_eq!(hash_a, hash_b);
     }
@@ -525,10 +565,10 @@ mod tests {
     #[test]
     fn compute_plan_audit_hash_changes_when_notional_limit_changes() {
         let original = compute_plan_audit_hash(
-            "id-1", 2_000, 2, Some("prev"), "owner-1", PlanTier::Paid, 100_000_000_000_000, 3, 4_900_000_000, PricingModel::Flat, "[]",
+            "id-1", 2_000, 2, Some("prev"), "owner-1", PlanTier::Paid, 100_000_000_000_000, 3, 4_900_000_000, PricingModel::Flat, "[]", 5,
         );
         let changed = compute_plan_audit_hash(
-            "id-1", 2_000, 2, Some("prev"), "owner-1", PlanTier::Paid, 200_000_000_000_000, 3, 4_900_000_000, PricingModel::Flat, "[]",
+            "id-1", 2_000, 2, Some("prev"), "owner-1", PlanTier::Paid, 200_000_000_000_000, 3, 4_900_000_000, PricingModel::Flat, "[]", 5,
         );
         assert_ne!(original, changed, "cambiar el límite nocional debe cambiar el hash de auditoría");
     }

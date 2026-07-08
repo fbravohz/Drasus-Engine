@@ -22,6 +22,12 @@
 //!   vendibles con hash de auditoría encadenado por `event_sequence_id`
 //!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, ADR-0143,
 //!   ADR-0141). STORY-036.
+//! - `instance_continuity`: KDF (Argon2id) + cifrado autenticado
+//!   AES-256-GCM con nonce sembrado e inyectado, filtro del delta de
+//!   respaldo (excluye secretos de bróker/IPs live) y el gate de
+//!   titularidad exclusiva por `custody_epoch` (concurrencia optimista a
+//!   nivel de instancia) (`docs/features/instance-continuity.md`,
+//!   ADR-0146 cimiento #11, ADR-0093, ADR-0141, ADR-0020). STORY-039.
 //! - `institutional_report_engine`: ensamblado puro de reportes
 //!   institucionales, serialización canónica del reporte, firma de
 //!   integridad REPRODUCIBLE (`compute_report_signature`) y hash de
@@ -39,6 +45,12 @@
 //!   (`docs/features/licensing-system.md`, ADR-0143, ADR-0144, ADR-0093,
 //!   ADR-0141). STORY-028.
 //! - `logic`: placeholder vacío, solo estructura (F0/W1).
+//! - `master_account_hierarchy`: gate de autorización de override por
+//!   `ConsentVerdict` REAL (#5), efecto local "eliminar = archivar" (nunca
+//!   DELETE) y hash de auditoría encadenado de ambas tablas (jerarquía
+//!   MUTABLE por `row_version`, atestaciones APPEND-ONLY por
+//!   `event_sequence_id`) (`docs/features/master-account-hierarchy.md`,
+//!   ADR-0147 cimiento #12, ADR-0093, ADR-0141, ADR-0020). STORY-040.
 //! - `mcp_gateway`: evaluador de permisos puro del Gateway MCP (ADR-0123) —
 //!   tipos `Pipeline`, `PermissionRequest`, `PermissionDecision` y la función
 //!   `evaluate_permission` (sin I/O). STORY-010.
@@ -60,6 +72,13 @@
 //!   detección de cruce de umbral y hash de auditoría encadenado por
 //!   `event_sequence_id` (`docs/features/usage-metering.md`, ADR-0143,
 //!   ADR-0144, ADR-0141). STORY-030.
+//! - `verified_account_registry`: cálculo puro del track record por ámbito
+//!   de atestación (soberano/read-only del bróker) a partir de los eventos
+//!   de #6 -- gain% que EXCLUYE el flujo de capital, drawdown máximo,
+//!   estadística de trades, firma de integridad REPRODUCIBLE del contenido
+//!   y hash de auditoría encadenado por `event_sequence_id`
+//!   (`docs/features/verified-account-registry.md`, ADR-0145 cimiento #10,
+//!   ADR-0093, ADR-0141, ADR-0020). STORY-037.
 
 pub mod audit_log;
 pub mod central_identity;
@@ -67,13 +86,16 @@ pub mod clock;
 pub mod consent_registry;
 pub mod data_aggregation;
 pub mod enriched_domain_events;
+pub mod instance_continuity;
 pub mod institutional_report_engine;
 pub mod job;
 pub mod licensing_system;
 pub mod logic;
+pub mod master_account_hierarchy;
 pub mod mcp_gateway;
 pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod third_party_api_gateway;
 pub mod usage_metering;
+pub mod verified_account_registry;
 pub mod worker_orchestrator;

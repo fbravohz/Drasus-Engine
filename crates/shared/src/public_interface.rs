@@ -253,6 +253,120 @@
 //! - [`verify_data_aggregation`]: harness CLI (Canal #2, ADR-0142) --
 //!   `cargo run -p app -- verify data-aggregation --input
 //!   '{"seed":42,"min_cohort":5,"external_sale_enabled":false,"events":[{"metric_e8":150000000,"consent":"COVERED"}]}'`.
+//!
+//! ## Verified Account Registry (`docs/features/verified-account-registry.md`,
+//! ## ADR-0145 cimiento #10 -- rector, ADR-0093, ADR-0143, ADR-0141, ADR-0020, STORY-037)
+//!
+//! Cimiento #10 y último del substrato de monetización: el pilar de
+//! "Cuentas Verificadas" (análogo a myFXbook/MT5 Signals), con el
+//! diferenciador soberano de que Drasus atestigua criptográficamente lo que
+//! su propio motor ejecutó, no solo lo que el bróker reporta. Registra
+//! cuentas multi-bróker bajo un `owner_id`, calcula su track record por
+//! ámbito de atestación (`SOVEREIGN` vs `BROKER_READONLY`, distinción
+//! INVIOLABLE) con un gain% que EXCLUYE el flujo de capital (depósitos/
+//! retiros nunca cuentan como ganancia), firma el contenido de forma
+//! reproducible, y solo publica con el `consent_out` REAL de
+//! `consent-registry` (#5) -- default privado, nunca un stub.
+//!
+//! - [`verified_account_registry::compute_track_record`]: EL punto de
+//!   modelado crítico -- suma `realized_pnl` de `OrderExecuted`
+//!   (`EnrichedDomainEvent`, #6) para el PnL/gain%, y acumula
+//!   `CapitalFlow` en columnas de transparencia SEPARADAS que nunca tocan
+//!   el PnL ni el numerador del gain%.
+//! - [`verified_account_registry::compute_track_record_signature`] /
+//!   [`verified_account_registry::compute_track_record_audit_hash`]: firma
+//!   reproducible del CONTENIDO (subset V) vs. hash de la FILA del ledger
+//!   (Grupo I) -- mismo patrón que `institutional_report_engine` (#7).
+//! - [`verified_account_registry::decide_publication`]: el gate de
+//!   publicación puro -- sin consentimiento vigente, NUNCA avanza a
+//!   `PUBLIC`.
+//! - [`verified_account_registry::AttestationScope::is_sovereign_attestation`]:
+//!   la ÚNICA fuente de verdad sobre si un track puede reclamar "Ejecución
+//!   Verificada por Drasus".
+//! - [`orchestrator::verified_account_registry::register_account`] /
+//!   [`orchestrator::verified_account_registry::attest_track_record`] /
+//!   [`orchestrator::verified_account_registry::request_publication`]: la
+//!   composición completa -- registra (default PRIVATE), calcula y firma
+//!   el track por ámbito, y resuelve el `consent_out` REAL de #5 antes de
+//!   publicar.
+//! - [`persistence::verified_account_registry::VerifiedAccountRepository`]:
+//!   repositorio MUTABLE (`row_version`, ADR-0141) para `verified_accounts`.
+//! - [`persistence::verified_account_registry::AttestedTrackRecordRepository`]:
+//!   repositorio APPEND-ONLY ATÓMICO (`event_sequence_id`, `BEGIN IMMEDIATE`
+//!   + reintento) para `attested_track_records`.
+//! - [`verify_verified_account_registry`]: harness CLI (Canal #2, ADR-0142)
+//!   -- `cargo run -p app -- verify verified-account-registry --input
+//!   '{"account":{"broker":"ICMarkets","currency":"USD","account_type":"OWN"},"consent":"COVERED","events":[{"type":"CapitalFlow","sign":"DEPOSIT","amount_e8":35000000000},{"type":"OrderExecuted","pnl_e8":15000000000}]}'`.
+//!
+//! ## Instance Continuity (`docs/features/instance-continuity.md`,
+//! ## ADR-0146 cimiento #11 -- rector, ADR-0093, ADR-0143, ADR-0141, ADR-0020, STORY-039)
+//!
+//! Cimiento #11 del substrato de monetización: respaldo cifrado
+//! client-side de la DB local (el proveedor jamás lee el contenido) +
+//! relevo de custodia "maestro itinerante" (exactamente una máquina
+//! titular escritora de la cadena de auditoría por cuenta, en cada
+//! instante). Motivo de urgencia (ADR-0146): en el tier de pago la
+//! telemetría de trabajo se suprime en origen (ADR-0143) -- el historial
+//! soberano de #10 NO está en el proveedor, así que un disco muerto lo
+//! borraría de forma irreversible sin este cimiento.
+//!
+//! - [`instance_continuity::derive_encryption_key`]: KDF Argon2id --
+//!   deriva la clave AES-256 desde el secreto maestro del usuario. La
+//!   clave y el secreto NUNCA se persisten ni salen de esta función.
+//! - [`instance_continuity::generate_nonce`]: nonce de AES-GCM con RNG
+//!   SEMBRADO e inyectado (mismo patrón que el ruido de #9) -- nunca
+//!   `rand::thread_rng()` en el Core.
+//! - [`instance_continuity::encrypt_backup_blob`] /
+//!   [`instance_continuity::decrypt_backup_blob`]: cifrado/descifrado
+//!   autenticado AES-256-GCM -- el tag GCM detecta CUALQUIER manipulación,
+//!   nunca devuelve basura silenciosa.
+//! - [`instance_continuity::compute_backup_delta`]: filtra del snapshot
+//!   crudo las credenciales de bróker y las IPs de servidor live -- las
+//!   MISMAS clases de secreto que se excluyen de la telemetría (ADR-0093).
+//! - [`instance_continuity::decide_custody_claim`] /
+//!   [`instance_continuity::is_current_titular`]: EL gate de titularidad
+//!   exclusiva -- concurrencia optimista a nivel de INSTANCIA COMPLETA
+//!   (`custody_epoch`), no de una fila de negocio cualquiera.
+//! - [`instance_continuity::take_encrypted_snapshot`]: la composición
+//!   completa del `backup_blob_out` -- filtra, cifra y persiste
+//!   append-only atómico.
+//! - [`instance_continuity::claim_custody`] / [`instance_continuity::is_titular`]:
+//!   la composición completa del `custody_status_out` -- reclama/consulta
+//!   la titularidad persistida.
+//! - [`verify_instance_continuity`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify instance-continuity --input
+//!   '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'`.
+//!
+//! ## Master Account Hierarchy (`docs/features/master-account-hierarchy.md`,
+//! ## ADR-0147 cimiento #12 -- rector y ÚLTIMO del substrato, ADR-0143, ADR-0141, ADR-0093, ADR-0020, STORY-040)
+//!
+//! Cimiento #12, cierra el substrato de monetización (12/12): una cuenta
+//! maestra raíz (fondo) agrupa N cuentas maestras hijas con autoridad de
+//! auditoría y override sobre cada una -- pero el mando NUNCA escribe
+//! directo en la base de datos de la hija (el adaptador de red del relé
+//! genérico, ADR-0143, queda diferido) y todo override exige consentimiento
+//! vigente y queda doblemente atestado (fondo + hija, nunca una mutación
+//! silenciosa).
+//!
+//! - [`master_account_hierarchy::decide_override_authorization`]: EL gate
+//!   de autorización -- `Executed` solo si el `ConsentVerdict` REAL de
+//!   `consent-registry` (#5) es `Covered`; sin opt-in vigente, `Denied`
+//!   SIEMPRE.
+//! - [`master_account_hierarchy::apply_local_command_effect`]: "eliminar" =
+//!   archivar (ADR-0141) -- catálogo cerrado de dos valores, ninguno es un
+//!   borrado físico.
+//! - [`master_account_hierarchy::link_child_to_parent`]: registra el
+//!   puntero de jerarquía de una hija hacia su fondo (regla fija #1: el
+//!   puntero, nunca el árbol completo -- anti-`tenant_id`).
+//! - [`master_account_hierarchy::issue_override`] /
+//!   [`master_account_hierarchy::receive_override`]: la composición
+//!   completa de la doble atestación -- el fondo emite (fila ISSUER), la
+//!   hija re-valida localmente y ejecuta o rechaza (fila EXECUTOR).
+//! - [`verify_master_account_hierarchy`]: harness CLI (Canal #2,
+//!   ADR-0142) -- `cargo run -p app -- verify master-account-hierarchy
+//!   --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7",
+//!   "node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE",
+//!   "target_ref":"strategy-42","justification":"riesgo excedido"}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -976,6 +1090,8 @@ pub struct PlanTierQuotaVerifyOutput {
     pub tier: Option<String>,
     pub notional_limit: Option<i64>,
     pub max_activations: Option<i64>,
+    /// Cuota de cuentas maestras hijas del plan (STORY-042, #12/#14).
+    pub max_child_accounts: Option<i64>,
     pub features_enabled: Option<Vec<String>>,
     /// `true` si el valor devuelto salió de la caché con TTL en vez de una
     /// resolución fresca contra el catálogo (esta llamada de CLI siempre
@@ -991,6 +1107,7 @@ impl PlanTierQuotaVerifyOutput {
             tier: None,
             notional_limit: None,
             max_activations: None,
+            max_child_accounts: None,
             features_enabled: None,
             cached: false,
             error: Some(msg),
@@ -1003,6 +1120,7 @@ impl PlanTierQuotaVerifyOutput {
             tier: Some(tier.as_str().to_string()),
             notional_limit: Some(limits.notional_limit),
             max_activations: Some(limits.max_activations),
+            max_child_accounts: Some(limits.max_child_accounts),
             features_enabled: Some(limits.features_enabled),
             cached: true,
             error: None,
@@ -2534,5 +2652,1146 @@ pub async fn verify_data_aggregation(input: DataAggregationVerifyInput) -> DataA
     match data_aggregation::run_aggregation(&pool, clock.as_ref(), &events, &config).await {
         Ok(outcome) => DataAggregationVerifyOutput::from_outcome(outcome),
         Err(e) => DataAggregationVerifyOutput::from_error(format!("fallo al ejecutar la agregación: {e}")),
+    }
+}
+
+// ── Verified Account Registry (STORY-037, vive en `shared` -- ver ADR-0137) ─
+
+/// Submódulo público del cimiento #10 (`docs/features/verified-account-registry.md`,
+/// ADR-0145, STORY-037).
+pub mod verified_account_registry {
+    // El Core -- enums de cuenta/publicación/ámbito, cálculo puro del
+    // track (gain% que EXCLUYE el flujo de capital), firma reproducible,
+    // hash de auditoría, gate de publicación puro y los tipos de puerto.
+    pub use crate::domain::verified_account_registry::{
+        canonical_attestation_scopes_json, compute_track_record, compute_track_record_audit_hash,
+        compute_track_record_signature, compute_verified_account_audit_hash,
+        decide_publication, decode_attestation_scopes_json, AccountType, AttestationScope,
+        AttestationScopeDecodeError, AttestedTrackRecord, CapitalReality, PublicationStatus,
+        TrackRecordMetrics, VerifiedAccountRecord, NS_PER_DAY,
+    };
+    // La composición completa -- registrar (default PRIVATE), calcular y
+    // firmar el track por ámbito, y el gate de publicación con el
+    // consent_out REAL de #5.
+    pub use crate::orchestrator::verified_account_registry::{
+        attest_track_record, register_account, request_publication, VerifiedAccountRegistryError,
+        VERIFIED_ACCOUNT_PUBLICATION_CONSENT_DATA_TYPE,
+    };
+    pub use crate::persistence::verified_account_registry::{
+        AttestedTrackRecordRepository, AttestedTrackRecordRepositoryError, AttestedTrackRecordRow,
+        NewVerifiedAccount, VerifiedAccountRepository, VerifiedAccountRepositoryError,
+        VerifiedAccountRow,
+    };
+}
+
+/// La cuenta a registrar, entrada de la verificación vía CLI -- espejo
+/// simplificado de [`verified_account_registry::NewVerifiedAccount`] con
+/// defaults razonables (`leverage`, `attestation_scopes`) para que un uso
+/// típico solo necesite `broker`/`currency`/`account_type`
+/// (`docs/features/verified-account-registry.md`, STORY-037).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VerifiedAccountRegistryAccountVerifyInput {
+    pub broker: String,
+    #[serde(default = "default_verified_account_leverage")]
+    pub leverage: i64,
+    pub currency: String,
+    /// `"FUNDED"`, `"PROP"` o `"OWN"`.
+    pub account_type: String,
+    /// Ámbitos de atestación habilitados para la cuenta -- por defecto,
+    /// ambos (soberano y read-only) coexisten, tal como describe
+    /// ADR-0145.
+    #[serde(default = "default_verified_account_scopes")]
+    pub attestation_scopes: Vec<String>,
+    /// Grupo II obligatorio -- en ESTA feature `institutional_tag` ES el Eje
+    /// B (`docs/adr/ADR-0145.md` corregido 2026-07-07, STORY-041/DEBT-016):
+    /// `"LIVE"` (default), `"PAPER"`, `"DEMO"` o `"CHALLENGE"` -- ORTOGONAL a
+    /// `attestation_scopes` (Eje A). Reemplaza el antiguo campo
+    /// `capital_reality` -- las dos tablas de este cimiento reutilizan el
+    /// campo Grupo II en vez de una columna nueva (ADR-0144 FIJO). El
+    /// default LIVE evita romper invocaciones previas a este retrabajo.
+    #[serde(default = "default_verified_account_institutional_tag")]
+    pub institutional_tag: String,
+    /// Referencia NO SECRETA a una conexión de bróker ya vinculada
+    /// (nullable, ADR-0093).
+    #[serde(default)]
+    pub broker_connection_ref: Option<String>,
+}
+
+fn default_verified_account_leverage() -> i64 {
+    100
+}
+
+fn default_verified_account_scopes() -> Vec<String> {
+    vec!["SOVEREIGN".to_string(), "BROKER_READONLY".to_string()]
+}
+
+fn default_verified_account_institutional_tag() -> String {
+    "LIVE".to_string()
+}
+
+/// Un evento de entrada SIMPLIFICADO para la verificación vía CLI -- a
+/// diferencia de [`DomainEventVerifyEvent`] (que exige TODOS los campos
+/// del catálogo real de #6), este tipo solo pide lo que efectivamente
+/// afecta el cálculo del track (`compute_track_record`); el resto de
+/// campos obligatorios de `EnrichedDomainEvent` se completan con valores
+/// de relleno documentados en [`Self::into_domain_event`]. `day_offset`
+/// distribuye los eventos en días de trading distintos (multiplicado por
+/// [`verified_account_registry::NS_PER_DAY`]).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
+pub enum VerifiedAccountRegistryEventVerifyInput {
+    CapitalFlow {
+        /// `"DEPOSIT"`, `"WITHDRAWAL"` o `"TRANSFER"`.
+        sign: String,
+        amount_e8: i64,
+        #[serde(default)]
+        day_offset: i64,
+    },
+    OrderExecuted {
+        pnl_e8: i64,
+        #[serde(default)]
+        day_offset: i64,
+        #[serde(default = "default_verify_order_duration_ns")]
+        duration_ns: i64,
+    },
+    AccountSnapshot {
+        equity_e8: i64,
+        balance_e8: i64,
+        #[serde(default)]
+        day_offset: i64,
+    },
+}
+
+fn default_verify_order_duration_ns() -> i64 {
+    3_600_000_000_000 // 1 hora
+}
+
+impl VerifiedAccountRegistryEventVerifyInput {
+    /// Convierte la entrada simplificada de CLI en el
+    /// `EnrichedDomainEvent` real del Core de #6, etiquetando `account_id`
+    /// con el id de la cuenta ya registrada -- los campos que el catálogo
+    /// real exige pero que esta feature no usa para calcular el track
+    /// (instrumento, lado, precio, slippage, notional, MAE, MFE) quedan
+    /// con valores de relleno fijos, documentados aquí en vez de dejarlos
+    /// implícitos.
+    fn into_domain_event(
+        self,
+        account_id: &str,
+        broker: &str,
+        currency: &str,
+    ) -> Result<enriched_domain_events::EnrichedDomainEvent, String> {
+        use enriched_domain_events::{
+            AccountSnapshotPayload, CapitalFlowPayload, CapitalFlowSign, EnrichedDomainEvent,
+            OrderExecutedPayload, OrderSide,
+        };
+        use verified_account_registry::NS_PER_DAY;
+
+        match self {
+            VerifiedAccountRegistryEventVerifyInput::CapitalFlow { sign, amount_e8, day_offset } => {
+                let sign = CapitalFlowSign::from_str_value(&sign).ok_or_else(|| {
+                    format!("sign desconocido: '{sign}' -- se esperaba DEPOSIT, WITHDRAWAL o TRANSFER")
+                })?;
+                Ok(EnrichedDomainEvent::CapitalFlow(CapitalFlowPayload {
+                    account_id: account_id.to_string(),
+                    sign,
+                    amount: amount_e8,
+                    currency: currency.to_string(),
+                    timestamp_ns: day_offset * NS_PER_DAY,
+                }))
+            }
+            VerifiedAccountRegistryEventVerifyInput::OrderExecuted { pnl_e8, day_offset, duration_ns } => {
+                // Nocional de relleno: cantidad y precio fijos (no entran
+                // al cálculo del track -- solo `realized_pnl`,
+                // `fill_time_ns` y `duration_ns` importan).
+                Ok(EnrichedDomainEvent::OrderExecuted(OrderExecutedPayload {
+                    instrument_id: "VERIFY".to_string(),
+                    side: OrderSide::Buy,
+                    quantity: 100_000_000,
+                    price: 100_000_000_000,
+                    slippage: 0,
+                    fill_time_ns: day_offset * NS_PER_DAY,
+                    broker: broker.to_string(),
+                    notional: 100_000_000_000,
+                    account_id: account_id.to_string(),
+                    realized_pnl: pnl_e8,
+                    mae: 0,
+                    mfe: 0,
+                    duration_ns,
+                }))
+            }
+            VerifiedAccountRegistryEventVerifyInput::AccountSnapshot { equity_e8, balance_e8, day_offset } => {
+                Ok(EnrichedDomainEvent::AccountSnapshot(AccountSnapshotPayload {
+                    account_id: account_id.to_string(),
+                    equity: equity_e8,
+                    balance: balance_e8,
+                    margin_available: balance_e8,
+                    margin_required: 0,
+                    timestamp_ns: day_offset * NS_PER_DAY,
+                }))
+            }
+        }
+    }
+}
+
+/// Input para la verificación de Verified Account Registry vía CLI
+/// (`docs/features/verified-account-registry.md`, STORY-037). Se
+/// deserializa desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify verified-account-registry --input
+/// '{"account":{"broker":"ICMarkets","currency":"USD","account_type":"OWN"},"consent":"COVERED","events":[{"type":"CapitalFlow","sign":"DEPOSIT","amount_e8":35000000000},{"type":"OrderExecuted","pnl_e8":15000000000}]}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VerifiedAccountRegistryVerifyInput {
+    pub account: VerifiedAccountRegistryAccountVerifyInput,
+    /// El ámbito de atestación bajo el que se calcula y firma el track --
+    /// `"SOVEREIGN"` (default) o `"BROKER_READONLY"`.
+    #[serde(default = "default_verify_scope")]
+    pub scope: String,
+    #[serde(default = "default_verify_time_window")]
+    pub time_window: String,
+    /// `"COVERED"` (siembra un opt-in real de publicación) | `"OPTED_OUT"`
+    /// (siembra un opt-out explícito) | cualquier otro valor / ausente ->
+    /// `"NO_CONSENT"` (no siembra nada -- resuelve al default-deny real).
+    #[serde(default = "default_verify_consent_state")]
+    pub consent: String,
+    #[serde(default = "default_verify_consent_version")]
+    pub consent_version: String,
+    /// Si `true`, tras calcular el track intenta publicar la cuenta
+    /// (`request_publication`) -- gobernado por `consent` de arriba.
+    #[serde(default)]
+    pub publish: bool,
+    pub events: Vec<VerifiedAccountRegistryEventVerifyInput>,
+}
+
+fn default_verify_scope() -> String {
+    "SOVEREIGN".to_string()
+}
+
+fn default_verify_time_window() -> String {
+    "2026-W27".to_string()
+}
+
+fn default_verify_consent_state() -> String {
+    "COVERED".to_string()
+}
+
+fn default_verify_consent_version() -> String {
+    "v1".to_string()
+}
+
+/// Output de la verificación de Verified Account Registry. Siempre
+/// serializa a JSON válido (ADR-0142). Si `ok` es `true`, refleja
+/// EXACTAMENTE lo que exponen los puertos `registry_out`/`track_record_out`
+/// -- ningún secreto (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VerifiedAccountRegistryVerifyOutput {
+    pub ok: bool,
+    pub verified_account_id: Option<String>,
+    /// `"PRIVATE"` o `"PUBLIC"` -- el estado de publicación DESPUÉS de
+    /// resolver el gate (si `publish=true`), o el default `PRIVATE` si no
+    /// se pidió publicar.
+    pub publication_status: Option<String>,
+    /// `"SOVEREIGN"` o `"BROKER_READONLY"` -- el ámbito bajo el que se
+    /// calculó este track.
+    pub scope: Option<String>,
+    /// `true` SOLO si `scope == SOVEREIGN` -- la etiqueta "Ejecución
+    /// Verificada por Drasus" vs. "Reportado por el Bróker".
+    pub is_attested_by_drasus: Option<bool>,
+    /// Eje B -- `"LIVE"`, `"PAPER"`, `"DEMO"` o `"CHALLENGE"`. SIEMPRE
+    /// presente junto a `scope`/`is_attested_by_drasus` (Eje A), nunca
+    /// omitido.
+    pub capital_reality: Option<String>,
+    /// `true` SOLO si `capital_reality == LIVE` -- la etiqueta "Cuenta LIVE
+    /// (capital real)" vs. "Cuenta PAPER/DEMO/CHALLENGE (capital virtual)".
+    /// Derivado ÚNICAMENTE del Eje B, independiente de `is_attested_by_drasus`.
+    pub is_real_capital: Option<bool>,
+    pub gain_pct_e8: Option<i64>,
+    pub max_drawdown_e8: Option<i64>,
+    pub win_rate_e8: Option<i64>,
+    pub trading_days: Option<i64>,
+    pub total_realized_pnl_e8: Option<i64>,
+    pub total_deposits_e8: Option<i64>,
+    pub total_withdrawals_e8: Option<i64>,
+    pub signature_hash: Option<String>,
+    pub error: Option<String>,
+}
+
+impl VerifiedAccountRegistryVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            verified_account_id: None,
+            publication_status: None,
+            scope: None,
+            is_attested_by_drasus: None,
+            capital_reality: None,
+            is_real_capital: None,
+            gain_pct_e8: None,
+            max_drawdown_e8: None,
+            win_rate_e8: None,
+            trading_days: None,
+            total_realized_pnl_e8: None,
+            total_deposits_e8: None,
+            total_withdrawals_e8: None,
+            signature_hash: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_result(
+        account: &verified_account_registry::VerifiedAccountRow,
+        track: &verified_account_registry::AttestedTrackRecordRow,
+    ) -> Self {
+        let projected = verified_account_registry::AttestedTrackRecord::from(track);
+        Self {
+            ok: true,
+            verified_account_id: Some(account.id.clone()),
+            publication_status: Some(account.publication_status.as_str().to_string()),
+            scope: Some(projected.scope.clone()),
+            is_attested_by_drasus: Some(projected.is_attested_by_drasus),
+            capital_reality: Some(projected.capital_reality.clone()),
+            is_real_capital: Some(projected.is_real_capital),
+            gain_pct_e8: Some(projected.gain_pct_e8),
+            max_drawdown_e8: Some(projected.max_drawdown_e8),
+            win_rate_e8: Some(projected.win_rate_e8),
+            trading_days: Some(projected.trading_days),
+            total_realized_pnl_e8: Some(projected.total_realized_pnl_e8),
+            total_deposits_e8: Some(projected.total_deposits_e8),
+            total_withdrawals_e8: Some(projected.total_withdrawals_e8),
+            signature_hash: Some(projected.signature_hash),
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Verified Account Registry con adaptadores
+/// reales (BD SQLite temporal + reloj de sistema real + el `consent_out`
+/// REAL de `consent-registry` #5), recorriendo el camino completo del
+/// cimiento #10: registra la cuenta (default PRIVATE), construye los
+/// eventos de #6 a partir de `input.events`, calcula y firma el track para
+/// el ámbito pedido, siembra (según `input.consent`) el consentimiento
+/// real de publicación, y si `input.publish` lo pide, resuelve el gate de
+/// publicación -- ejercitando Core -> Shell -> puerto tal como lo
+/// recorrería el motor real.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify verified-account-registry --input
+/// '{"account":{"broker":"ICMarkets","currency":"USD","account_type":"OWN"},"consent":"COVERED","events":[{"type":"CapitalFlow","sign":"DEPOSIT","amount_e8":35000000000},{"type":"OrderExecuted","pnl_e8":15000000000}]}'`
+pub async fn verify_verified_account_registry(
+    input: VerifiedAccountRegistryVerifyInput,
+) -> VerifiedAccountRegistryVerifyOutput {
+    let Some(account_type) = verified_account_registry::AccountType::from_str_value(&input.account.account_type)
+    else {
+        return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+            "account_type no reconocido: '{}'. Valores válidos: FUNDED, PROP, OWN",
+            input.account.account_type
+        ));
+    };
+    let Some(scope) = verified_account_registry::AttestationScope::from_str_value(&input.scope) else {
+        return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+            "scope no reconocido: '{}'. Valores válidos: SOVEREIGN, BROKER_READONLY",
+            input.scope
+        ));
+    };
+    // Valida el Eje B ANTES de tocar la BD -- en esta feature
+    // `institutional_tag` ES el Eje B (STORY-041), no un campo separado.
+    if verified_account_registry::CapitalReality::from_str_value(&input.account.institutional_tag).is_none() {
+        return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+            "institutional_tag no reconocido: '{}'. Valores válidos: LIVE, PAPER, DEMO, CHALLENGE",
+            input.account.institutional_tag
+        ));
+    }
+    let mut attestation_scopes = Vec::with_capacity(input.account.attestation_scopes.len());
+    for raw_scope in &input.account.attestation_scopes {
+        match verified_account_registry::AttestationScope::from_str_value(raw_scope) {
+            Some(parsed) => attestation_scopes.push(parsed),
+            None => {
+                return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+                    "attestation_scopes con valor no reconocido: '{raw_scope}'"
+                ))
+            }
+        }
+    }
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_data_aggregation / verify_third_party_api_gateway).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-verified-account-registry-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+    let node_id = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown-host".to_string());
+    let owner_id = "verify-verified-account-registry-owner".to_string();
+
+    // Paso 1 -- registra la cuenta (default PRIVATE, estructural).
+    let account = match verified_account_registry::register_account(
+        &pool,
+        clock.as_ref(),
+        verified_account_registry::NewVerifiedAccount {
+            owner_id: owner_id.clone(),
+            // Eje B, STORY-041: viene del input del CLI (`account.institutional_tag`,
+            // default LIVE, ya validado arriba), no del placeholder genérico
+            // `default_institutional_tag()` que usan las demás tablas.
+            institutional_tag: input.account.institutional_tag.clone(),
+            node_id: node_id.clone(),
+            broker: input.account.broker.clone(),
+            leverage: input.account.leverage,
+            currency: input.account.currency.clone(),
+            account_type,
+            attestation_scopes,
+            broker_connection_ref: input.account.broker_connection_ref.clone(),
+        },
+    )
+    .await
+    {
+        Ok(account) => account,
+        Err(e) => return VerifiedAccountRegistryVerifyOutput::from_error(format!("fallo al registrar la cuenta: {e}")),
+    };
+
+    // Paso 2 -- construye los eventos de #6 a partir del input simplificado.
+    let mut events = Vec::with_capacity(input.events.len());
+    for event_input in input.events {
+        match event_input.into_domain_event(&account.id, &account.broker, &account.currency) {
+            Ok(event) => events.push(event),
+            Err(msg) => return VerifiedAccountRegistryVerifyOutput::from_error(msg),
+        }
+    }
+
+    // Paso 3 -- calcula y firma el track para el ámbito pedido, y lo
+    // persiste append-only atómico.
+    let track = match verified_account_registry::attest_track_record(
+        &pool,
+        clock.as_ref(),
+        &account,
+        scope,
+        &input.time_window,
+        &events,
+    )
+    .await
+    {
+        Ok(track) => track,
+        Err(e) => return VerifiedAccountRegistryVerifyOutput::from_error(format!("fallo al calcular el track: {e}")),
+    };
+
+    // Paso 4 -- siembra (según input.consent) el consentimiento REAL de
+    // publicación de #5 -- nunca un stub (mismo patrón que
+    // verify_data_aggregation).
+    let mut optout_changes = std::collections::BTreeMap::new();
+    match input.consent.as_str() {
+        "COVERED" => {
+            optout_changes.insert(
+                verified_account_registry::VERIFIED_ACCOUNT_PUBLICATION_CONSENT_DATA_TYPE.to_string(),
+                false,
+            );
+            if let Err(e) = record_consent_action(
+                &pool,
+                clock.as_ref(),
+                RecordConsentActionInput {
+                    owner_id: owner_id.clone(),
+                    institutional_tag: default_institutional_tag(),
+                    node_id: node_id.clone(),
+                    compliance_status_id: None,
+                    action: ConsentAction::Accept,
+                    tos_version: Some(input.consent_version.clone()),
+                    optout_changes,
+                },
+            )
+            .await
+            {
+                return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+                    "fallo al registrar el consentimiento COVERED: {e}"
+                ));
+            }
+        }
+        "OPTED_OUT" => {
+            optout_changes.insert(
+                verified_account_registry::VERIFIED_ACCOUNT_PUBLICATION_CONSENT_DATA_TYPE.to_string(),
+                true,
+            );
+            if let Err(e) = record_consent_action(
+                &pool,
+                clock.as_ref(),
+                RecordConsentActionInput {
+                    owner_id: owner_id.clone(),
+                    institutional_tag: default_institutional_tag(),
+                    node_id: node_id.clone(),
+                    compliance_status_id: None,
+                    action: ConsentAction::Accept,
+                    tos_version: Some(input.consent_version.clone()),
+                    optout_changes,
+                },
+            )
+            .await
+            {
+                return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+                    "fallo al registrar el consentimiento OPTED_OUT: {e}"
+                ));
+            }
+        }
+        _ => {
+            // "NO_CONSENT" o cualquier otro valor: no siembra nada --
+            // resuelve al default-deny real de consent-registry.
+        }
+    }
+
+    // Paso 5 -- si se pidió publicar, resuelve el gate real de #5.
+    let account = if input.publish {
+        match verified_account_registry::request_publication(
+            &pool,
+            clock.as_ref(),
+            &account,
+            verified_account_registry::PublicationStatus::Public,
+            &input.consent_version,
+        )
+        .await
+        {
+            Ok(account) => account,
+            Err(e) => {
+                return VerifiedAccountRegistryVerifyOutput::from_error(format!(
+                    "fallo al resolver la publicación: {e}"
+                ))
+            }
+        }
+    } else {
+        account
+    };
+
+    VerifiedAccountRegistryVerifyOutput::from_result(&account, &track)
+}
+
+// ── Instance Continuity (STORY-039, vive en `shared` -- ver ADR-0137) ──────
+
+/// Submódulo público del cimiento #11 (`docs/features/instance-continuity.md`,
+/// ADR-0146, ADR-0093, ADR-0143, STORY-039).
+///
+/// Expone los tres puertos de la Feature (ADR-0137): `identity_in`
+/// (`AccountIdentity`, el tipo REAL de #1 -- ya aplanado en este mismo
+/// archivo, no se duplica aquí), `backup_blob_out` (`EncryptedBackupBlob`,
+/// Output `0..1`) y `custody_status_out` (`CustodyStatusOut`, Output `1`).
+///
+/// **Guardarraíl ADR-0093:** ningún tipo re-exportado aquí modela la clave
+/// de cifrado, el secreto maestro, credenciales de bróker ni IPs live --
+/// verificado por los tests `encrypted_backup_blob_json_never_leaks_key_or_secret`
+/// y `custody_status_out_json_never_leaks_secrets` del Core.
+///
+/// **NO acopla `licensing-system` (ADR-0137):** `custody_status_out` lo
+/// CONSUMIRÁ `licensing-system` (#2) más adelante -- es un consumidor
+/// downstream, no una dependencia; este submódulo no importa
+/// `licensing-system`.
+///
+/// **Adaptador de almacén de objetos + liberación forzada central + UI
+/// diferidos (STORY-039 §8):** este submódulo NO sube el blob a ningún
+/// servidor -- el Core + el esquema son el contrato; el transporte real es
+/// un adaptador posterior sobre este mismo puerto.
+pub mod instance_continuity {
+    // Core: KDF, cifrado/descifrado autenticado, filtro del delta,
+    // decisión pura de titularidad y hash de auditoría encadenado de
+    // ambas tablas.
+    pub use crate::domain::instance_continuity::{
+        canonical_delta_bytes, compute_backup_audit_hash, compute_backup_delta,
+        compute_custody_audit_hash, decide_custody_claim, decrypt_backup_blob,
+        derive_encryption_key, encrypt_backup_blob, generate_nonce, is_current_titular,
+        BackupField, CustodyClaimError, CustodyState, CustodyStatusOut, EncryptedBackupBlob,
+        EncryptionError, HexDecodeError,
+    };
+    // La composición completa (filtra secretos, cifra, persiste append-only
+    // atómico; reclama/consulta el gate de titularidad).
+    pub use crate::orchestrator::instance_continuity::{
+        claim_custody, is_titular, round_trip_decrypts_to, take_encrypted_snapshot,
+        BackupSnapshotError, BackupSnapshotResult, ClaimCustodyError, InstanceContinuityIdentity,
+    };
+    pub use crate::persistence::instance_continuity::{
+        BackupRegistryRepository, BackupRegistryRepositoryError, ClaimTitularInput,
+        CustodyRepository, CustodyRepositoryError, CustodyRow, InstanceBackupRow,
+        RecordBackupInput,
+    };
+}
+
+/// El submódulo `master_account_hierarchy` -- cimiento #12, ÚLTIMO del
+/// substrato de monetización (`docs/features/master-account-hierarchy.md`,
+/// ADR-0147, STORY-040). Re-exporta Core (gate de autorización, "eliminar =
+/// archivar", hashes de auditoría de ambas tablas), la composición completa
+/// (vincular jerarquía, emitir/recibir override) y los repositorios.
+///
+/// **Adaptador de red del relé genérico + UI diferidos (STORY-040 §11):**
+/// este submódulo NO transmite el comando cifrado a ninguna máquina remota
+/// -- el Core + el esquema son el contrato; el transporte real es un
+/// adaptador posterior sobre este mismo puerto.
+pub mod master_account_hierarchy {
+    // Core: catálogo de comandos/lados/etiquetas, gate de autorización,
+    // efecto local "eliminar = archivar" y hash de auditoría encadenado de
+    // ambas tablas.
+    pub use crate::domain::master_account_hierarchy::{
+        apply_local_command_effect, compute_hierarchy_audit_hash, compute_override_audit_hash,
+        decide_override_authorization, AttestationSide, LocalEffect, OverrideCommandKind,
+        OverrideOutcome, OverrideOutcomeLabel,
+    };
+    // La composición completa (vincular jerarquía; emitir/recibir override,
+    // con el consent_out REAL de #5 resuelto por cada lado).
+    pub use crate::orchestrator::master_account_hierarchy::{
+        execute_override, issue_override, link_child_to_parent, receive_override,
+        MasterAccountHierarchyError, OverrideExecutionResult, MASTER_ACCOUNT_OVERRIDE_CONSENT_DATA_TYPE,
+    };
+    pub use crate::persistence::master_account_hierarchy::{
+        AccountHierarchyRepository, AccountHierarchyRepositoryError, AccountHierarchyRow,
+        NewAccountHierarchy, OverrideAttestationRepository, OverrideAttestationRepositoryError,
+        OverrideAttestationRow, RecordOverrideAttestationInput,
+    };
+}
+
+/// El estado de custodia PREVIO al reclamo, tal como lo asume el harness de
+/// verificación CLI -- simula "esta cuenta ya tenía un historial de
+/// custodia" sin tener que recorrer todos los reclamos intermedios (ver
+/// [`instance_continuity::CustodyRepository::seed_initial_state`]).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CustodyVerifyInput {
+    pub titular_node_id: String,
+    pub custody_epoch: i64,
+}
+
+/// Input para la verificación de Instance Continuity vía CLI
+/// (`docs/features/instance-continuity.md`, STORY-039). Se deserializa
+/// desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify instance-continuity --input
+/// '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InstanceContinuityVerifyInput {
+    /// El secreto maestro del usuario -- SOLO viaja en memoria para
+    /// derivar la clave de cifrado (ADR-0093); NUNCA aparece en el output.
+    pub master_secret: String,
+    /// El contenido a cifrar/descifrar, en texto plano.
+    pub plaintext: String,
+    /// La semilla del nonce de AES-GCM -- determinista en esta
+    /// verificación (mismo patrón sembrado que el cimiento #9).
+    pub nonce_seed: u64,
+    /// El estado de custodia PREVIO al reclamo -- se siembra en la BD
+    /// temporal antes de ejercitar el reclamo real de esta verificación.
+    pub custody: CustodyVerifyInput,
+    /// La máquina que ejecuta esta verificación -- la que cifra el
+    /// snapshot y la que intenta reclamar la titularidad. Este mismo valor
+    /// se usa como identificador de hardware para resolver `identity_in`
+    /// (ver `Paso 0` de [`verify_instance_continuity`]) -- NO se acepta un
+    /// `owner_id` suelto por separado: el `owner_id` real sale de
+    /// `central-identity` (#1), nunca se inventa en este harness.
+    pub my_node_id: String,
+}
+
+/// Output de la verificación de Instance Continuity. Siempre serializa a
+/// JSON válido (ADR-0142). **Ningún campo porta la clave de cifrado, el
+/// secreto maestro, credenciales de bróker ni IPs live** (ADR-0093).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InstanceContinuityVerifyOutput {
+    pub ok: bool,
+    pub owner_id: Option<String>,
+    pub node_id: Option<String>,
+    /// `true` si `decrypt(encrypt(plaintext)) == plaintext` -- el
+    /// round-trip de cifrado autenticado AES-256-GCM.
+    pub round_trip_ok: Option<bool>,
+    /// El nonce usado, en hex -- NO es secreto (ADR-0002).
+    pub nonce_hex: Option<String>,
+    pub blob_hash: Option<String>,
+    pub blob_size_bytes: Option<i64>,
+    pub event_sequence_id: Option<i64>,
+    /// `true` si `my_node_id` YA era la titular vigente ANTES de intentar
+    /// el reclamo de esta verificación.
+    pub is_titular_before_claim: Option<bool>,
+    /// `"CLAIMED"` (el reclamo ganó) o `"CONFLICT"` (otra máquina ya había
+    /// avanzado el epoch -- el gate de titularidad exclusiva bloqueó el
+    /// reclamo, regla obligatoria #4 de ADR-0146).
+    pub custody_claim_outcome: Option<String>,
+    pub custody_epoch_after: Option<i64>,
+    pub titular_node_id_after: Option<String>,
+    pub error: Option<String>,
+}
+
+impl InstanceContinuityVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            owner_id: None,
+            node_id: None,
+            round_trip_ok: None,
+            nonce_hex: None,
+            blob_hash: None,
+            blob_size_bytes: None,
+            event_sequence_id: None,
+            is_titular_before_claim: None,
+            custody_claim_outcome: None,
+            custody_epoch_after: None,
+            titular_node_id_after: None,
+            error: Some(msg),
+        }
+    }
+}
+
+/// Ejecuta la verificación de Instance Continuity con adaptadores reales
+/// (BD SQLite temporal + reloj de sistema real + el `AccountIdentity` REAL
+/// de `central-identity`, #1 -- NO un placeholder), recorriendo el camino
+/// completo del cimiento #11: resuelve `identity_in` vinculando una cuenta
+/// local para `my_node_id`, cifra el `plaintext` con la clave derivada del
+/// `master_secret` (KDF Argon2id) y el nonce sembrado, registra el
+/// respaldo append-only atómico, descifra de vuelta para demostrar el
+/// round-trip autenticado, siembra el estado de custodia PREVIO dado por
+/// `input.custody`, y ejercita el reclamo REAL de titularidad para
+/// `my_node_id` -- ejercitando Core -> Shell -> puerto tal como lo
+/// recorrería la app real al cerrar/abrir sesión en una máquina.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify instance-continuity --input
+/// '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'`
+pub async fn verify_instance_continuity(input: InstanceContinuityVerifyInput) -> InstanceContinuityVerifyOutput {
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_verified_account_registry / verify_enriched_domain_events).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-instance-continuity-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return InstanceContinuityVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return InstanceContinuityVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return InstanceContinuityVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Paso 0 -- identity_in: vincula/crea la AccountIdentity local REAL vía
+    // central-identity (#1) para esta máquina -- mismo camino que
+    // verify_licensing_system/verify_enriched_domain_events. `owner_id` e
+    // `institutional_tag` SIEMPRE salen de aquí, nunca se inventan sueltos.
+    let identity_verifier =
+        crate::orchestrator::central_identity::LocalStubCentralIdentityVerifier::new(&pool, clock.as_ref());
+    let account_identity = match identity_verifier
+        .verify_identity(crate::orchestrator::central_identity::IdentityVerificationRequest {
+            email: format!("verify-instance-continuity-{}@drasus.local", input.my_node_id),
+            oauth_provider: None,
+            machine_identifiers: vec![input.my_node_id.clone()],
+            institutional_tag: default_institutional_tag(),
+            access_token_id: None,
+        })
+        .await
+    {
+        Ok(identity) => identity,
+        Err(e) => {
+            return InstanceContinuityVerifyOutput::from_error(format!("fallo al vincular identidad: {e}"))
+        }
+    };
+
+    let identity = instance_continuity::InstanceContinuityIdentity {
+        owner_id: account_identity.owner_id.clone(),
+        institutional_tag: account_identity.institutional_tag.clone(),
+        node_id: input.my_node_id.clone(),
+    };
+
+    // Paso 1 -- backup_blob_out: cifra el plaintext (envuelto en un único
+    // campo de delta -- el harness no ejercita el filtro de secretos por
+    // separado, eso lo cubren los tests unitarios del Core) y registra el
+    // respaldo append-only atómico.
+    let raw_fields =
+        vec![instance_continuity::BackupField { key: "snapshot".to_string(), value: input.plaintext.clone() }];
+    let snapshot = match instance_continuity::take_encrypted_snapshot(
+        &pool,
+        clock.as_ref(),
+        &identity,
+        &input.master_secret,
+        &raw_fields,
+        input.nonce_seed,
+    )
+    .await
+    {
+        Ok(s) => s,
+        Err(e) => {
+            return InstanceContinuityVerifyOutput::from_error(format!("fallo al tomar el snapshot cifrado: {e}"))
+        }
+    };
+
+    // Round-trip: descifra de vuelta con la MISMA clave (re-derivada, la
+    // Shell nunca guarda la clave entre llamadas) y compara contra el
+    // delta filtrado que se cifró.
+    let expected_plaintext =
+        instance_continuity::canonical_delta_bytes(&instance_continuity::compute_backup_delta(&raw_fields));
+    let round_trip_ok = match instance_continuity::round_trip_decrypts_to(
+        &snapshot.blob,
+        &input.master_secret,
+        &identity.owner_id,
+        &expected_plaintext,
+    ) {
+        Ok(ok) => ok,
+        Err(e) => return InstanceContinuityVerifyOutput::from_error(format!("fallo al descifrar el round-trip: {e}")),
+    };
+
+    // Paso 2 -- custody_status_out: siembra el estado PREVIO dado por
+    // input.custody (simula "esta cuenta ya existía") y ejercita el
+    // reclamo real de titularidad para my_node_id.
+    let custody_repo =
+        crate::persistence::instance_continuity::CustodyRepository::new(&pool, clock.as_ref());
+    if let Err(e) = custody_repo
+        .seed_initial_state(
+            &identity.owner_id,
+            &identity.institutional_tag,
+            &input.custody.titular_node_id,
+            input.custody.custody_epoch,
+        )
+        .await
+    {
+        return InstanceContinuityVerifyOutput::from_error(format!("fallo al sembrar el estado de custodia: {e}"));
+    }
+
+    let is_titular_before_claim =
+        match instance_continuity::is_titular(&pool, clock.as_ref(), &identity.owner_id, &input.my_node_id).await {
+            Ok(v) => v,
+            Err(e) => {
+                return InstanceContinuityVerifyOutput::from_error(format!("fallo al consultar la titularidad: {e}"))
+            }
+        };
+
+    let (custody_claim_outcome, custody_epoch_after, titular_node_id_after) = match instance_continuity::claim_custody(
+        &pool,
+        clock.as_ref(),
+        &identity,
+        input.custody.custody_epoch,
+    )
+    .await
+    {
+        Ok(row) => ("CLAIMED".to_string(), Some(row.custody_epoch), Some(row.titular_node_id)),
+        Err(instance_continuity::ClaimCustodyError::Repository(
+            instance_continuity::CustodyRepositoryError::CustodyConflict { .. },
+        )) => ("CONFLICT".to_string(), None, None),
+        Err(e) => {
+            return InstanceContinuityVerifyOutput::from_error(format!("fallo al reclamar la titularidad: {e}"))
+        }
+    };
+
+    InstanceContinuityVerifyOutput {
+        ok: true,
+        owner_id: Some(identity.owner_id),
+        node_id: Some(input.my_node_id),
+        round_trip_ok: Some(round_trip_ok),
+        nonce_hex: Some(snapshot.blob.nonce_hex),
+        blob_hash: Some(snapshot.row.blob_hash),
+        blob_size_bytes: Some(snapshot.row.blob_size_bytes),
+        event_sequence_id: Some(snapshot.row.event_sequence_id),
+        is_titular_before_claim: Some(is_titular_before_claim),
+        custody_claim_outcome: Some(custody_claim_outcome),
+        custody_epoch_after,
+        titular_node_id_after,
+        error: None,
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Master Account Hierarchy (STORY-040, cimiento #12 -- vive en `shared`,
+// ver ADR-0137)
+// ────────────────────────────────────────────────────────────────────────
+
+/// Input para la verificación de Master Account Hierarchy vía CLI
+/// (`docs/features/master-account-hierarchy.md`, STORY-040). Se
+/// deserializa desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify master-account-hierarchy --input
+/// '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MasterAccountHierarchyVerifyInput {
+    /// El fondo -- la cuenta maestra raíz que emite el override.
+    pub parent_owner_id: String,
+    /// La hija -- la cuenta maestra sobre la que el override actúa.
+    pub child_owner_id: String,
+    /// La máquina que ejecuta esta verificación -- usada como `node_id` de
+    /// AMBOS lados (emisor y ejecutor) en este harness de un solo proceso;
+    /// en producción real cada lado corre en su propia máquina, unidas por
+    /// el adaptador de red del relé genérico (diferido, ADR-0143).
+    pub node_id: String,
+    /// `"COVERED"` (siembra un opt-in real de la hija) | `"OPTED_OUT"`
+    /// (siembra un opt-out explícito) | cualquier otro valor / ausente ->
+    /// `"NO_CONSENT"` (no siembra nada -- resuelve al default-deny real de
+    /// `consent-registry`, #5). Mismo vocabulario que
+    /// `VerifiedAccountRegistryVerifyInput::consent`.
+    #[serde(default = "default_verify_consent_state")]
+    pub consent: String,
+    #[serde(default = "default_master_account_hierarchy_consent_version")]
+    pub consent_version: String,
+    /// `"ARCHIVE"` | `"MODIFY"` | `"REQUEST_AUDIT_REPORT"`.
+    pub command_kind: String,
+    pub target_ref: String,
+    pub justification: Option<String>,
+}
+
+fn default_master_account_hierarchy_consent_version() -> String {
+    "v1".to_string()
+}
+
+/// Output de la verificación de Master Account Hierarchy. Siempre
+/// serializa a JSON válido (ADR-0142). **Ningún campo porta el comando
+/// cifrado en claro, credenciales de bróker ni IPs live** (ADR-0093) -- solo
+/// el HECHO auditado del intento (desenlace + hashes de ambas atestaciones).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MasterAccountHierarchyVerifyOutput {
+    pub ok: bool,
+    /// `"EXECUTED"` o `"DENIED"` -- el desenlace del gate de autorización,
+    /// idéntico en AMBAS atestaciones (regla fija #4: nunca se descarta un
+    /// intento denegado en silencio).
+    pub outcome: Option<String>,
+    /// Presente SOLO si `outcome == "DENIED"` -- la razón real que
+    /// `ConsentVerdict::NotCovered` trajo, nunca un booleano ciego.
+    pub denial_reason: Option<String>,
+    /// `"ARCHIVED"` o `"NO_EFFECT"` -- el efecto local que la hija aplicó
+    /// (regla fija #5: "eliminar" nunca es un DELETE físico).
+    pub local_effect: Option<String>,
+    pub issuer_event_sequence_id: Option<i64>,
+    pub issuer_audit_hash: Option<String>,
+    pub executor_event_sequence_id: Option<i64>,
+    pub executor_audit_hash: Option<String>,
+    pub error: Option<String>,
+}
+
+impl MasterAccountHierarchyVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            outcome: None,
+            denial_reason: None,
+            local_effect: None,
+            issuer_event_sequence_id: None,
+            issuer_audit_hash: None,
+            executor_event_sequence_id: None,
+            executor_audit_hash: None,
+            error: Some(msg),
+        }
+    }
+
+    fn from_result(result: &master_account_hierarchy::OverrideExecutionResult) -> Self {
+        let (outcome_str, denial_reason) = match &result.outcome {
+            master_account_hierarchy::OverrideOutcome::Executed => ("EXECUTED".to_string(), None),
+            master_account_hierarchy::OverrideOutcome::Denied(reason) => ("DENIED".to_string(), Some(reason.clone())),
+        };
+        let local_effect_str = match result.local_effect {
+            master_account_hierarchy::LocalEffect::Archived => "ARCHIVED",
+            master_account_hierarchy::LocalEffect::NoEffect => "NO_EFFECT",
+        };
+
+        Self {
+            ok: true,
+            outcome: Some(outcome_str),
+            denial_reason,
+            local_effect: Some(local_effect_str.to_string()),
+            issuer_event_sequence_id: Some(result.issuer.event_sequence_id),
+            issuer_audit_hash: Some(result.issuer.audit_hash.clone()),
+            executor_event_sequence_id: Some(result.executor.event_sequence_id),
+            executor_audit_hash: Some(result.executor.audit_hash.clone()),
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Master Account Hierarchy con adaptadores
+/// reales (BD SQLite temporal + reloj de sistema real + el `consent_out`
+/// REAL de `consent-registry`, #5), recorriendo el camino completo del
+/// cimiento #12: siembra (según `input.consent`) el consentimiento real de
+/// la hija, registra la jerarquía fondo->hija, emite el override desde el
+/// fondo y lo recibe/ejecuta en la hija -- ejercitando Core -> Shell ->
+/// puerto tal como lo recorrería el motor real (el adaptador de red del
+/// relé genérico queda diferido, ver `docs/features/master-account-hierarchy.md`).
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify master-account-hierarchy --input
+/// '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'`
+pub async fn verify_master_account_hierarchy(
+    input: MasterAccountHierarchyVerifyInput,
+) -> MasterAccountHierarchyVerifyOutput {
+    let Some(command_kind) = master_account_hierarchy::OverrideCommandKind::from_str_value(&input.command_kind)
+    else {
+        return MasterAccountHierarchyVerifyOutput::from_error(format!(
+            "command_kind no reconocido: '{}'. Valores válidos: ARCHIVE, MODIFY, REQUEST_AUDIT_REPORT",
+            input.command_kind
+        ));
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_instance_continuity / verify_verified_account_registry).
+    let temp_dir = std::env::temp_dir().join(format!(
+        "drasus-verify-master-account-hierarchy-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return MasterAccountHierarchyVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return MasterAccountHierarchyVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return MasterAccountHierarchyVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Siembra el consentimiento REAL de la hija según input.consent -- igual
+    // que verify_verified_account_registry / verify_data_aggregation. Sin
+    // esto (o con cualquier valor distinto de COVERED/OPTED_OUT) no se
+    // registra ningún evento, y el consent_out real resuelve NotCovered
+    // (NoConsent) por default-deny.
+    if input.consent == "COVERED" || input.consent == "OPTED_OUT" {
+        let mut optout_changes = std::collections::BTreeMap::new();
+        optout_changes.insert(
+            master_account_hierarchy::MASTER_ACCOUNT_OVERRIDE_CONSENT_DATA_TYPE.to_string(),
+            input.consent == "OPTED_OUT",
+        );
+        if let Err(e) = crate::orchestrator::consent_registry::record_consent_action(
+            &pool,
+            clock.as_ref(),
+            crate::persistence::consent_registry::RecordConsentActionInput {
+                owner_id: input.child_owner_id.clone(),
+                institutional_tag: default_institutional_tag(),
+                node_id: input.node_id.clone(),
+                compliance_status_id: None,
+                action: crate::domain::consent_registry::ConsentAction::Accept,
+                tos_version: Some(input.consent_version.clone()),
+                optout_changes,
+            },
+        )
+        .await
+        {
+            return MasterAccountHierarchyVerifyOutput::from_error(format!(
+                "fallo al sembrar el consentimiento: {e}"
+            ));
+        }
+    }
+
+    // Registra la jerarquía (hija -> fondo) ANTES de ejercer el override --
+    // mismo camino que el orquestador real recorrería.
+    if let Err(e) = master_account_hierarchy::link_child_to_parent(
+        &pool,
+        clock.as_ref(),
+        &input.child_owner_id,
+        Some(&input.parent_owner_id),
+        &input.consent_version,
+        &input.node_id,
+    )
+    .await
+    {
+        return MasterAccountHierarchyVerifyOutput::from_error(format!("fallo al registrar la jerarquía: {e}"));
+    }
+
+    let result = match master_account_hierarchy::execute_override(
+        &pool,
+        clock.as_ref(),
+        &input.parent_owner_id,
+        &input.child_owner_id,
+        &input.node_id,
+        &input.node_id,
+        command_kind,
+        &input.target_ref,
+        input.justification.as_deref(),
+        &input.consent_version,
+    )
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => return MasterAccountHierarchyVerifyOutput::from_error(format!("fallo al ejecutar el override: {e}")),
+    };
+
+    MasterAccountHierarchyVerifyOutput::from_result(&result)
+}
+
+#[cfg(test)]
+mod master_account_hierarchy_verify_tests {
+    use super::*;
+
+    /// CRITERIO (Orden §8): JSON no filtra secretos (ADR-0093) -- fija la
+    /// lista exacta de claves permitidas en el output serializado y
+    /// confirma que ningún patrón de secreto/credencial aparece, mismo
+    /// patrón que `verified_account_record_json_never_leaks_secret_looking_fields`.
+    #[test]
+    fn master_account_hierarchy_verify_output_json_never_leaks_secret_fields() {
+        let output = MasterAccountHierarchyVerifyOutput {
+            ok: true,
+            outcome: Some("EXECUTED".to_string()),
+            denial_reason: None,
+            local_effect: Some("ARCHIVED".to_string()),
+            issuer_event_sequence_id: Some(1),
+            issuer_audit_hash: Some("hash-issuer".to_string()),
+            executor_event_sequence_id: Some(2),
+            executor_audit_hash: Some("hash-executor".to_string()),
+            error: None,
+        };
+
+        let json = serde_json::to_value(&output).expect("serializar");
+        let object = json.as_object().expect("el JSON debe ser un objeto");
+
+        let allowed_keys = [
+            "ok",
+            "outcome",
+            "denial_reason",
+            "local_effect",
+            "issuer_event_sequence_id",
+            "issuer_audit_hash",
+            "executor_event_sequence_id",
+            "executor_audit_hash",
+            "error",
+        ];
+        for key in object.keys() {
+            assert!(allowed_keys.contains(&key.as_str()), "clave no permitida en el output: '{key}'");
+        }
+
+        let json_lowercase = serde_json::to_string(&output).expect("serializar").to_lowercase();
+        for forbidden in [
+            "password", "api_key", "api-key", "broker_secret", "private_key",
+            "signing_key", "investor_password", "master_secret", "192.168.", "10.0.0.",
+        ] {
+            assert!(!json_lowercase.contains(forbidden), "el output no debe contener '{forbidden}'");
+        }
     }
 }

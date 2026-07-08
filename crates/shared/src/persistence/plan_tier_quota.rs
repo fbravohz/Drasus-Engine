@@ -69,6 +69,7 @@ pub struct NewPlan {
     pub tier: PlanTier,
     pub notional_limit: i64,
     pub max_activations: i64,
+    pub max_child_accounts: i64,
     pub price: i64,
     pub pricing_model: PricingModel,
     pub features_enabled: Vec<String>,
@@ -91,6 +92,7 @@ pub struct Plan {
     pub tier: PlanTier,
     pub notional_limit: i64,
     pub max_activations: i64,
+    pub max_child_accounts: i64,
     pub price: i64,
     pub pricing_model: PricingModel,
     pub features_enabled: Vec<String>,
@@ -124,6 +126,7 @@ impl<'a> PlanRepository<'a> {
             tier: Some(new_plan.tier),
             notional_limit: new_plan.notional_limit,
             max_activations: new_plan.max_activations,
+            max_child_accounts: new_plan.max_child_accounts,
             price: new_plan.price,
             pricing_model: new_plan.pricing_model,
             features_enabled: &new_plan.features_enabled,
@@ -152,14 +155,15 @@ impl<'a> PlanRepository<'a> {
             new_plan.price,
             new_plan.pricing_model,
             &features_json,
+            new_plan.max_child_accounts,
         );
 
         sqlx::query(
             "INSERT INTO plans (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                 owner_id, institutional_tag, node_id, \
-                tier, notional_limit, max_activations, price, pricing_model, features_enabled\
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                tier, notional_limit, max_activations, price, pricing_model, features_enabled, max_child_accounts\
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&id)
         .bind(now_ns)
@@ -176,6 +180,7 @@ impl<'a> PlanRepository<'a> {
         .bind(new_plan.price)
         .bind(new_plan.pricing_model.as_str())
         .bind(&features_json)
+        .bind(new_plan.max_child_accounts)
         .execute(self.pool)
         .await?;
 
@@ -192,6 +197,7 @@ impl<'a> PlanRepository<'a> {
             tier: new_plan.tier,
             notional_limit: new_plan.notional_limit,
             max_activations: new_plan.max_activations,
+            max_child_accounts: new_plan.max_child_accounts,
             price: new_plan.price,
             pricing_model: new_plan.pricing_model,
             features_enabled: canonical_features,
@@ -203,7 +209,7 @@ impl<'a> PlanRepository<'a> {
         let row = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                     owner_id, institutional_tag, node_id, \
-                    tier, notional_limit, max_activations, price, pricing_model, features_enabled \
+                    tier, notional_limit, max_activations, price, pricing_model, features_enabled, max_child_accounts \
              FROM plans WHERE id = ?",
         )
         .bind(id)
@@ -225,7 +231,7 @@ impl<'a> PlanRepository<'a> {
         let row = sqlx::query(
             "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                     owner_id, institutional_tag, node_id, \
-                    tier, notional_limit, max_activations, price, pricing_model, features_enabled \
+                    tier, notional_limit, max_activations, price, pricing_model, features_enabled, max_child_accounts \
              FROM plans WHERE tier = ? ORDER BY created_at DESC LIMIT 1",
         )
         .bind(tier.as_str())
@@ -263,6 +269,10 @@ impl<'a> PlanRepository<'a> {
             tier: Some(plan.tier),
             notional_limit: new_notional_limit,
             max_activations: new_max_activations,
+            // `update_limits` revisa nocional/activaciones/precio; la cuota de
+            // cuentas hijas se conserva (STORY-042). Se re-valida con su valor
+            // vigente para no reintroducir una fila inválida.
+            max_child_accounts: plan.max_child_accounts,
             price: new_price,
             pricing_model: plan.pricing_model,
             features_enabled: &plan.features_enabled,
@@ -284,6 +294,7 @@ impl<'a> PlanRepository<'a> {
             new_price,
             plan.pricing_model,
             &features_json,
+            plan.max_child_accounts,
         );
 
         // La guarda `row_version = ?` es la comparación optimista: solo
@@ -355,6 +366,7 @@ fn row_to_plan(row: sqlx::sqlite::SqliteRow) -> Result<Plan, PlanRepositoryError
         tier,
         notional_limit: row.get("notional_limit"),
         max_activations: row.get("max_activations"),
+        max_child_accounts: row.get("max_child_accounts"),
         price: row.get("price"),
         pricing_model,
         features_enabled,
@@ -381,6 +393,7 @@ mod tests {
             tier: PlanTier::Free,
             notional_limit: 1_000_000_000_000, // $10,000.00 * 1e8
             max_activations: 1,
+            max_child_accounts: 0, // FREE no puede crear cuentas maestras hijas
             price: 0,
             pricing_model: PricingModel::Flat,
             features_enabled: vec![],
@@ -395,6 +408,7 @@ mod tests {
             tier: PlanTier::Paid,
             notional_limit: 100_000_000_000_000, // $1,000,000.00 * 1e8
             max_activations: 3,
+            max_child_accounts: 5, // PAID puede crear hasta 5 cuentas maestras hijas (stub; la Cabina fija el valor real por tier)
             price: 4_900_000_000, // $49.00 * 1e8
             pricing_model: PricingModel::Flat,
             features_enabled: vec!["priority_support".to_string()],
