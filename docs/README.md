@@ -182,6 +182,10 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**third-party-api-gateway**](./features/third-party-api-gateway.md) | Capa gRPC pública con autenticación y rate-limit que expone certificación, feeds y ejecución a terceros; extiende ADR-0142 (ADR-0144, cimiento #8). | Cabina de Mando / substrato |
 | [**data-aggregation**](./features/data-aggregation.md) | Anonimiza (privacidad diferencial + hash) y agrega datos de ejecución consentidos en índices vendibles (sentimiento, régimen, fricción, correlación); ADR-0102/0144, cimiento #9. | Cabina de Mando / substrato |
 | [**verified-account-registry**](./features/verified-account-registry.md) | Cuentas Verificadas Drasus (análogo a myFXbook / MT5 Signals): unifica N cuentas de trading bajo una identidad, con atestación soberana (hash chain de ejecución propia) + read-only al bróker, y track record publicable opt-in independiente del tier (ADR-0145, cimiento #10). | Cabina de Mando / substrato |
+| [**instance-continuity**](./features/instance-continuity.md) | Respaldo cifrado client-side de la DB local + maestro itinerante (relevo de custodia entre máquinas activadas de la misma cuenta, sin dos escritores a la vez); promovida del moonshot `encrypted-local-backup` (ADR-0146, cimiento #11). | Cabina de Mando / substrato |
+| [**master-account-hierarchy**](./features/master-account-hierarchy.md) | Cuenta maestra raíz (fondo) con autoridad de auditoría/override sobre cuentas maestras hijas autónomas (cada una con su propio Plano de Control); comandos cifrados sobre el relé genérico, doble atestación del override (ADR-0147, cimiento #12). | Cabina de Mando / substrato |
+| [**data-portability**](./features/data-portability.md) | Catálogo declarativo de tablas con `owner_id` + registro de solicitudes de exportación/olvido; derecho de acceso/portabilidad/supresión (GDPR Art. 15/17/20), obligación legal transversal (ADR-0148, cimiento #13). | Cabina de Mando / substrato |
+| [**operator-roles**](./features/operator-roles.md) | Roles de operador a la carta dentro de una cuenta maestra: matriz de capacidades gateada por puerto de Feature (no por módulo), asignable a humanos o agentes LLM vía MCP; cascada de autoridad del fondo sobre cuentas hijas (ADR-0149, cimiento #14). | Cabina de Mando / substrato |
 
 ---
 
@@ -212,7 +216,7 @@ Proyectos de investigación avanzada y alta complejidad.
 | [**distributed-edge-execution**](./moonshots/distributed-edge-execution.md) | Topología de ejecución distribuida: un nodo satélite por bróker (geo-localizable) con control central Local-First, DR por S3 y split control/ejecución (ADR-0119). |
 | [**drl-parameter-tuning**](./moonshots/drl-parameter-tuning.md) | Ajuste de parámetros mediante Reinforcement Learning |
 | [**drl-portfolio-optimization**](./moonshots/drl-portfolio-optimization.md) | Es la optimización de portafolios usando DRL (Deep Reinforcement Learning). Entrena un agente que toma decisiones de asignación de capital dinámicas... |
-| [**encrypted-local-backup**](./moonshots/encrypted-local-backup.md) | Respaldo de la DB soberana del escritorio cifrado en el cliente (AES-256-GCM) hacia S3/R2: el proveedor almacena un blob que no puede leer — perk del tier de pago coherente con la soberanía (ADR-0143/0093). |
+| [**encrypted-local-backup**](./moonshots/encrypted-local-backup.md) | ⚠️ Superado por ADR-0146 — promovido a cimiento #11 [`instance-continuity`](./features/instance-continuity.md). Archivo histórico, no se actualiza más. |
 | [**figma-style-canvas**](./moonshots/figma-style-canvas.md) | Es el lienzo de diseño visual tipo Figma que permite construir estrategias arrastrando nodos, conectando, scalando, anidando. Implementa un edito... |
 | [**fix-api-execution**](./moonshots/fix-api-execution.md) | Ejecución institucional FIX API, Edge Computing y simulación de impacto de mercado (SOR) |
 | [**fuzzy-logic-evaluator**](./moonshots/fuzzy-logic-evaluator.md) | Es el evaluador de lógica borrosa (fuzzy logic) que permite reglas suaves ("casi buy", "moderadamente bullish") en lugar de binarias. Implementa... |
@@ -401,6 +405,10 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0143**](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central |
 | [**ADR-0144**](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después) |
 | [**ADR-0145**](./adr/ADR-0145.md) | Pilar de Cuentas Verificadas Drasus — atestación soberana + read-only al bróker + registro multi-cuenta (cimiento #10) + track record publicable; enmienda ADR-0143, acota ADR-0001 al monolito |
+| [**ADR-0146**](./adr/ADR-0146.md) | Continuidad y Portabilidad de Instancia — Respaldo Cifrado como Cimiento #11 + Maestro Itinerante (Relevo de Custodia) |
+| [**ADR-0147**](./adr/ADR-0147.md) | Jerarquía Organizacional de Cuentas Maestras — Fondo con Auditoría/Override sobre Cuentas Maestras Hijas (cimiento #12) |
+| [**ADR-0148**](./adr/ADR-0148.md) | Portabilidad y Exportación de Datos del Usuario — Cimiento #13 (Derecho de Acceso/Portabilidad/Olvido, GDPR Art. 15/17/20) |
+| [**ADR-0149**](./adr/ADR-0149.md) | Roles de Operador a la Carta — Control de Acceso Granular por Puerto de Feature, Cascada de Autoridad Jerárquica (cimiento #14) |
 
 ---
 

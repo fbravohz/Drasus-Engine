@@ -1,5 +1,7 @@
 # Respaldo Cifrado de la DB Local (Encrypted Local Backup)
 
+> ⚠️ **Superado por ADR-0146 (2026-07-06) — promovido de moonshot a cimiento #11.** Ya no es un adaptador diferido sin fecha: se construye su contrato/esquema ahora, en la misma pasada de fundaciones que el resto del substrato de monetización, con un mecanismo adicional (maestro itinerante / relevo de custodia). La especificación canónica vive en [`instance-continuity`](../features/instance-continuity.md). Este archivo queda como registro histórico de la idea original; no se actualiza más.
+
 **Carpeta:** `./moonshots/encrypted-local-backup/`
 **Estado:** Archivada como Moonshot (adaptador de durabilidad — puerto/contrato listo, sin implementación)
 **Última actualización:** 2026-07-05

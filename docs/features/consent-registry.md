@@ -9,24 +9,31 @@
 
 ## ¿Qué es esta feature?
 
-El registro **versionado y fechado** de aceptación de Términos y Condiciones, con granularidad opt-in/opt-out por tipo de dato. Es la columna vertebral legal del modelo: el firehose del tier gratuito (ADR-0143) y toda venta de datos agregados (ADR-0102/0144) son legales **solo si** hay consentimiento registrado.
+El registro **versionado y fechado** de aceptación de Términos y Condiciones. Es la columna vertebral legal del modelo: el firehose del tier gratuito (ADR-0143) y toda venta de datos agregados (ADR-0102/0144) son legales **solo si** hay consentimiento registrado.
 
-- **Problema:** usar o vender datos del usuario sin consentimiento explícito y probable es ilegal (GDPR y equivalentes).
-- **Comportamiento observable:** el usuario acepta un ToS con versión concreta; queda registrado con fecha; puede ajustar opt-outs granulares.
+- **Problema:** usar o vender datos del usuario sin base legal probable es ilegal (GDPR y equivalentes).
+- **Comportamiento observable:** el usuario acepta un ToS con versión concreta; queda registrado con fecha; puede ajustar opt-outs granulares **solo en las categorías genuinamente opcionales**.
 - **Por qué:** sin este registro, el negocio de datos no existe legalmente.
+
+> **Dos categorías de consentimiento, NO intercambiables (decisión del propietario 2026-07-07, base legal GDPR Art. 6/7):**
+> 1. **Gate de tier (obligatorio, ToS, NO es "consentimiento" revocable en sentido GDPR):** el firehose de trabajo/PI del tier gratuito (Clase 1, ADR-0143) y el control/licencia/anti-abuso (Clase 3, todos los tiers) son la **contraprestación contractual** del tier elegido — base legal Art. 6(1)(b) "necesario para la ejecución del contrato", no Art. 6(1)(a) "consentimiento". Aceptar el ToS es binario: **si el usuario no acepta, no usa Drasus en ese tier** — la alternativa real es el tier de pago (que suprime el firehose). Esto NUNCA tiene un toggle de opt-out granular dentro del tier gratuito: desactivar el firehose sin pagar rompería tanto el modelo de negocio como el principio legal (sería dar gratis lo que el ToS declara como su contraprestación).
+> 2. **Consentimiento genuino (opt-in real, siempre revocable, NUNCA condiciona el acceso al servicio):** categorías que NO son necesarias para prestar el servicio — hoy, la publicación del track record (Clase 5, `verified-account-registry` #10, opt-in independiente del tier, ADR-0145) y cualquier futura categoría de la misma naturaleza (ej. comunicaciones de marketing). Aquí SÍ aplica el opt-out/opt-in granular; forzarlo como condición de acceso violaría Art. 7(4) GDPR (prohibición de "bundling" de consentimiento).
+>
+> El campo `optout_map` de este registro (ver Persistencia) modela **solo la categoría 2**. La categoría 1 se resuelve en `licensing-system`/`plan-tier-quota` (qué tier tiene el usuario), no aquí.
 
 ## Comportamientos Observables
 
-- Cuando el usuario gratuito acepta el ToS → se registra la versión aceptada con fecha; sin ello, no opera.
+- Cuando el usuario acepta el ToS → se registra la versión aceptada con fecha; sin ello, no opera en ningún tier (gate obligatorio, no granular).
 - Cuando cambia la versión del ToS → se exige re-aceptación antes de continuar.
-- Cuando el usuario ajusta un opt-out granular (ej. "no usar mis datos para X") → el pipeline de agregación lo respeta.
+- Cuando el usuario ajusta un opt-out granular en una categoría **genuinamente opcional** (ej. Clase 5, publicación del track record) → el pipeline correspondiente lo respeta. **Esto NUNCA incluye el firehose del tier gratuito** — ese no es ajustable por el usuario, es inherente al tier.
 - Cuando se audita el consentimiento de un dato → se puede probar qué versión aceptó el usuario y cuándo.
 
 ## Restricciones
 
-- NUNCA se procesa dato del usuario sin un consentimiento vigente que lo cubra.
+- NUNCA se procesa dato del usuario sin base legal vigente que lo cubra (ToS del tier, o consentimiento granular en categorías opcionales).
 - El registro de consentimiento es append-only (inmutable, auditable).
-- NUNCA se asume consentimiento por defecto para venta a terceros: el opt-out granular manda.
+- NUNCA se asume consentimiento por defecto para venta a terceros fuera del gate de tier: el opt-out granular de categorías opcionales manda.
+- NUNCA se ofrece un opt-out granular sobre datos que son la contraprestación contractual del tier gratuito (categoría 1) — eso se resuelve cambiando de tier, no con un toggle.
 
 ## Parámetros Configurables (ADR-0008)
 
@@ -81,5 +88,5 @@ Registro append-only (`event_sequence_id UNIQUE`) con Grupo I + Perfil D. Campos
 ## Dependencias y Bloqueantes
 
 - **Depende de:** `central-identity` (`owner_id`).
-- **Bloquea a:** `data-aggregation` (no agrega sin consentimiento) y el firehose de `enriched-domain-events`.
+- **Bloquea a:** `data-aggregation` (no agrega sin consentimiento), el firehose de `enriched-domain-events`, y [`data-portability`](data-portability.md) (#13, el registro de aceptación de ToS/opt-outs forma parte de lo exportable).
 - **Contrato de Integración UI (ADR-0117) — Superficie propia:** pantalla de ToS + panel de opt-outs. SVF: aceptar el ToS dispara el registro real vía `public_interface`; el panel muestra la versión aceptada y la fecha; tras recargar, persiste.

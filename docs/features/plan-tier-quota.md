@@ -7,6 +7,8 @@
 **Última actualización:** 2026-07-04
 **Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #3) · ADR-0008 (configurabilidad)
 
+> ✅ **Extensión RESUELTA por [STORY-042](../execution/STORY-042-plan-tier-quota-max-child-accounts.md) (2026-07-07, ADR-0149 #14 `operator-roles`) — DEBT-017 pagada.** El catálogo de cuotas ahora incluye `max_child_accounts` — cuántas cuentas maestras hijas puede crear un fondo bajo `master-account-hierarchy` (#12), fijado **solo por el propietario de Drasus** según el tier (autoridad en la Cabina de Mando, diferida), nunca por el fondo. Mismo mecanismo que `notional_limit`/`max_activations`: columna en `plans` (migración `0009` in-situ, `CHECK >= 0`), campo en `PlanCandidate`/`PlanSnapshot`/`PlanLimits`, sellado en `compute_plan_audit_hash`, sembrado por tier (FREE=`0` sin hijas, PAID=`5` en el stub) y expuesto en el CLI `verify plan-tier-quota`. `0` es valor válido (tier sin cuentas hijas); solo se rechaza `< 0`. Auditoría TL + QA por mutación.
+
 ## ¿Qué es esta feature?
 
 El **catálogo configurable de planes** y sus límites. Un plan es dato, no código: define el tier, sus cuotas (volumen nocional permitido, activaciones simultáneas, features habilitadas) y su precio. Permite cambiar la estructura de precios sin recompilar.
@@ -79,5 +81,5 @@ Tabla de planes con Grupo I + Perfil D. Campos propios fuera del catálogo (marc
 
 ## Dependencias y Bloqueantes
 
-- **Bloquea a:** `licensing-system` (necesita límites de activación) y `usage-metering` (necesita límite de nocional).
+- **Bloquea a:** `licensing-system` (necesita límites de activación), `usage-metering` (necesita límite de nocional), [`master-account-hierarchy`](master-account-hierarchy.md) (#12, necesita `MAX_CHILD_ACCOUNTS`) y [`operator-roles`](operator-roles.md) (#14, gatea la creación de cuentas hijas contra esa misma cuota).
 - **Contrato de Integración UI (ADR-0117) — Ventana de Verificación:** su observable (catálogo de planes y límites vigentes) queda visible en el panel de licencia de `licensing-system`; hasta entonces, deuda de integración registrada.

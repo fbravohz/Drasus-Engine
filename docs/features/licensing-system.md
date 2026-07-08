@@ -38,6 +38,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
   * El usuario puede **desvincular** una máquina (huella de hardware) desde su Plano de Control para liberar un cupo de activación y reclamarlo en otra máquina (self-service, sin intervención del proveedor).
   * La invalidación de la máquina desvinculada es autoritativa en la Cabina de Mando (adaptador de red diferido); localmente, la máquina liberada degrada su gate en el siguiente heartbeat.
   * Un cupo liberado no se puede reclamar hasta pasado `TRANSFER_COOLDOWN`, evitando la rotación de una licencia por muchas máquinas.
+  * **Si la máquina desvinculada está destruida (disco muerto, ADR-0146):** el usuario no puede operar esa máquina para desvincularla — la liberación se hace desde el **panel de cuenta en la Cabina de Mando** (diferido), tras verificación de identidad. [`instance-continuity`](instance-continuity.md) (#11) reutiliza este mismo flujo self-service para liberar, además del cupo de activación, la **titularidad de custodia** de la cadena de auditoría.
 
 * **Cambio de Tier a Mitad de Ciclo (downgrade — garantía reduce-only):**
   * Si el usuario baja de tier a mitad de ciclo, el nuevo límite aplica **hacia adelante**; el contador de nocional del ciclo (`usage-metering`, append-only) **no se reinicia** por el cambio.

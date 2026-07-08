@@ -8,7 +8,7 @@
 | Canal | Qué es | Estado |
 |---|---|---|
 | **#1 — Flutter / SVF** | Tab en el *Banco de Verificación* de la app que ejercita el backend **real por FFI**; se prueba con el ratón. | Parcial (solo `sovereign-data-fetcher`) |
-| **#2 — CLI `verify`** (ADR-0142) | `cargo run -p app -- verify <feature> --input '<json>'`; imprime el observable en JSON. | Activo (9 features del substrato + `sovereign-data-fetcher`) |
+| **#2 — CLI `verify`** (ADR-0142) | `cargo run -p app -- verify <feature> --input '<json>'`; imprime el observable en JSON. | Activo (12 cimientos del substrato + `sovereign-data-fetcher`) |
 | **#3 — API de red / Postman** | Colección Postman/grpcurl contra el servidor gRPC público. | ⛔ **No implementado** (ver §Pendientes) |
 | **Automatizado** | `cargo test` + `cargo llvm-cov`; la red de seguridad, no la prueba manual. | Activo |
 
@@ -104,14 +104,15 @@ cargo test -p shared licensing_system
 
 ### `plan-tier-quota` — cimiento #3  ✅ backend · ⏳ SVF/galería
 
-**Puerto:** `plan_limits_out` → `PlanLimits` por tier.
+**Puerto:** `plan_limits_out` → `PlanLimits` por tier. Cuotas: `notional_limit`, `max_activations`, y **`max_child_accounts`** (cuentas maestras hijas bajo #12, STORY-042 — FREE=`0`, PAID=`5` en el stub; fijado por el proveedor, no por el fondo). `0` es válido (tier sin cuentas hijas).
 
 ```bash
-cargo run -p app -- verify plan-tier-quota --input '{"tier":"FREE"}'
+# PAID expone max_child_accounts:5; FREE expone 0
+cargo run -p app -- verify plan-tier-quota --input '{"tier":"PAID"}'
 cargo test -p shared plan_tier_quota
 ```
 
-Campos del JSON: `tier?` (default `FREE`).
+Campos del JSON: `tier?` (default `FREE`). Salida: `notional_limit`, `max_activations`, `max_child_accounts`, `features_enabled`.
 
 - **Canal #1 (SVF):** ⏳ pendiente (DEBT-005). · **Canal #3:** N/A.
 
@@ -196,6 +197,52 @@ cargo test -p shared data_aggregation
 Campos: `seed` (semilla del RNG, determinismo) · `min_cohort` (k-anonimato) · `external_sale_enabled` · `events: [{metric_e8 (×10⁸), consent}]`.
 
 - **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel de índices agregados + tamaño de cohorte. · **Canal #3:** vía #8 (diferido).
+
+### `verified-account-registry` — cimiento #10 (pilar Cuentas Verificadas)  ✅ backend · ⏳ SVF/galería
+
+**Puerto:** `event_in`/`consent_in`/`registry_out`/`track_record_out` → track record verificado por cuenta. **gain% EXCLUYE el flujo de capital** (diferenciador ADR-0145); **dos ejes ortogonales:** Eje A `SOVEREIGN` (atestado por Drasus) vs `BROKER_READONLY` (reportado por bróker) **inviolable** (`is_attested_by_drasus`), cruzado con Eje B realidad de capital `LIVE`/`PAPER`/`DEMO`/`CHALLENGE` (`is_real_capital`, `true` solo LIVE) — **el Eje B vive en `institutional_tag`** (Grupo II, ADR-0020, sin columna `capital_reality` — consolidado por STORY-041/DEBT-016); un track `SOVEREIGN`+`PAPER` es atestado pero de capital virtual, nunca se muestra sin ambas etiquetas; publicación opt-in con `consent_out` real de #5 (default PRIVATE); secretos nunca en el registro (ADR-0093). Requiere `--input`.
+
+```bash
+# Depósito NO cuenta como ganancia; track PRIVATE por default. Eje A SOVEREIGN (is_attested_by_drasus:true) × Eje B PAPER (is_real_capital:false) — atestado pero capital virtual. El Eje B se pasa como institutional_tag
+cargo run -p app -- verify verified-account-registry --input '{"account":{"broker":"ICMarkets","currency":"USD","account_type":"OWN","institutional_tag":"PAPER"},"scope":"SOVEREIGN","consent":"COVERED","events":[{"type":"CapitalFlow","sign":"DEPOSIT","amount_e8":35000000000},{"type":"OrderExecuted","pnl_e8":15000000000}]}'
+cargo test -p shared verified_account
+```
+
+Campos: `account: {broker, currency, account_type (FUNDED/PROP/OWN), institutional_tag (LIVE|PAPER|DEMO|CHALLENGE = Eje B realidad de capital, default LIVE)}` · `scope (SOVEREIGN|BROKER_READONLY = Eje A)` · `consent` · `events: [{type: CapitalFlow|OrderExecuted|AccountSnapshot, ...}]` (montos ×10⁸). La salida expone la etiqueta `capital_reality` + `is_real_capital` derivadas de `institutional_tag`.
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel de cuentas verificadas (**Superficie propia**, no plomería). · **Canal #3:** vía #8 (diferido). Portal público = repo aparte (ADR-0145).
+
+---
+
+### `instance-continuity` — cimiento #11 (respaldo cifrado + maestro itinerante)  ✅ backend · ⏳ SVF
+
+**Puerto:** `identity_in`/`backup_blob_out`/`custody_status_out`. **Cripto client-side real** (ADR-0093): KDF `Argon2id` desde el secreto maestro + cifrado autenticado **AES-256-GCM** con **nonce sembrado inyectado** (determinista en test, aleatorio en prod); la clave y el secreto maestro **jamás** se persisten ni salen. `compute_backup_delta` **excluye** secretos de bróker/IPs live. **Gate de titularidad exclusiva** (`custody_epoch`→`CustodyConflict`): exactamente una máquina escritora de la cadena a la vez. Dos tablas: `instance_backups` append-only atómica + `custody_state` mutable. Requiere `--input`.
+
+```bash
+# Round-trip de cifrado (round_trip_ok:true) + reclamo de titularidad (CLAIMED/CustodyConflict); jamás emite la clave ni el secreto
+cargo run -p app -- verify instance-continuity --input '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'
+cargo test -p shared instance_continuity
+```
+
+Campos: `master_secret` (nunca se re-emite) · `plaintext` · `nonce_seed` (siembra determinista) · `custody: {titular_node_id, custody_epoch}` · `my_node_id`. Salida: `round_trip_ok`, `nonce_hex`, `blob_hash`, `custody_claim_outcome`, `is_titular_before_claim` — sin clave ni secreto.
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — toggle de respaldo + indicador de titularidad en el cajón de ajustes (**Superficie propia**). · Adaptador de almacén de objetos (S3/R2) y liberación forzada central diferidos.
+
+---
+
+### `master-account-hierarchy` — cimiento #12 (fondo raíz → cuentas maestras hijas)  ✅ backend · ⏳ SVF
+
+**Puerto:** `identity_in`/`consent_in`/`override_command_out`/`override_attestation_out`. **Gate de consentimiento** (`decide_override_authorization`): un override del fondo sobre una hija se ejecuta **solo si** el `ConsentVerdict` **real** de #5 es `Covered` — sin opt-in vigente se **deniega** y ambos lados atestan el intento denegado. **Doble atestación**: `issue_override` (lado fondo, `ISSUER`) + `receive_override` (lado hija, `EXECUTOR`) encadenan cada uno en su propia cadena append-only (`override_attestations`, atómica) — **cada lado re-consulta el consentimiento por su cuenta**, nunca se pasan el veredicto (la hija conserva su Plano de Control). **"Eliminar" = archivar** (`LocalEffect` sin variante de borrado, ADR-0141). Jerarquía = `parent_owner_id` **nullable** cacheado (puntero anti-`tenant_id`, no árbol). El relé cifrado (ADR-0143) que transporta el comando fondo→hija es adaptador de red **diferido**. Requiere `--input`.
+
+```bash
+# Override ARCHIVE con consentimiento COVERED → outcome EXECUTED + local_effect ARCHIVED + ambas atestaciones (ISSUER/EXECUTOR); con NotCovered → DENIED en ambos lados
+cargo run -p app -- verify master-account-hierarchy --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'
+cargo test -p shared master_account_hierarchy
+```
+
+Campos: `parent_owner_id` (fondo) · `child_owner_id` (hija) · `node_id` · `consent` (verdict de #5) · `command_kind` (`ARCHIVE`|`MODIFY`|`REQUEST_AUDIT_REPORT`) · `target_ref` · `justification`. Salida: `outcome` (`EXECUTED`|`DENIED`), `denial_reason`, `local_effect` (`ARCHIVED`|`NO_EFFECT`), `issuer_*`/`executor_audit_hash` + `event_sequence_id` — sin secretos (ADR-0093).
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel consolidado de cuentas hijas del fondo (auditoría + emisión de override) + indicador "reporta a `<Fondo>`" en la hija (**Superficie propia**). · Relé cifrado (adaptador de red) y venta a fondos diferidos.
 
 ---
 

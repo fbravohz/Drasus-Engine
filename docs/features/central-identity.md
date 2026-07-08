@@ -21,12 +21,15 @@ La cuenta del usuario en la **Cabina de Mando Central** del proveedor (ADR-0143)
 - Cuando el usuario inicia sesión con identidad federada (Google/GitHub) → el sistema crea o vincula la cuenta a esa identidad.
 - Cuando el motor local arranca → consulta a la Cabina de Mando la identidad vinculada y la cachea para operación offline.
 - Cuando se crean N identidades desde el mismo hardware → se marcan para revisión anti-abuso (señal, no bloqueo automático).
+- Cuando el registro proviene de una jurisdicción en lista de sanciones/restricción (OFAC y equivalentes) → el registro se bloquea en el gate de la Cabina de Mando **antes** de crear la cuenta (nota legal 2026-07-07, auditoría de cobertura del substrato; screening estándar para cualquier SaaS que cobra internacionalmente — no requiere cimiento propio, es un gate de datos en este mismo registro + `licensing-system` #2).
+- Cuando el usuario corrige un dato de perfil inexacto (correo, nombre) → se sobreescribe directamente (derecho de rectificación, GDPR Art. 16); esto **no aplica** a registros financieros/de auditoría append-only (`verified-account-registry` #10, `usage-metering` #4), donde una corrección es una fila nueva que enmienda, nunca una edición de la fila vieja — la integridad de la cadena de hash lo exige.
 
 ## Restricciones
 
 - NUNCA se almacena la contraseña en texto plano (hash con sal, estándar).
 - NUNCA se exfiltran secretos de bróker ni IPs de servidores live junto a la identidad (ADR-0093).
 - La cuenta es del plano central; el motor local nunca es fuente de verdad de identidad — solo cachea.
+- NUNCA se completa un registro desde una jurisdicción sancionada sin pasar el gate de screening (nota legal, no cimiento propio — ver Comportamientos Observables).
 
 ## Parámetros Configurables (ADR-0008)
 
@@ -82,6 +85,6 @@ Tabla de cuenta con Grupo I (`id`, `created_at`, `updated_at`, `audit_hash`, `au
 
 ## Dependencias y Bloqueantes
 
-- **Bloquea a:** `licensing-system`, `usage-metering`, `consent-registry` (todas necesitan `owner_id`).
+- **Bloquea a:** `licensing-system`, `usage-metering`, `consent-registry` (todas necesitan `owner_id`), [`instance-continuity`](instance-continuity.md) (#11, a qué cuenta pertenece el blob y la titularidad), [`master-account-hierarchy`](master-account-hierarchy.md) (#12, cachea `parent_owner_id` — la jerarquía fondo→hija vive en este plano central, nunca calcada localmente), [`data-portability`](data-portability.md) (#13, `owner_id` es la llave de todo export/olvido).
 - **Anti-abuso multi-cuenta (grafo de colisión — diferido a la Cabina de Mando):** localmente esta feature solo **emite** la huella de hardware y una señal cuando N identidades comparten máquina (observable arriba). La **correlación cross-cuenta** — grafo de huellas → detección de granjas de cuentas gratuitas desde el mismo hardware, y (más adelante) patrones de comportamiento (mismos instrumentos/horarios/estrategias en cuentas distintas) — es responsabilidad del **servidor central**, diferida junto con él. El puerto ya expone la huella; el detector de colisión es un adaptador del plano central (puerto ahora, adaptador después, ADR-0144). La variante por comportamiento (ML) requiere volumen de datos y es trabajo lejano (EPIC-9+).
 - **Contrato de Integración UI (ADR-0117) — Ventana de Verificación:** su observable (cuenta vinculada + estado de verificación) queda visible en el panel de cuenta del cajón de ajustes; hasta que exista, se registra como deuda de integración contra la feature consumidora `licensing-system`.

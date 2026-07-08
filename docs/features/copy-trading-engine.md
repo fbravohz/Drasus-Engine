@@ -3,7 +3,9 @@
 **Carpeta:** `./features/copy-trading-engine/`  
 **Estado:** En Diseño  
 **Última actualización:** 2026-06-04  
-**Decisión Arquitectónica Asociada:** ADR-0092 (Copy-Trading mediante Relé Ciego de Señales)
+**Decisión Arquitectónica Asociada:** ADR-0092 (Copy-Trading mediante Relé Ciego de Señales) · ADR-0143 (relé cifrado genérico de la Cabina de Mando)
+
+> 🔶 **Enmendado por ADR-0143 (2026-07-06):** el "Signal Relay" deja de ser un servidor dedicado de esta feature — se reutiliza el relé cifrado genérico de la Cabina de Mando (mismo canal saliente de identidad/licencia/telemetría, generalizado a mensajería dirigida zero-knowledge). La disciplina criptográfica (AES-256-GCM, HMAC-SHA256, cero conocimiento, sin puertos entrantes) no cambia.
 
 ---
 
@@ -59,7 +61,7 @@ El copy-trading tradicional peer-to-peer (P2P) directo satura el ancho de banda 
 *   **Risk Scaler Engine:** Algoritmo matemático puro que toma la cantidad del máster, el capital de ambas partes, el ATR del activo y los parámetros de riesgo del copier para retornar la cantidad exacta a enviar al broker (retorna 0 si es inferior al lote mínimo del broker).
 
 ### Shell (Infraestructura)
-*   **Conector del Relé (Client):** Gestor de la conexión socket (WebSocket/gRPC) para mantener el canal abierto hacia el Signal Relay.
+*   **Conector del Relé (Client):** Gestor de la conexión socket (WebSocket/gRPC) para mantener el canal abierto hacia el relé cifrado genérico de la Cabina de Mando (ADR-0143).
 *   **Manejador de Señales (Orquestador):** Descompone la señal entrante en el copier, valida la firma, ejecuta el risk scaling local y despacha la orden al orquestador del módulo `execute`.
 
 ### Frontera Pública
@@ -107,8 +109,8 @@ El copy-trading tradicional peer-to-peer (P2P) directo satura el ancho de banda 
     *   No se puede enviar ningún dato de la orden sin cifrado previo.
     *   No se permiten conexiones entrantes al socket del Master.
 
-### **TTR-002: Autenticación y distribución asíncrona en el Signal Relay**
-*   **¿Cuál es el problema?** El servidor relé necesita validar la legitimidad de las conexiones de los copiers y redistribuir los payloads cifrados con latencia mínima sin tener acceso a la clave simétrica de encriptación.
+### **TTR-002: Autenticación y distribución asíncrona en el relé cifrado genérico de la Cabina de Mando**
+*   **¿Cuál es el problema?** El relé (componente compartido de la Cabina de Mando, ADR-0143 — no un servidor dedicado a copy-trading) necesita validar la legitimidad de las conexiones de los copiers y redistribuir los payloads cifrados con latencia mínima sin tener acceso a la clave simétrica de encriptación.
 *   **¿Qué tiene que pasar?** El relé valida las claves criptográficas firmadas por el Master de los copiers en la conexión inicial HTTPS. Una vez establecida la sesión WebSocket/gRPC, el relé recibe los payloads cifrados del máster y los retransmite de forma asíncrona a todos los copiers conectados correspondientes al ID del máster.
 *   **¿Cómo sé que está hecho?**
     *   [ ] Copiers con firmas de clave inválidas o expiradas son rechazados en el handshake inicial.

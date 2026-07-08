@@ -149,3 +149,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor |
 | [ADR-0144](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después); clasifica modelos en cimiento/moonshot-zizaña/descartado |
 | [ADR-0145](./adr/ADR-0145.md) | Pilar de Cuentas Verificadas Drasus — Atestación soberana de ejecución + read-only al bróker + registro multi-cuenta (cimiento #10) + track record publicable |
+| [ADR-0146](./adr/ADR-0146.md) | Continuidad y Portabilidad de Instancia — Respaldo Cifrado como Cimiento #11 + Maestro Itinerante (Relevo de Custodia) |
+| [ADR-0147](./adr/ADR-0147.md) | Jerarquía Organizacional de Cuentas Maestras — Cuenta Maestra Raíz (Fondo) con Autoridad de Auditoría y Override sobre Cuentas Maestras Hijas (cimiento #12) |
+| [ADR-0148](./adr/ADR-0148.md) | Portabilidad y Exportación de Datos del Usuario — Cimiento #13 (Derecho de Acceso/Portabilidad/Olvido, GDPR Art. 15/17/20) |
+| [ADR-0149](./adr/ADR-0149.md) | Roles de Operador a la Carta — Control de Acceso Granular por Puerto de Feature, Cascada de Autoridad Jerárquica (cimiento #14) |

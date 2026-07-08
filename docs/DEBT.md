@@ -105,6 +105,46 @@
 - **Disparador de pago:** (a) test de valor-dorado del ruido con semilla fija; (b) test de contención forzada (compartido con DEBT-011, `SQLITE_BUSY` simulado); (c) al cablear la topología como dimensión real (persistir `topology_hash`) o eliminar el cálculo muerto.
 - **Estado:** Abierta.
 
+### DEBT-013 · Huecos de cobertura en `verified-account-registry` (#10)
+- **Severidad:** 🟡 Baja (test-coverage, no correctitud)
+- **Origen:** gate de QA con mutación en STORY-037 (16 mutantes sobrevivientes de 118).
+- **Descripción:** tres grupos: (a) **ruta de reintento** del append atómico (`is_transient_write_conflict` + límites del loop de `record_track_record`) no ejercitada — **mismo problema sistémico que DEBT-011/012** (WAL+`busy_timeout`); (b) **campos del struct de retorno** de `update_publication_and_scopes` (`updated_at_ns`, `attestation_scopes`) sin aserción tras el update (misma naturaleza que el hueco de `revoke` en DEBT-011); (c) **bordes de `compute_track_record`**: el filtro cross-cuenta del `AccountSnapshot` (`p.account_id == account_id`) no se prueba con snapshots de otra cuenta; `>`→`>=` en drawdown/win-rate sobrevive (no hay trade de PnL cero que distinga "empate" de "ganado"); el signo del capital-base de respaldo (`total_deposits - total_withdrawals`) no se prueba con un retiro presente en la rama sin snapshot.
+- **Impacto actual:** nulo de correctitud — el diferenciador (gain% excluye flujo de capital), la inviolabilidad de ámbitos, el gate de consentimiento y la atomicidad SÍ están cazados (84/118 + la mutación manual de `BEGIN IMMEDIATE` tumba la prueba de 16 escritores). Son bordes y la ruta de reintento sistémica.
+- **Disparador de pago:** (a) compartido con DEBT-011/012 (test de contención forzada con `SQLITE_BUSY` simulado); (b) aserción de los campos del struct tras `update`; (c) tests de borde: snapshot de otra cuenta ignorado, trade de PnL cero (no cuenta como win), capital-base con retiro en la rama sin snapshot. Todos baratos.
+- **Estado:** Abierta.
+
+### DEBT-014 · Retrabajo de #10 — falta el Eje B (realidad de capital) en STORY-037
+- **Severidad:** 🟠 Media (modelado incompleto; una vez exista la superficie de publicación, mostrar un track sin su realidad de capital induce a error — ADR-0145 corregido lo declara "tan grave como confundir el Eje A").
+- **Origen:** corrección de ADR-0145 por el Architect (2026-07-06): la atestación pasó de "dos ámbitos" a **dos ejes ortogonales** — Eje A (autoría: `SOVEREIGN`/`BROKER_READONLY`) × Eje B (realidad de capital: `LIVE`/`PAPER`/`DEMO`/`CHALLENGE`). El código de STORY-037 solo modeló el Eje A.
+- **Descripción:** una cuenta en `PAPER`/`CHALLENGE` corre en el **mismo entorno determinista** que `LIVE` (NO es backtesting) y **sí es atestiguable** — solo con capital virtual, y nunca se presenta sin esa etiqueta. Falta: (1) añadir el campo del Eje B a `verified_accounts` y `attested_track_records` (migración `0016` es greenfield → editable in situ, o migración nueva); (2) el rótulo de publicación siempre muestra **ambos ejes juntos**; (3) test discriminante nuevo ("una cuenta `PAPER` se atestigua con firma, pero jamás se muestra sin la etiqueta de capital virtual"); actualizar la firma reproducible y el `audit_hash` para incluir el Eje B; parámetro `CAPITAL_MODES` (CONFIG).
+- **Impacto actual:** nulo hoy (greenfield, sin superficie de publicación viva — DEBT-005); se vuelve real en cuanto se publique/renderice un track.
+- **Disparador de pago:** Story de retrabajo dedicada (toca código sellado de #10 → exige su propio QA), **antes** de construir la superficie de publicación. Anclado por el Architect en el ROADMAP y en la Feature `verified-account-registry.md` (banner 🔶).
+- **Estado:** ✅ **Pagada** — [STORY-038](./execution/STORY-038-verified-account-capital-reality.md) (2026-07-06): enum `CapitalReality` (Eje B) ortogonal al Eje A, en `verified_accounts` y `attested_track_records` (migración `0016` in situ + CHECK); firma reproducible y ambos `audit_hash` encadenan el Eje B; proyección de puerto expone `capital_reality` + `is_real_capital` (derivado SOLO del Eje B) siempre junto al Eje A; discriminante `SOVEREIGN`+`PAPER` (atestado pero capital virtual) en 3 capas. Auditoría TL aprobada + QA APTO por mutación (80/92 cazados; Eje B 100% cazado; 6 sobrevivientes = bordes de DEBT-013, no nuevos).
+
+### DEBT-015 · #11 `instance-continuity` — `canonical_delta_bytes` sin test de valor-dorado
+- **Severidad:** 🟡 Media (completitud de datos, no seguridad; impacto nulo hoy por greenfield + adaptador de subida diferido, pero un respaldo vacío silencioso sería pérdida de datos al restaurar).
+- **Origen:** QA por mutación de STORY-039 (2026-07-06): 3 sobrevivientes, todos `canonical_delta_bytes -> Vec<u8>` reemplazado por `vec![]`/`vec![0]`/`vec![1]` — los tests no fijan la salida EXACTA de la serialización canónica del delta.
+- **Descripción:** `compute_backup_delta` (el filtro que EXCLUYE secretos) sí está cazado; lo que falta es un test de valor-dorado sobre `canonical_delta_bytes` que ancle los bytes exactos producidos, de modo que un defecto que devolviera bytes triviales/vacíos (respaldo sin contenido) se detecte. Análogo a DEBT-012 (Box-Muller sin valor-dorado).
+- **Impacto actual:** nulo (fase greenfield; el adaptador de subida S3/R2 está diferido, no hay respaldo real aún — STORY-039 §8).
+- **Disparador de pago:** añadir el test de valor-dorado **antes** de construir el adaptador de almacén de objetos (antes de que exista un respaldo real que pudiera salir vacío).
+- **Estado:** Abierta.
+
+### DEBT-016 · #10 `verified-account-registry` — columna `capital_reality` duplica `institutional_tag` (violación de Inundación de Fundaciones)
+- **Severidad:** 🔴 Alta (violación de invariante FIJO — "reutilización antes que creación", ADR-0144/ADR-0020; dos columnas con el mismo dominio de valores en la misma fila).
+- **Origen:** auditoría de Inundación de Fundaciones del Architect (2026-07-07), ratificada en ADR-0145 (banner 🔶) y SAD-22 §22.6. STORY-038 implementó el Eje B como columna nueva `capital_reality` (`LIVE`/`PAPER`/`DEMO`/`CHALLENGE`) coexistiendo con `institutional_tag` (Grupo II, ya presente en ambas tablas de `0016` por Perfil D, poblado con el placeholder `"DRASUS_LOCAL"`).
+- **Descripción:** el Eje B NO es un campo nuevo — es `institutional_tag` (Grupo II — "Environment") con su vocabulario extendido a `LIVE`/`PAPER`/`DEMO`/`CHALLENGE`. Retrabajo: eliminar `capital_reality` de `verified_accounts` y `attested_track_records` (migración `0016` in situ, greenfield), añadir `CHECK` a `institutional_tag`, y ajustar `domain/verified_account_registry.rs` (`CapitalReality`/`is_real_capital` interpretan `institutional_tag`).
+- **Impacto actual:** nulo de comportamiento (el Eje B funciona; QA APTO en STORY-038) — pero es una violación arquitectónica que ensuciaría el esquema y el vocabulario canónico si se congela a BROWNFIELD. Debe corregirse en greenfield.
+- **Disparador de pago:** ahora, antes de commitear #10 (para que git no registre la violación). Toca código sellado → Story dedicada + QA.
+- **Estado:** ✅ **Pagada** — [STORY-041](./execution/STORY-041-verified-account-eje-b-consolidation.md) (2026-07-07): columna `capital_reality` eliminada de ambas tablas (migración `0016` in-situ); `institutional_tag` gana el `CHECK IN ('LIVE','PAPER','DEMO','CHALLENGE')`; `CapitalReality` conservado como intérprete del campo canónico; validación fail-typed `UnknownInstitutionalTag` + dos tests-guardarraíl anti-regresión. Auditoría TL aprobada + QA APTO por mutación (80/92; 6 sobrevivientes = bordes de DEBT-013, ninguno nuevo — cobertura preservada exactamente).
+
+### DEBT-017 · #3 `plan-tier-quota` — falta la cuota `MAX_CHILD_ACCOUNTS`
+- **Severidad:** 🔶 Media (extensión de catálogo pendiente; bloquea a #12/#14 para gatear la creación de cuentas hijas).
+- **Origen:** ADR-0149 (cimiento #14 `operator-roles`, 2026-07-07), banner 🔶 en `plan-tier-quota.md`. El código de STORY-029 no incluye este límite.
+- **Descripción:** añadir `MAX_CHILD_ACCOUNTS` al catálogo de planes — cuántas cuentas maestras hijas puede crear un fondo bajo `master-account-hierarchy` (#12), fijado **solo por el propietario de Drasus** según el tier, nunca por el fondo. Mismo mecanismo que `NOTIONAL_LIMIT`/activaciones máximas — un campo más del plan, no infraestructura nueva.
+- **Impacto actual:** nulo hoy (la creación de cuentas hijas — #12/#14 — aún no gatea contra cuota); necesario antes de #14.
+- **Disparador de pago:** ahora, junto con el retrabajo de #10, antes de commitear el substrato. Toca código sellado de #3 → Story dedicada + QA.
+- **Estado:** ✅ **Pagada** — [STORY-042](./execution/STORY-042-plan-tier-quota-max-child-accounts.md) (2026-07-07): `max_child_accounts` añadido al catálogo (migración `0009` in-situ + `CHECK >= 0`), `PlanCandidate`/`PlanSnapshot`/`PlanLimits` + sellado en `compute_plan_audit_hash`, sembrado por tier (FREE=`0`/PAID=`5`), expuesto en CLI. `0` válido, `< 0` rechazado. Subagente se estancó a la mitad; el TL completó el patrón. Auditoría TL + QA APTO por mutación (36/39; **0 sobrevivientes**).
+
 ### DEBT-007 · `OPTOUT_CHANGE` como primera acción sin guarda explícita
 - **Severidad:** 🟡 Baja (falla-seguro)
 - **Origen:** observación de QA en STORY-031 (`consent-registry`).
@@ -119,5 +159,8 @@
 
 - **DEBT-001** (ledgers append-only sin transacción atómica) → saldada por [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md), 2026-07-05.
 - **DEBT-007** (`OPTOUT_CHANGE`-primera sin guarda) → saldada por [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md), 2026-07-05.
+- **DEBT-014** (Eje B ausente en #10) → saldada por [STORY-038](./execution/STORY-038-verified-account-capital-reality.md), 2026-07-06.
+- **DEBT-016** (columna `capital_reality` duplica `institutional_tag` en #10) → saldada por [STORY-041](./execution/STORY-041-verified-account-eje-b-consolidation.md), 2026-07-07.
+- **DEBT-017** (falta cuota `MAX_CHILD_ACCOUNTS` en #3) → saldada por [STORY-042](./execution/STORY-042-plan-tier-quota-max-child-accounts.md), 2026-07-07.
 
-> Nota: DEBT-001 y DEBT-007 se conservan arriba con su ficha completa y Estado ✅ Pagada (para preservar su historia); este índice apunta a la Story que las saldó.
+> Nota: DEBT-001, DEBT-007, DEBT-014, DEBT-016 y DEBT-017 se conservan arriba con su ficha completa y Estado ✅ Pagada (para preservar su historia); este índice apunta a la Story que las saldó.
