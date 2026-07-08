@@ -16,6 +16,13 @@
 //!   de cobertura por tipo de dato (`ConsentVerdict`) y hash de auditoría
 //!   encadenado por `event_sequence_id` (`docs/features/consent-registry.md`,
 //!   ADR-0143, ADR-0144, ADR-0141). STORY-031.
+//! - `data_portability`: decisión de disposición del olvido (SIEMPRE
+//!   pseudonimización, NUNCA DELETE), filtro de exclusión de secretos del
+//!   manifiesto de exportación, resolución determinista del manifiesto y
+//!   del detalle de disposición, y hash de auditoría encadenado de ambas
+//!   tablas (catálogo MUTABLE por `row_version`, solicitudes APPEND-ONLY
+//!   por `event_sequence_id`) (`docs/features/data-portability.md`,
+//!   ADR-0148 cimiento #13, ADR-0093, ADR-0141, ADR-0020). STORY-043.
 //! - `data_aggregation`: ruido gaussiano de privacidad diferencial con RNG
 //!   sembrado (Box-Muller), hash unidireccional de topología de estrategia
 //!   (SHA-256), verificación de k-anonimato y agregación de índices
@@ -85,6 +92,7 @@ pub mod central_identity;
 pub mod clock;
 pub mod consent_registry;
 pub mod data_aggregation;
+pub mod data_portability;
 pub mod enriched_domain_events;
 pub mod instance_continuity;
 pub mod institutional_report_engine;

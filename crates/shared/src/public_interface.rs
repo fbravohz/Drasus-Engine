@@ -367,6 +367,35 @@
 //!   --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7",
 //!   "node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE",
 //!   "target_ref":"strategy-42","justification":"riesgo excedido"}'`.
+//!
+//! ## Data Portability (`docs/features/data-portability.md`, ADR-0148
+//! ## cimiento #13, ADR-0141, ADR-0093, ADR-0020, STORY-043)
+//!
+//! Cimiento #13: infraestructura de cumplimiento transversal (mismo nivel
+//! que `consent-registry`, #5), NO dominio de trading -- da a un `owner_id`
+//! autenticado el derecho a exportar sus datos (Art. 15/20 GDPR) y a pedir
+//! el olvido (Art. 17), con excepciones de retención legal. Se cimenta
+//! AHORA un catálogo declarativo de qué tablas portan `owner_id` y un
+//! registro append-only de solicitudes con su estado; el generador de
+//! archivo real (recorrer el esquema y volcar el dato) y la UI quedan
+//! diferidos (adaptador posterior sobre este mismo puerto).
+//!
+//! - [`data_portability::decide_forget_disposition`]: la ÚNICA puerta que
+//!   decide qué le pasa a una tabla al pedirse el olvido -- SIEMPRE
+//!   pseudonimización, NUNCA un DELETE físico (ADR-0141); el catálogo de
+//!   salida es estructuralmente incapaz de expresar un borrado.
+//! - [`data_portability::is_excluded_from_export`]: filtro de exclusión de
+//!   secretos (ADR-0093) -- ninguna credencial de bróker, clave de cifrado
+//!   ni IP de servidor live llega jamás al manifiesto de exportación.
+//! - [`data_portability::seed_known_catalog`]: siembra idempotente del
+//!   catálogo con las tablas ya conocidas del substrato que portan
+//!   `owner_id`.
+//! - [`data_portability::request_export`] / [`data_portability::request_forget`]:
+//!   la composición completa -- arma el manifiesto/detalle de disposición
+//!   vía el Core y registra el evento `RECEIVED` append-only atómico.
+//! - [`verify_data_portability`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify data-portability --input
+//!   '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -3263,6 +3292,42 @@ pub mod master_account_hierarchy {
     };
 }
 
+/// El submódulo `data_portability` -- cimiento #13
+/// (`docs/features/data-portability.md`, ADR-0148, STORY-043). Re-exporta
+/// Core (vocabulario de tipo/estado, decisión de disposición del olvido,
+/// filtro de secretos, manifiesto de exportación, hashes de auditoría de
+/// ambas tablas), la composición completa (declarar/sembrar el catálogo,
+/// pedir export/olvido) y los repositorios.
+///
+/// **Generador de archivo real + UI diferidos (STORY-043 §1/§11):** este
+/// submódulo NO recorre el esquema real ni vuelca ningún dato de otra
+/// tabla -- el Core + el esquema son el contrato; el recorrido real es un
+/// adaptador posterior sobre este mismo puerto.
+pub mod data_portability {
+    // Core: vocabulario cerrado (tipo/estado de solicitud), decisión de
+    // disposición del olvido, filtro de secretos, manifiesto de
+    // exportación y hashes de auditoría encadenados de ambas tablas.
+    pub use crate::domain::data_portability::{
+        build_export_manifest, build_forget_disposition_detail, compute_catalog_audit_hash,
+        compute_request_audit_hash, decide_forget_disposition, disposition_detail_to_json,
+        is_excluded_from_export, CatalogEntry, ExportManifest, ForgetDisposition,
+        ManifestTableEntry, RequestStatus, RequestType, TableDispositionEntry,
+    };
+    // La composición completa (declarar/sembrar el catálogo; pedir
+    // export/olvido, armando el manifiesto/detalle vía el Core y
+    // persistiendo el evento append-only atómico).
+    pub use crate::orchestrator::data_portability::{
+        declare_exportable_table, request_export, request_forget, seed_known_catalog,
+        DataPortabilityError, DataPortabilityIdentity, ExportRequestResult, ForgetRequestResult,
+    };
+    pub use crate::persistence::data_portability::{
+        DataPortabilityRequestRepository, DataPortabilityRequestRepositoryError,
+        DataPortabilityRequestRow, ExportableDataCatalogRepository,
+        ExportableDataCatalogRepositoryError, ExportableDataCatalogRow, NewCatalogEntry,
+        RecordDataPortabilityRequestInput,
+    };
+}
+
 /// El estado de custodia PREVIO al reclamo, tal como lo asume el harness de
 /// verificación CLI -- simula "esta cuenta ya tenía un historial de
 /// custodia" sin tener que recorrer todos los reclamos intermedios (ver
@@ -3793,5 +3858,292 @@ mod master_account_hierarchy_verify_tests {
         ] {
             assert!(!json_lowercase.contains(forbidden), "el output no debe contener '{forbidden}'");
         }
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Data Portability (STORY-043, cimiento #13 -- vive en `shared`, ver
+// ADR-0137)
+// ────────────────────────────────────────────────────────────────────────
+
+/// Input para la verificación de Data Portability vía CLI
+/// (`docs/features/data-portability.md`, STORY-043). Se deserializa desde
+/// el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico:
+/// `cargo run -p app -- verify data-portability --input
+/// '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DataPortabilityVerifyInput {
+    /// El titular autenticado que pide su acceso/portabilidad/olvido --
+    /// SIEMPRE sale de `central-identity` (#1) en producción; este harness
+    /// lo acepta directo para poder ejercitar el camino sin depender de
+    /// otro cimiento.
+    pub owner_id: String,
+    #[serde(default = "default_institutional_tag")]
+    pub institutional_tag: String,
+    /// La máquina que registra esta solicitud.
+    pub node_id: String,
+    /// `"EXPORT"` (Art. 15/20 GDPR) | `"FORGET"` (Art. 17 GDPR).
+    pub request_type: String,
+}
+
+/// Output de la verificación de Data Portability. Siempre serializa a JSON
+/// válido (ADR-0142). **Ningún campo porta el dato real de ninguna tabla,
+/// credenciales de bróker ni IPs live** (ADR-0093) -- el manifiesto solo
+/// lista NOMBRES de tabla (la estructura), nunca contenido.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DataPortabilityVerifyOutput {
+    pub ok: bool,
+    pub request_type: Option<String>,
+    /// El estado del evento recién registrado -- siempre `"RECEIVED"` para
+    /// una solicitud nueva (el avance PROCESSING/COMPLETED lo emite el
+    /// adaptador diferido como eventos posteriores del mismo grupo).
+    pub status: Option<String>,
+    pub request_group_id: Option<String>,
+    pub event_sequence_id: Option<i64>,
+    pub audit_hash: Option<String>,
+    /// Presente SOLO si `request_type == "EXPORT"` -- los NOMBRES de tabla
+    /// del manifiesto (ya filtrados de secretos), nunca su contenido.
+    pub manifest_tables: Option<Vec<String>>,
+    /// Presente SOLO si `request_type == "FORGET"` -- el JSON de
+    /// disposición por tabla (`PSEUDONYMIZE_AND_RETAIN`/`PSEUDONYMIZE_AND_PURGE`),
+    /// el mismo que quedó persistido en `disposition_detail`.
+    pub disposition_detail: Option<String>,
+    pub error: Option<String>,
+}
+
+impl DataPortabilityVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            request_type: None,
+            status: None,
+            request_group_id: None,
+            event_sequence_id: None,
+            audit_hash: None,
+            manifest_tables: None,
+            disposition_detail: None,
+            error: Some(msg),
+        }
+    }
+
+    /// Construye el output a partir de un [`data_portability::ExportRequestResult`]
+    /// -- `manifest_tables` es la lista de NOMBRES de tabla del manifiesto,
+    /// nunca su dato real.
+    fn from_export_result(result: &data_portability::ExportRequestResult) -> Self {
+        Self {
+            ok: true,
+            request_type: Some(result.request.request_type.as_str().to_string()),
+            status: Some(result.request.status.as_str().to_string()),
+            request_group_id: Some(result.request.request_group_id.clone()),
+            event_sequence_id: Some(result.request.event_sequence_id),
+            audit_hash: Some(result.request.audit_hash.clone()),
+            manifest_tables: Some(result.manifest.tables.iter().map(|t| t.table_name.clone()).collect()),
+            disposition_detail: None,
+            error: None,
+        }
+    }
+
+    /// Construye el output a partir de un [`data_portability::ForgetRequestResult`]
+    /// -- `disposition_detail` es el JSON ya persistido, sin ningún dato
+    /// real de ninguna tabla.
+    fn from_forget_result(result: &data_portability::ForgetRequestResult) -> Self {
+        Self {
+            ok: true,
+            request_type: Some(result.request.request_type.as_str().to_string()),
+            status: Some(result.request.status.as_str().to_string()),
+            request_group_id: Some(result.request.request_group_id.clone()),
+            event_sequence_id: Some(result.request.event_sequence_id),
+            audit_hash: Some(result.request.audit_hash.clone()),
+            manifest_tables: None,
+            disposition_detail: result.request.disposition_detail.clone(),
+            error: None,
+        }
+    }
+}
+
+/// Ejecuta la verificación de Data Portability con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real), recorriendo el camino
+/// completo del cimiento #13: siembra el catálogo declarativo conocido
+/// ([`data_portability::seed_known_catalog`], idempotente) y registra la
+/// solicitud pedida (`EXPORT` arma el manifiesto vía el Core; `FORGET`
+/// arma el detalle de disposición vía el Core) -- ejercitando Core -> Shell
+/// -> puerto tal como lo recorrería la app real. El generador de archivo
+/// real (recorrer el esquema y volcar el dato) queda diferido, ver
+/// `docs/features/data-portability.md`.
+///
+/// Uso típico desde el CLI:
+/// `cargo run -p app -- verify data-portability --input
+/// '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'`
+pub async fn verify_data_portability(input: DataPortabilityVerifyInput) -> DataPortabilityVerifyOutput {
+    let Some(request_type) = data_portability::RequestType::from_str_value(&input.request_type) else {
+        return DataPortabilityVerifyOutput::from_error(format!(
+            "request_type no reconocido: '{}'. Valores válidos: EXPORT, FORGET",
+            input.request_type
+        ));
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_master_account_hierarchy / verify_instance_continuity).
+    let temp_dir = std::env::temp_dir().join(format!("drasus-verify-data-portability-{}", uuid::Uuid::new_v4()));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return DataPortabilityVerifyOutput::from_error(format!(
+            "no se pudo crear el directorio temporal de verificación: {e}"
+        ));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            return DataPortabilityVerifyOutput::from_error(format!(
+                "no se pudo crear la BD temporal de verificación: {e}"
+            ))
+        }
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return DataPortabilityVerifyOutput::from_error(format!(
+            "error al aplicar migraciones en la BD temporal: {e}"
+        ));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    // Siembra el catálogo declarativo conocido -- idempotente, mismo camino
+    // que recorrería el arranque real de la app (STORY-043 §6).
+    if let Err(e) = data_portability::seed_known_catalog(&pool, clock.as_ref()).await {
+        return DataPortabilityVerifyOutput::from_error(format!("fallo al sembrar el catálogo: {e}"));
+    }
+
+    let identity = data_portability::DataPortabilityIdentity {
+        owner_id: input.owner_id.clone(),
+        institutional_tag: input.institutional_tag.clone(),
+        node_id: input.node_id.clone(),
+    };
+
+    match request_type {
+        data_portability::RequestType::Export => {
+            match data_portability::request_export(&pool, clock.as_ref(), &identity).await {
+                Ok(result) => DataPortabilityVerifyOutput::from_export_result(&result),
+                Err(e) => DataPortabilityVerifyOutput::from_error(format!("fallo al solicitar el export: {e}")),
+            }
+        }
+        data_portability::RequestType::Forget => {
+            match data_portability::request_forget(&pool, clock.as_ref(), &identity).await {
+                Ok(result) => DataPortabilityVerifyOutput::from_forget_result(&result),
+                Err(e) => DataPortabilityVerifyOutput::from_error(format!("fallo al solicitar el olvido: {e}")),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod data_portability_verify_tests {
+    use super::*;
+
+    /// CRITERIO (Orden §8): JSON no filtra secretos (ADR-0093) -- fija la
+    /// lista exacta de claves permitidas en el output serializado y
+    /// confirma que ningún patrón de secreto/credencial aparece, mismo
+    /// patrón que `master_account_hierarchy_verify_output_json_never_leaks_secret_fields`.
+    #[test]
+    fn data_portability_verify_output_json_never_leaks_secret_fields() {
+        let output = DataPortabilityVerifyOutput {
+            ok: true,
+            request_type: Some("FORGET".to_string()),
+            status: Some("RECEIVED".to_string()),
+            request_group_id: Some("grp-1".to_string()),
+            event_sequence_id: Some(1),
+            audit_hash: Some("hash-1".to_string()),
+            manifest_tables: None,
+            disposition_detail: Some(
+                "[{\"table_name\":\"usage_records\",\"feature_name\":\"usage-metering\",\"disposition\":\"PSEUDONYMIZE_AND_RETAIN\"}]"
+                    .to_string(),
+            ),
+            error: None,
+        };
+
+        let json = serde_json::to_value(&output).expect("serializar");
+        let object = json.as_object().expect("el JSON debe ser un objeto");
+
+        let allowed_keys = [
+            "ok",
+            "request_type",
+            "status",
+            "request_group_id",
+            "event_sequence_id",
+            "audit_hash",
+            "manifest_tables",
+            "disposition_detail",
+            "error",
+        ];
+        for key in object.keys() {
+            assert!(allowed_keys.contains(&key.as_str()), "clave no permitida en el output: '{key}'");
+        }
+
+        let json_lowercase = serde_json::to_string(&output).expect("serializar").to_lowercase();
+        for forbidden in [
+            "password", "api_key", "api-key", "broker_secret", "private_key",
+            "signing_key", "investor_password", "master_secret", "encryption_key",
+            "192.168.", "10.0.0.",
+        ] {
+            assert!(!json_lowercase.contains(forbidden), "el output no debe contener '{forbidden}'");
+        }
+    }
+
+    /// CRITERIO DE CIERRE: `manifest_tables` de un EXPORT real NUNCA
+    /// incluye `api_credentials` -- el filtro de secretos del Core corre
+    /// dentro de `request_export` antes de que este output se arme.
+    #[tokio::test]
+    async fn verify_export_manifest_never_includes_the_api_credentials_table() {
+        let output = verify_data_portability(DataPortabilityVerifyInput {
+            owner_id: "user-42".to_string(),
+            institutional_tag: "LIVE".to_string(),
+            node_id: "node-A".to_string(),
+            request_type: "EXPORT".to_string(),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        let tables = output.manifest_tables.expect("un EXPORT debe traer manifest_tables");
+        assert!(!tables.contains(&"api_credentials".to_string()), "api_credentials porta secretos -- nunca debe exportarse");
+        assert!(tables.contains(&"verified_accounts".to_string()));
+    }
+
+    /// CRITERIO DE CIERRE: un FORGET real produce `disposition_detail` con
+    /// las tres tablas de retención legal marcadas
+    /// `PSEUDONYMIZE_AND_RETAIN`, nunca una variante de borrado.
+    #[tokio::test]
+    async fn verify_forget_disposition_never_contains_a_delete_variant() {
+        let output = verify_data_portability(DataPortabilityVerifyInput {
+            owner_id: "user-42".to_string(),
+            institutional_tag: "LIVE".to_string(),
+            node_id: "node-A".to_string(),
+            request_type: "FORGET".to_string(),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        let detail = output.disposition_detail.expect("un FORGET debe traer disposition_detail");
+        assert!(!detail.to_lowercase().contains("delete"), "el detalle de disposición nunca debe mencionar un borrado");
+        assert!(detail.contains("PSEUDONYMIZE_AND_RETAIN"));
+        assert!(detail.contains("PSEUDONYMIZE_AND_PURGE"));
+    }
+
+    /// Un `request_type` fuera de EXPORT/FORGET falla con un error claro,
+    /// nunca con un panic.
+    #[tokio::test]
+    async fn verify_rejects_unknown_request_type() {
+        let output = verify_data_portability(DataPortabilityVerifyInput {
+            owner_id: "user-42".to_string(),
+            institutional_tag: "LIVE".to_string(),
+            node_id: "node-A".to_string(),
+            request_type: "RECTIFY".to_string(),
+        })
+        .await;
+
+        assert!(!output.ok);
+        assert!(output.error.expect("debe traer error").contains("request_type"));
     }
 }

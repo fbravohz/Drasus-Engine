@@ -21,6 +21,12 @@
 //!   canales interno/externo y persistencia append-only atómica
 //!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, ADR-0143).
 //!   STORY-036.
+//! - `data_portability`: composición del cimiento #13 -- declara/siembra el
+//!   catálogo declarativo de tablas exportables, arma el manifiesto de
+//!   exportación (filtrando secretos) y el detalle de disposición del
+//!   olvido (SIEMPRE pseudonimización) y persiste ambas solicitudes
+//!   append-only atómico (`docs/features/data-portability.md`, ADR-0148,
+//!   ADR-0093). STORY-043.
 //! - `licensing_system`: emisor de licencias de desarrollo (stub Ed25519),
 //!   proveedor de límites de plan (stub) y caché con TTL del veredicto de
 //!   ejecución (`docs/features/licensing-system.md`, ADR-0143, ADR-0144).
@@ -75,6 +81,7 @@
 pub mod central_identity;
 pub mod consent_registry;
 pub mod data_aggregation;
+pub mod data_portability;
 pub mod enriched_domain_events;
 pub mod instance_continuity;
 pub mod institutional_report_engine;

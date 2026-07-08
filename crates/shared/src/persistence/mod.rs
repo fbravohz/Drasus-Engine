@@ -25,6 +25,12 @@
 //!   `event_sequence_id`, ADR-0141) para la tabla `aggregated_indexes`
 //!   (`docs/features/data-aggregation.md`, ADR-0144, ADR-0102, migración
 //!   `0015_data_aggregation.sql`). STORY-036.
+//! - `data_portability`: repositorio MUTABLE (con `row_version`, ADR-0141)
+//!   para `exportable_data_catalog`, IDEMPOTENTE por `table_name` +
+//!   repositorio APPEND-ONLY ATÓMICO (con `event_sequence_id`) para
+//!   `data_portability_requests` (`docs/features/data-portability.md`,
+//!   ADR-0148 cimiento #13, ADR-0093, migración `0019_data_portability.sql`).
+//!   STORY-043.
 //! - `instance_continuity`: repositorio APPEND-ONLY ATÓMICO (con
 //!   `event_sequence_id`, ADR-0141) para `instance_backups` + repositorio
 //!   MUTABLE (con `custody_epoch`, concurrencia optimista a nivel de
@@ -71,6 +77,7 @@ pub mod audit_log;
 pub mod central_identity;
 pub mod consent_registry;
 pub mod data_aggregation;
+pub mod data_portability;
 pub mod enriched_domain_events;
 pub mod instance_continuity;
 pub mod institutional_report_engine;
