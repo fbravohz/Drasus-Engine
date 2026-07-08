@@ -51,3 +51,7 @@
 **/*.pyc
 **/.venv/
 **/venv/
+
+# --- cargo-mutants (artefactos transitorios del gate de mutación, ADR-0133 capa 8) ---
+/mutants.out/
+/mutants.out.old/
