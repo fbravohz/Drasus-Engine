@@ -1,10 +1,10 @@
 # Data Portability (Portabilidad y Exportación de Datos)
 
-> 🔴 **En Diseño** 2026-07-07 · Cimiento del substrato aprobado por el propietario, aún sin orden de trabajo. Se materializa el catálogo + registro de solicitudes ahora; el generador de export real y la Cáscara Visual quedan diferidos (ver Dependencias).
+> 🟡 **Parcial** 2026-07-08 · Orden de trabajo [STORY-043](../execution/STORY-043-data-portability.md). Catálogo declarativo (`exportable_data_catalog`) + registro append-only de solicitudes (`data_portability_requests`) + Core (decisión de disposición del olvido, filtro de secretos, manifiesto de exportación) + orquestador + CLI de verificación, construidos e implementados. **Pendiente:** el generador de export real (recorrer el esquema y volcar el dato de cada tabla) y la Cáscara Visual — diferidos a la primera solicitud real o al lanzamiento en jurisdicción GDPR (ver Dependencias).
 
 **Carpeta:** `./features/data-portability/`
-**Estado:** 🔴 En Diseño (cimiento #13, pendiente de Story)
-**Última actualización:** 2026-07-07
+**Estado:** 🟡 Parcial (cimiento #13 — Core/persistencia/orquestador/CLI cerrados, generador real + UI diferidos)
+**Última actualización:** 2026-07-08
 **Decisión Arquitectónica Asociada:** ADR-0148 (cimiento #13) · ADR-0144 (substrato) · ADR-0020 (Inundación de Fundaciones — `owner_id` universal) · ADR-0093 (secretos jamás salen) · ADR-0141 (append-only, pseudonimización sobre DELETE físico)
 
 ## ¿Qué es esta feature?

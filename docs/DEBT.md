@@ -153,6 +153,19 @@
 - **Disparador de pago:** añadir una guarda explícita con error tipado (en vez de depender del efecto colateral) → plegado al alcance de **STORY-032**.
 - **Estado:** ✅ **Pagada** — [STORY-032](./execution/STORY-032-ledger-atomicity-hardening.md) (2026-07-05): guarda tipada `ConsentRepositoryError::OptoutBeforeAccept` que rechaza `OPTOUT_CHANGE` como primer evento antes de fusionar/persistir.
 
+### DEBT-018 · Cobertura de mutación del patrón de ledger append-only en cimientos previos a #13
+- **Severidad:** 🟠 Media (sin corrupción de datos; hueco de resiliencia/reporte de error bajo concurrencia real).
+- **Origen:** medición de `cargo-mutants` durante el cierre de #13 (`data-portability`, STORY-043, 2026-07-08). Al matar los 11 sobrevivientes de #13 se confirmó empíricamente que **7 de ellos sobreviven idénticos en #10** (`verified-account-registry`, ya cerrado/commiteado).
+- **Descripción:** el patrón "ledger append-only atómico" (`is_transient_write_conflict`, el bucle de reintento `record_*`, y la proyección de la fila devuelta en tablas mutables con `row_version`) está **calcado** en varios cimientos. Los tests actuales de esos cimientos **no matan** tres clases de mutante:
+  1. **Clasificador de contención** (`is_transient_write_conflict` → `true`/`false`; `||`→`&&`; `&&`→`||`): sin test unitario directo que le pase un error de "database is locked" real y una violación UNIQUE PERMANENTE (PK, no `event_sequence_id`).
+  2. **Bucle de reintento** (`attempt += 1`→`*=`; `attempt < MAX`→`==`/`>`/`<=`): sin test de **contención sostenida** que agote `MAX_RECORD_ATTEMPTS` y afirme `WriteContention { attempts: MAX }`.
+  3. **Fidelidad de la fila devuelta** (borrado de campo en la proyección de `reclassify`/`update_*` de tablas mutables): sin assertions sobre la fila que la función DEVUELVE (solo se verifica lo persistido).
+- **Alcance a auditar (EPIC-0):** confirmado en **#10**; por herencia del patrón calcado, previsiblemente en **#5** (`consent-registry`), **#6** (`enriched-domain-events`), **#9** (`data-aggregation`), **#11** (`instance-continuity`), **#12** (`master-account-hierarchy`), y los ledgers endurecidos por STORY-032 (`audit_log`, `usage_records`). Cada uno se mide y se cierra a 0 survivors.
+- **Impacto actual:** nulo hoy (greenfield, sin carga concurrente real; el núcleo de integridad — `BEGIN IMMEDIATE`, `UNIQUE`, hashes encadenados persistidos — SÍ está cubierto). Muerde bajo concurrencia de producción, que es cuando el modo de falla (rendirse sin reintento, enmascarar un error permanente, o devolver metadato rancio) es más sutil.
+- **Patrón de pago (ya validado en #13, STORY-043):** por cada ledger, tres tests deterministas — (1) contención sostenida con segundo escritor reteniendo `BEGIN IMMEDIATE` (`busy_timeout=0`) hasta agotar reintentos; (2) `is_transient_*` directo con violación UNIQUE de PK (no de secuencia); (3) assertions sobre la fila devuelta por la actualización mutable.
+- **Disparador de pago:** auditoría retroactiva **EPIC-0** (contraste cimiento por cimiento). Toca código sellado → cada cimiento re-corre su QA por mutación a 0 survivors.
+- **Estado:** Abierta.
+
 ---
 
 ## Deudas pagadas

@@ -246,6 +246,24 @@ Campos: `parent_owner_id` (fondo) · `child_owner_id` (hija) · `node_id` · `co
 
 ---
 
+### `data-portability` — cimiento #13 (acceso / portabilidad / olvido, GDPR Art. 15/17/20)  🟡 backend parcial · ⏳ SVF
+
+**Puerto:** `identity_in`/`export_request_out`/`data_catalog_out`. Dos piezas: (1) **catálogo declarativo** `exportable_data_catalog` (MUTABLE, `row_version`) de qué tablas portan `owner_id` — auto-declaración idempotente por `table_name`; (2) **registro append-only atómico** `data_portability_requests` de solicitudes EXPORT/FORGET con avance de estado (`RECEIVED`→`PROCESSING`→`COMPLETED`) como eventos nuevos del mismo `request_group_id`. **Olvido = SIEMPRE pseudonimización, NUNCA DELETE físico** (`decide_forget_disposition`: `retention_exempt`⇒`PSEUDONYMIZE_AND_RETAIN`, si no ⇒`PSEUDONYMIZE_AND_PURGE`; sin variante de borrado). **Secretos jamás en el export** (ADR-0093): `is_excluded_from_export` deja `api_credentials`/claves/IPs FUERA del manifiesto de EXPORT (aunque el FORGET sí las purga). Generador de archivo real + UI **diferidos**. Requiere `--input`.
+
+```bash
+# FORGET: registra solicitud append-only + disposition_detail por tabla (retain vs purge); api_credentials → PURGE pero nunca en manifiesto de export
+cargo run -p app -- verify data-portability --input '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'
+# EXPORT: manifiesto de tablas del owner, con api_credentials EXCLUIDA (0 ocurrencias)
+cargo run -p app -- verify data-portability --input '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"EXPORT"}'
+cargo test -p shared --lib data_portability
+```
+
+Campos: `owner_id` · `institutional_tag` (Perfil D) · `node_id` · `request_type` (`EXPORT`|`FORGET`). Salida: `request_group_id`, `status`, `event_sequence_id`, `audit_hash`, y `manifest_tables` (EXPORT, sin secretos) o `disposition_detail` (FORGET, retain/purge por tabla). **QA por mutación APTO** (73 mutantes, 0 survivors; 3 tests deterministas de contención/clasificador/fila-devuelta — ver STORY-043 §12 y DEBT-018).
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — botón "exportar mis datos" / "olvidarme" en el panel de cuenta de la Cabina de Mando (**Superficie propia**, no en el monolito local).
+
+---
+
 ## Ingesta de Datos (EPIC-1)
 
 ### `sovereign-data-fetcher`  ✅ backend · ✅ SVF
