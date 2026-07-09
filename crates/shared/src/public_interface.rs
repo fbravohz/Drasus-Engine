@@ -396,6 +396,33 @@
 //! - [`verify_data_portability`]: harness CLI (Canal #2, ADR-0142) --
 //!   `cargo run -p app -- verify data-portability --input
 //!   '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'`.
+//!
+//! ## Operator Roles (`docs/features/operator-roles.md`, ADR-0149
+//! ## cimiento #14 y ÚLTIMO del substrato, ADR-0123, ADR-0141, ADR-0020,
+//! ## STORY-044)
+//!
+//! Cimiento #14: dentro de UNA cuenta maestra, el dueño crea roles de
+//! operador a la carta (matriz de capacidades por puerto de Feature) y los
+//! asigna a operadores (`HUMAN` o `AGENT`). Una llamada se concede solo si
+//! el rol la permite Y pasa el evaluador de riesgo de pipeline ya
+//! existente (`mcp_gateway::evaluate_permission`, ADR-0123) -- el gate de
+//! rol es ADICIONAL, nunca sustituto. El invariante "último admin en pie"
+//! corre DENTRO de la misma transacción que escribe cada mutación
+//! admin-afectante.
+//!
+//! - [`operator_roles::CapabilityMatrix`]: matriz de capacidades
+//!   `BTreeMap<String, bool>` (ordenada, hash determinista) -- denegada por
+//!   defecto si la clave no está declarada.
+//! - [`operator_roles::evaluate_operator_call`]: compone el gate de rol con
+//!   `mcp_gateway::evaluate_permission` -- concede solo si AMBOS conceden.
+//! - [`operator_roles::check_last_admin_standing`]: el invariante puro
+//!   "último admin en pie", cuyo guardarraíl en la Shell corre dentro de
+//!   `BEGIN IMMEDIATE`.
+//! - [`operator_roles::seed_admin_bootstrap`]: siembra el rol ADMIN inicial
+//!   y lo asigna al primer operador `HUMAN` de la cuenta -- idempotente.
+//! - [`verify_operator_roles`]: harness CLI (Canal #2, ADR-0142) --
+//!   `cargo run -p app -- verify operator-roles --input
+//!   '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'`.
 
 pub use crate::clock_audit::{
     emit_mode_transition, emit_ntp_sync, emit_session_close, ClockAuditContext, ClockMode,
@@ -3328,6 +3355,49 @@ pub mod data_portability {
     };
 }
 
+/// El submódulo `operator_roles` -- cimiento #14 y ÚLTIMO del substrato de
+/// monetización (`docs/features/operator-roles.md`, ADR-0149, STORY-044).
+/// Re-exporta Core (matriz de capacidades, gate compuesto rol+pipeline,
+/// invariante "último admin en pie", gate de cuota de cuentas hijas, hashes
+/// de auditoría de las tres tablas), la composición completa (definir/
+/// reclasificar/revocar roles, asignar/revocar operadores, evaluar
+/// llamadas, sembrar el primer admin, cascada de autoridad) y los
+/// repositorios.
+///
+/// **Transporte de red de la cascada + UI diferidos (STORY-044 §1/§6):**
+/// este submódulo modela SOLO la decisión/registro LOCAL de un override de
+/// asignación -- el relé cifrado (ADR-0143) y la doble atestación
+/// cross-máquina completa de `master-account-hierarchy` (#12) son un
+/// adaptador posterior sobre este mismo puerto.
+pub mod operator_roles {
+    // Core: tipo de operador, baja lógica, catálogo de cambios del ledger,
+    // matriz de capacidades (BTreeMap ordenado), gate de rol puntual, gate
+    // compuesto (rol AND mcp_gateway::evaluate_permission), invariante
+    // "último admin en pie" y gate de cuota de cuentas hijas, hashes de
+    // auditoría de las tres tablas.
+    pub use crate::domain::operator_roles::{
+        admins_remaining_after, can_create_child_account, check_last_admin_standing,
+        compute_assignment_audit_hash, compute_event_audit_hash, compute_role_audit_hash,
+        evaluate_operator_call, evaluate_role_capability, AssignmentView, CapabilityMatrix,
+        ChildAccountVerdict, CombinedVerdict, LastAdminViolation, LifecycleStatus,
+        OperatorRoleChangeType, OperatorType, ProposedChange, RoleVerdict, RoleView,
+        CAPABILITY_CREATE_CHILD_ACCOUNT, CAPABILITY_MANAGE_ROLES,
+    };
+    // La composición completa (definir/reclasificar/revocar roles, asignar/
+    // revocar operadores, evaluar llamadas, cuota de cuentas hijas, primer
+    // admin por defecto, cascada de autoridad).
+    pub use crate::orchestrator::operator_roles::{
+        apply_authority_override, assign_operator, define_role, evaluate_call, request_child_account,
+        revoke_assignment, revoke_role, seed_admin_bootstrap, update_role_matrix, EvaluateCallResult,
+        OperatorRolesIdentity,
+    };
+    pub use crate::persistence::operator_roles::{
+        NewOperatorRole, OperatorAssignmentRepository, OperatorAssignmentRow, OperatorRoleError,
+        OperatorRoleEventRepository, OperatorRoleEventRow, OperatorRoleRepository, OperatorRoleRow,
+        RecordOperatorRoleEventInput, SetAssignmentInput,
+    };
+}
+
 /// El estado de custodia PREVIO al reclamo, tal como lo asume el harness de
 /// verificación CLI -- simula "esta cuenta ya tenía un historial de
 /// custodia" sin tener que recorrer todos los reclamos intermedios (ver
@@ -4145,5 +4215,350 @@ mod data_portability_verify_tests {
 
         assert!(!output.ok);
         assert!(output.error.expect("debe traer error").contains("request_type"));
+    }
+}
+
+// ── Operator Roles -- cimiento #14 (Canal #2, ADR-0142) ─────────────────────
+
+/// Token de acceso raíz que este harness siembra como primer admin por
+/// defecto cuando `input.root_access_token_id` no se especifica -- mismo
+/// valor que el ejemplo canónico de la Orden (STORY-044 §9), para que el
+/// comando de ejemplo funcione copy/paste sin campos adicionales.
+const DEFAULT_ROOT_ACCESS_TOKEN_ID: &str = "tok-owner";
+
+/// Traduce el nombre de pipeline en texto (`"GENERATE"`, `"EXECUTE"`, …) al
+/// enum [`crate::domain::mcp_gateway::Pipeline`] -- este harness NO
+/// modifica `mcp_gateway.rs` (código sellado de #8); esta es plomería de
+/// CLI local a `public_interface`.
+fn parse_pipeline(value: &str) -> Option<crate::domain::mcp_gateway::Pipeline> {
+    use crate::domain::mcp_gateway::Pipeline;
+    match value.to_uppercase().as_str() {
+        "INGEST" => Some(Pipeline::Ingest),
+        "GENERATE" => Some(Pipeline::Generate),
+        "VALIDATE" => Some(Pipeline::Validate),
+        "INCUBATE" => Some(Pipeline::Incubate),
+        "MANAGE" => Some(Pipeline::Manage),
+        "EXECUTE" => Some(Pipeline::Execute),
+        "FEEDBACK" => Some(Pipeline::Feedback),
+        "WITHDRAW" => Some(Pipeline::Withdraw),
+        _ => None,
+    }
+}
+
+/// Traduce `"LIVE"`/`"DEMO"` al enum
+/// [`crate::domain::mcp_gateway::InstitutionalTag`] -- solo relevante
+/// cuando `pipeline == "MANAGE"`.
+fn parse_manage_institutional_tag(value: &str) -> Option<crate::domain::mcp_gateway::InstitutionalTag> {
+    use crate::domain::mcp_gateway::InstitutionalTag;
+    match value.to_uppercase().as_str() {
+        "LIVE" => Some(InstitutionalTag::Live),
+        "DEMO" => Some(InstitutionalTag::Demo),
+        _ => None,
+    }
+}
+
+/// Input para la verificación de Operator Roles vía CLI
+/// (`docs/features/operator-roles.md`, ADR-0149, STORY-044). Se deserializa
+/// desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// Uso típico (golden path -- admin invocando una capacidad que él mismo se
+/// declaró, en pipeline abierto):
+/// `cargo run -p app -- verify operator-roles --input
+/// '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'`
+///
+/// Uso típico (operador sin rol -- mismo `owner_id`, un `access_token_id`
+/// que NUNCA se asignó):
+/// `cargo run -p app -- verify operator-roles --input
+/// '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-nunca-asignado","capability_key":"generate.run_search","pipeline":"GENERATE"}'`
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OperatorRolesVerifyInput {
+    /// La cuenta maestra dueña del catálogo de roles -- SIEMPRE sale de
+    /// `central-identity` (#1) en producción; este harness lo acepta
+    /// directo para poder ejercitar el camino sin depender de otro
+    /// cimiento.
+    pub owner_id: String,
+    #[serde(default = "default_institutional_tag")]
+    pub institutional_tag: String,
+    /// La máquina que registra los eventos de esta verificación.
+    pub node_id: String,
+    /// El operador (login humano o conexión MCP) cuya llamada se evalúa.
+    pub access_token_id: String,
+    /// El token de acceso que este harness siembra como primer ADMIN de la
+    /// cuenta (`seed_admin_bootstrap`) -- por defecto
+    /// [`DEFAULT_ROOT_ACCESS_TOKEN_ID`]. Pásalo distinto de
+    /// `access_token_id` para demostrar el camino "operador sin rol".
+    #[serde(default)]
+    pub root_access_token_id: Option<String>,
+    /// El puerto de Feature invocado -- clave de capacidad evaluada contra
+    /// la matriz del rol.
+    pub capability_key: String,
+    /// `"INGEST"|"GENERATE"|"VALIDATE"|"INCUBATE"|"MANAGE"|"EXECUTE"|"FEEDBACK"|"WITHDRAW"`
+    /// -- el pipeline de destino para el evaluador de ADR-0123.
+    pub pipeline: String,
+    /// Solo relevante si `pipeline == "MANAGE"`: `"LIVE"` o `"DEMO"`.
+    #[serde(default)]
+    pub manage_institutional_tag: Option<String>,
+    /// Estado del interruptor de producción en el momento de la evaluación
+    /// -- por defecto apagado (`false`).
+    #[serde(default)]
+    pub production_override_active: bool,
+}
+
+/// Output de la verificación de Operator Roles. Siempre serializa a JSON
+/// válido (ADR-0142). **Ningún campo porta credenciales, secretos de
+/// bróker ni IPs live** (ADR-0093) -- solo el veredicto y metadatos de
+/// auditoría no sensibles.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OperatorRolesVerifyOutput {
+    pub ok: bool,
+    /// `"GRANTED"` | `"DENIED_BY_ROLE"` | `"DENIED_BY_PIPELINE"`.
+    pub verdict: Option<String>,
+    /// Motivo de la denegación, si aplica.
+    pub reason: Option<String>,
+    /// El rol resuelto para `access_token_id`, o `None` si no tenía
+    /// asignación ACTIVA.
+    pub resolved_role_id: Option<String>,
+    pub resolved_role_name: Option<String>,
+    /// `audit_hash` del último evento del ledger registrado durante esta
+    /// verificación (la reclasificación de la matriz del admin que habilita
+    /// el golden path).
+    pub audit_hash: Option<String>,
+    pub event_sequence_id: Option<i64>,
+    pub error: Option<String>,
+}
+
+impl OperatorRolesVerifyOutput {
+    fn from_error(msg: String) -> Self {
+        Self {
+            ok: false,
+            verdict: None,
+            reason: None,
+            resolved_role_id: None,
+            resolved_role_name: None,
+            audit_hash: None,
+            event_sequence_id: None,
+            error: Some(msg),
+        }
+    }
+}
+
+/// Ejecuta la verificación de Operator Roles con adaptadores reales (BD
+/// SQLite temporal + reloj de sistema real), recorriendo el camino
+/// completo del cimiento #14:
+///
+/// 1. Siembra el primer admin por defecto (`seed_admin_bootstrap`,
+///    idempotente) para `root_access_token_id`.
+/// 2. El propio admin -- que YA tiene `CAPABILITY_MANAGE_ROLES` -- declara
+///    la capacidad `input.capability_key` en su propio rol
+///    (`update_role_matrix`), demostrando que un admin puede conceder
+///    capacidades nuevas sin reinventar el bootstrap con un comodín.
+/// 3. Evalúa la llamada de `access_token_id` contra `capability_key` y el
+///    pipeline pedido -- gate compuesto (#14 AND ADR-0123).
+///
+/// Si `access_token_id` es distinto de `root_access_token_id` y nunca se
+/// le asignó nada, el paso 2 no lo afecta -- el paso 3 devuelve
+/// `DENIED_BY_ROLE` (ADR-0149: sin rol explícito, denegado).
+///
+/// Uso típico desde el CLI: ver [`OperatorRolesVerifyInput`].
+pub async fn verify_operator_roles(input: OperatorRolesVerifyInput) -> OperatorRolesVerifyOutput {
+    let Some(pipeline) = parse_pipeline(&input.pipeline) else {
+        return OperatorRolesVerifyOutput::from_error(format!(
+            "pipeline no reconocido: '{}'. Valores válidos: INGEST, GENERATE, VALIDATE, INCUBATE, MANAGE, EXECUTE, FEEDBACK, WITHDRAW",
+            input.pipeline
+        ));
+    };
+
+    let manage_institutional_tag = match input.manage_institutional_tag.as_deref() {
+        Some(raw) => match parse_manage_institutional_tag(raw) {
+            Some(tag) => Some(tag),
+            None => {
+                return OperatorRolesVerifyOutput::from_error(format!(
+                    "manage_institutional_tag no reconocido: '{raw}'. Valores válidos: LIVE, DEMO"
+                ))
+            }
+        },
+        None => None,
+    };
+
+    // BD SQLite temporal exclusiva para esta verificación (mismo patrón
+    // que verify_master_account_hierarchy / verify_data_portability).
+    let temp_dir = std::env::temp_dir().join(format!("drasus-verify-operator-roles-{}", uuid::Uuid::new_v4()));
+    if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+        return OperatorRolesVerifyOutput::from_error(format!("no se pudo crear el directorio temporal de verificación: {e}"));
+    }
+
+    let db_path = temp_dir.join("verify.db");
+    let db_url = format!("sqlite://{}", db_path.display());
+    let pool = match crate::persistence::pool::connect(&db_url).await {
+        Ok(p) => p,
+        Err(e) => return OperatorRolesVerifyOutput::from_error(format!("no se pudo crear la BD temporal de verificación: {e}")),
+    };
+    if let Err(e) = crate::persistence::pool::migrate(&pool).await {
+        return OperatorRolesVerifyOutput::from_error(format!("error al aplicar migraciones en la BD temporal: {e}"));
+    }
+
+    let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
+
+    let identity = operator_roles::OperatorRolesIdentity {
+        owner_id: input.owner_id.clone(),
+        institutional_tag: input.institutional_tag.clone(),
+        node_id: input.node_id.clone(),
+    };
+
+    let root_access_token_id = input.root_access_token_id.clone().unwrap_or_else(|| DEFAULT_ROOT_ACCESS_TOKEN_ID.to_string());
+
+    // Paso 1 -- siembra el primer admin por defecto (idempotente).
+    let (admin_role, _admin_assignment) =
+        match operator_roles::seed_admin_bootstrap(&pool, clock.as_ref(), &identity, &root_access_token_id).await {
+            Ok(seeded) => seeded,
+            Err(e) => return OperatorRolesVerifyOutput::from_error(format!("fallo al sembrar el admin por defecto: {e}")),
+        };
+
+    // Paso 2 -- el admin, que ya tiene CAPABILITY_MANAGE_ROLES, declara la
+    // capacidad pedida en SU PROPIO rol -- último evento del ledger que
+    // este harness expone en el output.
+    let mut expanded_matrix = admin_role.capability_matrix.clone();
+    expanded_matrix.set(input.capability_key.clone(), true);
+    let (_updated_admin_role, last_event) =
+        match operator_roles::update_role_matrix(&pool, clock.as_ref(), &identity, &admin_role.id, expanded_matrix).await {
+            Ok(result) => result,
+            Err(e) => return OperatorRolesVerifyOutput::from_error(format!("fallo al declarar la capacidad en el rol admin: {e}")),
+        };
+
+    // Paso 3 -- evalúa la llamada REAL del operador solicitado.
+    let permission_request = crate::domain::mcp_gateway::PermissionRequest {
+        pipeline,
+        institutional_tag: manage_institutional_tag,
+        production_override_active: input.production_override_active,
+        agent_session_id: input.access_token_id.clone(),
+        requested_scope: input.capability_key.clone(),
+    };
+
+    let evaluation = match operator_roles::evaluate_call(
+        &pool,
+        clock.as_ref(),
+        &identity,
+        &input.access_token_id,
+        &input.capability_key,
+        &permission_request,
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(e) => return OperatorRolesVerifyOutput::from_error(format!("fallo al evaluar la llamada del operador: {e}")),
+    };
+
+    let (verdict_str, reason) = match &evaluation.verdict {
+        operator_roles::CombinedVerdict::Granted => ("GRANTED".to_string(), None),
+        operator_roles::CombinedVerdict::DeniedByRole { reason } => ("DENIED_BY_ROLE".to_string(), Some(reason.clone())),
+        operator_roles::CombinedVerdict::DeniedByPipeline { reason } => ("DENIED_BY_PIPELINE".to_string(), Some(reason.clone())),
+    };
+
+    let resolved_role_name = match &evaluation.resolved_role_id {
+        Some(role_id) => match operator_roles::OperatorRoleRepository::new(&pool, clock.as_ref()).get_role(role_id).await {
+            Ok(Some(role)) => Some(role.role_name),
+            _ => None,
+        },
+        None => None,
+    };
+
+    OperatorRolesVerifyOutput {
+        ok: true,
+        verdict: Some(verdict_str),
+        reason,
+        resolved_role_id: evaluation.resolved_role_id,
+        resolved_role_name,
+        audit_hash: Some(last_event.audit_hash),
+        event_sequence_id: Some(last_event.event_sequence_id),
+        error: None,
+    }
+}
+
+#[cfg(test)]
+mod operator_roles_verify_tests {
+    use super::*;
+
+    fn sample_input(access_token_id: &str) -> OperatorRolesVerifyInput {
+        OperatorRolesVerifyInput {
+            owner_id: "acc-1".to_string(),
+            institutional_tag: "LIVE".to_string(),
+            node_id: "node-A".to_string(),
+            access_token_id: access_token_id.to_string(),
+            root_access_token_id: None,
+            capability_key: "generate.run_search".to_string(),
+            pipeline: "GENERATE".to_string(),
+            manage_institutional_tag: None,
+            production_override_active: false,
+        }
+    }
+
+    /// CRITERIO (Orden §9): el comando de ejemplo -- un ADMIN invocando una
+    /// capacidad permitida en pipeline abierto -- da `GRANTED`.
+    #[tokio::test]
+    async fn verify_grants_admin_operator_invoking_a_declared_capability_on_an_open_pipeline() {
+        let output = verify_operator_roles(sample_input(DEFAULT_ROOT_ACCESS_TOKEN_ID)).await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.verdict, Some("GRANTED".to_string()));
+        assert!(output.resolved_role_id.is_some());
+        assert_eq!(output.resolved_role_name, Some("Admin".to_string()));
+        assert!(output.audit_hash.is_some());
+        assert!(output.event_sequence_id.is_some());
+    }
+
+    /// CRITERIO (Orden §9): un operador SIN rol asignado se deniega.
+    #[tokio::test]
+    async fn verify_denies_operator_without_any_assignment() {
+        let output = verify_operator_roles(sample_input("tok-nunca-asignado")).await;
+
+        assert!(output.ok, "la verificación en sí debe tener éxito: {:?}", output.error);
+        assert_eq!(output.verdict, Some("DENIED_BY_ROLE".to_string()));
+        assert!(output.resolved_role_id.is_none());
+        assert!(output.reason.is_some());
+    }
+
+    /// CRITERIO (Orden §8): JSON no filtra secretos (ADR-0093).
+    #[test]
+    fn operator_roles_verify_output_json_never_leaks_secret_fields() {
+        let output = OperatorRolesVerifyOutput {
+            ok: true,
+            verdict: Some("GRANTED".to_string()),
+            reason: None,
+            resolved_role_id: Some("role-1".to_string()),
+            resolved_role_name: Some("Admin".to_string()),
+            audit_hash: Some("hash-1".to_string()),
+            event_sequence_id: Some(1),
+            error: None,
+        };
+
+        let json = serde_json::to_value(&output).expect("serializar");
+        let object = json.as_object().expect("el JSON debe ser un objeto");
+
+        let allowed_keys =
+            ["ok", "verdict", "reason", "resolved_role_id", "resolved_role_name", "audit_hash", "event_sequence_id", "error"];
+        for key in object.keys() {
+            assert!(allowed_keys.contains(&key.as_str()), "clave no permitida en el output: '{key}'");
+        }
+
+        let json_lowercase = serde_json::to_string(&output).expect("serializar").to_lowercase();
+        for forbidden in [
+            "password", "api_key", "api-key", "broker_secret", "private_key",
+            "signing_key", "investor_password", "master_secret", "encryption_key",
+            "192.168.", "10.0.0.",
+        ] {
+            assert!(!json_lowercase.contains(forbidden), "el output no debe contener '{forbidden}'");
+        }
+    }
+
+    /// Un `pipeline` fuera del catálogo falla con un error claro, nunca con
+    /// un panic.
+    #[tokio::test]
+    async fn verify_rejects_unknown_pipeline() {
+        let mut input = sample_input(DEFAULT_ROOT_ACCESS_TOKEN_ID);
+        input.pipeline = "UNKNOWN".to_string();
+        let output = verify_operator_roles(input).await;
+
+        assert!(!output.ok);
+        assert!(output.error.expect("debe traer error").contains("pipeline"));
     }
 }

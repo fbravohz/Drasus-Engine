@@ -52,6 +52,14 @@
 //! - `licensing_system`: repositorio MUTABLE (con `row_version`, ADR-0141)
 //!   para la tabla `licenses` (`docs/features/licensing-system.md`,
 //!   ADR-0143, ADR-0144, migración `0008_licensing_system.sql`). STORY-028.
+//! - `operator_roles`: DOS repositorios MUTABLES (con `row_version`,
+//!   ADR-0141) para `operator_roles`/`operator_assignments` -- las
+//!   mutaciones que afectan el invariante "último admin en pie" corren
+//!   DENTRO de una transacción `BEGIN IMMEDIATE` que valida y escribe la
+//!   fila y su evento juntos -- + un repositorio APPEND-ONLY ATÓMICO (con
+//!   `event_sequence_id`) para `operator_role_events`
+//!   (`docs/features/operator-roles.md`, ADR-0149 cimiento #14, ADR-0123,
+//!   migración `0020_operator_roles.sql`). STORY-044.
 //! - `pool`: fábrica del pool de conexiones + runner de migraciones embebidas.
 //! - `plan_tier_quota`: repositorio MUTABLE (con `row_version`, ADR-0141)
 //!   para la tabla `plans` (`docs/features/plan-tier-quota.md`, ADR-0143,
@@ -85,6 +93,7 @@ pub mod job;
 pub mod licensing_system;
 pub mod master_account_hierarchy;
 pub mod mcp_gateway;
+pub mod operator_roles;
 pub mod plan_tier_quota;
 pub mod pool;
 pub mod telemetry;

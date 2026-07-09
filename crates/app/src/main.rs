@@ -14,14 +14,14 @@ use shared::public_interface::{
     create_pool, run_migrations, run_mcp_server, verify_central_identity, verify_consent_registry,
     verify_data_aggregation, verify_data_portability, verify_enriched_domain_events,
     verify_institutional_report_engine, verify_instance_continuity, verify_licensing_system,
-    verify_master_account_hierarchy, verify_plan_tier_quota, verify_third_party_api_gateway,
-    verify_usage_metering, verify_verified_account_registry, CentralIdentityVerifyInput,
-    ConsentRegistryVerifyInput, DataAggregationVerifyInput, DataPortabilityVerifyInput,
-    EnrichedDomainEventsVerifyInput, ExecutorIdentity, InstanceContinuityVerifyInput,
-    InstitutionalReportEngineVerifyInput, JobExecutor, JobExecutorConfig,
-    LicensingSystemVerifyInput, MasterAccountHierarchyVerifyInput, PlanTierQuotaVerifyInput,
-    SystemClock, ThirdPartyApiGatewayVerifyInput, UsageMeteringVerifyInput,
-    VerifiedAccountRegistryVerifyInput,
+    verify_master_account_hierarchy, verify_operator_roles, verify_plan_tier_quota,
+    verify_third_party_api_gateway, verify_usage_metering, verify_verified_account_registry,
+    CentralIdentityVerifyInput, ConsentRegistryVerifyInput, DataAggregationVerifyInput,
+    DataPortabilityVerifyInput, EnrichedDomainEventsVerifyInput, ExecutorIdentity,
+    InstanceContinuityVerifyInput, InstitutionalReportEngineVerifyInput, JobExecutor,
+    JobExecutorConfig, LicensingSystemVerifyInput, MasterAccountHierarchyVerifyInput,
+    OperatorRolesVerifyInput, PlanTierQuotaVerifyInput, SystemClock, ThirdPartyApiGatewayVerifyInput,
+    UsageMeteringVerifyInput, VerifiedAccountRegistryVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 
@@ -75,11 +75,12 @@ enum Commands {
     ///   drasus verify instance-continuity --input '{"master_secret":"correct horse battery staple","plaintext":"snapshot-bytes","nonce_seed":42,"custody":{"titular_node_id":"node-A","custody_epoch":3},"my_node_id":"node-A"}'
     ///   drasus verify master-account-hierarchy --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'
     ///   drasus verify data-portability --input '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'
+    ///   drasus verify operator-roles --input '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -620,10 +621,45 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        "operator-roles" => {
+            // `owner_id`, `node_id`, `access_token_id`, `capability_key` y
+            // `pipeline` no tienen defaults razonables (no existe una
+            // cuenta/operador/capacidad "por defecto" que verificar) -- por
+            // eso `drasus verify operator-roles` SIN --input no es válido,
+            // igual que master-account-hierarchy y data-portability.
+            let input: OperatorRolesVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "operator-roles requiere --input con al menos {{\"owner_id\":\"...\",\"node_id\":\"...\",\"access_token_id\":\"...\",\"capability_key\":\"...\",\"pipeline\":\"GENERATE\"}}"
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let output = verify_operator_roles(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("OperatorRolesVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles"
             );
             std::process::exit(1);
         }

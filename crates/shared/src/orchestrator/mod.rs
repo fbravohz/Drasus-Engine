@@ -55,6 +55,13 @@
 //! - `mcp_server`: servidor MCP sobre stdio (ADR-0123, STORY-010) — expone
 //!   las operaciones de `shared` como herramientas MCP y registra cada
 //!   decisión de permiso en `permission_decisions`.
+//! - `operator_roles`: composición del cimiento #14 -- define/reclasifica/
+//!   revoca roles, asigna/revoca operadores, evalúa el gate compuesto (rol
+//!   AND `mcp_gateway::evaluate_permission`), decide la cuota de cuentas
+//!   hijas con `plan_tier_quota::PlanLimits` (#3), siembra el primer admin
+//!   por defecto (`seed_admin_bootstrap`, idempotente) y modela el registro
+//!   local de la cascada de autoridad del fondo
+//!   (`docs/features/operator-roles.md`, ADR-0149, ADR-0123). STORY-044.
 //! - `plan_tier_quota`: catálogo de desarrollo (stub, Free/Paid) + caché con
 //!   TTL de límites resueltos por tier + composición del puerto
 //!   `plan_limits_out` (`docs/features/plan-tier-quota.md`, ADR-0143,
@@ -89,6 +96,7 @@ pub mod job_executor;
 pub mod licensing_system;
 pub mod master_account_hierarchy;
 pub mod mcp_server;
+pub mod operator_roles;
 pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod third_party_api_gateway;

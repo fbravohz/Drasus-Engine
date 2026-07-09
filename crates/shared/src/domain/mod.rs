@@ -61,6 +61,13 @@
 //! - `mcp_gateway`: evaluador de permisos puro del Gateway MCP (ADR-0123) —
 //!   tipos `Pipeline`, `PermissionRequest`, `PermissionDecision` y la función
 //!   `evaluate_permission` (sin I/O). STORY-010.
+//! - `operator_roles`: matriz de capacidades por puerto de Feature
+//!   (`BTreeMap` ordenado -- nunca `HashMap`), gate de rol compuesto CON
+//!   `mcp_gateway::evaluate_permission` (nunca lo sustituye), el invariante
+//!   puro "último admin en pie" y el gate de creación de cuentas hijas que
+//!   reutiliza `plan_tier_quota::PlanLimits::max_child_accounts`
+//!   (`docs/features/operator-roles.md`, ADR-0149 cimiento #14, ADR-0123,
+//!   ADR-0141, ADR-0020). STORY-044.
 //! - `plan_tier_quota`: catálogo configurable de planes -- validación de
 //!   coherencia de un plan (tier + cuotas + precio), resolución de límites
 //!   (`PlanLimits`) y hash de auditoría encadenado por `row_version`
@@ -101,6 +108,7 @@ pub mod licensing_system;
 pub mod logic;
 pub mod master_account_hierarchy;
 pub mod mcp_gateway;
+pub mod operator_roles;
 pub mod plan_tier_quota;
 pub mod telemetry;
 pub mod third_party_api_gateway;
