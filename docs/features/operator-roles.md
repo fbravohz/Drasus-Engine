@@ -1,10 +1,10 @@
 # Operator Roles (Roles de Operador a la Carta)
 
-> 🔴 **En Diseño** 2026-07-07 · Cimiento del substrato aprobado por el propietario, aún sin orden de trabajo.
+> 🟡 **Parcial** 2026-07-08 · Orden de trabajo [STORY-044](../execution/STORY-044-operator-roles.md). Catálogo de roles a la carta (`operator_roles`) + asignaciones operador↔rol (`operator_assignments`) + ledger append-only de cambios (`operator_role_events`) + Core (matriz de capacidades, gate compuesto rol+ADR-0123, invariante "último admin en pie", gate de cuota de cuentas hijas) + orquestador + CLI de verificación, construidos e implementados. **Pendiente:** el transporte de red de la cascada de autoridad del fondo (relé ADR-0143), la integración cross-máquina completa de la doble atestación de #12, y la Cáscara Visual — diferidos a la construcción de la Cabina de Mando / Etapa 0.5.
 
 **Carpeta:** `./features/operator-roles/`
-**Estado:** 🔴 En Diseño (cimiento #14, pendiente de Story)
-**Última actualización:** 2026-07-07
+**Estado:** 🟡 Parcial (cimiento #14 — Core/persistencia/orquestador/CLI cerrados, transporte de red de la cascada + UI diferidos)
+**Última actualización:** 2026-07-08
 **Decisión Arquitectónica Asociada:** ADR-0149 (cimiento #14) · ADR-0144 (substrato) · ADR-0137 (catálogo de puertos como universo de capacidades) · ADR-0123 (evaluador de permisos que este cimiento extiende) · ADR-0147 (cascada de autoridad, #12) · ADR-0020 (`access_token_id` Grupo II)
 
 ## ¿Qué es esta feature?

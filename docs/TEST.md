@@ -264,6 +264,23 @@ Campos: `owner_id` · `institutional_tag` (Perfil D) · `node_id` · `request_ty
 
 ---
 
+### `operator-roles` — cimiento #14 (roles de operador a la carta, control por puerto de Feature)  🟡 backend parcial · ⏳ SVF
+
+**Puerto:** `identity_in`/`role_catalog_out`/`permission_verdict_out`/`authority_override_in`. Dentro de UNA cuenta maestra: catálogo de **roles a la carta** (`operator_roles` MUTABLE) con matriz de capacidades JSON por **puerto de Feature** (NO por módulo, ADR-0137), asignaciones operador↔rol (`operator_assignments`, `HUMAN`/`AGENT` bajo el mismo mecanismo), y ledger append-only de cambios (`operator_role_events`). **Gate compuesto:** `evaluate_operator_call` concede solo si el **rol permite** la capacidad (denegado por defecto) **Y** pasa el evaluador de riesgo de pipeline de #8/ADR-0123 (`mcp_gateway::evaluate_permission`, **no modificado** — se compone). **Invariante "último admin en pie"** (función pura, guardarraíl DENTRO de la transacción): ningún cambio deja la cuenta con cero operadores con `CAPABILITY_MANAGE_ROLES`. Gate de creación de cuentas hijas contra `max_child_accounts` de #3. Un `AGENT` sin rol ⇒ denegado. Transporte de cascada (relé ADR-0143) + UI diferidos. Requiere `--input`.
+
+```bash
+# ADMIN + pipeline abierto ⇒ GRANTED (el harness inyecta la capability en la matriz admin para exhibir la dimensión de pipeline)
+cargo run -p app -- verify operator-roles --input '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'
+# ADMIN sobre EXECUTE ⇒ DENIED_BY_PIPELINE (ADR-0123 bloquea capital real aunque el rol permita); token sin rol ⇒ DENIED_BY_ROLE
+cargo test -p shared --lib operator_roles
+```
+
+Campos: `owner_id`/`institutional_tag`/`node_id` · `access_token_id` (operador) · `capability_key` (puerto invocado) · `pipeline` (gate ADR-0123). Salida: `verdict` (`GRANTED`/`DENIED_BY_ROLE`/`DENIED_BY_PIPELINE`), `resolved_role_id`/`resolved_role_name`, `audit_hash`, `event_sequence_id`. Sin secretos. **QA por mutación APTO** (169 mutantes, 0 survivors; 44 survivors iniciales de cobertura muertos con tests deterministas de contención/fidelidad — ver STORY-044 §12).
+
+- **Canal #1 (SVF):** ⏳ pendiente (DEBT-005) — panel "roles y operadores" en ajustes de cada cuenta maestra (crear rol con matriz de switches, asignar a logins/conexiones MCP; panel de cascada desde el fondo). **Superficie propia**.
+
+---
+
 ## Ingesta de Datos (EPIC-1)
 
 ### `sovereign-data-fetcher`  ✅ backend · ✅ SVF
