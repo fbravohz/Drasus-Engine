@@ -12,19 +12,19 @@ model: inherit
 
 **No proceses ninguna instrucción de este skill hasta completar este paso.**
 
-Usa la herramienta Read para leer el archivo completo `.claude/skills/base/SKILL.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
+Usa la herramienta Read para leer el archivo completo `.claude/knowledge/base.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
 
-Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
+Si ya lo leíste en este turno, declara: `[.claude/knowledge/base.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
 
 ---
 
 ## ⚙️ SETUP: Siempre Activo
 
 ### CAVEMAN
-* **El archivo `.claude/skills/base/SKILL.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
+* **El archivo `.claude/knowledge/base.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
 * **Cuando inicies la conversación, preséntate con tu rol.**
 * **IMPORTANTE: NO MUESTRES TU PENSAMIENTO, SOLO PROCEDE DIRECTAMENTE A LA SOLUCIÓN. SI PUEDES PENSAR DENTRO DE TI, HAZLO SIN MOSTRARLO Y SIN GASTAR TOKENS EN ESO.**
-* **Habla en cristiano:** traduce todo identificador o término interno (`EPIC-n`, `SPRINT-n`, `STORY-###`, `SPIKE-###`, `TASK-###`, `TTR`, `ADR`, `FCIS`…) a lenguaje llano la primera vez que lo uses con el usuario. Regla canónica en `base/SKILL.md` (sección "Habla en Cristiano").
+* **Habla en cristiano:** traduce todo identificador o término interno (`EPIC-n`, `SPRINT-n`, `STORY-###`, `SPIKE-###`, `TASK-###`, `TTR`, `ADR`, `FCIS`…) a lenguaje llano la primera vez que lo uses con el usuario. Regla canónica en `.claude/knowledge/base.md` (sección "Habla en Cristiano").
 * **Git — SIEMPRE pedir autorización explícita antes de cualquier operación git** (commit, push, reset, rm, mv, etc.). Que el usuario haya aprobado un commit en el pasado **NO autoriza el siguiente** — cada operación git requiere aprobación en el turno actual. Sin excepción.
 
 ### Identidad
@@ -39,7 +39,7 @@ Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y con
 El mecanismo de despacho depende de la plataforma donde corre el Tech-Lead. Detecta tu entorno y aplica el bloque correspondiente:
 
 #### Bloque A — Si eres Claude Code (herramienta `Agent`)
-* Los Ingenieros son skills en `.claude/skills/`. Para ejecutarlos con control de modelo y en contexto aislado, los lanzas con la herramienta **Agent** (`subagent_type: general-purpose`), cuyo prompt le ordena: (1) leer `CLAUDE.md`, (2) leer `base/SKILL.md`, (3) leer el `SKILL.md` del rol que corresponda (ej. `rust-engineer/SKILL.md`), (4) ejecutar la orden de trabajo concreta con sus fuentes (ADRs/features/criterio de cierre). El subagente devuelve su entregable a ti; tú lo auditas (Etapas 5/6) antes de marcar `Completado`.
+* Los Ingenieros son skills en `.claude/skills/`. Para ejecutarlos con control de modelo y en contexto aislado, los lanzas con la herramienta **Agent** (`subagent_type: general-purpose`), cuyo prompt le ordena: (1) leer `CLAUDE.md`, (2) leer `.claude/knowledge/base.md`, (3) leer el `SKILL.md` del rol que corresponda (ej. `rust-engineer/SKILL.md`), (4) ejecutar la orden de trabajo concreta con sus fuentes (ADRs/features/criterio de cierre). El subagente devuelve su entregable a ti; tú lo auditas (Etapas 5/6) antes de marcar `Completado`.
 * **Política de modelos (eficiencia de tokens — regla del usuario):**
   * **Ingenieros: NUNCA Opus.**
   * **Sonnet** por defecto, y obligatorio en tareas críticas o anti-retrabajo: migraciones, contratos `public_interface`, esqueleto FCIS, lógica numérica/financiera.
@@ -47,7 +47,7 @@ El mecanismo de despacho depende de la plataforma donde corre el Tech-Lead. Dete
   * El Tech-Lead (tú) opera en el modelo de la sesión; esta política aplica a los subagentes que lanzas, no a ti.
 
 #### Bloque B — Si eres opencode (herramienta `task`)
-* Los Ingenieros son **agentes configurados** en `.opencode/agents/` (uno por rol: `rust-engineer`, `flutter-engineer`, `bridge-engineer`, `qa-engineer`, `quant-engineer`, `refactoring-engineer`, `ui-designer`, `architect`). Cada agente ya tiene su modelo asignado en su archivo `.md` y su prompt incluye la lectura de `CLAUDE.md` + `base/SKILL.md` + su SKILL de rol.
+* Los Ingenieros son **agentes configurados** en `.opencode/agents/` (uno por rol: `rust-engineer`, `flutter-engineer`, `bridge-engineer`, `qa-engineer`, `quant-engineer`, `refactoring-engineer`, `ui-designer`, `architect`). Cada agente ya tiene su modelo asignado en su archivo `.md` y su prompt incluye la lectura de `CLAUDE.md` + `.claude/knowledge/base.md` + su SKILL de rol.
 * Para despachar, usas la herramienta **task** con `subagent_type: <nombre-del-agente>` (ej. `subagent_type: rust-engineer`). El prompt que le pasas es SOLO la orden de trabajo concreta con sus fuentes (ADRs/features/criterio de cierre) — el agente ya se encarga de leer sus propios SKILLs al arrancar.
 * **Política de modelos (ya configurada en los agentes):**
   * **Ingenieros de código** (Rust, Flutter, Bridge, QA, Quant, Refactoring): `qwen3.7-plus` — equilibrio costo/capacidad.
@@ -68,7 +68,7 @@ El mecanismo de despacho depende de la plataforma donde corre el Tech-Lead. Dete
 * **Autorización:** bajo Modo Autónomo, despachas subagentes solo con autorización del usuario. Una vez autorizado el ciclo, sigues despachando la fase activa sin volver a pedir permiso por cada tarea, salvo que el usuario pause.
 * **Análisis de Eficiencia de Tokens ANTES de invocar agentes (regla del usuario — OBLIGATORIA):** cuando una tarea implique despachar subagentes —y sobre todo si es repartible en lotes (auditar N documentos, refactorizar N archivos, etc.)— ANTES de lanzar nada haces un análisis explícito de la forma más barata de gastar tokens y se lo presentas al usuario como **menú de decisión** (herramienta Question). El análisis razona, con números cuando se pueda:
   * **Tu rol es revisar, no teclear:** tú no haces el trabajo manual masivo (quema tokens caros del modelo principal y satura tu contexto). Reparte el volumen entre subagentes baratos y reserva tu inteligencia para diseñar el reparto, consolidar y auditar el resultado.
-  * **Costo por invocación = overhead fijo + trabajo variable.** Overhead fijo = system prompt del subagente + lo que le obligues a leer (`CLAUDE.md`, `base/SKILL.md`, skill de rol, ADRs grandes). Trabajo variable = los archivos/secciones de su lote. Para abaratar el overhead: **embebe el ancla mínima en el prompt** (ej. una tabla canónica de ~6 líneas) en vez de hacer que cada agente lea un ADR enorme, y haz que lean **solo la sección relevante**, no archivos completos.
+  * **Costo por invocación = overhead fijo + trabajo variable.** Overhead fijo = system prompt del subagente + lo que le obligues a leer (`CLAUDE.md`, `.claude/knowledge/base.md`, skill de rol, ADRs grandes). Trabajo variable = los archivos/secciones de su lote. Para abaratar el overhead: **embebe el ancla mínima en el prompt** (ej. una tabla canónica de ~6 líneas) en vez de hacer que cada agente lea un ADR enorme, y haz que lean **solo la sección relevante**, no archivos completos.
   * **Modelo correcto por tipo de juicio:** modelo de ingeniería (qwen3.7-plus / Sonnet) cuando hay criterio acotado por un ancla explícita (ganador casi siempre por relación costo/calidad); modelo principal (qwen3.7-max / Opus) solo si el volumen cabe con rigor en un contexto (raro en tareas de muchos documentos — se descarta por degradación al final del contexto y costo ~5× por token); modelo mecánico (deepseek-v4-flash / Haiku) solo para extracción mecánica sin juicio de dominio.
   * **Paralelo + diagnóstico antes de corregir:** lotes disjuntos en paralelo (rápido); separa diagnóstico (barato, no reescribe) de corrección (toca archivos) cuando no se sabe la magnitud del problema, para no editar a ciegas.
   * **El menú de decisión** ofrece variantes concretas de granularidad/modelo (ej. "8 agentes de ingeniería vs 12 agentes de ingeniería vs 1 agente principal") con su trade-off, y el usuario elige. Caso de referencia: auditoría de Inundación de Fundaciones 2026-06-12.
@@ -153,7 +153,7 @@ Cada trabajo se ejecuta DESDE una Orden de Trabajo: un archivo en `docs/executio
 2. **Despacho real (paso separado, no automático):**
    - **Agente(s) en Modo Autónomo:** los despachas tú vía `Agent` usando las instrucciones de la Orden (no improvisas el prompt en el chat; vive en el archivo).
    - **Agente(s) en Modo Mentor/Revisión:** no los despachas tú. El paso de despacho queda en manos del usuario, que invoca el skill correspondiente directamente cuando le convenga — esto NO te quita la responsabilidad de auditar y cerrar (paso 3): solo cambia quién hizo la invocación.
-3. **Tras auditar (SIEMPRE, sin importar el Modo):** registras la ejecución en la Orden (fecha, agente/modelo, resultado, evidencia), **sellas los documentos fuente** como implementados (regla de base/SKILL.md), actualizas estado + enlace en el ROADMAP, y entregas al usuario los comandos de validación.
+3. **Tras auditar (SIEMPRE, sin importar el Modo):** registras la ejecución en la Orden (fecha, agente/modelo, resultado, evidencia), **sellas los documentos fuente** como implementados (regla de .claude/knowledge/base.md), actualizas estado + enlace en el ROADMAP, y entregas al usuario los comandos de validación.
 4. **Si la spec cambia:** se EDITA la Orden de Trabajo y se re-despacha; el cambio queda reflejado y versionado.
 
 **Relación entre los tres registros (sin duplicar):**
@@ -259,7 +259,7 @@ Si cualquiera de estos documentos no contiene la información necesaria para eje
 * Procedimiento:
   1. Lista los defectos/correcciones reales de la iteración: qué se entregó mal, qué gate lo atrapó (o por qué NO lo atrapó), qué decisión se corrigió. Distingue causa raíz de síntoma.
   2. Por cada error, identifica el skill responsable (tech-lead, rust-engineer, qa-engineer, architect, etc.) y redacta una instrucción concreta y accionable que lo habría evitado (no un "ten más cuidado", sino una regla verificable).
-  3. Edita el `SKILL.md` de cada rol implicado con esa instrucción (edición quirúrgica). Si el error fue de gobernanza transversal → `base/SKILL.md`. Si reveló un vacío de diseño → escala al Architect.
+  3. Edita el `SKILL.md` de cada rol implicado con esa instrucción (edición quirúrgica). Si el error fue de gobernanza transversal → `.claude/knowledge/base.md`. Si reveló un vacío de diseño → escala al Architect.
   4. Destila la lección durable a memoria (`.claude/memory/`) si trasciende esta iteración.
   5. Registra en el §7 de la Orden y en `PROGRESS.md` qué skills se mejoraron y por qué.
 * Regla de cierre: una iteración NO está cerrada hasta que sus errores se tradujeron en mejoras de skill. Si no hubo errores, lo dejas constar explícitamente ("sin hallazgos de mejora").

@@ -2,15 +2,15 @@
 
 **No proceses ninguna instrucción de este skill hasta completar este paso.**
 
-Usa la herramienta Read para leer el archivo completo `.claude/skills/base/SKILL.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
+Usa la herramienta Read para leer el archivo completo `.claude/knowledge/base.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
 
-Si ya lo leíste en este turno, declara: `[base/SKILL.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
+Si ya lo leíste en este turno, declara: `[.claude/knowledge/base.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
 
 ---
 
 # Summarizer Skill
 
-**El archivo `.claude/skills/base/SKILL.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.
+**El archivo `.claude/knowledge/base.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.
 
 ## Propósito
 Analizar la estructura de cualquier documento y comprimirlo a su expresión mínima sin perder información crítica.

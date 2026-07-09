@@ -13,7 +13,7 @@
 - **Unidad de entrega = un módulo completo (ADR-0118).** Cada fase libera el 100% del **núcleo** de su módulo, no una selección de piezas. La fuente de verdad de qué TTRs componen un módulo es su tabla "TTRs Etiquetados por Fase" dentro del propio `docs/modules/<módulo>.md`.
 - **Una Feature se construye una sola vez**, en el primer módulo que la usa en el pipeline (`ingest → generate → validate → incubate → manage → execute → feedback → withdraw`). Los módulos posteriores solo la **integran** (enchufan su puerto), no la reconstruyen.
 - **La vanidad está fuera del núcleo:** la UI unificada va a EPIC-8 (ADR-0117) y el R&D no validado a `moonshots/`/EPIC-9+ (ADR-0103). Por eso "módulo completo" no obliga a construir adornos antes de llegar al dinero.
-- **Vocabulario:** los identificadores internos (`EPIC-n`, `STORY-###`, `TTR`, `ADR-XXXX`) están traducidos en `.claude/skills/base/SKILL.md` ("Habla en Cristiano"). Aquí: **EPIC = fase/gran bloque**, **STORY = trabajo con código**, **SPIKE = investigación de un riesgo técnico**, **TASK = trabajo sin código**.
+- **Vocabulario:** los identificadores internos (`EPIC-n`, `STORY-###`, `TTR`, `ADR-XXXX`) están traducidos en `.claude/knowledge/base.md` ("Habla en Cristiano"). Aquí: **EPIC = fase/gran bloque**, **STORY = trabajo con código**, **SPIKE = investigación de un riesgo técnico**, **TASK = trabajo sin código**.
 
 ---
 

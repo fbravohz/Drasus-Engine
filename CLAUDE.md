@@ -46,7 +46,7 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 
 **Pipeline de módulos:** `ingest → generate → validate → incubate → manage → execute → feedback → withdraw`.
 
-**Skills (agentes):** `.claude/skills/<rol>/SKILL.md`. `base/SKILL.md` tiene supremacía sobre todos.
+**Skills (agentes):** `.claude/skills/<rol>/SKILL.md`. `.claude/knowledge/base.md` tiene supremacía sobre todos (no es una skill invocable: es la base de conocimiento obligatoria que cada skill lee al iniciar).
 
 ---
 
@@ -76,6 +76,6 @@ Existe memoria nativa de proyecto en `~/Drasus-Engine/.claude/memory/` (índice 
 
 ## 5. Governance — Fuente Única de Verdad
 
-Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.claude/skills/base/SKILL.md`**, que gobierna a todos los skills. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
+Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.claude/knowledge/base.md`**, que gobierna a todos los skills. **No es una skill invocable** — es conocimiento base de lectura obligatoria, referenciado por cada skill al iniciar. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
 
 Recordatorio mínimo siempre activo (el detalle está en `base`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa; en código, identificadores en inglés y comentarios en español (ADR-0121).

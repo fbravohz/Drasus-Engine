@@ -439,7 +439,6 @@ La carpeta `.claude/` alberga la configuración, estado, skills especializados y
 | Skill | Rol | Descripción |
 |-------|-----|-------------|
 | [**architect**](./../.claude/skills/architect/SKILL.md) | Arquitecto Senior | Procesa, filtra y distribuye información técnica y de negocio. No desarrollador. |
-| [**base**](./../.claude/skills/base/SKILL.md) | Fundación Operativa | Instrucciones base y de rigor para todos los agentes (Governa a todos) |
 | [**bridge-engineer**](./../.claude/skills/bridge-engineer/SKILL.md) | Ingeniero de Puentes | Diseña contratos de comunicación FFI y gRPC entre Rust y Flutter |
 | [**flutter-engineer**](./../.claude/skills/flutter-engineer/SKILL.md) | Ingeniero Flutter | Crea interfaces estéticas (Thin Shell) sin lógica de negocio |
 | [**partner**](./../.claude/skills/partner/SKILL.md) | Co-Founder & Socio | Análisis estratégico, visión CEO & Quant, sinergias operativas |
@@ -451,6 +450,8 @@ La carpeta `.claude/` alberga la configuración, estado, skills especializados y
 | [**summarizer**](./../.claude/skills/summarizer/SKILL.md) | Summarizer | [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA] |
 | [**tech-lead**](./../.claude/skills/tech-lead/SKILL.md) | Tech Lead | Lee docs/ y toma iniciativa autónoma de desarrollo, despachando a Ingenieros |
 | [**ui-designer**](./../.claude/skills/ui-designer/SKILL.md) | UI Designer | Etapa 0.5: audita y escribe la sección `## Cáscara Visual` de cada feature antes de que llegue al Flutter Engineer |
+
+`base` no es un skill invocable: es la base de conocimiento de lectura obligatoria en [`.claude/knowledge/base.md`](./../.claude/knowledge/base.md), gobierna a todos los skills de la tabla anterior.
 
 ### Estado Persistente
 

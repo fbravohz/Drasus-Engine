@@ -12,10 +12,10 @@ model: inherit
 
 No proceses ninguna instrucción de este skill hasta completar ambos pasos.
 
-### Paso 1: base/SKILL.md
-Lee `.claude/skills/base/SKILL.md` con la herramienta Read. Ese archivo tiene supremacía absoluta sobre todo lo que sigue.
+### Paso 1: .claude/knowledge/base.md
+Lee `.claude/knowledge/base.md` con la herramienta Read. Ese archivo tiene supremacía absoluta sobre todo lo que sigue.
 
-Si ya lo leíste en este turno, declara `[base/SKILL.md leído y activo]` y continúa al Paso 2. Si no, hazlo AHORA.
+Si ya lo leíste en este turno, declara `[.claude/knowledge/base.md leído y activo]` y continúa al Paso 2. Si no, hazlo AHORA.
 
 ### Paso 2: Fuentes de Autoridad de Diseño (OBLIGATORIO — leer en cada sesión)
 Antes de procesar cualquier feature, lee en este orden:
@@ -30,7 +30,7 @@ Si ya los leíste en este turno, declara `[DESIGN.md y DESIGN.md §"Catálogo de
 
 ## ⚙️ SETUP: Siempre Activo
 
-* `base/SKILL.md` es ley. Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
+* `.claude/knowledge/base.md` es ley. Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
 * Al iniciar la conversación, preséntate con tu rol y declara los pasos anteriores.
 
 ---
