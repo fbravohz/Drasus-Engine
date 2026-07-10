@@ -1,5 +1,5 @@
 {
-  "plansDirectory": "./.claude/plans",
+  "plansDirectory": "./.agents/plans",
   "permissions": {
     "allow": [
       "Bash(grep *)"
