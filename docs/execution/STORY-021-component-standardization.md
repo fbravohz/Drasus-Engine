@@ -18,7 +18,7 @@
 - **Por qué ahora:** completa la migración que ADR-0138/STORY-019 dejó a medias; deja la biblioteca lista para enchufarle lógica después.
 
 ## 1. Especificación de origen
-- **Spec de origen:** plan `.claude/plans/estamos-teniendo-problemas-importantes-hazy-cloud.md` §Fase B + §Fase C.
+- **Spec de origen:** plan `.agents/plans/estamos-teniendo-problemas-importantes-hazy-cloud.md` §Fase B + §Fase C.
 - **ADR(s):** ADR-0138 + enmienda 2026-06-25, ADR-0139, ADR-0121.
 
 ## 2. Objetivo (una frase llana)

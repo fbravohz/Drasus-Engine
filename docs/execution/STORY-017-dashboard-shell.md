@@ -20,7 +20,7 @@
 - **Por qué se formaliza ahora:** cerrar la deuda de gobernanza junto con el resto del trabajo UI.
 
 ## 1. Especificación de origen
-- **Spec de origen:** `.claude/plans/tengo-feedback-1-en-peaceful-breeze.md` §2 (Dashboard Shell).
+- **Spec de origen:** `.agents/plans/tengo-feedback-1-en-peaceful-breeze.md` §2 (Dashboard Shell).
 - **ADR(s):** ADR-0136 (arquitectura visual Dashboard + Canvas), ADR-0117 (Cáscara Delgada).
 
 ## 2. Objetivo (una frase llana)

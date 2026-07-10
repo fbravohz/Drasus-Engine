@@ -20,7 +20,7 @@
 - **Por qué se formaliza ahora:** el propietario pidió saldar la deuda de gobernanza (trabajo construido sin Story) antes de estandarizar la biblioteca.
 
 ## 1. Especificación de origen
-- **Spec de origen:** `.claude/plans/tengo-feedback-1-en-peaceful-breeze.md` §1 (acento dinámico + settings) y §C (paleta de fondo).
+- **Spec de origen:** `.agents/plans/tengo-feedback-1-en-peaceful-breeze.md` §1 (acento dinámico + settings) y §C (paleta de fondo).
 - **ADR(s):** ADR-0138 (design system), ADR-0139 (principio rector).
 
 ## 2. Objetivo (una frase llana)

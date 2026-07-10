@@ -2,7 +2,7 @@
 
 Esta carpeta no documenta el proyecto: documenta lo que el usuario aprende mientras lo construye (Protocolo de Lecciones, ADR-0122, corregido por [ADR-0124](../adr/ADR-0124.md)). Cada archivo es una Story/Task concreta — el mismo ID que su Orden en `docs/execution/` — y consolida TODO lo enseñado durante esa Story, anclado a su código real. Cualquier skill puede leer y escribir aquí bajo Modo Mentor, Revisión o Docente (ADR-0120/ADR-0122).
 
-## Reglas (detalle completo en `.claude/knowledge/base.md`)
+## Reglas (detalle completo en `.agents/knowledge/base.md`)
 
 - Un archivo por Story/Task, nombrado igual que su Orden (`STORY-007-telemetry.md`), nunca por tema de lenguaje suelto.
 - Cada concepto explicado dentro del archivo cita el código real de esa Story (ruta + fragmento), no un ejemplo de manual.

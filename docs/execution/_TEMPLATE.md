@@ -89,3 +89,16 @@ cargo llvm-cov --workspace --summary-only          # % de cobertura de líneas
 
 ## 8. Pendientes derivados / decisiones
 - <pendientes que salieron de este trabajo, con su destino (otra Orden, escalamiento, etc.)>
+
+---
+
+## 9. Cierre ejecutivo (para el usuario — CEO)
+
+> Escrito por el Tech-Lead al CERRAR la Story, justo antes de proponer commits —
+> nunca al abrirla (eso es §0: intención de entrada, no resultado de cierre).
+> **Es el ÚNICO texto que se imprime en el chat como mensaje final de cierre** de
+> esta Story. Antes de escribirla, lee `.agents/knowledge/brief.md` (única vez
+> que se consulta) y aplica el "Formato de Reporte al CEO" definido en
+> `.agents/skills/tech-lead/SKILL.md`.
+
+<Bloque ESTADO / PROGRESO MACRO / FRICCIONES Y DEUDA / INPUT REQUERIDO DEL CEO aquí.>

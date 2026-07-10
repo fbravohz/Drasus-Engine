@@ -1,7 +1,7 @@
 # DEBT.md — Registro Canónico de Deuda Técnica Rastreada
 
 > **Propósito:** el **único lugar descubrible** donde vive la lista de deudas técnicas conocidas y **deliberadamente aplazadas**. Una deuda rastreada es lo opuesto a deuda oculta: está escrita con su causa, su impacto y su disparador de pago. En greenfield es sano — permite avanzar en el camino crítico sin frenar por cosas que aún no muerden, **siempre que** queden registradas aquí.
-> **Relación con `PROGRESS.md`:** la bitácora del Tech-Lead (`.claude/state/tech-lead/PROGRESS.md`) *narra* cuándo se halló una deuda; **este archivo es el registro canónico**. Las entradas de PROGRESS apuntan a los `DEBT-XXX` de aquí. Si una deuda no está aquí, no está rastreada.
+> **Relación con `PROGRESS.md`:** la bitácora del Tech-Lead (`.agents/state/tech-lead/PROGRESS.md`) *narra* cuándo se halló una deuda; **este archivo es el registro canónico**. Las entradas de PROGRESS apuntan a los `DEBT-XXX` de aquí. Si una deuda no está aquí, no está rastreada.
 > **Mantenimiento:** el Tech-Lead añade/cierra filas al abrir o pagar una deuda. Estado: `Abierta` · `En pago` · `Pagada` (con enlace a la Story que la saldó).
 
 ## Convención de severidad

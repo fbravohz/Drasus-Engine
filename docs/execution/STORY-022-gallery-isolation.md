@@ -31,7 +31,7 @@
 - **TTR(s):** ninguno.
 - **Módulo(s):** ninguno.
 - **ADR(s):** ADR-0117 (Techo Fijo / Cáscara Visual) como contexto del design system; ADR-0121 (idioma de código y comentarios).
-- **Plan aprobado:** `.claude/plans/necesito-que-separemos-todos-mighty-mccarthy.md`.
+- **Plan aprobado:** `.agents/plans/necesito-que-separemos-todos-mighty-mccarthy.md`.
 
 ## 2. Objetivo (una frase llana)
 

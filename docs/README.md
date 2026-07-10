@@ -420,19 +420,22 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 
 ---
 
-## 🔧 Estructura de Configuración Claude Code (`.claude/`)
+## 🔧 Estructura de Configuración (`.claude/` + `.agents/`)
 
-La carpeta `.claude/` alberga la configuración, estado, skills especializados y planes para el entorno Claude Code.
+La carpeta `.claude/` alberga únicamente los skills (frontmatter de descubrimiento) y la configuración del entorno Claude Code. La carpeta `.agents/` alberga documents, knowledge, memory, plans y state — el contenido reutilizable por otros tipos de agente — más el cuerpo completo de cada skill.
 
 ### Carpetas Principales
 
 | Carpeta | Descripción |
 |---------|-------------|
-| [**skills/**](./../.claude/skills/) | Agentes especializados para roles arquitectónicos y técnicos |
-| [**documents/**](./../.claude/documents/) | Workspace de documentación temporal y sesiones activas |
-| [**state/**](./../.claude/state/) | Estado persistente entre sesiones (Progress, Memory) |
-| [**plans/**](./../.claude/plans/) | Planes de ejecución y arquitectura guardados |
-| [**worktrees/**](./../.claude/worktrees/) | Worktrees aislados de Git para trabajo concurrente |
+| [**.claude/skills/**](./../.claude/skills/) | Frontmatter de descubrimiento (`name`/`description`/`model`) de cada skill; el cuerpo completo vive en `.agents/skills/` |
+| [**.agents/skills/**](./../.agents/skills/) | Contenido completo (system prompt) de cada skill |
+| [**.agents/documents/**](./../.agents/documents/) | Workspace de documentación temporal y sesiones activas |
+| [**.agents/knowledge/**](./../.agents/knowledge/) | Base de conocimiento obligatoria (`base.md`), gobierna a todos los skills |
+| [**.agents/memory/**](./../.agents/memory/) | Memoria persistente entre sesiones (índice `MEMORY.md` + un hecho por archivo) |
+| [**.agents/state/**](./../.agents/state/) | Estado persistente entre sesiones (Progress) |
+| [**.agents/plans/**](./../.agents/plans/) | Planes de ejecución y arquitectura guardados |
+| [**.claude/worktrees/**](./../.claude/worktrees/) | Worktrees aislados de Git para trabajo concurrente |
 
 ### Skills Disponibles
 
@@ -447,24 +450,24 @@ La carpeta `.claude/` alberga la configuración, estado, skills especializados y
 | [**refactoring-engineer**](./../.claude/skills/refactoring-engineer/SKILL.md) | Refactoring Engineer | Optimiza estructura de código y resuelve deuda técnica |
 | [**rust-engineer**](./../.claude/skills/rust-engineer/SKILL.md) | Rust Engineer | Lógica pesada, algoritmos cuantitativos, bases de datos (100% Rust puro) |
 | [**social-strategist**](./../.claude/skills/social-strategist/SKILL.md) | Social Strategist | Estrategia digital y orquestación de contenido para Drasus Engine |
-| [**summarizer**](./../.claude/skills/summarizer/SKILL.md) | Summarizer | [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA] |
 | [**tech-lead**](./../.claude/skills/tech-lead/SKILL.md) | Tech Lead | Lee docs/ y toma iniciativa autónoma de desarrollo, despachando a Ingenieros |
 | [**ui-designer**](./../.claude/skills/ui-designer/SKILL.md) | UI Designer | Etapa 0.5: audita y escribe la sección `## Cáscara Visual` de cada feature antes de que llegue al Flutter Engineer |
 
-`base` no es un skill invocable: es la base de conocimiento de lectura obligatoria en [`.claude/knowledge/base.md`](./../.claude/knowledge/base.md), gobierna a todos los skills de la tabla anterior.
+`base` no es un skill invocable: es la base de conocimiento de lectura obligatoria en [`.agents/knowledge/base.md`](./../.agents/knowledge/base.md), gobierna a todos los skills de la tabla anterior.
 
 ### Estado Persistente
 
 | Carpeta | Descripción |
 |---------|-------------|
-| [**state/tech-lead/**](./../.claude/state/tech-lead/) | Progreso y estado del Tech Lead (PROGRESS.md) |
+| [**state/tech-lead/**](./../.agents/state/tech-lead/) | Progreso y estado del Tech Lead (PROGRESS.md) |
+| [**state/social-strategist/**](./../.agents/state/social-strategist/) | Progreso y estado del Social Strategist (PROGRESS.md) |
 
 ### Documentos Temporales
 
 | Carpeta | Descripción |
 |---------|-------------|
-| [**documents/tmp/**](./../.claude/documents/tmp/) | Workspace temporal de sesiones |
-| [**documents/social-strategist/**](./../.claude/documents/social-strategist/) | Documentos de estrategia social |
+| [**documents/tmp/**](./../.agents/documents/tmp/) | Workspace temporal de sesiones |
+| [**documents/social-strategist/**](./../.agents/documents/social-strategist/) | Documentos de estrategia social |
 
 ### Configuración
 

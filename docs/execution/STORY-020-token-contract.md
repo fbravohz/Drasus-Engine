@@ -18,7 +18,7 @@
 - **Por qué ahora:** es el contrato anti-retrabajo que congela STORY-021 (estandarización masiva). Indivisible.
 
 ## 1. Especificación de origen
-- **Spec de origen:** plan `.claude/plans/estamos-teniendo-problemas-importantes-hazy-cloud.md` §Fase A.
+- **Spec de origen:** plan `.agents/plans/estamos-teniendo-problemas-importantes-hazy-cloud.md` §Fase A.
 - **ADR(s):** ADR-0138 + enmienda 2026-06-25 (Tema Extensible), ADR-0139, ADR-0121 (idioma de código/comentarios).
 
 ## 2. Objetivo (una frase llana)
