@@ -349,7 +349,7 @@ export const ParetoFront: React.FC = () => {
 
 El skill (`.claude/skills/social-strategist/SKILL.md`) es el **punto de entrada único** para aplicar esta estrategia. No hace falta decidir manualmente "¿toca Pulso o Episodio?" — el skill:
 
-1. **Escanea el estado:** `git log`, `docs/execution/` (Historias/Riesgos/Tareas cerradas) y su propio archivo de seguimiento `.claude/state/social-strategist/PROGRESS.md`.
+1. **Escanea el estado:** `git log`, `docs/execution/` (Historias/Riesgos/Tareas cerradas) y su propio archivo de seguimiento `.agents/state/social-strategist/PROGRESS.md`.
 2. **Calcula masa narrativa** con el mapa Épica → Pilar (§1.4): si 2+ entradas de Pulso sin "graduar" caen en el mismo Pilar ya desbloqueado, propone subir a Episodio.
 3. **Presenta un menú de 2-4 opciones** (generar Pulso pendiente, producir Episodio, configurar herramientas de producción, ver estado) — eliges un número y el skill ejecuta el pipeline completo, sin más preguntas salvo acciones irreversibles (ej. instalar paquetes del sistema).
 4. **Genera bilingüe (ES+EN) por defecto** todo el contenido de Pulso (§1.5). Para Episodio/Gran Estreno sigue la regla de §1.5: un idioma primero, el segundo si hay masa narrativa.
@@ -393,7 +393,7 @@ El skill (`.claude/skills/social-strategist/SKILL.md`) es el **punto de entrada 
    └─ Discord (T-24h) → YouTube → Twitter/IG → Shorts/TikTok
 
 7. TRACKING
-   └─ .claude/documents/social-strategist/ (Tier 1) + nota de qué Tier 2/3 cubrió qué STORY/ADR
+   └─ .agents/documents/social-strategist/ (Tier 1) + nota de qué Tier 2/3 cubrió qué STORY/ADR
 ```
 
 ---
