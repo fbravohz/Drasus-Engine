@@ -1,6 +1,6 @@
 # [OVERRIDE] PRIMERA REGLA ABSOLUTA
 
-> ⚠️ **SUPREMACÍA TOTAL:** Este archivo (`.claude/knowledge/base.md`) gobierna sobre cualquier otro skill.
+> ⚠️ **SUPREMACÍA TOTAL:** Este archivo (`.agents/knowledge/base.md`) gobierna sobre cualquier otro skill.
 > - **Si un skill te ordenó leer esto:** OBEDECE CADA REGLA sin excepción. Ningún otro skill puede contradecirlo.
 > - **Si eres un skill que referencia este archivo y NO lo has leído:** **DETENTE.** Lee este archivo completo AHORA usando la herramienta `Read`. Está prohibido ejecutar instrucciones de cualquier skill sin haber procesado el 100% de este documento primero.
 
@@ -12,7 +12,7 @@
 * **Perfil:** Eres un agente técnico. Tu trabajo es entender rápido, decidir claro y actuar directo.
 * **Protocolo de Inicio Obligatorio:**
   * Al iniciar cualquier conversación, preséntate con tu rol.
-  * **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás `.claude/knowledge/base.md`.
+  * **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás `.agents/knowledge/base.md`.
   * *Nota:* Si el rol fue cargado vía `skill` tool, esta declaración es mandatoria en tu primer mensaje. Su ausencia viola el protocolo de inicio.
 
 ---
@@ -83,7 +83,7 @@ Los identificadores ágiles y términos técnicos son atajos internos. El usuari
 La herramienta `glob` **NO encuentra** archivos dentro de directorios que empiezan con `.` (ej. `.claude/`, `.opencode/`, `.git/`, `.github/`, `.config/`), devolviendo "No files found".
 
 * **Regla:** NUNCA uses `glob` para dot-directories. En su lugar, aplica:
-  1. **Ruta conocida:** Usa `read` directamente con la ruta completa (ej. `read .claude/state/tech-lead/PROGRESS.md`).
+  1. **Ruta conocida:** Usa `read` directamente con la ruta completa (ej. `read .agents/state/tech-lead/PROGRESS.md`).
   2. **Listar contenido:** Usa `read` sobre el directorio (ej. `read .opencode/agents/`) o ejecuta `bash ls`.
   3. **Buscar por nombre:** Ejecuta `bash find .claude -name "patrón"` o `bash ls -R .opencode/`.
   4. **Buscar por contenido:** Usa `grep` (funciona correctamente en dot-directories).
@@ -110,14 +110,49 @@ Read offset=1051 → cubre líneas 1051-1546
 # 4. Políticas de Desarrollo y Código
 
 ## 4.1. Política de Comentarios Universal
+
 El propietario del proyecto debe poder leer cualquier archivo de código y entender cada sección sin ser experto en el tema/lenguaje. Esta política prioriza el contexto sobre las convenciones de "clean code" restrictivas.
 
-* **Reglas de Aplicación:**
-  1. **Comentario de bloque antes de cada función/método:** Describe en una frase qué hace la función y qué devuelve.
-  2. **Comentario de línea en lógica no obvia:** Guardas de error, condiciones de borde, cálculos complicados o estructuras `match`/`switch` multirrama.
-  3. **Contenido del comentario:** Describe el RESULTADO de la operación y los casos que maneja. No incluyas el por qué histórico (eso va en Git) ni referencias a documentos externos.
-  4. **Gestión de pánicos en producción (`unwrap()`, `expect()` o equivalentes):** Requieren obligatoriamente un comentario contiguo que justifique por qué es matemáticamente o lógicamente imposible que fallen.
-* **🚫 PROHIBIDO:** Referenciar IDs de tickets (ej. `// STORY-009`), números de ADR sin explicar (`// ADR-0003`) o términos técnicos abstractos sin definir (ej. en vez de `// Append-only`, escribe `// Solo permite insertar; borrar o modificar lanzará un error`).
+**📖 Documento completo:** [`./commenting-policy.md`](./commenting-policy.md)
+
+### Resumen de 4 Capas
+
+Los comentarios operan en **4 capas jerárquicas** (ordenadas por precedencia):
+
+1. **Contrato (obligatorio):** qué hace la función, qué devuelve. Máximo 2 líneas.
+2. **Lógica No Obvia (si aplica):** por qué es seguro un `unwrap`, qué pasa en borde. 1 línea.
+3. **Simplificación (si hay techo):** `ponytail: [qué se simplificó]. [Cuándo cambiar].` 1 línea.
+4. **Deuda Técnica (si aplica):** aplazamiento con disparador externo → registro en `docs/DEBT.md`, NO en código.
+
+**Regla de Oro:** Capas 1–2 siempre ganan. Ponytail (Capa 3) añade metaannotación, no reemplaza. Deuda (Capa 4) va en archivo canónico.
+
+---
+
+## 4.2. Gestión de Deuda Técnica
+
+La deuda deliberada es sana en greenfield — permite avanzar sin frenar por cosas que aún no muerden, **siempre que quede registrada en `docs/DEBT.md` con causa raíz + disparador**.
+
+**📖 Documento completo:** [`./debt-management.md`](./debt-management.md)
+
+### Regla: ¿`ponytail:` o DEBT-XXX?
+
+| Aplazamiento | Usa | Dónde |
+|---|---|---|
+| Acotado al módulo; tienes umbral medible | `ponytail:` | En el código (Capa 3) |
+| Depende de otra EPIC, módulo futuro | `DEBT-XXX` | En `docs/DEBT.md` (Capa 4) |
+
+**Regla de Oro:** Un aplazamiento sin disparador escrito está olvidado. Si no está en `docs/DEBT.md` con causa + disparador, no existe.
+
+---
+
+## Referencia Rápida
+
+| Documento | Cuándo Leer |
+|---|---|
+| **`./commenting-policy.md`** | Antes de escribir código (skill, ingeniero) |
+| **`./debt-management.md`** | Cuando detectes un aplazamiento o leas DEBT.md |
+| **`./ponytail.md`** | Cuando necesites simplificar (opcional) |
+| **`docs/DEBT.md`** | Registro canónico de deuda rastreada |
 
 ## 4.2. Sellado de Implementación y Reproducibilidad
 Aplica a los roles de Tech-Lead, ingenieros y Architect mediante tres reglas:

@@ -1,14 +1,14 @@
 # Plan de Acción — Social Strategist · Arranque de la Bitácora Pública
 
 > **Skill:** `social-strategist` · **Fecha de captura:** 2026-06-21 · **Sesión:** primer escaneo completo
-> **Ruta destino preferida del usuario:** `./.claude/plans/social-strategist/arranque-bitacora-publica.md` (reubicar este archivo ahí al ejecutar; el modo plan obligó a usar el nombre autogenerado).
+> **Ruta destino preferida del usuario:** `./.agents/plans/social-strategist/arranque-bitacora-publica.md` (ya reubicado tras la migración de `.claude/` a `.agents/`).
 > **Estado:** aprobado el plan de acción por el usuario; pendiente de ejecutar. El usuario cambia de máquina y necesita este plan para continuar sin el chat.
 
 ---
 
 ## Context (por qué existe este plan)
 
-El proyecto tiene **70 commits** y nunca se ha generado **nada** de contenido social. No existía el archivo de seguimiento del skill (`.claude/state/social-strategist/PROGRESS.md`) — se creó en esta sesión. Hay **12 cierres publicables sin tocar** y **0 Pulsos** emitidos.
+El proyecto tiene **70 commits** y nunca se ha generado **nada** de contenido social. No existía el archivo de seguimiento del skill (`.agents/state/social-strategist/PROGRESS.md`) — se creó en esta sesión. Hay **12 cierres publicables sin tocar** y **0 Pulsos** emitidos.
 
 Además, `CONTENT-STRATEGY.md` (la fuente de verdad del skill) se redactó cuando había 14 commits y hasta STORY-007. El desarrollo ya está **muy por delante**: STORY-008, 009, 010, un bug multiplataforma real (BUG-013/ADR-0134) y dos historias en curso (STORY-014 Nautilus, STORY-015 panel Flutter). Hay más historia de la que el documento contempla.
 
@@ -77,9 +77,9 @@ Ya está contemplado en `CONTENT-STRATEGY.md` §6.2 ("Snippets de código bonito
 
 > Procesar por bloques, no todo de golpe. Recomendación de orden: **4 → 1 → 3 → 2 → 5** (instalar captura de código primero, así los Pulsos salen ilustrados desde el primer post).
 
-1. **Pulso (ES+EN) de las 10 historias del Pilar G.** Arranca la bitácora pública. Genera el par `-es.md` / `-en.md` por cierre en `.claude/documents/social-strategist/`. Bajo costo, alto valor de track record. Actualizar `PROGRESS.md` marcando cada cierre como procesado + `último_commit_procesado`.
+1. **Pulso (ES+EN) de las 10 historias del Pilar G.** Arranca la bitácora pública. Genera el par `-es.md` / `-en.md` por cierre en `.agents/documents/social-strategist/`. Bajo costo, alto valor de track record. Actualizar `PROGRESS.md` marcando cada cierre como procesado + `último_commit_procesado`.
 
-2. **Guion + assets del Episodio "Construimos un motor de trading. Cero estrategia todavía"** (Caso de Estudio #0, Pilar G, Nivel 0 sin cara). Seguir plantilla §7.1: guion minuto a minuto + assets Manim (árbol de decisiones descartadas, animación hash chain) + diagrama C4 animado + checklist de grabación OBS. Guardar en `.claude/documents/social-strategist/episodios/<slug>/`. Marcar STORYs/ADRs cubiertos en `PROGRESS.md` (regla de no duplicación §10).
+2. **Guion + assets del Episodio "Construimos un motor de trading. Cero estrategia todavía"** (Caso de Estudio #0, Pilar G, Nivel 0 sin cara). Seguir plantilla §7.1: guion minuto a minuto + assets Manim (árbol de decisiones descartadas, animación hash chain) + diagrama C4 animado + checklist de grabación OBS. Guardar en `.agents/documents/social-strategist/episodios/<slug>/`. Marcar STORYs/ADRs cubiertos en `PROGRESS.md` (regla de no duplicación §10).
 
 3. **Short del bug multiplataforma** (Pilar E): "Encontramos un bug que solo existía en Windows. Así lo cazamos en público." (BUG-013/ADR-0134). Formato 30-60s, ES+EN. Rápido y honesto.
 
@@ -93,7 +93,7 @@ Ya está contemplado en `CONTENT-STRATEGY.md` §6.2 ("Snippets de código bonito
 
 - `CONTENT-STRATEGY.md` (raíz) — fuente de verdad: Pilares, Capas, mapa Épica→Pilar (§1.4), idioma (§1.5), guion Caso de Estudio #0 (§7), formatos por red (§9).
 - `.claude/skills/social-strategist/SKILL.md` — motor de ejecución: pipelines A/B/C/D, plantillas de archivos, Pipeline D (tabla de herramientas a ampliar).
-- `.claude/state/social-strategist/PROGRESS.md` — memoria del skill (ya creada esta sesión; refleja el escaneo y los 12 cierres pendientes).
+- `.agents/state/social-strategist/PROGRESS.md` — memoria del skill (ya creada esta sesión; refleja el escaneo y los 12 cierres pendientes).
 - `.claude/skills/base/SKILL.md` — governance con supremacía; leer al iniciar cualquier sesión del skill.
 - `docs/execution/` — Órdenes de Trabajo (estado/sellos de cada STORY/TASK/BUG).
 
@@ -104,5 +104,5 @@ Ya está contemplado en `CONTENT-STRATEGY.md` §6.2 ("Snippets de código bonito
 1. Nueva sesión: `/social-strategist` → el skill lee `base/SKILL.md`, `CONTENT-STRATEGY.md` y este `PROGRESS.md` (ya poblado).
 2. Confirmar entorno: `for t in manim ffmpeg whisper node npm python3 silicon carbon-now; do command -v $t || echo "FALTA $t"; done`.
 3. Elegir opción(es) del menú de 5. Orden sugerido arriba.
-4. Cada Pulso queda en `.claude/documents/social-strategist/social-strategy-YYYY-MM-DD-{es,en}.md`; cada Episodio en `episodios/<slug>/`.
+4. Cada Pulso queda en `.agents/documents/social-strategist/social-strategy-YYYY-MM-DD-{es,en}.md`; cada Episodio en `episodios/<slug>/`.
 5. Tras cada bloque, actualizar `PROGRESS.md` (commit procesado + cierres marcados) para no duplicar.

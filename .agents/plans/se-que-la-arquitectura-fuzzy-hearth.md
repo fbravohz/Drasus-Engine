@@ -7,7 +7,7 @@ El proyecto usa desarrollo dirigido por especificación con IA (spec-driven deve
 1. **Gasto de tokens creciente y pérdida de coherencia en sesiones largas ("lost in the middle"):** el Tech-Lead carga instrucciones extensas al inicio y debe "recordarlas a rajatabla" 50+ turnos después, con el contexto saturado de resultados de subagentes y código.
 2. **Documentos operativos creciendo sin la disciplina de partición que YA existe para ADRs** (`docs/ADR.md` índice + `docs/adr/ADR-XXXX.md` individual, 145 archivos, patrón probado): `PROGRESS.md` (307 líneas) y `DEBT.md` (115 líneas) narran todo en un solo archivo cada uno. `docs/execution/` (36 Órdenes) ordena mal porque el prefijo es el TIPO, no el número.
 3. **Sesiones enteras perdidas en refactor** porque los agentes no reutilizaron código existente ni pensaron con criterio senior antes de construir — el skill `ponytail` (disciplina anti-sobreingeniería) existe en el repo pero no está incorporado a los skills de ingeniería.
-4. **Solapamiento y ruido entre documentos de gobernanza:** no está claro qué vive en `CLAUDE.md` vs `base/SKILL.md` vs los índices/gates de cada skill; hay al menos una duplicación verbatim confirmada (protocolo de lectura progresiva). El límite entre memoria (`.claude/memory/`) y la bitácora operativa (`PROGRESS.md`) se explica hoy en tres lugares con matices distintos.
+4. **Solapamiento y ruido entre documentos de gobernanza:** no está claro qué vive en `CLAUDE.md` vs `base/SKILL.md` vs los índices/gates de cada skill; hay al menos una duplicación verbatim confirmada (protocolo de lectura progresiva). El límite entre memoria (`.agents/memory/`) y la bitácora operativa (`PROGRESS.md`) se explica hoy en tres lugares con matices distintos.
 5. Un bloque "CAVEMAN" en `tech-lead/SKILL.md` que el usuario considera que no aportó valor.
 
 **Corrección de una creencia del usuario (verificado, no requiere acción):** `.claude/memory/` NO está en `.gitignore` — el archivo tiene la línea explícita `# .claude/memory/ SÍ se versiona`, y los 18 archivos (17 memorias + índice) ya están 100% trackeados y sin cambios pendientes. Esto ya se corrigió en el commit `61701a5 chore(memory): versionar .claude/memory/`. No es parte de este plan.
@@ -26,7 +26,7 @@ El proyecto usa desarrollo dirigido por especificación con IA (spec-driven deve
 3. Extender el mismo patrón a `qa-engineer`, `flutter-engineer`, `bridge-engineer` y `architect` (los 4 con bloques extraíbles reales, según auditoría — ver punto 7). `rust-engineer`, `quant-engineer`, `refactoring-engineer` se dejan intactos: no tienen bloque aislable de tamaño relevante y partirlos sería abstracción sin necesidad real.
 4. Codificar el patrón "núcleo + on-demand" como convención general en `base/SKILL.md`.
 5. Partir `docs/DEBT.md` en índice + `docs/debt/DEBT-XXX.md` (mismo patrón que ADR).
-6. Partir `.claude/state/tech-lead/PROGRESS.md` en índice + `.claude/state/tech-lead/progress/<entrada>.md`.
+6. Partir `.agents/state/tech-lead/PROGRESS.md` en índice + `.agents/state/tech-lead/progress/<entrada>.md`.
 7. Renombrar `docs/execution/*.md` de `TIPO-NNN-slug.md` a `NNN-TIPO-slug.md`, y `docs/lessons/**/STORY-NNN-slug.md` al mismo esquema.
 8. Retirar el bloque "CAVEMAN" de `tech-lead/SKILL.md` (confirmado: es el único de los 8 skills operativos que lo tiene).
 9. Incorporar la disciplina de reutilización/simplicidad de `ponytail` como sección permanente de `base/SKILL.md` (piso mínimo siempre activo — `ponytail` sigue existiendo aparte como modo invocable de intensidad superior).
@@ -93,7 +93,7 @@ Igual que el plan original: `docs/DEBT.md` como índice (tabla `DEBT-XXX | Sever
 
 ## 6. `PROGRESS.md` → índice + `progress/<entrada>.md`
 
-Igual que el plan original: `PROGRESS.md` conserva "Estado actual" + "Reglas activas" + tabla índice de la bitácora; 17 archivos nuevos en `.claude/state/tech-lead/progress/YYYY-MM-DD-<slug>.md` con el contenido narrativo íntegro copiado literal. Las entradas NUEVAS futuras deben ser punteros de una línea a la Orden de Trabajo, reforzando la regla que el propio archivo ya se autoimpone (línea 4) y que se venía violando.
+Igual que el plan original: `PROGRESS.md` conserva "Estado actual" + "Reglas activas" + tabla índice de la bitácora; 17 archivos nuevos en `.agents/state/tech-lead/progress/YYYY-MM-DD-<slug>.md` con el contenido narrativo íntegro copiado literal. Las entradas NUEVAS futuras deben ser punteros de una línea a la Orden de Trabajo, reforzando la regla que el propio archivo ya se autoimpone (línea 4) y que se venía violando.
 
 ## 7. Renombrado de `docs/execution/` y `docs/lessons/`
 
@@ -115,7 +115,7 @@ Nueva sección corta (~15-20 líneas), aplicable a los 7 skills de ingeniería, 
 
 ## 11. Frontera memoria ↔ PROGRESS — un solo lugar canónico
 
-Añadir en `base/SKILL.md` (junto a la sección de memoria/persistencia ya existente) el párrafo canónico único: "`.claude/memory/` = hechos durables, curados, entre sesiones, leíbles/escribibles por cualquier skill (user/feedback/project/reference). `.claude/state/tech-lead/PROGRESS.md` = bitácora operativa del Tech-Lead exclusivamente (qué se despachó, a qué agente, siguiente paso) — el detalle de cada trabajo vive en su Orden de Trabajo, no en PROGRESS ni en memoria." `CLAUDE.md` §4 y `tech-lead/SKILL.md` §"Memoria de Progreso" se recortan para apuntar a este párrafo en vez de restatearlo con matices propios.
+Añadir en `base/SKILL.md` (junto a la sección de memoria/persistencia ya existente) el párrafo canónico único: "`.agents/memory/` = hechos durables, curados, entre sesiones, leíbles/escribibles por cualquier skill (user/feedback/project/reference). `.agents/state/tech-lead/PROGRESS.md` = bitácora operativa del Tech-Lead exclusivamente (qué se despachó, a qué agente, siguiente paso) — el detalle de cada trabajo vive en su Orden de Trabajo, no en PROGRESS ni en memoria." `CLAUDE.md` §4 y `tech-lead/SKILL.md` §"Memoria de Progreso" se recortan para apuntar a este párrafo en vez de restatearlo con matices propios.
 
 ---
 
@@ -131,7 +131,7 @@ Añadir en `base/SKILL.md` (junto a la sección de memoria/persistencia ya exist
 
 1. **Conteo de líneas post-split:** `wc -l` de cada núcleo (tech-lead ~170, ui-designer ~280, qa-engineer/flutter-engineer/bridge-engineer/architect reducidos por su bloque extraído) — todos bajan frente al original.
 2. **Nada se perdió:** líneas de núcleo + suma de gates/reference nuevos ≈ líneas originales de cada skill (más encabezados nuevos). Diff manual de que el contenido movido es idéntico carácter por carácter (no reescrito).
-3. **Paridad de patrón:** `ls docs/debt/ | wc -l` = 11, `ls .claude/state/tech-lead/progress/ | wc -l` = 17.
+3. **Paridad de patrón:** `ls docs/debt/ | wc -l` = 11, `ls .agents/state/tech-lead/progress/ | wc -l` = 17.
 4. **Cero referencias rotas:** greps de verificación del punto 7 devuelven 0 con el patrón viejo tras el rename.
 5. **Orden real corregido:** `ls docs/execution/` alfabético coincide con el orden cronológico de creación (`git log --diff-filter=A --name-only -- docs/execution/`).
 6. **CAVEMAN retirado:** `grep -n "CAVEMAN" .claude/skills/tech-lead/SKILL.md` devuelve 0 resultados.

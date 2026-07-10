@@ -1,5 +1,6 @@
 # Memoria del Proyecto — Drasus Engine
 
+- [Comentarios, Ponytail y DEBT.md — Reconciliación](comentarios-ponytail-reconciliacion.md) — 4 capas jerárquicas (base.md Capas 1–2 siempre ganan; Ponytail Capa 3 si hay techo; DEBT.md Capa 4 si disparador externo); ej: `ponytail: sin caché, escalar si >1000 req/s` (módulo actual) vs. `DEBT-003` (depende de EPIC futura).
 - [ADR-0020 contrato lógico](adr-0020-contrato-logico.md) — 25 campos = vocabulario lógico con filtro por perfil, NO columnas calcadas; perfiles acumulativos (B ⊇ D); catálogo canónico de 4 perfiles en ADR.md.
 - [ROADMAP metodología módulo completo](roadmap-metodologia-modulo-completo.md) — ADR-0118: unidad de entrega = módulo completo; ROADMAP guía sin bitácora; features se construyen en su primer consumidor.
 - [Política de pruebas y validación](politica-de-pruebas-y-validacion.md) — Pirámide ADR-0133: unitarios+integración+proptest+fuzzing; QA obligatorio EPIC-1+; cargo-llvm-cov.
