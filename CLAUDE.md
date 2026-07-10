@@ -46,7 +46,15 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 
 **Pipeline de módulos:** `ingest → generate → validate → incubate → manage → execute → feedback → withdraw`.
 
-**Skills (agentes):** `.claude/skills/<rol>/SKILL.md`. `.claude/knowledge/base.md` tiene supremacía sobre todos (no es una skill invocable: es la base de conocimiento obligatoria que cada skill lee al iniciar).
+**Skills (agentes):** `.claude/skills/<rol>/SKILL.md` (frontmatter de descubrimiento; el contenido completo vive en `.agents/skills/<rol>/SKILL.md`, referenciado desde ahí). 
+
+**Base de Conocimiento (obligatoria para skills):**
+- `.agents/knowledge/base.md` — Gobernanza meta + mapa de referencias (supremacía absoluta).
+- `.agents/knowledge/commenting-policy.md` — HOW TO: escribir comentarios (4 capas jerárquicas).
+- `.agents/knowledge/debt-management.md` — HOW TO: registrar deuda técnica (`ponytail:` vs. DEBT-XXX).
+- `.agents/knowledge/ponytail.md` — HOW TO: simplificación deliberada (Capa 3 de comentarios).
+
+Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas gobernanza meta, lee `base.md` (~234 líneas).
 
 ---
 
@@ -66,7 +74,7 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 ## 4. Memoria entre Sesiones (Recuerdo tipo "persona")
 
-Existe memoria nativa de proyecto en `~/Drasus-Engine/.claude/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan.
+Existe memoria nativa de proyecto en `~/Drasus-Engine/.agents/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan.
 
 - **Es curada, no automática.** Se escriben hechos durables a propósito (decisiones, restricciones, estado de trabajo en curso), no transcripciones completas.
 - **Disciplina obligatoria:** al cerrar trabajo significativo, destila la decisión o el estado a un archivo de memoria y enlázalo desde `MEMORY.md`. No dupliques lo que ya registra el código, el git o estos documentos.
@@ -76,6 +84,6 @@ Existe memoria nativa de proyecto en `~/Drasus-Engine/.claude/memory/` (índice 
 
 ## 5. Governance — Fuente Única de Verdad
 
-Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.claude/knowledge/base.md`**, que gobierna a todos los skills. **No es una skill invocable** — es conocimiento base de lectura obligatoria, referenciado por cada skill al iniciar. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
+Las reglas operativas canónicas (rigor, anti-alucinación, anti-obsolescencia, gate de creación de documentos, edición quirúrgica, idioma, saneamiento terminológico) viven en **`.agents/knowledge/base.md`**, que gobierna a todos los skills. **No es una skill invocable** — es conocimiento base de lectura obligatoria, referenciado por cada skill al iniciar. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `base`; si algo de aquí contradice a `base`, gana `base`. La instrucción explícita del usuario gana siempre.
 
 Recordatorio mínimo siempre activo (el detalle está en `base`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa; en código, identificadores en inglés y comentarios en español (ADR-0121).

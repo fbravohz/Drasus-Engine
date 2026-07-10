@@ -33,7 +33,7 @@
 
 # --- Claude Code (overrides personales, no se versionan) ---
 .claude/settings.local.json
-# .claude/memory/ SÍ se versiona: es conocimiento curado del proyecto,
+# .agents/memory/ SÍ se versiona: es conocimiento curado del proyecto,
 # compartido entre sesiones y colaboradores (no un override personal).
 
 # --- Bases de datos SQLite (runtime, nunca se versionan) ---
