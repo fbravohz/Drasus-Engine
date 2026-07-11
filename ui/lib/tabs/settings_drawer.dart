@@ -17,9 +17,9 @@ import '../components/components.dart' as custom_ui;
 // Todos respetan el espectro de vitalidad del sistema de tokens.
 // ---------------------------------------------------------------------------
 const List<Color> _kAccentPresets = [
-  Color(0xFF54E8D0), // optimaCyan
+  Gx.optimaCyan,
   Color(0xFF7CF06A), // reactorGreen
-  Color(0xFF9A8CFF), // transitionIndigo (default)
+  Gx.transitionIndigo, // default
   Color(0xFF56A8FF), // transitionBlue
   Color(0xFFFFC94D), // alertAmber
   Color(0xFFCC2B2B), // accentPrimaryA / criticalCrimson oscuro
@@ -40,8 +40,8 @@ const List<Color> _kTextPresets = [
   Color(0xFFFFFFFF), // blanco puro
   Color(0xFFAEBBD6), // textSecondary — azul-grisáceo claro
   Color(0xFF8492B0), // textLabel — gris-azul suave
-  Color(0xFF54E8D0), // optimaCyan (texto tintado)
-  Color(0xFF9A8CFF), // transitionIndigo (texto tintado)
+  Gx.optimaCyan, // texto tintado
+  Gx.transitionIndigo, // texto tintado
   Color(0xFF1A1E2E), // oscuro estándar (para paletas claras)
   Color(0xFF080A18), // deepSpace (casi-negro)
   Color(0xFF2A2E40), // gris-azul oscuro
