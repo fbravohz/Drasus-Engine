@@ -1284,4 +1284,212 @@ mod tests {
         assert!(!projection.is_real_capital, "PAPER nunca es capital real (Eje B), sin importar el Eje A");
         assert_eq!(projection.capital_reality, "PAPER");
     }
+
+    // ── CRITERIO (QA por mutación, DEBT-018): reintento acotado hasta AGOTAR ──
+
+    /// CRITERIO DE CIERRE (QA por mutación): bajo contención de escritura
+    /// SOSTENIDA (otro escritor retiene el lock de `BEGIN IMMEDIATE` y no lo
+    /// suelta), el bucle de reintento de `record_track_record` debe agotar
+    /// EXACTAMENTE `MAX_RECORD_ATTEMPTS` intentos y rendirse con
+    /// `WriteContention { attempts: MAX }` -- nunca descartar el track en
+    /// silencio, ni rendirse un intento antes o después. Patrón de
+    /// referencia: `persistence/data_portability.rs` (STORY-043, DEBT-018).
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn record_track_record_exhausts_exactly_max_attempts_when_write_lock_is_held() {
+        use std::str::FromStr;
+        use std::time::Duration;
+
+        use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+
+        let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = temp_dir.path().join("verified_account_registry_forced_contention.sqlite");
+        let database_url = format!("sqlite://{}", db_path.display());
+
+        // Migrar con el pool normal (busy_timeout de 5s).
+        let pool = connect(&database_url).await.expect("conectar");
+        migrate(&pool).await.expect("migrar");
+
+        // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
+        // "database is locked" en vez de esperar 5s -- hace la contención
+        // determinista y rápida.
+        let immediate_opts = || {
+            SqliteConnectOptions::from_str(&database_url)
+                .expect("parsear opciones")
+                .journal_mode(SqliteJournalMode::Wal)
+                .busy_timeout(Duration::from_millis(0))
+        };
+
+        // Escritor A: toma el lock de escritura con `BEGIN IMMEDIATE` y NO lo
+        // suelta mientras B intenta escribir.
+        let lock_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool que retiene el lock");
+        let lock_tx = lock_pool
+            .begin_with("BEGIN IMMEDIATE")
+            .await
+            .expect("tomar el lock de escritura reservado");
+
+        // Escritor B: intenta registrar un track mientras A retiene el
+        // lock. Cada `try_record_once` abre `BEGIN IMMEDIATE`, choca con el
+        // lock de A, falla con "database is locked" (transitorio) y
+        // reintenta, hasta agotar MAX_RECORD_ATTEMPTS.
+        let repo_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool del repositorio");
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = AttestedTrackRecordRepository::new(&repo_pool, &clock);
+
+        let result = repo.record_track_record(record_input("acc-contention", AttestationScope::Sovereign)).await;
+
+        drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
+
+        match result {
+            Err(AttestedTrackRecordRepositoryError::WriteContention { attempts }) => {
+                assert_eq!(
+                    attempts, MAX_RECORD_ATTEMPTS,
+                    "bajo contención sostenida debe agotar EXACTAMENTE MAX_RECORD_ATTEMPTS intentos"
+                );
+            }
+            other => panic!(
+                "se esperaba WriteContention {{ attempts: {MAX_RECORD_ATTEMPTS} }} bajo contención sostenida, se obtuvo: {other:?}"
+            ),
+        }
+    }
+
+    // ── CRITERIO (QA por mutación, DEBT-018): clasificador de contención ──────
+
+    /// CRITERIO DE CIERRE (QA por mutación): `is_transient_write_conflict`
+    /// distingue una violación UNIQUE PERMANENTE (la PK `id` de
+    /// `attested_track_records`, que NO se debe reintentar) de la
+    /// contención transitoria. Fija que exige AMBAS condiciones (es
+    /// violación UNIQUE **y** menciona `event_sequence_id`), no una sola, y
+    /// que no clasifica cualquier cosa como transitoria.
+    #[tokio::test]
+    async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
+        let pool = migrated_pool().await;
+
+        // Inserta una fila válida y luego otra con el MISMO `id`: viola la
+        // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
+        // PERMANENTE cuyo mensaje NO menciona `event_sequence_id`.
+        let insert_with_id_dup = |event_sequence_id: i64| {
+            sqlx::query(
+                "INSERT INTO attested_track_records (\
+                    id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                    owner_id, institutional_tag, node_id, signature_hash, verified_account_id, scope, \
+                    time_window, equity_curve, balance_curve, max_drawdown_e8, gain_pct_e8, win_rate_e8, \
+                    avg_holding_time_ns, trading_days, total_realized_pnl_e8, total_deposits_e8, total_withdrawals_e8\
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'LIVE', 'node-1', 'sig', 'acc-1', \
+                           'SOVEREIGN', '2026-W27', '[]', '[]', 0, 0, 0, 0, 0, 0, 0, 0)",
+            )
+            .bind(event_sequence_id)
+            .execute(&pool)
+        };
+        insert_with_id_dup(1).await.expect("primera fila válida");
+        let err = insert_with_id_dup(2)
+            .await
+            .expect_err("la segunda fila debe violar la PRIMARY KEY id");
+
+        let permanent = AttestedTrackRecordRepositoryError::Database(err);
+        assert!(
+            !is_transient_write_conflict(&permanent),
+            "una violación UNIQUE de la PK (no de event_sequence_id) es PERMANENTE, no transitoria"
+        );
+
+        // Control: un error que ni siquiera es de base de datos jamás es
+        // transitorio (fija la rama temprana `let ... else`).
+        let non_database = AttestedTrackRecordRepositoryError::WriteContention { attempts: 5 };
+        assert!(
+            !is_transient_write_conflict(&non_database),
+            "un error no-Database nunca es contención transitoria"
+        );
+    }
+
+    // ── CRITERIO (QA por mutación, DEBT-018): fidelidad de la fila devuelta ───
+
+    /// CRITERIO DE CIERRE (QA por mutación): la fila que DEVUELVE
+    /// `update_publication_and_scopes` refleja los valores NUEVOS
+    /// (`audit_hash` recomputado, `audit_chain_hash` encadenado a la
+    /// versión previa, `updated_at` avanzado al reloj) Y conserva los
+    /// campos NO tocados por la operación (`owner_id`, `broker`,
+    /// `institutional_tag`, `currency`, `node_id`, `account_type`,
+    /// `broker_connection_ref`) -- si el literal `..account.clone()` de
+    /// `update_publication_and_scopes` perdiera uno de esos campos
+    /// preservados, o si alguno de los campos nuevos quedara copiado del
+    /// viejo, esta prueba lo detectaría. Patrón de referencia:
+    /// `persistence/data_portability.rs::reclassify_returned_row_reflects_new_hash_chain_and_timestamp`
+    /// (STORY-043, DEBT-018).
+    #[tokio::test]
+    async fn update_publication_and_scopes_returned_row_reflects_new_hash_chain_timestamp_and_preserved_fields() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = VerifiedAccountRepository::new(&pool, &clock);
+
+        let account = repo.create(sample_new_account()).await.expect("registrar cuenta");
+        assert_eq!(account.updated_at_ns, 1_000, "precondición: la fila génesis nace en el now inicial");
+        assert!(account.audit_chain_hash.is_none(), "precondición: la fila génesis no encadena");
+
+        // Ámbitos NUEVOS que DIFIEREN de los de la cuenta génesis
+        // (`Sovereign`): así el mutante "delete field attestation_scopes"
+        // (que caería a `..account.clone()` = `[Sovereign]`) produce un valor
+        // distinto al esperado y la aserción se cae.
+        let new_scopes = [AttestationScope::BrokerReadonly];
+        assert_ne!(
+            account.attestation_scopes.as_slice(),
+            new_scopes.as_slice(),
+            "precondición: los ámbitos nuevos deben diferir de los génesis para discriminar el mutante"
+        );
+
+        clock.tick(); // 1_000 -> 1_100
+        let updated = repo
+            .update_publication_and_scopes(&account, PublicationStatus::Public, &new_scopes)
+            .await
+            .expect("actualizar publicación");
+
+        assert_ne!(
+            updated.audit_hash, account.audit_hash,
+            "update_publication_and_scopes debe DEVOLVER el audit_hash recomputado, no el viejo copiado"
+        );
+        assert_eq!(
+            updated.audit_chain_hash,
+            Some(account.audit_hash.clone()),
+            "el audit_chain_hash devuelto debe encadenar al audit_hash de la versión previa"
+        );
+        assert_eq!(
+            updated.updated_at_ns, 1_100,
+            "el updated_at devuelto debe ser el now del reloj tras el tick, no el viejo"
+        );
+
+        // `attestation_scopes` es un campo NUEVO de la operación (no
+        // preservado): la fila devuelta debe traerlo tal cual se pidió, y
+        // debe coincidir con lo persistido en disco -- fija el mutante
+        // "delete field attestation_scopes from struct expression".
+        assert_eq!(
+            updated.attestation_scopes,
+            new_scopes.to_vec(),
+            "attestation_scopes de la fila devuelta debe reflejar el valor recién pedido"
+        );
+        let reloaded = repo.find_by_id(&account.id).await.expect("releer").expect("existe");
+        assert_eq!(
+            updated.attestation_scopes, reloaded.attestation_scopes,
+            "attestation_scopes de la fila devuelta debe coincidir con lo persistido en disco"
+        );
+
+        // Campos preservados vía `..account.clone()` -- ninguno debe
+        // perderse ni sustituirse por un valor por defecto.
+        assert_eq!(updated.owner_id, account.owner_id, "owner_id debe preservarse");
+        assert_eq!(updated.institutional_tag, account.institutional_tag, "institutional_tag (Eje B) debe preservarse");
+        assert_eq!(updated.node_id, account.node_id, "node_id debe preservarse");
+        assert_eq!(updated.broker, account.broker, "broker debe preservarse");
+        assert_eq!(updated.leverage, account.leverage, "leverage debe preservarse");
+        assert_eq!(updated.currency, account.currency, "currency debe preservarse");
+        assert_eq!(updated.account_type, account.account_type, "account_type debe preservarse");
+        assert_eq!(
+            updated.broker_connection_ref, account.broker_connection_ref,
+            "broker_connection_ref debe preservarse"
+        );
+    }
 }

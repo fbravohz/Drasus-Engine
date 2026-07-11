@@ -679,6 +679,66 @@ mod tests {
         );
     }
 
+    // ── CRITERIO (QA por mutación, DEBT-018): fidelidad de la fila devuelta ───
+
+    /// CRITERIO DE CIERRE (QA por mutación): la fila que DEVUELVE
+    /// `update_parent_and_consent` refleja los valores FRESCOS/persistidos
+    /// campo por campo -- si el literal `..current.clone()` de la función
+    /// perdiera alguno de los cuatro campos que la operación produce nuevos
+    /// (`updated_at_ns`, `audit_hash`, `audit_chain_hash`, `consent_ref`),
+    /// esta comparación contra lo persistido en disco lo detectaría. Cada
+    /// valor nuevo se elige DISTINTO del de la fila génesis para que el
+    /// mutante (que caería al valor viejo copiado) produzca un resultado
+    /// diferente al esperado. Patrón de referencia:
+    /// `persistence/data_portability.rs::reclassify_returned_row_reflects_new_hash_chain_and_timestamp`
+    /// (STORY-043, DEBT-018).
+    #[tokio::test]
+    async fn update_parent_and_consent_returned_row_reflects_fresh_fields_and_matches_persisted() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = AccountHierarchyRepository::new(&pool, &clock);
+
+        // Génesis: parent "fund-X", consent "v1", updated_at 1_000, sin cadena.
+        let hierarchy = repo.link_child(sample_new_hierarchy()).await.expect("vincular hija");
+        assert_eq!(hierarchy.updated_at_ns, 1_000, "precondición: la fila génesis nace en el now inicial");
+        assert!(hierarchy.audit_chain_hash.is_none(), "precondición: la fila génesis no encadena");
+        assert_eq!(hierarchy.consent_ref, "v1", "precondición: consent génesis");
+
+        clock.tick(); // 1_000 -> 1_100
+        // consent NUEVO ("v2") distinto del génesis ("v1") para discriminar
+        // el mutante "delete field consent_ref".
+        let updated = repo
+            .update_parent_and_consent(&hierarchy, Some("fund-Y"), "v2")
+            .await
+            .expect("actualizar padre y consentimiento");
+
+        // Campos NUEVOS de la operación en la fila DEVUELTA -- cada uno
+        // distinto de su valor génesis (que es donde caería el mutante).
+        assert_eq!(
+            updated.updated_at_ns, 1_100,
+            "el updated_at devuelto debe ser el now del reloj tras el tick, no el viejo (1_000)"
+        );
+        assert_ne!(
+            updated.audit_hash, hierarchy.audit_hash,
+            "el audit_hash devuelto debe ser el recomputado, no el viejo copiado"
+        );
+        assert_eq!(
+            updated.audit_chain_hash,
+            Some(hierarchy.audit_hash.clone()),
+            "el audit_chain_hash devuelto debe encadenar al audit_hash génesis (no quedar en None)"
+        );
+        assert_eq!(updated.consent_ref, "v2", "el consent_ref devuelto debe ser el nuevo, no el viejo copiado");
+
+        // Espejo contra lo PERSISTIDO en disco -- la fila devuelta debe ser
+        // bit-a-bit igual a la que quedó en la BD (mata cualquier campo
+        // borrado que aún no cubran las aserciones puntuales de arriba).
+        let reloaded = repo.find_by_owner("trader-7").await.expect("releer").expect("existe");
+        assert_eq!(
+            updated, reloaded,
+            "la fila devuelta por update_parent_and_consent debe coincidir campo por campo con la persistida"
+        );
+    }
+
     #[tokio::test]
     async fn database_check_rejects_unknown_attestation_side() {
         let pool = migrated_pool().await;
@@ -845,5 +905,127 @@ mod tests {
         let sequence_ids: Vec<i64> = chain.iter().map(|row| row.event_sequence_id).collect();
         let expected: Vec<i64> = (1..=N).collect();
         assert_eq!(sequence_ids, expected, "los event_sequence_id deben ser 1..=N sin huecos ni duplicados");
+    }
+
+    // ── CRITERIO (QA por mutación, DEBT-018): reintento acotado hasta AGOTAR ──
+
+    /// CRITERIO DE CIERRE (QA por mutación): bajo contención de escritura
+    /// SOSTENIDA (otro escritor retiene el lock de `BEGIN IMMEDIATE` y no lo
+    /// suelta), el bucle de reintento de `record_attestation` debe agotar
+    /// EXACTAMENTE `MAX_RECORD_ATTEMPTS` intentos y rendirse con
+    /// `WriteContention { attempts: MAX }` -- nunca descartar la atestación
+    /// en silencio, ni rendirse un intento antes o después. Patrón de
+    /// referencia: `persistence/data_portability.rs` (STORY-043, DEBT-018).
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn record_attestation_exhausts_exactly_max_attempts_when_write_lock_is_held() {
+        use std::str::FromStr;
+        use std::time::Duration;
+
+        use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+
+        let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = temp_dir.path().join("master_account_hierarchy_forced_contention.sqlite");
+        let database_url = format!("sqlite://{}", db_path.display());
+
+        // Migrar con el pool normal (busy_timeout de 5s).
+        let pool = connect(&database_url).await.expect("conectar");
+        migrate(&pool).await.expect("migrar");
+
+        // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
+        // "database is locked" en vez de esperar 5s -- hace la contención
+        // determinista y rápida.
+        let immediate_opts = || {
+            SqliteConnectOptions::from_str(&database_url)
+                .expect("parsear opciones")
+                .journal_mode(SqliteJournalMode::Wal)
+                .busy_timeout(Duration::from_millis(0))
+        };
+
+        // Escritor A: toma el lock de escritura con `BEGIN IMMEDIATE` y NO lo
+        // suelta mientras B intenta escribir.
+        let lock_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool que retiene el lock");
+        let lock_tx = lock_pool
+            .begin_with("BEGIN IMMEDIATE")
+            .await
+            .expect("tomar el lock de escritura reservado");
+
+        // Escritor B: intenta registrar una atestación mientras A retiene el
+        // lock. Cada `try_record_once` abre `BEGIN IMMEDIATE`, choca con el
+        // lock de A, falla con "database is locked" (transitorio) y
+        // reintenta, hasta agotar MAX_RECORD_ATTEMPTS.
+        let repo_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool del repositorio");
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = OverrideAttestationRepository::new(&repo_pool, &clock);
+
+        let result = repo
+            .record_attestation(sample_attestation_input(AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
+            .await;
+
+        drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
+
+        match result {
+            Err(OverrideAttestationRepositoryError::WriteContention { attempts }) => {
+                assert_eq!(
+                    attempts, MAX_RECORD_ATTEMPTS,
+                    "bajo contención sostenida debe agotar EXACTAMENTE MAX_RECORD_ATTEMPTS intentos"
+                );
+            }
+            other => panic!(
+                "se esperaba WriteContention {{ attempts: {MAX_RECORD_ATTEMPTS} }} bajo contención sostenida, se obtuvo: {other:?}"
+            ),
+        }
+    }
+
+    // ── CRITERIO (QA por mutación, DEBT-018): clasificador de contención ──────
+
+    /// CRITERIO DE CIERRE (QA por mutación): `is_transient_write_conflict`
+    /// distingue una violación UNIQUE PERMANENTE (la PK `id`, que NO se debe
+    /// reintentar) de la contención transitoria. Fija que exige AMBAS
+    /// condiciones (es violación UNIQUE **y** menciona `event_sequence_id`),
+    /// no una sola, y que no clasifica cualquier cosa como transitoria.
+    #[tokio::test]
+    async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
+        let pool = migrated_pool().await;
+
+        // Inserta una fila válida y luego otra con el MISMO `id`: viola la
+        // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
+        // PERMANENTE cuyo mensaje NO menciona `event_sequence_id`.
+        let insert_with_id_dup = |event_sequence_id: i64| {
+            sqlx::query(
+                "INSERT INTO override_attestations (\
+                    id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                    owner_id, parent_owner_id, node_id, attestation_side, command_kind, target_ref, outcome, justification\
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'trader-7', 'fund-X', 'node-A', \
+                           'ISSUER', 'ARCHIVE', 'strategy-42', 'EXECUTED', NULL)",
+            )
+            .bind(event_sequence_id)
+            .execute(&pool)
+        };
+        insert_with_id_dup(1).await.expect("primera fila válida");
+        let err = insert_with_id_dup(2)
+            .await
+            .expect_err("la segunda fila debe violar la PRIMARY KEY id");
+
+        let permanent = OverrideAttestationRepositoryError::Database(err);
+        assert!(
+            !is_transient_write_conflict(&permanent),
+            "una violación UNIQUE de la PK (no de event_sequence_id) es PERMANENTE, no transitoria"
+        );
+
+        // Control: un error que ni siquiera es de base de datos jamás es
+        // transitorio (fija la rama temprana `let ... else`).
+        let non_database = OverrideAttestationRepositoryError::UnknownOutcome("X".to_string());
+        assert!(
+            !is_transient_write_conflict(&non_database),
+            "un error no-Database nunca es contención transitoria"
+        );
     }
 }
