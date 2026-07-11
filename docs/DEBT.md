@@ -44,17 +44,17 @@
 - **Disparador de pago:** editar el baseline SQL es barato en greenfield → se pagan en la auditoría retroactiva o al cablear el job en background.
 - **Estado:** Abierta.
 
-### DEBT-004 · Nodo Canvas del `sovereign-data-fetcher` no construido
+### DEBT-004 · Nodo Canvas por-feature del `sovereign-data-fetcher` no construido
 - **Severidad:** 🟡 Baja
-- **Origen:** STORY-024 (Opción B, manifestación #3).
-- **Descripción:** el nodo Canvas + inspector lateral del fetcher no se construyó porque la infraestructura Canvas aún no existe.
-- **Disparador de pago:** al construir la infra Canvas (decisión del usuario: al inicio de la auditoría retroactiva). De ahí en adelante toda feature entrega sus 3 manifestaciones. Reordena el ROADMAP → escalar al Architect (ADR-0117/0136).
-- **Estado:** Abierta.
+- **Origen:** STORY-024 (Opción B, manifestación #3). **Causa raíz corregida por la auditoría retroactiva (2026-07-10, Lote 5).**
+- **Descripción:** la causa original ("la infra Canvas no existe") **ya no es cierta**: la auditoría confirmó que la **infraestructura genérica de Canvas SÍ existe** (`ui/lib/tabs/canvas_tab.dart`: drag-drop, nodos, breadcrumb). Lo que falta es el **nodo específico por-feature + inspector panel** del fetcher (y del resto de features con superficie).
+- **Disparador de pago:** definido el contrato del nodo por-feature por el Architect (ver TASK-049 §E5, reconciliación ADR-0117/0136). Entonces toda feature entrega su nodo Canvas.
+- **Estado:** Abierta (alcance reformulado).
 
 ### DEBT-005 · Tanda de UI final del substrato (SVF + galería + harness genérico)
 - **Severidad:** 🟡 Baja (autorizada, backend-first)
 - **Origen:** decisión del usuario 2026-07-04.
-- **Descripción:** los backends de los cimientos #1–#9 se verifican por CLI (Canal #2); su **SVF (Canal #1) + componentes de galería con mocks** se construyen en UNA tanda al final, que incluye: (a) el **harness SVF genérico** (una vez, obligatorio — nadie arma SVF a medida); (b) la SVF retroactiva de #1–#9; (c) el **arreglo de la SVF del `sovereign-data-fetcher`** (hoy dice "descargado" pero no muestra la respuesta del servidor).
+- **Descripción:** los backends de los cimientos **#1–#14** (ampliado por la auditoría retroactiva 2026-07-10 — el substrato cerró 14/14, no #1–#9) se verifican por CLI (Canal #2); su **SVF (Canal #1) + componentes de galería con mocks** se construyen en UNA tanda al final, que incluye: (a) el **harness SVF genérico** (una vez, obligatorio — nadie arma SVF a medida); (b) la SVF retroactiva de #1–#14; (c) el **arreglo de la SVF del `sovereign-data-fetcher`** — NOTA: la auditoría (Lote 5) observó que el código actual ya muestra 4 key-values reales del job, así que el "bug" original puede estar ya resuelto; **confirmar/reformular** al construir el harness.
 - **Disparador de pago:** al cerrar los backends del substrato.
 - **Estado:** Abierta.
 
@@ -160,10 +160,21 @@
   1. **Clasificador de contención** (`is_transient_write_conflict` → `true`/`false`; `||`→`&&`; `&&`→`||`): sin test unitario directo que le pase un error de "database is locked" real y una violación UNIQUE PERMANENTE (PK, no `event_sequence_id`).
   2. **Bucle de reintento** (`attempt += 1`→`*=`; `attempt < MAX`→`==`/`>`/`<=`): sin test de **contención sostenida** que agote `MAX_RECORD_ATTEMPTS` y afirme `WriteContention { attempts: MAX }`.
   3. **Fidelidad de la fila devuelta** (borrado de campo en la proyección de `reclassify`/`update_*` de tablas mutables): sin assertions sobre la fila que la función DEVUELVE (solo se verifica lo persistido).
-- **Alcance a auditar (EPIC-0):** confirmado en **#10**; por herencia del patrón calcado, previsiblemente en **#5** (`consent-registry`), **#6** (`enriched-domain-events`), **#9** (`data-aggregation`), **#11** (`instance-continuity`), **#12** (`master-account-hierarchy`), y los ledgers endurecidos por STORY-032 (`audit_log`, `usage_records`). Cada uno se mide y se cierra a 0 survivors.
+- **Alcance CONFIRMADO por la auditoría retroactiva (2026-07-10, Lotes 2/3/4):** ausencia de los 3 tests companion verificada empíricamente en **#4** (`usage-metering`), **#5** (`consent-registry`), **#6** (`enriched-domain-events`), **#7** (`institutional-report-engine` — DEBT.md lo OMITÍA), **#9** (`data-aggregation`), **#10** (`verified-account-registry`), **#11** (`instance-continuity`), **#12** (`master-account-hierarchy`). Cada uno se mide y se cierra a 0 survivors.
 - **Impacto actual:** nulo hoy (greenfield, sin carga concurrente real; el núcleo de integridad — `BEGIN IMMEDIATE`, `UNIQUE`, hashes encadenados persistidos — SÍ está cubierto). Muerde bajo concurrencia de producción, que es cuando el modo de falla (rendirse sin reintento, enmascarar un error permanente, o devolver metadato rancio) es más sutil.
 - **Patrón de pago (ya validado en #13, STORY-043):** por cada ledger, tres tests deterministas — (1) contención sostenida con segundo escritor reteniendo `BEGIN IMMEDIATE` (`busy_timeout=0`) hasta agotar reintentos; (2) `is_transient_*` directo con violación UNIQUE de PK (no de secuencia); (3) assertions sobre la fila devuelta por la actualización mutable.
-- **Disparador de pago:** auditoría retroactiva **EPIC-0** (contraste cimiento por cimiento). Toca código sellado → cada cimiento re-corre su QA por mutación a 0 survivors.
+- **Disparador de pago:** auditoría retroactiva **EPIC-0** — pagada vía **STORY-047** (2026-07-10, retrofit de los 8 cimientos con el patrón dorado).
+- **Estado:** ✅ **Pagada** — [STORY-047](./execution/STORY-045-foundation-audit-remediation.md) (2026-07-10). Los 8 cimientos (#4,#5,#6,#7,#9,#10,#11,#12) tienen los 3 tests companion; gate de mutación del Tech-Lead: **0 `missed`** (los 8 `timeout` del contador de reintento `+= → *=` son detección por no-terminación, aceptables). Los ledgers de la plomería EPIC-0 (`job`/`mcp_gateway`) quedan rastreados en DEBT-019 aparte.
+
+### DEBT-019 · Cobertura de mutación de la plomería EPIC-0 (`job`/`mcp_gateway`/`mcp_server`)
+- **Severidad:** 🟡 Baja (test-coverage, no correctitud) — misma naturaleza que DEBT-011/012/013 pero para la plomería de la Fundación.
+- **Origen:** gate de mutación del Tech-Lead sobre STORY-045/046 (2026-07-10): 20 mutantes `missed` + 2 `timeout` sobre `pool.rs`/`job.rs`/`persistence/mcp_gateway.rs`/`orchestrator/mcp_server.rs`/`domain/mcp_gateway.rs`.
+- **Descripción:** la **atomicidad** que STORY-046 añadió SÍ está cubierta (los mutantes del contador de reintento `+= → *=` en `record_result`/`record_decision` salen como **TIMEOUT** = no-terminación detectable; la integridad del append está cazada). Los sobrevivientes son de dos clases, ninguna es regresión de STORY-046:
+  1. **Killable, ligado al cambio (3):** fidelidad de la fila DEVUELTA por `JobRepository::update_progress` (`job.rs:466-468` — `updated_at_ns`/`audit_hash`/`audit_chain_hash` sin aserción sobre la fila devuelta). Análogo al test #3 del patrón dorado, pero en la ruta mutable.
+  2. **Ortogonal preexistente (17):** manejadores de herramientas MCP (`drasus_clock_now`/`jobs_list`/`jobs_submit`/`telemetry_latest` → `Ok(Default::default())`, `run_mcp_server` → `Ok(())`); comparaciones de lectura en `telemetry_latest` (`mcp_server.rs:316-317`); `institutional_tag_to_string` (`domain/mcp_gateway.rs:253`); impls `Display`/`Error` de `JobRepositoryError`; brazo `match JobState::Running` en `transition`. Son funciones que STORY-045/046 NO tocó — coverage de manejadores/lectura/boilerplate.
+- **Impacto actual:** nulo de correctitud (la propiedad crítica — atomicidad append, FK activas, triggers, `audit_chain_hash` NULL — SÍ está probada). Es cobertura faltante.
+- **Patrón de pago:** (1) test de fidelidad de fila devuelta en `update_progress`; (2) aserciones de resultado sobre los manejadores MCP + test de la comparación de `telemetry_latest`. Todos baratos; se pliegan a la tanda de retrofit de EPIC-0 junto a DEBT-018.
+- **Disparador de pago:** auditoría retroactiva EPIC-0 (misma ventana que DEBT-018) o Story de cobertura dedicada.
 - **Estado:** Abierta.
 
 ---
@@ -175,5 +186,6 @@
 - **DEBT-014** (Eje B ausente en #10) → saldada por [STORY-038](./execution/STORY-038-verified-account-capital-reality.md), 2026-07-06.
 - **DEBT-016** (columna `capital_reality` duplica `institutional_tag` en #10) → saldada por [STORY-041](./execution/STORY-041-verified-account-eje-b-consolidation.md), 2026-07-07.
 - **DEBT-017** (falta cuota `MAX_CHILD_ACCOUNTS` en #3) → saldada por [STORY-042](./execution/STORY-042-plan-tier-quota-max-child-accounts.md), 2026-07-07.
+- **DEBT-018** (cobertura de mutación del patrón append-only en cimientos #4–#12) → saldada por [STORY-047](./execution/STORY-045-foundation-audit-remediation.md), 2026-07-10 (gate de mutación 0 `missed`).
 
 > Nota: DEBT-001, DEBT-007, DEBT-014, DEBT-016 y DEBT-017 se conservan arriba con su ficha completa y Estado ✅ Pagada (para preservar su historia); este índice apunta a la Story que las saldó.
