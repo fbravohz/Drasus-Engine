@@ -153,3 +153,5 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0147](./adr/ADR-0147.md) | Jerarquía Organizacional de Cuentas Maestras — Cuenta Maestra Raíz (Fondo) con Autoridad de Auditoría y Override sobre Cuentas Maestras Hijas (cimiento #12) |
 | [ADR-0148](./adr/ADR-0148.md) | Portabilidad y Exportación de Datos del Usuario — Cimiento #13 (Derecho de Acceso/Portabilidad/Olvido, GDPR Art. 15/17/20) |
 | [ADR-0149](./adr/ADR-0149.md) | Roles de Operador a la Carta — Control de Acceso Granular por Puerto de Feature, Cascada de Autoridad Jerárquica (cimiento #14) |
+| [ADR-0150](./adr/ADR-0150.md) | Expedition — Ledger de Ejecución Inmutable, Linaje de Procedencia y Pipeline Versionado (columna vertebral de procedencia + presupuesto de pruebas del DSR) |
+| [ADR-0151](./adr/ADR-0151.md) | Modelo de Aplicación de la Corrección por Pruebas Múltiples — Por Punto de Decisión, N desde el Linaje, Correlación por V[{SR_n}] (reconcilia PBO/CSCV ↔ DSR ↔ PSR; guardia de límite degenerado) |
