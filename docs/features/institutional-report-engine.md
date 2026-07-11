@@ -5,7 +5,9 @@
 **Carpeta:** `./features/institutional-report-engine/`
 **Estado:** 🟡 Parcial (puerto + firma reproducible + persistencia; render Tera, catálogo y API de terceros diferidos)
 **Última actualización:** 2026-07-03
-**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #7) · ADR-0101 (plantillas Tera) · ADR-0027 (audit trail)
+**Decisión Arquitectónica Asociada:** ADR-0144 (cimiento #7) · ADR-0101 (se cita **solo por el motor de plantillas Tera compartido**; la *decisión* de ADR-0101 está acotada a transpilar Strategy AST → lenguajes externos MQL4/5/NinjaScript, **no** a renderizar reportes) · ADR-0027 (audit trail)
+
+> **Diferido — ADR de render (disparador: construcción de la Story de render):** la decisión arquitectónica específica del render de reportes institucionales (Tera → PDF/HTML + white-label) **no existe todavía como ADR**; ADR-0101 no la cubre. Cuando se construya la Story de render (hoy Pendiente en el banner), se formaliza en un ADR propio o como enmienda de alcance de ADR-0101. Hasta entonces, Tera aquí es reutilización de motor, no decisión de reporte.
 
 ## ¿Qué es esta feature?
 

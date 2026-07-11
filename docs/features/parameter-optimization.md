@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/parameter-optimization/`
 **Estado:** Lista para implementar
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #4):** la optimización de parámetros **es** un punto de decisión — su selección se corrige con N = combinaciones evaluadas (reconstruido desde el linaje), DSR si el criterio es Sharpe, PBO/CSCV si no. La correlación entra por `V[{SR_n}]`. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-08
 
 ---

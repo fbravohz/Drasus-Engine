@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/nsga2-optimizer/`
 **Estado:** Lista para implementar
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #1 de la matriz):** la minería NSGA-II **NO** es un punto de publicación; **solo REGISTRA** el insumo (N + σ² + sketch del vector de Sharpe) en la Expedition activa (`expedition-ledger`). No deflacta aquí: la corrección se aplica río abajo, por punto de decisión. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 **Decisiones Arquitectónicas Asociadas:** ADR-0042, ADR-0044, ADR-0108, ADR-0109, ADR-0110, ADR-0111, ADR-0130
 

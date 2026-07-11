@@ -106,7 +106,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 * **¿Cuál es el problema?**  
   Necesitamos ligar la licencia a una máquina específica para evitar la clonación no autorizada del software comercial en múltiples servidores, sin violar la privacidad del usuario ni almacenar datos personales.
 * **¿Qué tiene que pasar?**  
-  El sistema recopila datos de hardware locales estables y genera un hash único empleando un algoritmo `HMAC-SHA256`. Este hash se valida contra el archivo de licencia importado por el usuario.
+  El sistema recopila datos de hardware locales estables y genera un hash único con `SHA-256` (huella de máquina = `node_id`, digest de una vía sin clave — es la huella reutilizada de `central-identity`/`AccountIdentity`, "SHA-256 de identificadores de máquina"). **No es `HMAC`** (que sería un hash con clave simétrica): esta huella es un digest público, distinto de la **firma de licencia**, que sí es asimétrica `Ed25519` (clave privada solo en el emisor, ADR-0093). Este hash se valida contra el archivo de licencia importado por el usuario.
 * **¿Cómo sé que está hecho?**  
   * [ ] El hash se genera de manera idéntica en el mismo equipo en múltiples arranques del sistema.
   * [ ] Si se altera el archivo de configuración de hardware simulado, el sistema detecta el cambio de firma.

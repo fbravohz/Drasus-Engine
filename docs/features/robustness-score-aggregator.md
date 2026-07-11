@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/robustness-score-aggregator/`
 **Estado:** En Diseño
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #10):** el ranking por **fitness compuesta** (criterio ≠ Sharpe) se corrige con **PBO/CSCV, NO con DSR directo** (el DSR es específico del Sharpe). Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-29
 **Decisión Arquitectónica Asociada:** ADR-0058 (Política de Scoring Ponderado de Robustez)
 

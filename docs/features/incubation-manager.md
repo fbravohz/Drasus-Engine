@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/incubation-manager/`
 **Estado:** Especificación (Fase 2)
+
+> **Corrección por pruebas múltiples (ADR-0151):** la **promoción** es un punto de decisión — cuando se selecciona entre candidatos que compiten por promover, esa selección se corrige (PBO/CSCV o DSR según el criterio), con N reconstruido desde el linaje (unión de pools multi-etapa). La promoción registra su toque en `expedition_lineage` con naturaleza `PROMOTED`. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-05-31
 **Decisión Arquitectónica Asociada:** ADR-0088 (Protocolo de Incubación & Cono de Silencio)
 

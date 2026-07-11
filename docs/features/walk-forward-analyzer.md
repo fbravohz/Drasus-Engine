@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/walk-forward-analyzer/`
 **Estado:** Especificación (Extraída de backtest-engine)
+
+> **Corrección por pruebas múltiples (ADR-0151, puntos #5/#6 — WFA de Drasus ES WFO):** re-optimiza in-sample por ventana y barre una malla 10×10 eligiendo la celda más estable ⇒ sesgo de selección **doble**: por-ventana (N = combinaciones IS) y por-malla (N = 100), ambos se deflactan. El componente **OOS ciego concatenado NO se deflacta con DSR**: se evalúa con **PSR + degradación WFE**. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 **Decisiones Arquitectónicas Asociadas:** ADR-0108, ADR-0110
 

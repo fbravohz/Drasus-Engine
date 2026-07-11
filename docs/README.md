@@ -152,6 +152,8 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**strategy-ensemble**](./features/strategy-ensemble.md) | Orquesta canales (NSGA-II, Simbólico nativo, HMM) en estrategias híbridas mediante **Fusión de Pareto** y **Mayoría Ponderada**, gestionando la **Asimetría... | generate |
 | [**strategy-self-explanation**](./features/strategy-self-explanation.md) | Módulo de auditoría que traduce un Árbol de Sintaxis Abstracta (AST) críptico (típicamente vomitado por el motor evolutivo genético) a un párrafo de... | generate |
 | [**strategy-versioning**](./features/strategy-versioning.md) | El Strategy Versioning implementa un sistema de historial completo similar a Git para estrategias y portafolios. Cada modificación a la... | manage, feedback |
+| [**pipeline-registry**](./features/pipeline-registry.md) | Definición reutilizable y versionada de un Pipeline (la "ruta" custom de features/módulos); formaliza el custom module de ADR-0137 con versionado git-like (ADR-0150). | validate |
+| [**expedition-ledger**](./features/expedition-ledger.md) | Columna vertebral de procedencia: registra cada corrida (Expedition) inmutable y la ata a los artefactos que tocó con su naturaleza; es el registro del N/presupuesto de pruebas del DSR (ADR-0150). | validate, generate, manage, feedback |
 | [**system-watchdog**](./features/system-watchdog.md) | El protector de última instancia del sistema. Su misión es la **Prevención de Ruina**: monitorea continuamente la salud técnica (latencia, conexión)... | execute, feedback |
 | [**telemetry**](./features/telemetry.md) | Es el componente encargado de capturar y persistir métricas de **performance técnica** y estado de salud del sistema en tiempo real. A diferencia... | execute, feedback |
 | [**temporal-aggregator**](./features/temporal-aggregator.md) | Es un motor de procesamiento de series temporales encargado de agrupar ticks o barras de alta frecuencia en intervalos de tiempo arbitrarios y no... | ingest, validate |
@@ -409,6 +411,8 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0147**](./adr/ADR-0147.md) | Jerarquía Organizacional de Cuentas Maestras — Fondo con Auditoría/Override sobre Cuentas Maestras Hijas (cimiento #12) |
 | [**ADR-0148**](./adr/ADR-0148.md) | Portabilidad y Exportación de Datos del Usuario — Cimiento #13 (Derecho de Acceso/Portabilidad/Olvido, GDPR Art. 15/17/20) |
 | [**ADR-0149**](./adr/ADR-0149.md) | Roles de Operador a la Carta — Control de Acceso Granular por Puerto de Feature, Cascada de Autoridad Jerárquica (cimiento #14) |
+| [**ADR-0150**](./adr/ADR-0150.md) | Expedition — Ledger de Ejecución Inmutable, Linaje de Procedencia y Pipeline Versionado (columna vertebral de procedencia + presupuesto de pruebas del DSR) |
+| [**ADR-0151**](./adr/ADR-0151.md) | Modelo de Aplicación de la Corrección por Pruebas Múltiples — Por Punto de Decisión, N desde el Linaje, Correlación por V[{SR_n}] (reconcilia PBO/CSCV ↔ DSR ↔ PSR; guardia de límite degenerado) |
 
 ---
 

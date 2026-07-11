@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/dsr-tracking-engine/`
 **Estado:** En Diseño
+
+> **Reconciliación (ADR-0150 + ADR-0151):** esta feature se generaliza al `expedition-ledger`: **registra el INSUMO** de deflación (N + σ² por Welford + sketch del vector de Sharpe) por Expedition. El N *aplicado* NO es su `trials_count` de por vida — se computa **por punto de decisión** desde el linaje, con correlación por `V[{SR_n}]` (ADR-0151; guardia de límite degenerado N→∞ ⇒ DSR→0). Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-30
 **Decisión Arquitectónica Asociada:** ADR-0067 (Capa de Inferencia Estadística (EBTA))
 

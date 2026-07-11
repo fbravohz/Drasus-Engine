@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/cpcv-analyzer/`
 **Estado:** Lista para implementar
+
+> **Puerta primaria de selección (ADR-0151 + ADR-0063):** el PBO/CSCV es la **puerta PRIMARIA y metric-agnóstica** de selección-entre-variantes — cubre los casos donde el DSR no aplica directo (fitness compuesta, Ret/DD). Complementaria, no redundante, con el DSR (deflación Sharpe-específica, ADR-0067). Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-30
 **Decisión Arquitectónica Asociada:** ADR-0063 (Protocolo CPCV y Validación PBO)
 

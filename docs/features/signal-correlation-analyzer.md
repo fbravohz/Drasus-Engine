@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/signal-correlation-analyzer/`
 **Estado:** En Diseño
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #9):** si se **elige entre clusters**, es un punto de decisión ⇒ **PBO/CSCV**. La estructura de correlación que produce esta feature es también el insumo del refinamiento `N_eff`-por-clustering (ONC, López de Prado 2019) — diferido a DEBT. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-12
 
 ---

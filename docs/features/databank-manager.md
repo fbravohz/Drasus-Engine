@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/databank-manager/`
 **Estado:** Especificación / Prioritaria (P1)
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #2):** el filtro Top-X% sobre el databank **es** un punto de decisión — se corrige (PBO/CSCV si el criterio ≠ Sharpe, DSR si es Sharpe). El databank es también la fuente del pool de Sharpe de los ensayos que la política de N consume. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-13
 
 ---

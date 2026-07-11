@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/portfolio-optimizer/`
 **Estado:** Especificación (Fase 2)
+
+> **Corrección por pruebas múltiples (ADR-0151, punto #8):** la selección de la composición de portafolio **es** un punto de decisión — N = variantes de composición comparadas (unión de pools desde el linaje si agrupa artefactos de varias Expeditions) ⇒ **PBO/CSCV** (métrica de portafolio ≠ Sharpe simple). Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 **Decisiones Arquitectónicas Asociadas:** ADR-0089 (Motores de Optimización de Portfolio Clásicos & Ensamblador Singular D-Score), ADR-0108, ADR-0111
 

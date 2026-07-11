@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/statistical-inference-ebta/`
 **Estado:** En Diseño
+
+> **Aplicación del DSR (ADR-0151):** el DSR se aplica **por punto de decisión**, con N acotado a los ensayos que compitieron por esa selección (reconstruido desde `expedition_lineage`) y correlación por `V[{SR_n}]` — **nunca** con el `trials_count` de por vida (guardia de límite degenerado: N→∞ ⇒ DSR→0). Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-30
 **Decisión Arquitectónica Asociada:** ADR-0067 (Capa de Inferencia Estadística (EBTA))
 

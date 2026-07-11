@@ -2,6 +2,8 @@
 
 **Carpeta:** `./features/monte-carlo-simulator/`
 **Estado:** Especificación (Actualizado para Scoring Ponderado)
+
+> **NO es punto de selección (ADR-0151, punto #7):** el Montecarlo mide **ruina / percentiles**, no aplica DSR ni PSR. Salvedad documentable: al remuestrear rompe la autocorrelación temporal → **subestima el riesgo de cola**; se interpreta como cota optimista, no como veredicto de sobreajuste. Impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 **Decisión Arquitectónica Asociada:** ADR-0058 (Scoring Ponderado de Robustez), ADR-0061 (Motor MC), ADR-0109, ADR-0111, ADR-0112 (cómputo CPU-first, `tch-rs` erradicado)
 
