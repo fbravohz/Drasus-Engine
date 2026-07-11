@@ -2,6 +2,8 @@
 
 **Carpeta:** `./modules/incubate/`
 **Estado:** Orquestador (Imperative Shell)
+
+> **Corrección por pruebas múltiples (ADR-0151):** la **promoción** es un punto de decisión — la selección entre candidatos que compiten por promover se corrige (PBO/CSCV o DSR según criterio), con N desde el linaje; el toque se registra en `expedition_lineage` con naturaleza `PROMOTED`. Nota de impacto progresivo (ADR-0137).
 **Última actualización:** 2026-04-12
 
 ---

@@ -80,6 +80,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-021 | **EPIC-2** | Auditoría forense (Audit Log) |
 | TTR-024 | **EPIC-2** | Eficiencia del modelo (Perfect Profit Benchmark) |
 | TTR-062 | **EPIC-2** | Acceso agéntico MCP (Cabina Dual) |
+| TTR-063 | **EPIC-2** | Procedencia de la corrida + N del DSR (Expedition Ledger, ADR-0150) |
 | TTR-004 | **EPIC-4** | Guantelete de robustez decagonal (HPC Hybrid MC) |
 | TTR-005 | **EPIC-4** | Reporte visual (Downsampling & Arrow) |
 | TTR-006 | **EPIC-4** | Auditoría de generalización (Basket Stress Test) |
@@ -823,6 +824,18 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** Resultado de backtest que incorpora el indicador fundamental sin sesgo de mirar al futuro.
 *   **Precondición:** Indicador disponible vía `public_interface` de `generate` (TTR-044).
 *   **Postcondición:** Veredicto de robustez sensible al aporte fundamental, auditable.
+
+### **TTR-063: Orquestación de la Expedition del Backtest (Expedition Ledger)**
+*   **Descripción:** Al lanzar un backtest, abre una **Expedition** (corrida) vía la `public_interface` de [`expedition-ledger`](../features/expedition-ledger.md) con el snapshot de configuración (incl. **familia/espacio-de-búsqueda a priori**) y la versión de ruta de [`pipeline-registry`](../features/pipeline-registry.md); al producir cada `BacktestResult` registra su fila de linaje contra la versión de estrategia y acumula el **insumo** de deflación (`trials_count` + σ² + sketch de Sharpe).
+*   **Reglas de Orquestación:**
+    * No reimplementa el ledger: crea/transiciona la Expedition y registra el linaje por los puertos de `expedition-ledger` (Soberanía de Datos, ADR-0003).
+    * El snapshot de config de la Expedition es inmutable (reproducibilidad bit-a-bit, ADR-0002).
+    * El N aplicado a cada selección se computa **por punto de decisión** desde el linaje (ADR-0151), NO es el `trials_count` de por vida (guardia de límite degenerado); la correlación entra por `V[{SR_n}]`. Prohibido un contador paralelo.
+    * La corrida referencia una `pipeline_version_hash` *locked*; nunca una versión de ruta inexistente.
+*   **Entrada:** Solicitud de backtest, versión de ruta, snapshot de config, `BacktestResult`/`MetricsDict` producidos.
+*   **Salida:** Expedition inmutable con estado, N y métricas resumen + filas de linaje `CREATED`/`RE_VALIDATED` atadas a la versión de estrategia.
+*   **Precondición:** `pipeline-registry` y `expedition-ledger` disponibles (EPIC-2).
+*   **Postcondición:** El histórico de corridas y la procedencia de cada artefacto quedan consultables y auditables; el N global queda registrado e inmutable.
 
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.

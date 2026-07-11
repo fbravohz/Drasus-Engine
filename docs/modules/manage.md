@@ -2,6 +2,8 @@
 
 **Carpeta:** `./modules/manage/`
 **Estado:** Orquestador (Imperative Shell)
+
+> **Corrección por pruebas múltiples (ADR-0151):** la **selección de portafolios** (#8) y la **selección de cluster** (#9) son puntos de decisión ⇒ **PBO/CSCV** (criterio ≠ Sharpe), con N = variantes comparadas como **unión de pools** desde `expedition_lineage` cuando la decisión agrupa artefactos de varias Expeditions. Nota de impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 
 ---

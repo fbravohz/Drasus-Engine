@@ -2,6 +2,8 @@
 
 **Carpeta:** `./modules/generate/`
 **Estado:** Orquestador (Imperative Shell)
+
+> **Corrección por pruebas múltiples (ADR-0151):** la minería NSGA-II **solo registra** el insumo (N + σ² + sketch) en la Expedition (punto #1, no publica); el **filtro Top-X%** (#2) y la **optimización de parámetros** (#4) SÍ son puntos de decisión y se corrigen (DSR si Sharpe, PBO/CSCV si no), con N reconstruido desde el linaje y correlación por `V[{SR_n}]`. Nunca se usa el `trials_count` de por vida como N. Nota de impacto progresivo (ADR-0137).
 **Última actualización:** 2026-06-11
 
 ---
