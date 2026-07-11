@@ -11,6 +11,20 @@
 --     de *estado*, no de *hechos*: tiene exactamente una fila por clave.
 --
 -- Idempotencia (ADR-0006): CREATE TABLE IF NOT EXISTS / INSERT OR IGNORE.
+--
+-- STRICT mode + triggers append-only + audit_chain_hash NULL (ADR-0141
+-- M4/M10/M12, in-situ edit del baseline GREENFIELD, auditoría retroactiva
+-- 2026-07):
+--   - `permission_decisions` gana los mismos triggers `BEFORE UPDATE`/
+--     `BEFORE DELETE` que `audit_events` (0002) y `job_results` (0003) --
+--     hasta ahora solo la disciplina del repositorio (sin métodos
+--     update/delete) lo protegía; el borrado/edición directo por SQL no
+--     estaba bloqueado a nivel de base de datos.
+--   - `audit_chain_hash` deja de ser `NOT NULL` con el sentinel de texto
+--     `"genesis"` para la primera fila -- pasa a `NULL` en la fila génesis,
+--     igual que el resto de las tablas append-only del sistema (anomalía
+--     A4 de la auditoría retroactiva; ADR-0141: "audit_chain_hash: NULL en
+--     la fila génesis de TODAS las tablas. Sin sentinels 'genesis'.").
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tabla de decisiones de permiso (append-only, forense)
@@ -22,7 +36,7 @@ CREATE TABLE IF NOT EXISTS permission_decisions (
     created_at                  INTEGER NOT NULL,             -- Nanosegundos desde epoch
     updated_at                  INTEGER NOT NULL,             -- = created_at (append-only)
     audit_hash                  TEXT    NOT NULL,             -- SHA-256 de campos de dominio propio
-    audit_chain_hash            TEXT    NOT NULL,             -- audit_hash de la fila anterior (o "genesis")
+    audit_chain_hash            TEXT,                         -- audit_hash de la fila anterior; NULL SOLO en la fila génesis (ADR-0141 M10)
     event_sequence_id           INTEGER NOT NULL UNIQUE,      -- Posición monótona (1, 2, 3, …)
 
     -- Grupo II: Soberanía
@@ -38,7 +52,8 @@ CREATE TABLE IF NOT EXISTS permission_decisions (
     requested_scope             TEXT    NOT NULL,             -- Pipeline/frontera invocada
     permission_outcome          TEXT    NOT NULL,             -- "granted" | "denied:<razón>"
     production_override_active  INTEGER NOT NULL DEFAULT 0    -- Estado del interruptor (0/1)
-);
+        CHECK (production_override_active IN (0, 1))
+) STRICT;
 
 -- Índice para auditoría por sesión de agente.
 CREATE INDEX IF NOT EXISTS idx_permission_decisions_session
@@ -48,6 +63,22 @@ CREATE INDEX IF NOT EXISTS idx_permission_decisions_session
 CREATE INDEX IF NOT EXISTS idx_permission_decisions_sequence
     ON permission_decisions (event_sequence_id);
 
+-- Enforzamiento append-only: rechaza UPDATE (mismo patrón que
+-- `audit_events`/`job_results`, 0002/0003 -- una decisión de permiso
+-- registrada es un hecho forense permanente).
+CREATE TRIGGER IF NOT EXISTS trg_permission_decisions_no_update
+BEFORE UPDATE ON permission_decisions
+BEGIN
+    SELECT RAISE(ABORT, 'permission_decisions is append-only: UPDATE is forbidden');
+END;
+
+-- Enforzamiento append-only: rechaza DELETE.
+CREATE TRIGGER IF NOT EXISTS trg_permission_decisions_no_delete
+BEFORE DELETE ON permission_decisions
+BEGIN
+    SELECT RAISE(ABORT, 'permission_decisions is append-only: DELETE is forbidden');
+END;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tabla de configuración del Gateway MCP (estado mutable)
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -55,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_permission_decisions_sequence
 CREATE TABLE IF NOT EXISTS mcp_gateway_config (
     key     TEXT PRIMARY KEY NOT NULL,
     value   TEXT NOT NULL
-);
+) STRICT;
 
 -- Valor inicial del interruptor de producción: desactivado por defecto (ADR-0123).
 -- INSERT OR IGNORE: si ya existe no lo sobreescribe — idempotente.

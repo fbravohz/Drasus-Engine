@@ -62,7 +62,7 @@ async fn insert_queued_job(pool: &SqlitePool, job_id: &str) {
 
     sqlx::query(
         "INSERT INTO jobs \
-         (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+         (id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
           process_id, session_id, node_id, logic_hash, owner_id, access_token_id, \
           user_id, job_type, parameters, state, progress) \
          VALUES (?, ?, ?, ?, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, \

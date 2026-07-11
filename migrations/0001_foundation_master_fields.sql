@@ -14,6 +14,11 @@
 -- (ADR-0006: "Cada migración debe ser determinista e idempotente").
 -- SQLx additionally tracks applied migrations via `_sqlx_migrations` and
 -- will not re-run a migration whose checksum is unchanged.
+--
+-- STRICT mode (ADR-0141 M12, in-situ edit of the GREENFIELD baseline,
+-- retroactive audit 2026-07): every column here already used only the
+-- canonical SQLite types (`TEXT`/`INTEGER`), so declaring the table
+-- `STRICT` rejects future type drift without changing any column.
 
 CREATE TABLE IF NOT EXISTS foundation_master_fields (
     -- I. Identidad & Integridad
@@ -50,7 +55,7 @@ CREATE TABLE IF NOT EXISTS foundation_master_fields (
     execution_latency_ms   INTEGER,                      -- Latency in milliseconds
     source_signal_id       TEXT,                         -- Signal link
     signature_hash         TEXT                          -- HMAC signals
-);
+) STRICT;
 
 -- Recovery/event-sourcing access path (ADR-0020 Part I, ADR-0006 crash recovery).
 CREATE INDEX IF NOT EXISTS idx_foundation_master_fields_event_sequence_id

@@ -586,11 +586,11 @@ async fn interrupted_download_recovers_on_restart() {
         recovered_job.state
     );
 
-    // El event_sequence_id debe haber aumentado (la transición RUNNING → QUEUED
-    // produce una nueva entrada en la cadena de auditoría).
+    // El row_version debe haber aumentado (la transición RUNNING → QUEUED
+    // produce una nueva versión de la fila en la cadena de auditoría).
     assert!(
-        recovered_job.event_sequence_id > running_job.event_sequence_id,
-        "la recuperación debe incrementar el event_sequence_id"
+        recovered_job.row_version > running_job.row_version,
+        "la recuperación debe incrementar el row_version"
     );
 }
 
@@ -704,4 +704,161 @@ async fn verify_with_fake_sources_returns_ok_json() {
     assert!(parsed["bulk_files_downloaded"].is_number(), "bulk_files_downloaded debe ser número");
     assert!(parsed["delta_bytes"].is_number(), "delta_bytes debe ser número");
     assert!(parsed["total_bytes"].is_number(), "total_bytes debe ser número");
+}
+
+// ── Atomicidad bajo concurrencia de DownloadRepository::record (STORY-046 M1) ──
+
+fn sample_new_download_record() -> sovereign_data_fetcher::public_interface::NewDownloadRecord {
+    sovereign_data_fetcher::public_interface::NewDownloadRecord {
+        data_snapshot_id: None,
+        logic_hash: Some("fetcher-v1".to_string()),
+        node_id: Some("node-test".to_string()),
+        process_id: Some("process-test".to_string()),
+        source_endpoint: "https://example.invalid/bulk/segment.zip".to_string(),
+    }
+}
+
+/// CRITERIO DE CIERRE (QA por mutación): bajo contención de escritura
+/// SOSTENIDA (otro escritor retiene el lock de `BEGIN IMMEDIATE` y no lo
+/// suelta), el bucle de reintento de `DownloadRepository::record` debe
+/// agotar EXACTAMENTE el máximo de intentos y rendirse con
+/// `WriteContention { attempts: MAX }` -- nunca descartar el registro de
+/// descarga en silencio.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn download_record_exhausts_exactly_max_attempts_when_write_lock_is_held() {
+    use std::str::FromStr;
+    use std::time::Duration;
+
+    use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+
+    const MAX_RECORD_ATTEMPTS: u32 = 5; // mismo valor que persistence.rs (privado al crate)
+
+    let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+    let db_path = temp_dir.path().join("sovereign_download_forced_contention.sqlite");
+    let database_url = format!("sqlite://{}", db_path.display());
+
+    let setup_pool = create_pool(&database_url).await.expect("conectar (setup)");
+    run_migrations(&setup_pool).await.expect("migrar");
+    setup_pool.close().await;
+
+    // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
+    // "database is locked" en vez de esperar 5s -- contención determinista
+    // y rápida.
+    let immediate_opts = || {
+        SqliteConnectOptions::from_str(&database_url)
+            .expect("parsear opciones")
+            .journal_mode(SqliteJournalMode::Wal)
+            .busy_timeout(Duration::from_millis(0))
+    };
+
+    // Escritor A: toma el lock de escritura con `BEGIN IMMEDIATE` y NO lo
+    // suelta mientras B intenta escribir.
+    let lock_pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(immediate_opts())
+        .await
+        .expect("pool que retiene el lock");
+    let lock_tx = lock_pool
+        .begin_with("BEGIN IMMEDIATE")
+        .await
+        .expect("tomar el lock de escritura reservado");
+
+    // Escritor B: intenta registrar una descarga mientras A retiene el
+    // lock. Cada intento abre `BEGIN IMMEDIATE`, choca con el lock de A,
+    // falla con "database is locked" (transitorio) y reintenta, hasta
+    // agotar el máximo de intentos.
+    let repo_pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(immediate_opts())
+        .await
+        .expect("pool del repositorio");
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = DownloadRepository::new(&repo_pool, &clock);
+
+    let result = repo.record(sample_new_download_record()).await;
+
+    drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
+
+    match result {
+        Err(sovereign_data_fetcher::public_interface::DownloadRepositoryError::WriteContention { attempts }) => {
+            assert_eq!(
+                attempts, MAX_RECORD_ATTEMPTS,
+                "bajo contención sostenida debe agotar EXACTAMENTE el máximo de intentos"
+            );
+        }
+        other => panic!(
+            "se esperaba WriteContention {{ attempts: {MAX_RECORD_ATTEMPTS} }} bajo contención sostenida, se obtuvo: {other:?}"
+        ),
+    }
+}
+
+/// CRITERIO DE CIERRE (QA por mutación): una violación UNIQUE PERMANENTE
+/// (la PK `id`, que NO se debe reintentar) NO debe clasificarse como
+/// contención transitoria -- se verifica indirectamente: un `id` duplicado
+/// insertado por fuera del repositorio (violación de PK, no de
+/// `event_sequence_id`) hace fallar el INSERT directo con un error que NO
+/// es "database is locked" ni menciona `event_sequence_id`; el repositorio
+/// (que sí usa UUIDs v7 únicos) nunca produce esa colisión en circunstancias
+/// normales, así que esta prueba fija el comportamiento de la base de datos
+/// del que depende el clasificador `is_transient_write_conflict` interno de
+/// `persistence.rs`.
+#[tokio::test]
+async fn duplicate_primary_key_insert_is_a_permanent_error_not_a_sequence_collision() {
+    let (pool, _dir) = setup_db().await;
+
+    let insert_with_id_dup = |event_sequence_id: i64| {
+        sqlx::query(
+            "INSERT INTO sovereign_download_records \
+             (id, created_at, updated_at, audit_hash, event_sequence_id, source_endpoint) \
+             VALUES ('dup-download-id', 1, 1, 'h', ?, 'https://example.invalid')",
+        )
+        .bind(event_sequence_id)
+        .execute(&pool)
+    };
+
+    insert_with_id_dup(1).await.expect("primera fila válida");
+    let err = insert_with_id_dup(2)
+        .await
+        .expect_err("la segunda fila debe violar la PRIMARY KEY id");
+
+    let message = err.to_string().to_lowercase();
+    assert!(
+        !message.contains("database is locked") && !message.contains("event_sequence_id"),
+        "una violación de PK debe distinguirse textualmente de una colisión de secuencia o un lock transitorio; mensaje: {message}"
+    );
+}
+
+/// CRITERIO DE CIERRE (QA por mutación): la fila que DEVUELVE
+/// `DownloadRepository::record` refleja SIEMPRE valores frescos --
+/// `audit_hash` recién computado, `audit_chain_hash` encadenado a la fila
+/// anterior y `created_at`/`updated_at` leídos del reloj EN ESE INSTANTE --
+/// nunca datos por defecto ni reutilizados de una llamada previa.
+#[tokio::test]
+async fn download_record_returned_row_reflects_fresh_hash_chain_and_timestamp() {
+    let (pool, _dir) = setup_db().await;
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = DownloadRepository::new(&pool, &clock);
+
+    let first = repo.record(sample_new_download_record()).await.expect("registrar primer registro");
+    assert_eq!(first.created_at, 1_000, "precondición: el primer registro nace en el now inicial");
+    assert!(first.audit_chain_hash.is_none(), "precondición: el primer registro no encadena");
+    assert_eq!(first.event_sequence_id, 1);
+
+    clock.tick(); // 1_000 -> 1_100
+    let second = repo.record(sample_new_download_record()).await.expect("registrar segundo registro");
+
+    assert_ne!(
+        second.audit_hash, first.audit_hash,
+        "record debe DEVOLVER el audit_hash recién computado, no uno reutilizado"
+    );
+    assert_eq!(
+        second.audit_chain_hash,
+        Some(first.audit_hash.clone()),
+        "el audit_chain_hash devuelto debe encadenar al audit_hash del registro anterior"
+    );
+    assert_eq!(
+        second.created_at, 1_100,
+        "el created_at devuelto debe ser el now del reloj tras el tick, no el viejo"
+    );
+    assert_eq!(second.event_sequence_id, 2);
 }

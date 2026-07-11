@@ -48,6 +48,13 @@ pub enum JobRepositoryError {
     /// Una transición de estado solicitada no está permitida
     /// ([`crate::domain::job::validate_transition`]).
     InvalidTransition(crate::domain::job::InvalidTransition),
+    /// [`JobRepository::record_result`] no pudo completarse tras agotar los
+    /// reintentos ante contención de escritura transitoria (otro escritor
+    /// mantuvo el lock de la base de datos más allá del `busy_timeout`, o
+    /// hubo colisión repetida al derivar `event_sequence_id`). El resultado
+    /// NO se descartó en silencio -- se propaga este error tipado (regla
+    /// "Atomicidad de ledgers append-only", rust-engineer/SKILL.md §4).
+    WriteContention { attempts: u32 },
 }
 
 impl std::fmt::Display for JobRepositoryError {
@@ -58,6 +65,9 @@ impl std::fmt::Display for JobRepositoryError {
                 write!(f, "job repository: unknown state value '{value}' in jobs table")
             }
             JobRepositoryError::InvalidTransition(err) => write!(f, "job repository: {err}"),
+            JobRepositoryError::WriteContention { attempts } => {
+                write!(f, "no se pudo registrar el job_result tras {attempts} intentos por contención de escritura")
+            }
         }
     }
 }
@@ -68,6 +78,7 @@ impl std::error::Error for JobRepositoryError {
             JobRepositoryError::Database(err) => Some(err),
             JobRepositoryError::UnknownState(_) => None,
             JobRepositoryError::InvalidTransition(err) => Some(err),
+            JobRepositoryError::WriteContention { .. } => None,
         }
     }
 }
@@ -82,6 +93,35 @@ impl From<crate::domain::job::InvalidTransition> for JobRepositoryError {
     fn from(err: crate::domain::job::InvalidTransition) -> Self {
         JobRepositoryError::InvalidTransition(err)
     }
+}
+
+/// Número máximo de intentos de [`JobRepository::record_result`] ante
+/// contención de escritura transitoria antes de rendirse con
+/// [`JobRepositoryError::WriteContention`]. Mismo valor y misma
+/// justificación que [`crate::persistence::audit_log::MAX_APPEND_ATTEMPTS`]:
+/// con `busy_timeout` de 5s (ADR-0141 R2) el lock casi siempre se obtiene
+/// sin reintentar.
+const MAX_RECORD_ATTEMPTS: u32 = 5;
+
+/// Decide si un error de [`JobRepository::record_result`] es una contención
+/// de escritura TRANSITORIA -- algo que reintentar (re-derivando el
+/// `event_sequence_id` y reinsertando) puede resolver, sin descartar el
+/// resultado. Mismo criterio que
+/// `crate::persistence::audit_log::is_transient_write_conflict`.
+fn is_transient_write_conflict(error: &JobRepositoryError) -> bool {
+    let JobRepositoryError::Database(sqlx::Error::Database(db)) = error else {
+        return false;
+    };
+
+    let message = db.message().to_lowercase();
+    // Lock ocupado: otro escritor tenía el lock de la BD / de la tabla.
+    if message.contains("database is locked") || message.contains("database table is locked") {
+        return true;
+    }
+
+    // Colisión de secuencia: mismo event_sequence_id derivado por dos
+    // escritores -- transitorio, re-derivar y reinsertar lo arregla.
+    db.is_unique_violation() && message.contains("event_sequence_id")
 }
 
 /// Un job nuevo para persistir (TTR-001 "Entrada": `JobRequest(job_type,
@@ -108,7 +148,11 @@ pub struct Job {
     pub updated_at_ns: i64,
     pub audit_hash: String,
     pub audit_chain_hash: Option<String>,
-    pub event_sequence_id: i64,
+    /// Contador de versión de ESTA fila (arranca en 1, +1 en cada UPDATE).
+    /// `jobs` es MUTABLE -- renombrado desde `event_sequence_id` (ADR-0141
+    /// "Semántica de secuencias": ese nombre queda reservado para la
+    /// posición GLOBAL en un event-store append-only, como `job_results`).
+    pub row_version: i64,
 
     pub process_id: Option<String>,
     pub session_id: Option<String>,
@@ -184,27 +228,27 @@ impl<'a> JobRepository<'a> {
     /// Persiste un job nuevo en estado `QUEUED` y lo devuelve (TTR-001:
     /// "Job se guarda ANTES de retornar UUID").
     ///
-    /// Genera un UUID v4 fresco (`id`, azar sin semilla — confinado a esta
-    /// cáscara según ADR-0002/0004) y lee el [`Clock`] actual
-    /// (`created_at_ns` == `updated_at_ns` para una fila recién creada).
-    /// `event_sequence_id` arranca en `1` y `audit_chain_hash` es `None`
-    /// para un job nuevo (la cadena de actualizaciones propia de este job
-    /// todavía no tiene predecesor).
+    /// Genera un UUID v7 fresco (`id`, ordenable por tiempo — ADR-0141
+    /// "Claves primarias", confinado a esta cáscara según ADR-0002/0004) y
+    /// lee el [`Clock`] actual (`created_at_ns` == `updated_at_ns` para una
+    /// fila recién creada). `row_version` arranca en `1` y
+    /// `audit_chain_hash` es `None` para un job nuevo (la cadena de
+    /// actualizaciones propia de este job todavía no tiene predecesor).
     ///
     /// El `INSERT` de esta llamada es el límite de durabilidad: quien
     /// llama recibe el UUID del job (vía el [`Job::id`] devuelto) solo
     /// después de que este `INSERT` se completó, nunca antes
     /// (persist-before-ack).
     pub async fn submit(&self, request: NewJob) -> Result<Job, JobRepositoryError> {
-        let id = Uuid::new_v4().to_string();
+        let id = Uuid::now_v7().to_string();
         let now_ns = self.clock.timestamp_ns();
         let state = JobState::Queued;
         let progress: u8 = 0;
-        let event_sequence_id: i64 = 1;
+        let row_version: i64 = 1;
         let audit_hash = compute_job_audit_hash(
             &id,
             now_ns,
-            event_sequence_id,
+            row_version,
             None,
             &request.user_id,
             &request.job_type,
@@ -215,7 +259,7 @@ impl<'a> JobRepository<'a> {
 
         sqlx::query(
             "INSERT INTO jobs (\
-                id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                 process_id, session_id, node_id, logic_hash, \
                 owner_id, access_token_id, \
                 user_id, job_type, parameters, state, progress\
@@ -226,7 +270,7 @@ impl<'a> JobRepository<'a> {
         .bind(now_ns)
         .bind(&audit_hash)
         .bind(Option::<String>::None)
-        .bind(event_sequence_id)
+        .bind(row_version)
         .bind(Option::<String>::None) // process_id: sin asignar hasta que un worker lo tome
         .bind(&request.session_id)
         .bind(&request.node_id)
@@ -247,7 +291,7 @@ impl<'a> JobRepository<'a> {
             updated_at_ns: now_ns,
             audit_hash,
             audit_chain_hash: None,
-            event_sequence_id,
+            row_version,
             process_id: None,
             session_id: request.session_id,
             node_id: request.node_id,
@@ -265,7 +309,7 @@ impl<'a> JobRepository<'a> {
     /// Carga un único job por `id`, o `None` si no existe.
     pub async fn find(&self, id: &str) -> Result<Option<Job>, JobRepositoryError> {
         let row = sqlx::query(
-            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                     process_id, session_id, node_id, logic_hash, \
                     owner_id, access_token_id, \
                     user_id, job_type, parameters, state, progress \
@@ -285,7 +329,7 @@ impl<'a> JobRepository<'a> {
     /// recuperación en startup escanea por `QUEUED` y `RUNNING`).
     pub async fn jobs_in_state(&self, state: JobState) -> Result<Vec<Job>, JobRepositoryError> {
         let rows = sqlx::query(
-            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                     process_id, session_id, node_id, logic_hash, \
                     owner_id, access_token_id, \
                     user_id, job_type, parameters, state, progress \
@@ -302,7 +346,7 @@ impl<'a> JobRepository<'a> {
     /// [`validate_transition`] antes de escribir nada.
     ///
     /// Incrementa `updated_at` (lectura actual de [`Clock`]),
-    /// `event_sequence_id` (+1) y fija `audit_chain_hash` al `audit_hash`
+    /// `row_version` (+1) y fija `audit_chain_hash` al `audit_hash`
     /// previo del job — la misma forma de cadena de hashes que
     /// `audit_events`, acotada al historial de filas propio de este job.
     /// Al transicionar a `RUNNING`, `process_id` se fija a `worker_id`
@@ -319,7 +363,7 @@ impl<'a> JobRepository<'a> {
         validate_transition(job.state, to)?;
 
         let now_ns = self.clock.timestamp_ns();
-        let event_sequence_id = job.event_sequence_id + 1;
+        let row_version = job.row_version + 1;
         let progress = match to {
             JobState::Running => 0,
             JobState::Completed => 100,
@@ -333,7 +377,7 @@ impl<'a> JobRepository<'a> {
         let audit_hash = compute_job_audit_hash(
             &job.id,
             now_ns,
-            event_sequence_id,
+            row_version,
             Some(&job.audit_hash),
             &job.user_id,
             &job.job_type,
@@ -344,14 +388,14 @@ impl<'a> JobRepository<'a> {
 
         sqlx::query(
             "UPDATE jobs SET \
-                updated_at = ?, audit_hash = ?, audit_chain_hash = ?, event_sequence_id = ?, \
+                updated_at = ?, audit_hash = ?, audit_chain_hash = ?, row_version = ?, \
                 process_id = ?, state = ?, progress = ? \
              WHERE id = ?",
         )
         .bind(now_ns)
         .bind(&audit_hash)
         .bind(&job.audit_hash)
-        .bind(event_sequence_id)
+        .bind(row_version)
         .bind(&process_id)
         .bind(to.as_str())
         .bind(progress as i64)
@@ -365,7 +409,7 @@ impl<'a> JobRepository<'a> {
             updated_at_ns: now_ns,
             audit_hash,
             audit_chain_hash: Some(job.audit_hash.clone()),
-            event_sequence_id,
+            row_version,
             process_id,
             session_id: job.session_id.clone(),
             node_id: job.node_id.clone(),
@@ -385,17 +429,17 @@ impl<'a> JobRepository<'a> {
     /// sin cambiar su `state` (TTR-005: "Worker actualiza progreso cada
     /// `progress_interval` segundos").
     ///
-    /// Incrementa `updated_at`, `event_sequence_id` y `audit_chain_hash`
+    /// Incrementa `updated_at`, `row_version` y `audit_chain_hash`
     /// igual que [`Self::transition`]. Devuelve el [`Job`] actualizado.
     pub async fn update_progress(&self, job: &Job, progress: crate::domain::job::Progress) -> Result<Job, JobRepositoryError> {
         let now_ns = self.clock.timestamp_ns();
-        let event_sequence_id = job.event_sequence_id + 1;
+        let row_version = job.row_version + 1;
         let progress_value = progress.value();
 
         let audit_hash = compute_job_audit_hash(
             &job.id,
             now_ns,
-            event_sequence_id,
+            row_version,
             Some(&job.audit_hash),
             &job.user_id,
             &job.job_type,
@@ -406,13 +450,13 @@ impl<'a> JobRepository<'a> {
 
         sqlx::query(
             "UPDATE jobs SET \
-                updated_at = ?, audit_hash = ?, audit_chain_hash = ?, event_sequence_id = ?, progress = ? \
+                updated_at = ?, audit_hash = ?, audit_chain_hash = ?, row_version = ?, progress = ? \
              WHERE id = ?",
         )
         .bind(now_ns)
         .bind(&audit_hash)
         .bind(&job.audit_hash)
-        .bind(event_sequence_id)
+        .bind(row_version)
         .bind(progress_value as i64)
         .bind(&job.id)
         .execute(self.pool)
@@ -422,7 +466,7 @@ impl<'a> JobRepository<'a> {
             updated_at_ns: now_ns,
             audit_hash,
             audit_chain_hash: Some(job.audit_hash.clone()),
-            event_sequence_id,
+            row_version,
             progress: progress_value,
             ..job.clone()
         })
@@ -433,15 +477,70 @@ impl<'a> JobRepository<'a> {
     /// escritura para `job_results`, y la base de datos además rechaza
     /// `UPDATE`/`DELETE` vía triggers (migración `0003_jobs.sql`).
     ///
-    /// `event_sequence_id` es el próximo valor en la cadena global de
-    /// `job_results` (leer-y-luego-escribir, reflejando el patrón de
-    /// [`crate::persistence::audit_log::AuditLogRepository::append`]).
+    /// ## Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only")
+    ///
+    /// El *read-then-write* (leer la cola de la cadena de `job_results` y el
+    /// `INSERT` final) ocurre dentro de UNA sola transacción
+    /// `BEGIN IMMEDIATE` -- ver [`Self::try_record_once`]. Sin esa
+    /// transacción, dos escritores concurrentes derivarían el mismo
+    /// `event_sequence_id`, el `UNIQUE` rechazaría a uno y su resultado se
+    /// PERDERÍA. Ante contención transitoria se reintenta hasta
+    /// [`MAX_RECORD_ATTEMPTS`] veces re-derivando la secuencia; el resultado
+    /// NUNCA se descarta en silencio (si se agotan los reintentos se
+    /// devuelve [`JobRepositoryError::WriteContention`]).
     pub async fn record_result(&self, new_result: NewJobResult) -> Result<JobResult, JobRepositoryError> {
-        let previous_hash = self.load_latest_result_hash().await?;
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            match self.try_record_once(&new_result).await {
+                Ok(result) => return Ok(result),
+                Err(error) => {
+                    // Solo se reintenta ante contención de escritura
+                    // transitoria; cualquier otro error se propaga de
+                    // inmediato.
+                    if is_transient_write_conflict(&error) {
+                        if attempt < MAX_RECORD_ATTEMPTS {
+                            continue;
+                        }
+                        // Agotados los reintentos: error tipado, NUNCA
+                        // pérdida silenciosa del resultado.
+                        return Err(JobRepositoryError::WriteContention { attempts: attempt });
+                    }
+                    return Err(error);
+                }
+            }
+        }
+    }
 
-        let id = Uuid::new_v4().to_string();
+    /// Un intento único de [`Self::record_result`], dentro de una
+    /// transacción `BEGIN IMMEDIATE`. Devuelve el error tal cual si algo
+    /// falla -- el bucle de `record_result` decide si es transitorio y hay
+    /// que reintentar. `BEGIN IMMEDIATE` toma el lock de escritura de
+    /// ENTRADA: así ningún otro escritor puede intercalar entre la lectura
+    /// de la cola y el `INSERT`, y se evita el interbloqueo de upgrade que
+    /// ocurriría si dos transacciones DEFERRED intentaran subir de lectura
+    /// a escritura a la vez.
+    async fn try_record_once(&self, new_result: &NewJobResult) -> Result<JobResult, JobRepositoryError> {
+        let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
+
+        // Lectura (DENTRO de la transacción) -- la cola actual de la cadena
+        // GLOBAL de job_results, para derivar el próximo event_sequence_id
+        // y encadenar el audit_hash.
+        let tail_row = sqlx::query("SELECT audit_hash, event_sequence_id FROM job_results ORDER BY event_sequence_id DESC LIMIT 1")
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        let (event_sequence_id, previous_hash) = match tail_row {
+            Some(row) => {
+                let previous_seq: i64 = row.get("event_sequence_id");
+                let previous_hash: String = row.get("audit_hash");
+                (previous_seq + 1, Some(previous_hash))
+            }
+            None => (1, None),
+        };
+
+        let id = Uuid::now_v7().to_string();
         let now_ns = self.clock.timestamp_ns();
-        let event_sequence_id = self.next_result_sequence_id().await?;
 
         let audit_hash = compute_result_audit_hash(
             &id,
@@ -453,6 +552,8 @@ impl<'a> JobRepository<'a> {
             new_result.error_message.as_deref(),
         );
 
+        // Escritura (DENTRO de la transacción) -- el INSERT que cierra el
+        // read-then-write atómico.
         sqlx::query(
             "INSERT INTO job_results (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
@@ -469,8 +570,12 @@ impl<'a> JobRepository<'a> {
         .bind(&new_result.result_data)
         .bind(&new_result.error_message)
         .bind(now_ns)
-        .execute(self.pool)
+        .execute(&mut *tx)
         .await?;
+
+        // Confirma la transacción: recién aquí el lock de escritura se
+        // libera y la fila se hace visible a otros escritores.
+        tx.commit().await?;
 
         Ok(JobResult {
             id,
@@ -479,9 +584,9 @@ impl<'a> JobRepository<'a> {
             audit_hash,
             audit_chain_hash: previous_hash,
             event_sequence_id,
-            job_uuid: new_result.job_uuid,
-            result_data: new_result.result_data,
-            error_message: new_result.error_message,
+            job_uuid: new_result.job_uuid.clone(),
+            result_data: new_result.result_data.clone(),
+            error_message: new_result.error_message.clone(),
             completed_at_ns: now_ns,
         })
     }
@@ -500,29 +605,6 @@ impl<'a> JobRepository<'a> {
 
         Ok(row.map(row_to_result))
     }
-
-    /// Lee el `audit_hash` de la fila de `job_results` insertada más
-    /// recientemente (mayor `event_sequence_id`), o `None` si la tabla
-    /// está vacía (la próxima llamada a
-    /// [`record_result`](Self::record_result) crea la fila génesis).
-    async fn load_latest_result_hash(&self) -> Result<Option<String>, JobRepositoryError> {
-        let row = sqlx::query("SELECT audit_hash FROM job_results ORDER BY event_sequence_id DESC LIMIT 1")
-            .fetch_optional(self.pool)
-            .await?;
-
-        Ok(row.map(|row| row.get::<String, _>(0)))
-    }
-
-    /// Calcula el próximo `event_sequence_id` para `job_results` (1 para
-    /// la primera fila, luego monótonamente creciente).
-    async fn next_result_sequence_id(&self) -> Result<i64, JobRepositoryError> {
-        let row = sqlx::query("SELECT COALESCE(MAX(event_sequence_id), 0) FROM job_results")
-            .fetch_one(self.pool)
-            .await?;
-
-        let max: i64 = row.get(0);
-        Ok(max + 1)
-    }
 }
 
 /// Convierte una fila de `jobs` al tipo [`Job`].
@@ -538,7 +620,7 @@ fn row_to_job(row: sqlx::sqlite::SqliteRow) -> Result<Job, JobRepositoryError> {
         updated_at_ns: row.get("updated_at"),
         audit_hash: row.get("audit_hash"),
         audit_chain_hash: row.get("audit_chain_hash"),
-        event_sequence_id: row.get("event_sequence_id"),
+        row_version: row.get("row_version"),
         process_id: row.get("process_id"),
         session_id: row.get("session_id"),
         node_id: row.get("node_id"),
@@ -577,7 +659,7 @@ fn row_to_result(row: sqlx::sqlite::SqliteRow) -> JobResult {
 fn compute_job_audit_hash(
     id: &str,
     updated_at_ns: i64,
-    event_sequence_id: i64,
+    row_version: i64,
     previous_audit_hash: Option<&str>,
     user_id: &str,
     job_type: &str,
@@ -596,7 +678,7 @@ fn compute_job_audit_hash(
 
     push(id);
     push(&updated_at_ns.to_string());
-    push(&event_sequence_id.to_string());
+    push(&row_version.to_string());
     push(previous_audit_hash.unwrap_or(crate::domain::audit_log::GENESIS_PREVIOUS_HASH));
     push(user_id);
     push(job_type);
@@ -685,7 +767,7 @@ mod tests {
 
         assert_eq!(job.state, JobState::Queued);
         assert_eq!(job.progress, 0);
-        assert_eq!(job.event_sequence_id, 1);
+        assert_eq!(job.row_version, 1);
         assert_eq!(job.audit_chain_hash, None);
 
         let found = repo.find(&job.id).await.expect("find job").expect("job exists");
@@ -710,7 +792,7 @@ mod tests {
         assert_eq!(running.state, JobState::Running);
         assert_eq!(running.process_id, Some("worker-7".to_string()));
         assert_eq!(running.progress, 0);
-        assert_eq!(running.event_sequence_id, 2);
+        assert_eq!(running.row_version, 2);
         assert_eq!(running.audit_chain_hash, Some(job.audit_hash.clone()));
         assert_ne!(running.audit_hash, job.audit_hash);
     }
@@ -753,7 +835,7 @@ mod tests {
 
         let found = repo.find(&job.id).await.expect("find job").expect("job exists");
         assert_eq!(found.state, JobState::Queued);
-        assert_eq!(found.event_sequence_id, 1);
+        assert_eq!(found.row_version, 1);
     }
 
     /// TTR-005: `update_progress` actualiza el progreso sin cambiar el
@@ -778,7 +860,7 @@ mod tests {
 
         assert_eq!(progressed.state, JobState::Running);
         assert_eq!(progressed.progress, 45);
-        assert_eq!(progressed.event_sequence_id, 3);
+        assert_eq!(progressed.row_version, 3);
     }
 
     /// TTR-004: `jobs_in_state` devuelve solo los jobs que coinciden con
@@ -921,5 +1003,189 @@ mod tests {
         assert_eq!(result_a.event_sequence_id, 1);
         assert_eq!(result_b.event_sequence_id, 2);
         assert_eq!(result_b.audit_chain_hash, Some(result_a.audit_hash));
+    }
+
+    // ── Atomicidad bajo concurrencia (STORY-046, patrón de audit_log.rs / data_portability.rs) ──
+
+    /// CRITERIO DE CIERRE (QA por mutación): bajo contención de escritura
+    /// SOSTENIDA (otro escritor retiene el lock de `BEGIN IMMEDIATE` y no lo
+    /// suelta), el bucle de reintento de `record_result` debe agotar
+    /// EXACTAMENTE `MAX_RECORD_ATTEMPTS` intentos y rendirse con
+    /// `WriteContention { attempts: MAX }` -- nunca descartar el resultado
+    /// en silencio. Fija de forma determinista: el incremento del contador
+    /// (`attempt += 1`), el límite de corte (`attempt < MAX`), y que el
+    /// clasificador trate "database is locked" como transitorio.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn record_result_exhausts_exactly_max_attempts_when_write_lock_is_held() {
+        use std::str::FromStr;
+        use std::time::Duration;
+
+        use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+
+        let temp_dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = temp_dir.path().join("job_results_forced_contention.sqlite");
+        let database_url = format!("sqlite://{}", db_path.display());
+
+        // Migrar con el pool normal (busy_timeout de 5s) y crear el job del
+        // que colgará el resultado (job_results.job_uuid -> jobs.id es una
+        // FK real desde que se activó foreign_keys=ON, hallazgo C1).
+        let setup_pool = connect(&database_url).await.expect("conectar (setup)");
+        migrate(&setup_pool).await.expect("migrar");
+        let clock = DeterministicClock::new(1_000, 100);
+        let setup_repo = JobRepository::new(&setup_pool, &clock);
+        let job = setup_repo.submit(sample_new_job()).await.expect("crear job de prueba");
+        setup_pool.close().await;
+
+        // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
+        // "database is locked" en vez de esperar 5s -- contención
+        // determinista y rápida.
+        let immediate_opts = || {
+            SqliteConnectOptions::from_str(&database_url)
+                .expect("parsear opciones")
+                .journal_mode(SqliteJournalMode::Wal)
+                .busy_timeout(Duration::from_millis(0))
+        };
+
+        // Escritor A: toma el lock de escritura con `BEGIN IMMEDIATE` y NO lo
+        // suelta mientras B intenta escribir.
+        let lock_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool que retiene el lock");
+        let lock_tx = lock_pool
+            .begin_with("BEGIN IMMEDIATE")
+            .await
+            .expect("tomar el lock de escritura reservado");
+
+        // Escritor B: intenta registrar un resultado mientras A retiene el
+        // lock. Cada `try_record_once` abre `BEGIN IMMEDIATE`, choca con el
+        // lock de A, falla con "database is locked" (transitorio) y
+        // reintenta, hasta agotar MAX_RECORD_ATTEMPTS.
+        let repo_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(immediate_opts())
+            .await
+            .expect("pool del repositorio");
+        let repo = JobRepository::new(&repo_pool, &clock);
+
+        let result = repo
+            .record_result(NewJobResult {
+                job_uuid: job.id.clone(),
+                result_data: Some("{\"ok\":true}".to_string()),
+                error_message: None,
+            })
+            .await;
+
+        drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
+
+        match result {
+            Err(JobRepositoryError::WriteContention { attempts }) => {
+                assert_eq!(
+                    attempts, MAX_RECORD_ATTEMPTS,
+                    "bajo contención sostenida debe agotar EXACTAMENTE MAX_RECORD_ATTEMPTS intentos"
+                );
+            }
+            other => panic!(
+                "se esperaba WriteContention {{ attempts: {MAX_RECORD_ATTEMPTS} }} bajo contención sostenida, se obtuvo: {other:?}"
+            ),
+        }
+    }
+
+    /// CRITERIO DE CIERRE (QA por mutación): `is_transient_write_conflict`
+    /// distingue una violación UNIQUE PERMANENTE (la PK `id` de
+    /// `job_results`, que NO se debe reintentar) de la contención
+    /// transitoria. Fija que exige AMBAS condiciones (es violación UNIQUE
+    /// **y** menciona `event_sequence_id`), no una sola (`&&` != `||`), y
+    /// que no clasifica cualquier cosa como transitoria.
+    #[tokio::test]
+    async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = JobRepository::new(&pool, &clock);
+        let job = repo.submit(sample_new_job()).await.expect("crear job de prueba");
+
+        // Inserta una fila válida y luego otra con el MISMO `id`: viola la
+        // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
+        // PERMANENTE cuyo mensaje NO menciona `event_sequence_id`.
+        let insert_with_id_dup = |event_sequence_id: i64| {
+            sqlx::query(
+                "INSERT INTO job_results \
+                 (id, created_at, updated_at, audit_hash, event_sequence_id, job_uuid, completed_at) \
+                 VALUES ('dup-result-id', 1, 1, 'h', ?, ?, 1)",
+            )
+            .bind(event_sequence_id)
+            .bind(&job.id)
+            .execute(&pool)
+        };
+        insert_with_id_dup(1).await.expect("primera fila válida");
+        let err = insert_with_id_dup(2)
+            .await
+            .expect_err("la segunda fila debe violar la PRIMARY KEY id");
+
+        let permanent = JobRepositoryError::Database(err);
+        assert!(
+            !is_transient_write_conflict(&permanent),
+            "una violación UNIQUE de la PK (no de event_sequence_id) es PERMANENTE, no transitoria"
+        );
+
+        // Control: un error que ni siquiera es de base de datos jamás es
+        // transitorio (fija la rama temprana `let ... else`).
+        let non_database = JobRepositoryError::UnknownState("X".to_string());
+        assert!(
+            !is_transient_write_conflict(&non_database),
+            "un error no-Database nunca es contención transitoria"
+        );
+    }
+
+    /// CRITERIO DE CIERRE (QA por mutación): la fila que DEVUELVE
+    /// `record_result` refleja SIEMPRE valores frescos -- `audit_hash`
+    /// recién computado, `audit_chain_hash` encadenado a la fila anterior y
+    /// `created_at`/`updated_at` leídos del reloj EN ESE INSTANTE -- nunca
+    /// datos por defecto ni copiados de una llamada previa.
+    #[tokio::test]
+    async fn record_result_returned_row_reflects_fresh_hash_chain_and_timestamp() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = JobRepository::new(&pool, &clock);
+
+        let job = repo.submit(sample_new_job()).await.expect("crear job de prueba");
+
+        let result_a = repo
+            .record_result(NewJobResult {
+                job_uuid: job.id.clone(),
+                result_data: Some("{\"ok\":true}".to_string()),
+                error_message: None,
+            })
+            .await
+            .expect("registrar primer resultado");
+        assert_eq!(result_a.created_at_ns, 1_000, "precondición: el primer resultado nace en el now inicial");
+        assert!(result_a.audit_chain_hash.is_none(), "precondición: el primer resultado no encadena");
+
+        clock.tick(); // 1_000 -> 1_100
+        let job_b = repo.submit(sample_new_job()).await.expect("crear segundo job de prueba");
+        let result_b = repo
+            .record_result(NewJobResult {
+                job_uuid: job_b.id.clone(),
+                result_data: None,
+                error_message: Some("boom".to_string()),
+            })
+            .await
+            .expect("registrar segundo resultado");
+
+        assert_ne!(
+            result_b.audit_hash, result_a.audit_hash,
+            "record_result debe DEVOLVER el audit_hash recién computado, no uno reutilizado"
+        );
+        assert_eq!(
+            result_b.audit_chain_hash,
+            Some(result_a.audit_hash.clone()),
+            "el audit_chain_hash devuelto debe encadenar al audit_hash del resultado anterior"
+        );
+        assert_eq!(
+            result_b.created_at_ns, 1_100,
+            "el created_at devuelto debe ser el now del reloj tras el tick, no el viejo"
+        );
+        assert_eq!(result_b.event_sequence_id, 2);
     }
 }

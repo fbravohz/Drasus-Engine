@@ -19,6 +19,11 @@ use crate::schemas::{DownloadRecord, NewDownloadRecord};
 pub enum DownloadRepositoryError {
     /// La operación subyacente de SQLite falló.
     Database(sqlx::Error),
+    /// [`DownloadRepository::record`] no pudo completarse tras agotar los
+    /// reintentos ante contención de escritura transitoria -- el registro
+    /// de descarga NO se descartó en silencio (regla "Atomicidad de
+    /// ledgers append-only", rust-engineer/SKILL.md §4).
+    WriteContention { attempts: u32 },
 }
 
 impl std::fmt::Display for DownloadRepositoryError {
@@ -26,6 +31,9 @@ impl std::fmt::Display for DownloadRepositoryError {
         match self {
             DownloadRepositoryError::Database(err) => {
                 write!(f, "download repository database error: {err}")
+            }
+            DownloadRepositoryError::WriteContention { attempts } => {
+                write!(f, "no se pudo registrar la descarga tras {attempts} intentos por contención de escritura")
             }
         }
     }
@@ -35,6 +43,7 @@ impl std::error::Error for DownloadRepositoryError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             DownloadRepositoryError::Database(err) => Some(err),
+            DownloadRepositoryError::WriteContention { .. } => None,
         }
     }
 }
@@ -43,6 +52,34 @@ impl From<sqlx::Error> for DownloadRepositoryError {
     fn from(err: sqlx::Error) -> Self {
         DownloadRepositoryError::Database(err)
     }
+}
+
+/// Número máximo de intentos de [`DownloadRepository::record`] ante
+/// contención de escritura transitoria antes de rendirse con
+/// [`DownloadRepositoryError::WriteContention`]. Mismo valor y misma
+/// justificación que los demás ledgers append-only del sistema
+/// (`crate::persistence::audit_log::MAX_APPEND_ATTEMPTS` en `shared`).
+const MAX_RECORD_ATTEMPTS: u32 = 5;
+
+/// Decide si un error de [`DownloadRepository::record`] es una contención
+/// de escritura TRANSITORIA -- algo que reintentar (re-derivando el
+/// `event_sequence_id` y reinsertando) puede resolver, sin descartar el
+/// registro. Mismo criterio que
+/// `shared::persistence::audit_log::is_transient_write_conflict`.
+fn is_transient_write_conflict(error: &DownloadRepositoryError) -> bool {
+    let DownloadRepositoryError::Database(sqlx::Error::Database(db)) = error else {
+        return false;
+    };
+
+    let message = db.message().to_lowercase();
+    // Lock ocupado: otro escritor tenía el lock de la BD / de la tabla.
+    if message.contains("database is locked") || message.contains("database table is locked") {
+        return true;
+    }
+
+    // Colisión de secuencia: mismo event_sequence_id derivado por dos
+    // escritores -- transitorio, re-derivar y reinsertar lo arregla.
+    db.is_unique_violation() && message.contains("event_sequence_id")
 }
 
 // ── Repositorio ──────────────────────────────────────────────────────────────
@@ -65,20 +102,81 @@ impl<'a> DownloadRepository<'a> {
 
     /// Inserta un nuevo registro de descarga y lo devuelve ya persistido.
     ///
-    /// Genera automáticamente: UUID, timestamps (del Clock inyectado),
+    /// Genera automáticamente: UUID v7, timestamps (del Clock inyectado),
     /// `audit_hash` (SHA-256 del contenido) y encadenamiento con el
     /// registro previo (`audit_chain_hash`). El `event_sequence_id` es el
     /// siguiente número monótono en la tabla.
+    ///
+    /// ## Atomicidad bajo concurrencia (regla "Atomicidad de ledgers append-only")
+    ///
+    /// El *read-then-write* (leer la cola de la cadena y el `INSERT` final)
+    /// ocurre dentro de UNA sola transacción `BEGIN IMMEDIATE` -- ver
+    /// [`Self::try_record_once`]. Sin esa transacción, dos escritores
+    /// concurrentes derivarían el mismo `event_sequence_id`, el `UNIQUE`
+    /// (migración `0006`) rechazaría a uno y su registro se PERDERÍA. Ante
+    /// contención transitoria se reintenta hasta [`MAX_RECORD_ATTEMPTS`]
+    /// veces re-derivando la secuencia; el registro NUNCA se descarta en
+    /// silencio (si se agotan los reintentos se devuelve
+    /// [`DownloadRepositoryError::WriteContention`]).
     pub async fn record(
         &self,
         new: NewDownloadRecord,
     ) -> Result<DownloadRecord, DownloadRepositoryError> {
-        // Lee el hash del último registro para construir la cadena de auditoría.
-        let previous_hash = self.load_latest_hash().await?;
-        let id = Uuid::new_v4().to_string();
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            match self.try_record_once(&new).await {
+                Ok(record) => return Ok(record),
+                Err(error) => {
+                    // Solo se reintenta ante contención de escritura
+                    // transitoria; cualquier otro error se propaga de
+                    // inmediato.
+                    if is_transient_write_conflict(&error) {
+                        if attempt < MAX_RECORD_ATTEMPTS {
+                            continue;
+                        }
+                        // Agotados los reintentos: error tipado, NUNCA
+                        // pérdida silenciosa del registro.
+                        return Err(DownloadRepositoryError::WriteContention { attempts: attempt });
+                    }
+                    return Err(error);
+                }
+            }
+        }
+    }
+
+    /// Un intento único de [`Self::record`], dentro de una transacción
+    /// `BEGIN IMMEDIATE` -- toma el lock de escritura de ENTRADA, evitando
+    /// tanto la intercalación de otro escritor entre la lectura de la cola
+    /// y el `INSERT` como el interbloqueo de upgrade de dos transacciones
+    /// DEFERRED.
+    async fn try_record_once(
+        &self,
+        new: &NewDownloadRecord,
+    ) -> Result<DownloadRecord, DownloadRepositoryError> {
+        let mut tx = self.pool.begin_with("BEGIN IMMEDIATE").await?;
+
+        // Lectura (DENTRO de la transacción) -- la cola actual de la cadena
+        // GLOBAL de sovereign_download_records, para derivar el próximo
+        // event_sequence_id y encadenar el audit_hash.
+        let tail_row = sqlx::query(
+            "SELECT audit_hash, event_sequence_id FROM sovereign_download_records \
+             ORDER BY event_sequence_id DESC LIMIT 1",
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let (event_sequence_id, previous_hash) = match tail_row {
+            Some(row) => {
+                let previous_seq: i64 = row.get("event_sequence_id");
+                let previous_hash: String = row.get("audit_hash");
+                (previous_seq + 1, Some(previous_hash))
+            }
+            None => (1, None),
+        };
+
+        let id = Uuid::now_v7().to_string();
         let now_ns = self.clock.timestamp_ns();
-        // El event_sequence_id es 1 para el primer registro, luego monótonamente creciente.
-        let event_sequence_id = self.next_sequence_id().await?;
 
         // Calcula el hash de auditoría del nuevo registro.
         let audit_hash = compute_audit_hash(
@@ -93,6 +191,8 @@ impl<'a> DownloadRepository<'a> {
             &new.source_endpoint,
         );
 
+        // Escritura (DENTRO de la transacción) -- el INSERT que cierra el
+        // read-then-write atómico.
         sqlx::query(
             "INSERT INTO sovereign_download_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id,\
@@ -110,8 +210,12 @@ impl<'a> DownloadRepository<'a> {
         .bind(&new.node_id)
         .bind(&new.process_id)
         .bind(&new.source_endpoint)
-        .execute(self.pool)
+        .execute(&mut *tx)
         .await?;
+
+        // Confirma la transacción: recién aquí el lock de escritura se
+        // libera y la fila se hace visible a otros escritores.
+        tx.commit().await?;
 
         Ok(DownloadRecord {
             id,
@@ -120,11 +224,11 @@ impl<'a> DownloadRepository<'a> {
             audit_hash,
             audit_chain_hash: previous_hash,
             event_sequence_id,
-            data_snapshot_id: new.data_snapshot_id,
-            logic_hash: new.logic_hash,
-            node_id: new.node_id,
-            process_id: new.process_id,
-            source_endpoint: new.source_endpoint,
+            data_snapshot_id: new.data_snapshot_id.clone(),
+            logic_hash: new.logic_hash.clone(),
+            node_id: new.node_id.clone(),
+            process_id: new.process_id.clone(),
+            source_endpoint: new.source_endpoint.clone(),
         })
     }
 
@@ -188,31 +292,6 @@ impl<'a> DownloadRepository<'a> {
         }))
     }
 
-    /// Lee el `audit_hash` del último registro insertado, o `None` si la
-    /// tabla está vacía (el próximo registro será el primero de la cadena).
-    async fn load_latest_hash(&self) -> Result<Option<String>, DownloadRepositoryError> {
-        let row = sqlx::query(
-            "SELECT audit_hash FROM sovereign_download_records \
-             ORDER BY event_sequence_id DESC LIMIT 1",
-        )
-        .fetch_optional(self.pool)
-        .await?;
-
-        Ok(row.map(|r| r.get::<String, _>(0)))
-    }
-
-    /// Devuelve el próximo `event_sequence_id` (1 para la primera fila,
-    /// luego incrementa monótonamente).
-    async fn next_sequence_id(&self) -> Result<i64, DownloadRepositoryError> {
-        let row = sqlx::query(
-            "SELECT COALESCE(MAX(event_sequence_id), 0) FROM sovereign_download_records",
-        )
-        .fetch_one(self.pool)
-        .await?;
-
-        let max: i64 = row.get(0);
-        Ok(max + 1)
-    }
 }
 
 // ── Hash de auditoría ────────────────────────────────────────────────────────

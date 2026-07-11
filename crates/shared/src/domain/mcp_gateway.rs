@@ -86,6 +86,7 @@ pub struct PermissionRequest {
 /// - Grupo II (Soberanía — `owner_id`, `institutional_tag`)
 /// - Grupo IV (Hardware — `node_id`, `process_id`)
 /// - Dominio propio (4 campos específicos de esta feature)
+#[derive(Debug)]
 pub struct PermissionDecision {
     // ── Grupo I — Identidad & Integridad (universal) ─────────────────────
     /// UUID de esta decisión de permiso.
@@ -96,8 +97,10 @@ pub struct PermissionDecision {
     pub updated_at: i64,
     /// SHA-256 de los campos de dominio propio (sin circularidad).
     pub audit_hash: String,
-    /// `audit_hash` de la decisión anterior en la cadena (NULL solo en la primera).
-    pub audit_chain_hash: String,
+    /// `audit_hash` de la decisión anterior en la cadena. `None` SOLO en la
+    /// fila génesis -- sin sentinel de texto `"genesis"` (ADR-0141 M10,
+    /// anomalía A4 de la auditoría retroactiva).
+    pub audit_chain_hash: Option<String>,
     /// Posición monótona en la cadena (1, 2, 3, …).
     pub event_sequence_id: i64,
     // ── Grupo II — Soberanía ──────────────────────────────────────────────
@@ -178,14 +181,16 @@ pub fn evaluate_permission(req: &PermissionRequest) -> PermissionOutcome {
 impl PermissionDecision {
     /// Construye una `PermissionDecision` completa lista para persistir.
     ///
-    /// `prev_hash` es el `audit_chain_hash` de la decisión anterior
-    /// (o `"genesis"` si es la primera). `sequence_id` es la posición
-    /// monótona en la cadena (último `event_sequence_id` + 1).
+    /// `prev_hash` es el `audit_hash` de la decisión anterior, o `None` si
+    /// esta es la fila génesis de la cadena (ADR-0141 M10: sin sentinel de
+    /// texto `"genesis"` -- el génesis se reconoce por `IS NULL`).
+    /// `sequence_id` es la posición monótona en la cadena (último
+    /// `event_sequence_id` + 1).
     pub fn build(
         req: &PermissionRequest,
         outcome: &PermissionOutcome,
         now_ns: i64,
-        prev_hash: String,
+        prev_hash: Option<String>,
         sequence_id: i64,
         node_id: String,
         pid: i64,
@@ -194,18 +199,23 @@ impl PermissionDecision {
 
         // `audit_hash` se calcula sobre los campos de dominio propio únicamente.
         // Si incluyera el Grupo I (que contiene `audit_hash` mismo) habría
-        // circularidad: necesitas el hash para calcularlo.
+        // circularidad: necesitas el hash para calcularlo. Para el cómputo
+        // (no para lo que se persiste) el génesis usa la constante
+        // GENESIS_PREVIOUS_HASH, igual que el resto de las cadenas del
+        // sistema (`crate::domain::audit_log`).
         let audit_hash = compute_audit_hash(
             &req.agent_session_id,
             &req.requested_scope,
             &outcome_str,
             req.production_override_active,
-            &prev_hash,
+            prev_hash
+                .as_deref()
+                .unwrap_or(crate::domain::audit_log::GENESIS_PREVIOUS_HASH),
             sequence_id,
         );
 
         PermissionDecision {
-            id: Uuid::new_v4(),
+            id: Uuid::now_v7(),
             created_at: now_ns,
             updated_at: now_ns,
             audit_hash,

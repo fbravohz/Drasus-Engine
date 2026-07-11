@@ -92,7 +92,7 @@ impl SharedMemorySegment {
     /// - `drasus-shm-<uuid>.dat`: el buffer de datos mapeado.
     /// - `drasus-shm-<uuid>.keepalive`: centinela de vida del padre.
     pub fn create(data: &[u8]) -> Result<Self, ShmError> {
-        let id = Uuid::new_v4().to_string();
+        let id = Uuid::now_v7().to_string();
         let base = std::env::temp_dir();
         let data_path = base.join(format!("drasus-shm-{id}.dat"));
         let keepalive_path = base.join(format!("drasus-shm-{id}.keepalive"));

@@ -33,6 +33,9 @@
 -- Idempotency (ADR-0006): `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF
 -- NOT EXISTS` / `CREATE TRIGGER IF NOT EXISTS` make re-running this
 -- migration a no-op.
+--
+-- STRICT mode + CHECK(json_valid) (ADR-0141 M4/M5/M12, in-situ edit of the
+-- GREENFIELD baseline, retroactive audit 2026-07).
 
 CREATE TABLE IF NOT EXISTS audit_events (
     -- I. Identidad & Integridad (universal, ADR-0020)
@@ -59,7 +62,8 @@ CREATE TABLE IF NOT EXISTS audit_events (
     entity_type        TEXT    NOT NULL,             -- Type of the entity the event refers to
     entity_id          TEXT    NOT NULL,             -- Identifier of that entity
     details_json       TEXT    NOT NULL              -- Structured event details (JSON-encoded)
-);
+        CHECK (json_valid(details_json))
+) STRICT;
 
 -- Chronological / replay access path (ADR-0027 event sourcing recovery).
 CREATE INDEX IF NOT EXISTS idx_audit_events_event_sequence_id

@@ -33,6 +33,9 @@
 --
 -- Idempotencia (ADR-0006): `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF
 -- NOT EXISTS` hacen que volver a correr esta migración sea un no-op.
+--
+-- STRICT mode + CHECK(json_valid) (ADR-0141 M5/M12, in-situ edit of the
+-- GREENFIELD baseline, retroactive audit 2026-07).
 
 CREATE TABLE IF NOT EXISTS telemetry_samples (
     -- I. Identidad & Integridad (universal, ADR-0020)
@@ -58,7 +61,8 @@ CREATE TABLE IF NOT EXISTS telemetry_samples (
     -- Columnas propias de la Feature (telemetry.md "Persistencia")
     metric_name        TEXT    NOT NULL,             -- Qué se midió, ej. "ingest.hot_path_latency"
     details_json       TEXT                          -- Contexto extra opcional (JSON-encoded, nullable)
-);
+        CHECK (details_json IS NULL OR json_valid(details_json))
+) STRICT;
 
 -- Acceso por serie temporal (telemetry.md "Comportamientos Observables":
 -- "permite consultar series temporales de performance técnica").

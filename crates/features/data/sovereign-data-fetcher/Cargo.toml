@@ -24,8 +24,10 @@ thiserror = "1"
 # Serialización/deserialización para parámetros y payloads JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Generación de UUIDs para identificadores de registros.
-uuid = { version = "1", features = ["v4"] }
+# Generación de UUIDs para identificadores de registros. v7 (ordenable por
+# tiempo, ADR-0141 "Claves primarias") es el generador canónico del
+# sistema; v4 se conserva solo si algún consumidor externo lo necesitara.
+uuid = { version = "1", features = ["v4", "v7"] }
 # Hash SHA-256 para los campos de integridad (audit_hash, audit_chain_hash).
 sha2 = "0.10"
 # Permite definir traits con métodos async que se usan como `dyn Trait`.

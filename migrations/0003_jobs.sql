@@ -44,6 +44,24 @@
 -- Idempotency (ADR-0006): `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF
 -- NOT EXISTS` / `CREATE TRIGGER IF NOT EXISTS` make re-running this
 -- migration a no-op.
+--
+-- STRICT mode + CHECK constraints (ADR-0141 M4/M5/M6/M9/M12, in-situ edit of
+-- the GREENFIELD baseline, retroactive audit 2026-07):
+--   - `jobs` is MUTABLE (state/progress/process_id are updated in place), so
+--     its monotonic version counter is renamed `event_sequence_id` ->
+--     `row_version` (ADR-0141 "Semántica de secuencias": that name is
+--     reserved for the GLOBAL append-only position of an event-store;
+--     `jobs` never had a `UNIQUE` on it, confirming it was always a
+--     per-row version counter, just mis-named).
+--   - `jobs.state` gets `CHECK (state IN (...))` over the five canonical
+--     values of `crate::domain::job::JobState`.
+--   - `jobs.parameters` and `job_results.result_data` get
+--     `CHECK (json_valid(...))` (the latter nullable, since a failed job has
+--     no result payload).
+--   - The FK `job_results.job_uuid -> jobs.id` gets `ON DELETE RESTRICT`
+--     explicit (was implicit `NO ACTION`; `jobs` rows are never deleted in
+--     this system, so this only makes the invariant readable, not a
+--     behavior change).
 
 CREATE TABLE IF NOT EXISTS jobs (
     -- I. Identidad & Integridad (universal, ADR-0020). `id` IS the job's
@@ -55,7 +73,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     updated_at         INTEGER NOT NULL,             -- Nanoseconds since epoch; bumped on every state/progress update
     audit_hash         TEXT    NOT NULL,             -- SHA-256 snapshot of this row's content
     audit_chain_hash   TEXT,                         -- Previous audit_hash for this job (NULL for the first write)
-    event_sequence_id  INTEGER NOT NULL,             -- Monotonic version counter for this job's own update chain
+    row_version        INTEGER NOT NULL,             -- Version counter for THIS row; starts at 1, +1 on every UPDATE (ADR-0141)
 
     -- Concurrencia e integridad (async-job-executor.md "Gobernanza y Estándares")
     process_id         TEXT,                         -- Worker ID that last touched this job (NULL while QUEUED)
@@ -70,10 +88,12 @@ CREATE TABLE IF NOT EXISTS jobs (
     -- TTR-001/002/005/006 feature-specific fields
     user_id            TEXT    NOT NULL,             -- Requesting user (TTR-001 "Entrada": JobRequest.user_id)
     job_type           TEXT    NOT NULL,             -- e.g. BACKTEST, GENERATE_CANDIDATES, OPTIMIZE_PORTFOLIO
-    parameters         TEXT    NOT NULL,             -- JSON-encoded job parameters (JobRequest.parameters)
-    state              TEXT    NOT NULL,             -- QUEUED | RUNNING | COMPLETED | FAILED | CANCELLED
+    parameters         TEXT    NOT NULL              -- JSON-encoded job parameters (JobRequest.parameters)
+        CHECK (json_valid(parameters)),
+    state              TEXT    NOT NULL              -- QUEUED | RUNNING | COMPLETED | FAILED | CANCELLED
+        CHECK (state IN ('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED')),
     progress           INTEGER NOT NULL DEFAULT 0    -- 0-100 (TTR-005)
-);
+) STRICT;
 
 -- Recovery access path (TTR-004: startup scan for QUEUED/RUNNING jobs).
 CREATE INDEX IF NOT EXISTS idx_jobs_state
@@ -90,12 +110,13 @@ CREATE TABLE IF NOT EXISTS job_results (
 
     -- TTR-003/005 feature-specific fields ("Result object")
     job_uuid           TEXT    NOT NULL,             -- FK -> jobs.id (the job this result belongs to)
-    result_data        TEXT,                         -- JSON-encoded result payload (NULL on failure)
+    result_data        TEXT                          -- JSON-encoded result payload (NULL on failure)
+        CHECK (result_data IS NULL OR json_valid(result_data)),
     error_message      TEXT,                         -- Error description (NULL on success)
     completed_at       INTEGER NOT NULL,             -- Nanoseconds since epoch (Clock port) when the job reached a terminal state
 
-    FOREIGN KEY (job_uuid) REFERENCES jobs (id)
-);
+    FOREIGN KEY (job_uuid) REFERENCES jobs (id) ON DELETE RESTRICT
+) STRICT;
 
 -- Lookup access path (async-job-executor.md "GET /api/jobs/{uuid}/result").
 CREATE INDEX IF NOT EXISTS idx_job_results_job_uuid

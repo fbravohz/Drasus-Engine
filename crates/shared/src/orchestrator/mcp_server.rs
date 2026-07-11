@@ -112,33 +112,29 @@ impl DrasusGateway {
 
         let outcome = evaluate_permission(&req);
 
-        // Obtiene el extremo de la cadena para encadenar la próxima decisión.
-        let (prev_hash, next_seq) =
-            McpGatewayRepository::chain_tip(&self.pool)
-                .await
-                .map_err(|e| McpError::internal_error(e.to_string(), None))?
-                .map(|(h, s)| (h, s + 1))
-                .unwrap_or_else(|| ("genesis".to_string(), 1));
-
         // Timestamp de la evaluación (nanosegundos desde epoch).
         let now_ns = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos() as i64)
             .unwrap_or(0);
 
-        let decision = crate::domain::mcp_gateway::PermissionDecision::build(
-            &req,
-            &outcome,
-            now_ns,
-            prev_hash,
-            next_seq,
-            self.node_id.to_string(),
-            std::process::id() as i64,
-        );
-
-        McpGatewayRepository::append(&self.pool, &decision)
-            .await
-            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        // Deriva la posición en la cadena Y escribe la fila dentro de UNA
+        // sola transacción `BEGIN IMMEDIATE` (STORY-046 M1: fusiona lo que
+        // antes eran dos pasos sueltos -- `chain_tip` seguido de `append`
+        // -- que bajo concurrencia podían perder una decisión de permiso).
+        McpGatewayRepository::record_decision(&self.pool, |prev_hash, next_seq| {
+            crate::domain::mcp_gateway::PermissionDecision::build(
+                &req,
+                &outcome,
+                now_ns,
+                prev_hash,
+                next_seq,
+                self.node_id.to_string(),
+                std::process::id() as i64,
+            )
+        })
+        .await
+        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
         Ok(outcome)
     }
@@ -359,7 +355,7 @@ pub async fn run_mcp_server(pool: SqlitePool) -> anyhow::Result<()> {
     use rmcp::{ServiceExt, transport::stdio};
 
     // UUID de la sesión de este servidor MCP (identifica al agente en el audit log).
-    let agent_session_id = uuid::Uuid::new_v4().to_string();
+    let agent_session_id = uuid::Uuid::now_v7().to_string();
 
     // Hostname del nodo (Grupo IV de ADR-0020).
     let node_id = hostname::get()

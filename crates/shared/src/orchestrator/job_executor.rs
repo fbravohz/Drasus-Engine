@@ -184,7 +184,7 @@ pub struct ProgressReporter<'a> {
 impl<'a> ProgressReporter<'a> {
     /// Persiste `progress` (0-100, clampeado) para el job envuelto y
     /// actualiza el snapshot interno del reporter para que las llamadas
-    /// subsecuentes encadenen correctamente (`event_sequence_id`/
+    /// subsecuentes encadenen correctamente (`row_version`/
     /// `audit_chain_hash`).
     pub async fn report(&mut self, progress: u8) -> Result<(), JobRepositoryError> {
         let updated = self.repo.update_progress(&self.job, Progress::new(progress)).await?;

@@ -133,7 +133,7 @@ impl TelemetryBuffer {
             execution_latency_ms,
         };
 
-        let id = Uuid::new_v4().to_string();
+        let id = Uuid::now_v7().to_string();
         let created_at_ns = self.shared.clock.timestamp_ns();
 
         let mut chain_state = self.shared.chain_state.lock().expect("chain_state mutex envenenado");

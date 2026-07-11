@@ -15,7 +15,7 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
 use sqlx::SqlitePool;
 
 /// Abre un pool de conexiones SQLite con el modo de journal WAL
@@ -37,6 +37,26 @@ pub async fn connect(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
         // limpiamente y el reintento acotado de la capa de repositorio solo
         // actúa como red de seguridad, no como camino normal.
         .busy_timeout(Duration::from_secs(5))
+        // Activa `PRAGMA foreign_keys=ON` (ADR-0141 R1, hallazgo C1 de la
+        // auditoría retroactiva). Sin esto SQLite acepta silenciosamente
+        // inserts huérfanos contra la única FK real del baseline
+        // (`job_results.job_uuid -> jobs.id`) -- la restricción existe en el
+        // esquema pero queda inerte hasta que este PRAGMA se activa por
+        // conexión (SQLite no lo persiste en el archivo).
+        .foreign_keys(true)
+        // En modo WAL, `synchronous=NORMAL` es tan durable como `FULL` ante
+        // caídas de proceso (el WAL es el registro de verdad) y 2-3x más
+        // rápido -- solo `synchronous=OFF` arriesgaría corrupción ante un
+        // corte de energía a mitad de escritura (ADR-0141).
+        .synchronous(SqliteSynchronous::Normal)
+        // Techo del archivo WAL: evita que crezca sin límite ante lectores
+        // de larga duración que retrasan el checkpoint automático
+        // (67 108 864 bytes = 64 MB, ADR-0141).
+        .pragma("journal_size_limit", "67108864")
+        // Dispara un checkpoint automático cada 1000 páginas del WAL, para
+        // que el archivo -wal no acumule crecimiento entre checkpoints
+        // manuales (ADR-0141).
+        .pragma("wal_autocheckpoint", "1000")
         .create_if_missing(true);
 
     SqlitePoolOptions::new().connect_with(options).await
@@ -146,5 +166,96 @@ mod tests {
         assert_eq!(row_count, 0, "idempotent re-migration must not alter data");
 
         pool.close().await;
+    }
+
+    /// CRITERIO DE CIERRE (hallazgo C1): con `PRAGMA foreign_keys=ON`
+    /// activo, insertar una fila de `job_results` cuyo `job_uuid` NO existe
+    /// en `jobs` debe fallar por violación de FK. Antes de activar
+    /// `.foreign_keys(true)` en [`connect`], este mismo INSERT pasaba en
+    /// silencio (SQLite trata las FKs como no-op sin el PRAGMA) -- esta
+    /// prueba se cae si se quita esa línea.
+    #[tokio::test]
+    async fn inserting_job_result_with_unknown_job_uuid_is_rejected_by_foreign_key() {
+        let pool = connect("sqlite::memory:").await.expect("connect");
+        migrate(&pool).await.expect("migrate");
+
+        let result = sqlx::query(
+            "INSERT INTO job_results (\
+                id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
+                job_uuid, result_data, error_message, completed_at\
+            ) VALUES ('result-orphan', 0, 0, 'hash', NULL, 1, 'job-that-does-not-exist', NULL, NULL, 0)",
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(
+            result.is_err(),
+            "un job_results.job_uuid huérfano debe rechazarse por la FK job_results -> jobs"
+        );
+    }
+
+    /// CRITERIO DE CIERRE (ADR-0141 "Configuración del pool SQLite"): los
+    /// PRAGMAs `synchronous=NORMAL`, `journal_size_limit=64MB` y
+    /// `wal_autocheckpoint=1000` páginas quedan activos por conexión.
+    #[tokio::test]
+    async fn connect_activates_the_pragmas_required_by_adr_0141() {
+        let pool = connect("sqlite::memory:").await.expect("connect");
+
+        // `synchronous`: 0=OFF, 1=NORMAL, 2=FULL, 3=EXTRA.
+        let synchronous: i64 = sqlx::query("PRAGMA synchronous")
+            .fetch_one(&pool)
+            .await
+            .expect("read synchronous")
+            .get(0);
+        assert_eq!(synchronous, 1, "synchronous debe ser NORMAL (1)");
+
+        let journal_size_limit: i64 = sqlx::query("PRAGMA journal_size_limit")
+            .fetch_one(&pool)
+            .await
+            .expect("read journal_size_limit")
+            .get(0);
+        assert_eq!(journal_size_limit, 67_108_864, "journal_size_limit debe ser 64MB");
+
+        let wal_autocheckpoint: i64 = sqlx::query("PRAGMA wal_autocheckpoint")
+            .fetch_one(&pool)
+            .await
+            .expect("read wal_autocheckpoint")
+            .get(0);
+        assert_eq!(wal_autocheckpoint, 1_000, "wal_autocheckpoint debe ser 1000 páginas");
+
+        let foreign_keys: i64 = sqlx::query("PRAGMA foreign_keys")
+            .fetch_one(&pool)
+            .await
+            .expect("read foreign_keys")
+            .get(0);
+        assert_eq!(foreign_keys, 1, "foreign_keys debe estar activo (ON)");
+    }
+
+    /// CRITERIO DE CIERRE (hallazgo C2): las 6 tablas del baseline
+    /// (migraciones `0001`-`0006`) se declaran `STRICT`, igual que las
+    /// tablas `0007`-`0020`.
+    #[tokio::test]
+    async fn all_six_baseline_tables_are_declared_strict() {
+        let pool = connect("sqlite::memory:").await.expect("connect");
+        migrate(&pool).await.expect("migrate");
+
+        for table in [
+            "foundation_master_fields",
+            "audit_events",
+            "jobs",
+            "job_results",
+            "telemetry_samples",
+            "permission_decisions",
+            "mcp_gateway_config",
+            "sovereign_download_records",
+        ] {
+            let sql: String = sqlx::query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?")
+                .bind(table)
+                .fetch_one(&pool)
+                .await
+                .unwrap_or_else(|_| panic!("leer sqlite_master para {table}"))
+                .get(0);
+            assert!(sql.contains("STRICT"), "la tabla '{table}' debe declararse STRICT; DDL: {sql}");
+        }
     }
 }

@@ -189,7 +189,8 @@ impl<'a> AuditLogRepository<'a> {
         .await?;
         let previous = tail_row.map(row_to_event);
 
-        let id = Uuid::new_v4().to_string();
+        // PK UUIDv7 (ADR-0141 M3): ordenable temporalmente, no v4.
+        let id = Uuid::now_v7().to_string();
         let created_at_ns = self.clock.timestamp_ns();
 
         let event = chain_event(id, created_at_ns, content.clone(), previous.as_ref());
