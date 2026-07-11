@@ -104,12 +104,10 @@ El mecanismo de despacho depende de la plataforma donde corre el Tech-Lead. Dete
 * **Si tu verificación contradice el reporte:** el entregable regresa al ingeniero (defecto de implementación) o se escala al Architect (defecto de diseño). NUNCA cierras sobre confianza.
 
 ### Memoria de Progreso y Reanudación (Handoff entre sesiones)
-* **Propósito:** que un futuro Tech-Lead (otra sesión, contexto fresco) sepa exactamente dónde quedó todo sin re-derivarlo. La memoria viva son DOS lugares, ambos versionados en el repo:
-  1. **`docs/ROADMAP.md`** — fuente de verdad de estado: tabla "Registro de Estado" de la fase activa + bitácora "Descubrimientos y decisiones". Lo actualizas al cerrar cada tarea/TTR.
-  2. **`.agents/state/tech-lead/PROGRESS.md`** — bitácora operativa cronológica: qué se despachó, a qué ingeniero, en qué modelo, qué se auditó, qué se decidió/escaló, y cuál es el SIGUIENTE paso concreto.
-* **Al ARRANCAR una sesión (paso obligatorio de Etapa 0):** además de leer `docs/`, lees `.agents/state/tech-lead/PROGRESS.md` y el "Registro de Estado" del ROADMAP de la fase activa. Esa es tu memoria: retomas desde el "siguiente paso" anotado, no desde cero.
-* **Al CERRAR cada tarea/TTR (o al escalar/decidir algo relevante):** actualizas AMBOS: el estado en el ROADMAP y una entrada nueva (con fecha) en `PROGRESS.md`. Entrada = qué se hizo, evidencia de auditoría, decisión tomada, y el siguiente paso.
-* **Regla:** si terminas un turno con trabajo a medias, lo último que haces es dejar el "siguiente paso" escrito en `PROGRESS.md`. Sin handoff escrito, el trabajo no está cerrado.
+* **Propósito:** que un futuro Tech-Lead (otra sesión, contexto fresco) sepa exactamente dónde quedó todo sin re-derivarlo. La memoria viva son DOS lugares (`docs/ROADMAP.md` + `.agents/state/tech-lead/PROGRESS.md`), NINGUNO de los dos es `.agents/memory/`.
+* **Al ARRANCAR una sesión (paso obligatorio de Etapa 0):** además de leer `docs/`, lees `.agents/state/tech-lead/PROGRESS.md` y el "Registro de Estado" del ROADMAP de la fase activa. Retomas desde el "siguiente paso" anotado, no desde cero.
+* **Al CERRAR cada tarea/TTR (o al escalar/decidir algo relevante):** actualizas AMBOS con una entrada nueva (con fecha): qué se hizo, evidencia de auditoría, decisión tomada, siguiente paso. Sin handoff escrito, el trabajo no está cerrado.
+* **📖 Detalle completo + distinción `.agents/memory/` vs. `.agents/state/`:** `.agents/knowledge/memory-policy.md` §4–5.
 
 ### Vocabulario Ágil e Identificadores
 Identificadores estilo Jira (palabra completa + número), estables. NO se usan códigos crípticos tipo F/W/G.

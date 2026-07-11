@@ -53,8 +53,9 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 - `.agents/knowledge/commenting-policy.md` — HOW TO: escribir comentarios (4 capas jerárquicas).
 - `.agents/knowledge/debt-management.md` — HOW TO: registrar deuda técnica (`ponytail:` vs. DEBT-XXX).
 - `.agents/knowledge/ponytail.md` — HOW TO: simplificación deliberada (Capa 3 de comentarios).
+- `.agents/knowledge/memory-policy.md` — HOW TO: qué y cómo recordar entre sesiones (mecánica del harness + disciplina de Drasus + `.agents/memory/` vs. `.agents/state/`).
 
-Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas gobernanza meta, lee `base.md` (~234 líneas).
+Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `base.md` (~234 líneas).
 
 ---
 
@@ -74,11 +75,9 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 ## 4. Memoria entre Sesiones (Recuerdo tipo "persona")
 
-Existe memoria nativa de proyecto en `~/Drasus-Engine/.agents/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan.
+Existe memoria nativa de proyecto en `~/Drasus-Engine/.agents/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan. Es curada, no automática — nunca dupliques lo que ya registra el código, el git o estos documentos.
 
-- **Es curada, no automática.** Se escriben hechos durables a propósito (decisiones, restricciones, estado de trabajo en curso), no transcripciones completas.
-- **Disciplina obligatoria:** al cerrar trabajo significativo, destila la decisión o el estado a un archivo de memoria y enlázalo desde `MEMORY.md`. No dupliques lo que ya registra el código, el git o estos documentos.
-- **Recuerdo semántico difuso (futuro):** capturar y buscar conversaciones por significado (lo que hacía claude-mem) es una **construcción aparte** (servidor MCP o CLI local + embeddings), no un ajuste de configuración. Se diseña cuando la memoria curada se quede corta, no antes.
+**📖 Política completa (mecánica del harness + disciplina de Drasus + protocolo del Tech-Lead + por qué `.agents/state/` es un sistema distinto):** `.agents/knowledge/memory-policy.md`.
 
 ---
 

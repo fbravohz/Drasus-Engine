@@ -145,6 +145,14 @@ La deuda deliberada es sana en greenfield — permite avanzar sin frenar por cos
 
 ---
 
+## 4.3. Política de Memoria
+
+Existe memoria nativa de proyecto en `.agents/memory/` (índice `MEMORY.md` + un hecho por archivo), distinta de la bitácora operativa por agente en `.agents/state/<agente>/`. Es curada, no automática: nunca dupliques lo que ya registra el código, el git o estos documentos.
+
+**📖 Documento completo (mecánica del harness + disciplina de Drasus + protocolo del Tech-Lead + `memory/` vs. `state/`):** [`./memory-policy.md`](./memory-policy.md)
+
+---
+
 ## Referencia Rápida
 
 | Documento | Cuándo Leer |
@@ -152,6 +160,7 @@ La deuda deliberada es sana en greenfield — permite avanzar sin frenar por cos
 | **`./commenting-policy.md`** | Antes de escribir código (skill, ingeniero) |
 | **`./debt-management.md`** | Cuando detectes un aplazamiento o leas DEBT.md |
 | **`./ponytail.md`** | Cuando necesites simplificar (opcional) |
+| **`./memory-policy.md`** | Cuando escribas/leas `.agents/memory/` o dudes si algo es memoria o state |
 | **`docs/DEBT.md`** | Registro canónico de deuda rastreada |
 
 ## 4.2. Sellado de Implementación y Reproducibilidad
