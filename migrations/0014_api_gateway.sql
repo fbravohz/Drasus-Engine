@@ -105,7 +105,12 @@ CREATE TABLE IF NOT EXISTS api_credentials (
     -- Duración de la ventana de rate-limit, en segundos.
     window_seconds         INTEGER NOT NULL,
     -- JSON array de los endpoints habilitados para esta credencial (ENDPOINTS_ENABLED, CONFIG).
-    endpoints_enabled      TEXT    NOT NULL CHECK (json_valid(endpoints_enabled))
+    endpoints_enabled      TEXT    NOT NULL CHECK (json_valid(endpoints_enabled)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño de la credencial DEBE existir en `accounts`. RESTRICT: nunca
+    -- se borra una cuenta con credenciales emitidas.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de unicidad del hash: dos credenciales jamás comparten el mismo
@@ -142,13 +147,24 @@ CREATE TABLE IF NOT EXISTS api_usage_records (
     -- Endpoint invocado (texto libre, ej. 'CERTIFY').
     endpoint               TEXT    NOT NULL,
     -- Desenlace observable de esta solicitud.
-    outcome                TEXT    NOT NULL CHECK (outcome IN ('ALLOWED', 'RATE_LIMITED', 'DENIED'))
+    outcome                TEXT    NOT NULL CHECK (outcome IN ('ALLOWED', 'RATE_LIMITED', 'DENIED')),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño de la solicitud DEBE existir en `accounts`. RESTRICT: nunca
+    -- se borra una cuenta con historial de uso de API.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en
 -- event_sequence_id en tablas append-only") -- acceso cronológico / replay.
 CREATE INDEX IF NOT EXISTS idx_api_usage_records_event_sequence_id
     ON api_usage_records (event_sequence_id);
+
+-- Índice del lado propietario (M7 ADR-0141: toda columna FK-hijo requiere
+-- su propio índice; el compuesto de abajo lidera por credential_id, no
+-- sirve para lookups directos por owner_id).
+CREATE INDEX IF NOT EXISTS idx_api_usage_records_owner_id
+    ON api_usage_records (owner_id);
 
 -- Query path principal de la ventana de rate-limit (third-party-api-gateway.md
 -- "Ciclo de Vida" - "Proceso": "verifica rate-limit"): contar las

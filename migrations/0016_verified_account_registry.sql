@@ -166,7 +166,12 @@ CREATE TABLE IF NOT EXISTS verified_accounts (
     -- Referencia NO SECRETA a la conexión de bróker (broker_connections,
     -- cifrada, local -- fuera de esta Story). Nullable: no toda cuenta
     -- tiene ya una conexión read-only vinculada.
-    broker_connection_ref  TEXT
+    broker_connection_ref  TEXT,
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño Drasus de la cuenta verificada DEBE existir en `accounts`.
+    -- RESTRICT: nunca se borra una cuenta con cuentas verificadas propias.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Query path de "todas las cuentas de este dueño" (panel de cuentas
@@ -220,7 +225,12 @@ CREATE TABLE IF NOT EXISTS attested_track_records (
     trading_days           INTEGER NOT NULL,
     total_realized_pnl_e8  INTEGER NOT NULL,
     total_deposits_e8      INTEGER NOT NULL,
-    total_withdrawals_e8   INTEGER NOT NULL
+    total_withdrawals_e8   INTEGER NOT NULL,
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño del track DEBE existir en `accounts`. RESTRICT: nunca se
+    -- borra una cuenta con tracks atestados asociados.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

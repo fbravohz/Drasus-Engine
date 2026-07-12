@@ -100,7 +100,12 @@ CREATE TABLE IF NOT EXISTS operator_roles (
         CHECK (status IN ('ACTIVE', 'REVOKED')),
 
     -- No se duplican nombres de rol dentro de la MISMA cuenta.
-    UNIQUE (owner_id, role_name)
+    UNIQUE (owner_id, role_name),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la cuenta maestra dueña del catálogo DEBE existir en `accounts`.
+    -- RESTRICT: nunca se borra una cuenta con roles definidos.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Query path de "todos los roles de esta cuenta" (panel de roles y
@@ -134,7 +139,12 @@ CREATE TABLE IF NOT EXISTS operator_assignments (
 
     -- Un operador tiene UN rol vigente por cuenta -- reasignar es un UPDATE
     -- de esta misma fila, no una fila nueva.
-    UNIQUE (owner_id, access_token_id)
+    UNIQUE (owner_id, access_token_id),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la cuenta maestra dueña de la asignación DEBE existir en `accounts`.
+    -- RESTRICT: nunca se borra una cuenta con asignaciones vigentes.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice obligatorio en la FK (ADR-0141 M7/M8: toda FK lleva su índice).
@@ -175,7 +185,12 @@ CREATE TABLE IF NOT EXISTS operator_role_events (
         )),
     subject_ref         TEXT    NOT NULL,            -- El role_id o access_token_id afectado por este cambio
     detail               TEXT                        -- JSON opcional con detalle adicional del cambio (nullable)
-        CHECK (detail IS NULL OR json_valid(detail))
+        CHECK (detail IS NULL OR json_valid(detail)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la cuenta maestra afectada DEBE existir en `accounts`. RESTRICT: nunca
+    -- se borra una cuenta con eventos de gobernanza de roles asociados.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

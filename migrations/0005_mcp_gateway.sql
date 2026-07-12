@@ -52,12 +52,25 @@ CREATE TABLE IF NOT EXISTS permission_decisions (
     requested_scope             TEXT    NOT NULL,             -- Pipeline/frontera invocada
     permission_outcome          TEXT    NOT NULL,             -- "granted" | "denied:<razón>"
     production_override_active  INTEGER NOT NULL DEFAULT 0    -- Estado del interruptor (0/1)
-        CHECK (production_override_active IN (0, 1))
+        CHECK (production_override_active IN (0, 1)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- nullable -- ejemplo explícito citado por el propio ADR ("el
+    -- interruptor de mcp_gateway"). Nota de orden: esta migración (0005) se
+    -- aplica ANTES que `0007_central_identity.sql` (crea `accounts`);
+    -- SQLite permite la referencia hacia adelante bajo `foreign_keys=ON`
+    -- (verificado -- ver nota equivalente en `0002_audit_log.sql`).
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice para auditoría por sesión de agente.
 CREATE INDEX IF NOT EXISTS idx_permission_decisions_session
     ON permission_decisions (agent_session_id, created_at);
+
+-- Índice de FK-hijo (ADR-0141 M7): toda columna owner_id con FK requiere su
+-- propio índice, aunque sea nullable.
+CREATE INDEX IF NOT EXISTS idx_permission_decisions_owner_id
+    ON permission_decisions (owner_id);
 
 -- Índice para verificación rápida de la cadena (tail lookup).
 CREATE INDEX IF NOT EXISTS idx_permission_decisions_sequence

@@ -95,7 +95,13 @@ CREATE TABLE IF NOT EXISTS usage_records (
     -- Instrumento operado.
     instrument_id          TEXT    NOT NULL,
     -- Veredicto de cuota tras esta operación.
-    quota_verdict          TEXT    NOT NULL CHECK (quota_verdict IN ('WITHIN', 'CROSSED'))
+    quota_verdict          TEXT    NOT NULL CHECK (quota_verdict IN ('WITHIN', 'CROSSED')),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la cuenta dueña de esta operación medida DEBE existir en `accounts`
+    -- (creada en la migración 0007, previa a esta). RESTRICT: nunca se
+    -- borra una cuenta con operaciones medidas asociadas.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (M8 ADR-0141: "Índice obligatorio en

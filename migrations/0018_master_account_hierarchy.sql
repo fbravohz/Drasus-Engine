@@ -106,7 +106,13 @@ CREATE TABLE IF NOT EXISTS account_hierarchy (
     consent_ref       TEXT    NOT NULL,             -- Referencia CACHEADA al consentimiento contractual vigente (no la verdad legal en sí)
 
     -- IV. Infraestructura & Ops
-    node_id           TEXT    NOT NULL              -- Máquina que registró/actualizó esta jerarquía
+    node_id           TEXT    NOT NULL,             -- Máquina que registró/actualizó esta jerarquía
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la hija DEBE existir en `accounts`. RESTRICT: nunca se borra una
+    -- cuenta con fila de jerarquía propia. `owner_id` ya es UNIQUE arriba,
+    -- por lo que el índice de esa restricción sirve también a la FK.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Query path de "todas las hijas de este fondo" (panel de jerarquía de
@@ -140,7 +146,15 @@ CREATE TABLE IF NOT EXISTS override_attestations (
     target_ref         TEXT    NOT NULL,             -- Qué recurso de la hija referencia esta orden (estrategia/portafolio/parámetro)
     outcome            TEXT    NOT NULL              -- EXECUTED (solo con ConsentVerdict::Covered vigente, regla fija #3) | DENIED
         CHECK (outcome IN ('EXECUTED', 'DENIED')),
-    justification      TEXT                          -- Texto libre opcional -- por qué se emitió/ejecutó el override
+    justification      TEXT,                         -- Texto libre opcional -- por qué se emitió/ejecutó el override
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- la hija afectada DEBE existir en `accounts`. RESTRICT: nunca se borra
+    -- una cuenta con overrides asociados. `parent_owner_id` (el fondo) NO
+    -- lleva FK: fuera del alcance textual de la enmienda, que fija la regla
+    -- solo para columnas literalmente nombradas `owner_id` -- reportado al
+    -- Tech-Lead como observación abierta.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

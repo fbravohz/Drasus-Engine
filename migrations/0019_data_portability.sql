@@ -110,7 +110,12 @@ CREATE TABLE IF NOT EXISTS data_portability_requests (
         CHECK (status IN ('RECEIVED', 'PROCESSING', 'COMPLETED')),
     request_group_id    TEXT    NOT NULL,            -- Agrupa TODOS los eventos de UNA solicitud lógica (mismo id a través de RECEIVED->PROCESSING->COMPLETED)
     disposition_detail  TEXT                         -- JSON: qué tablas se pseudonimizaron-y-retuvieron vs. pseudonimizaron-y-purgaron (solo FORGET, nullable)
-        CHECK (disposition_detail IS NULL OR json_valid(disposition_detail))
+        CHECK (disposition_detail IS NULL OR json_valid(disposition_detail)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el titular que pide la portabilidad/olvido DEBE existir en `accounts`.
+    -- RESTRICT: nunca se borra una cuenta con solicitudes de portabilidad.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

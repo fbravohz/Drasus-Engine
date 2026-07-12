@@ -95,7 +95,12 @@ CREATE TABLE IF NOT EXISTS instance_backups (
     snapshot_at           INTEGER NOT NULL,             -- Nanosegundos: instante del snapshot que este respaldo cubre
     blob_hash             TEXT    NOT NULL,             -- SHA-256 hex del blob cifrado (ciphertext + tag GCM)
     blob_size_bytes       INTEGER NOT NULL CHECK (blob_size_bytes >= 0), -- Tamaño del blob cifrado, en bytes
-    nonce_hex             TEXT    NOT NULL              -- Nonce de AES-GCM usado, en hex -- NO es secreto (ADR-0002)
+    nonce_hex             TEXT    NOT NULL,             -- Nonce de AES-GCM usado, en hex -- NO es secreto (ADR-0002)
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño de la cuenta respaldada DEBE existir en `accounts`. RESTRICT:
+    -- nunca se borra una cuenta con respaldos asociados.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en
@@ -139,7 +144,12 @@ CREATE TABLE IF NOT EXISTS custody_state (
     institutional_tag     TEXT    NOT NULL,             -- Entorno/etiqueta institucional
 
     -- IV. Infraestructura & Ops
-    titular_node_id       TEXT    NOT NULL              -- Máquina que es la titular ESCRITORA vigente de la cadena de auditoría
+    titular_node_id       TEXT    NOT NULL,             -- Máquina que es la titular ESCRITORA vigente de la cadena de auditoría
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño de la cuenta bajo custodia DEBE existir en `accounts`.
+    -- RESTRICT: nunca se borra una cuenta con estado de custodia vigente.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Nota: `owner_id` ya es `UNIQUE` arriba -- SQLite crea automáticamente un

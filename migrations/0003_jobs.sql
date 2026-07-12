@@ -92,12 +92,25 @@ CREATE TABLE IF NOT EXISTS jobs (
         CHECK (json_valid(parameters)),
     state              TEXT    NOT NULL              -- QUEUED | RUNNING | COMPLETED | FAILED | CANCELLED
         CHECK (state IN ('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED')),
-    progress           INTEGER NOT NULL DEFAULT 0    -- 0-100 (TTR-005)
+    progress           INTEGER NOT NULL DEFAULT 0,   -- 0-100 (TTR-005)
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- nullable (no todo job tiene dueño, mismo patrón que `audit_events`).
+    -- Nota de orden: esta migración (0003) se aplica ANTES que
+    -- `0007_central_identity.sql` (crea `accounts`); SQLite permite la
+    -- referencia hacia adelante bajo `foreign_keys=ON` (verificado -- ver
+    -- nota equivalente en `0002_audit_log.sql`).
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Recovery access path (TTR-004: startup scan for QUEUED/RUNNING jobs).
 CREATE INDEX IF NOT EXISTS idx_jobs_state
     ON jobs (state);
+
+-- Índice de FK-hijo (ADR-0141 M7): toda columna owner_id con FK requiere su
+-- propio índice, aunque sea nullable.
+CREATE INDEX IF NOT EXISTS idx_jobs_owner_id
+    ON jobs (owner_id);
 
 CREATE TABLE IF NOT EXISTS job_results (
     -- I. Identidad & Integridad (universal, ADR-0020).

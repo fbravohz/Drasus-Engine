@@ -124,7 +124,12 @@ CREATE TABLE IF NOT EXISTS generated_reports (
     -- Contenido JSON canónico COMPLETO del reporte (claves ordenadas,
     -- serializado desde un BTreeMap -- determinista, ADR-0002/0004). Es
     -- exactamente lo que `signature_hash` hashea.
-    report_body           TEXT    NOT NULL CHECK (json_valid(report_body))
+    report_body           TEXT    NOT NULL CHECK (json_valid(report_body)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño del reporte DEBE existir en `accounts`. RESTRICT: nunca se
+    -- borra una cuenta con reportes generados asociados.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

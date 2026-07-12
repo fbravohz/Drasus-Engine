@@ -62,7 +62,18 @@ CREATE TABLE IF NOT EXISTS audit_events (
     entity_type        TEXT    NOT NULL,             -- Type of the entity the event refers to
     entity_id          TEXT    NOT NULL,             -- Identifier of that entity
     details_json       TEXT    NOT NULL              -- Structured event details (JSON-encoded)
-        CHECK (json_valid(details_json))
+        CHECK (json_valid(details_json)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- nullable (no todo evento tiene dueño, ejemplo explícito del ADR).
+    -- Nota de orden: esta migración (0002) se aplica ANTES que
+    -- `0007_central_identity.sql` (crea `accounts`); SQLite permite
+    -- referencia hacia adelante en CREATE TABLE bajo `foreign_keys=ON` --
+    -- verificado (la FK solo se exige en el primer INSERT, y `accounts` ya
+    -- existe para entonces porque todas las migraciones corren antes de que
+    -- la app inserte datos). Sin riesgo funcional; se documenta para
+    -- visibilidad del Tech-Lead.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Chronological / replay access path (ADR-0027 event sourcing recovery).
@@ -73,6 +84,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_event_sequence_id
 -- XYZ el 2026-04-07?" -> lookup by entity).
 CREATE INDEX IF NOT EXISTS idx_audit_events_entity
     ON audit_events (entity_type, entity_id);
+
+-- Índice de FK-hijo (ADR-0141 M7): toda columna owner_id con FK requiere su
+-- propio índice, aunque sea nullable.
+CREATE INDEX IF NOT EXISTS idx_audit_events_owner_id
+    ON audit_events (owner_id);
 
 -- Append-only enforcement: reject UPDATE (audit-log.md: "NUNCA un evento se
 -- modifica después de ser grabado").

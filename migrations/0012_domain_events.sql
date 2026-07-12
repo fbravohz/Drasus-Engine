@@ -115,7 +115,12 @@ CREATE TABLE IF NOT EXISTS domain_events (
     -- Decisión de replicación hacia la Cabina de Mando (0 = no replica /
     -- solo local, 1 = replica), derivada del ExecutionGate real de
     -- licensing-system (#2) en el momento de persistir este evento.
-    replicate              INTEGER NOT NULL CHECK (replicate IN (0, 1))
+    replicate              INTEGER NOT NULL CHECK (replicate IN (0, 1)),
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el dueño del evento DEBE existir en `accounts`. RESTRICT: nunca se
+    -- borra una cuenta con eventos de dominio asociados.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en

@@ -106,7 +106,12 @@ CREATE TABLE IF NOT EXISTS consent_records (
     -- Snapshot COMPLETO del mapa de opt-outs tras este evento (JSON: {tipo_dato: bool}, true = opted-out).
     optout_map             TEXT    NOT NULL CHECK (json_valid(optout_map)),
     -- Instante de dominio (ns UTC) en que el usuario ejecutó esta acción.
-    accepted_at            INTEGER NOT NULL
+    accepted_at            INTEGER NOT NULL,
+
+    -- FK física owner_id -> accounts(id) (ADR-0141 enmienda 2026-07-11, M6):
+    -- el titular del consentimiento DEBE existir en `accounts`. RESTRICT:
+    -- nunca se borra una cuenta con historial de consentimiento.
+    FOREIGN KEY (owner_id) REFERENCES accounts (id) ON DELETE RESTRICT
 ) STRICT;
 
 -- Índice de la posición en la cadena (ADR-0141 M8: "Índice obligatorio en
