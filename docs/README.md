@@ -188,6 +188,7 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**master-account-hierarchy**](./features/master-account-hierarchy.md) | Cuenta maestra raíz (fondo) con autoridad de auditoría/override sobre cuentas maestras hijas autónomas (cada una con su propio Plano de Control); comandos cifrados sobre el relé genérico, doble atestación del override (ADR-0147, cimiento #12). | Cabina de Mando / substrato |
 | [**data-portability**](./features/data-portability.md) | Catálogo declarativo de tablas con `owner_id` + registro de solicitudes de exportación/olvido; derecho de acceso/portabilidad/supresión (GDPR Art. 15/17/20), obligación legal transversal (ADR-0148, cimiento #13). | Cabina de Mando / substrato |
 | [**operator-roles**](./features/operator-roles.md) | Roles de operador a la carta dentro de una cuenta maestra: matriz de capacidades gateada por puerto de Feature (no por módulo), asignable a humanos o agentes LLM vía MCP; cascada de autoridad del fondo sobre cuentas hijas (ADR-0149, cimiento #14). | Cabina de Mando / substrato |
+| [**verification-bench**](./features/verification-bench.md) | Banco de Pruebas: harness genérico de verificación en el Panel Operativo Fundacional — selector de feature, input JSON editable, envío real por FFI y validación visual de forma del input (Válido/Inválido); realización canónica de la SVF y gate permanente de Definición de Terminado (ADR-0117/ADR-0152). | Todos |
 
 ---
 
