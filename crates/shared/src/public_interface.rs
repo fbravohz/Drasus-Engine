@@ -874,6 +874,31 @@ pub async fn verify_licensing_system(input: LicensingSystemVerifyInput) -> Licen
     }
 }
 
+#[cfg(test)]
+mod licensing_system_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- esta
+    /// función YA vincula la identidad vía `central-identity` (#1) antes de
+    /// activar la licencia, así que la cuenta dueña queda registrada por ese
+    /// camino; esta prueba deja constancia de que sigue siendo así si algo
+    /// cambia ese cableado (truena con violación de FK sobre `licenses` si
+    /// deja de registrarse).
+    #[tokio::test]
+    async fn verify_activates_a_sovereign_license_and_allows_execution() {
+        let output = verify_licensing_system(LicensingSystemVerifyInput {
+            tier: "SOVEREIGN".to_string(),
+            owner_email: "verify-licensing-happy-path@drasus.local".to_string(),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.tier, Some("SOVEREIGN".to_string()));
+        assert!(output.verdict.is_some());
+        assert!(output.activations.is_some());
+    }
+}
+
 // ── Plan / Tier / Quota (STORY-029, vive en `shared` -- ver ADR-0137) ───────
 
 /// Submódulo público del cimiento #3 (`docs/features/plan-tier-quota.md`,
@@ -1075,10 +1100,30 @@ pub async fn verify_usage_metering(input: UsageMeteringVerifyInput) -> UsageMete
         return UsageMeteringVerifyOutput::from_error(0, format!("fallo al sembrar el catálogo: {e}"));
     }
 
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id).
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: "verify-usage-metering-owner@verify.drasus.local".to_string(),
+            oauth_provider: None,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => return UsageMeteringVerifyOutput::from_error(0, format!("fallo al registrar la cuenta dueña: {e}")),
+    };
+
     // Paso 2 -- registra cada operación EN ORDEN, acumulando sobre la
     // misma cuenta y el mismo ciclo vigente (fuera del hot-path: esta
     // función SÍ hace lecturas/escrituras de BD local).
-    let owner_id = "verify-usage-metering-owner";
+    let owner_id = owner_account.owner_id.as_str();
     let mut last_record: Option<UsageRecord> = None;
     for (index, operation) in input.operations.iter().enumerate() {
         let result = record_metered_operation(
@@ -1116,6 +1161,34 @@ pub async fn verify_usage_metering(input: UsageMeteringVerifyInput) -> UsageMete
             0,
             "no se proveyó ninguna operación en 'operations' -- nada que registrar".to_string(),
         ),
+    }
+}
+
+#[cfg(test)]
+mod usage_metering_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña no se registra antes de `record_metered_operation`,
+    /// esta prueba truena con una violación de FK sobre `usage_records`.
+    #[tokio::test]
+    async fn verify_records_a_single_operation_and_reports_its_usage_record() {
+        let output = verify_usage_metering(UsageMeteringVerifyInput {
+            tier: "FREE".to_string(),
+            operations: vec![MeteredOperationVerifyInput {
+                size: 250_000_000,
+                price: 4_000_000_000_000,
+                instrument_id: "BTCUSDT".to_string(),
+            }],
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.tier, Some("FREE".to_string()));
+        assert_eq!(output.operations_recorded, 1);
+        assert!(output.billing_cycle_id.is_some());
+        assert!(output.cycle_accumulated.is_some());
+        assert!(output.quota_verdict.is_some());
     }
 }
 
@@ -1440,7 +1513,29 @@ pub async fn verify_consent_registry(input: ConsentRegistryVerifyInput) -> Conse
     let node_id = hostname::get()
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown-host".to_string());
-    let owner_id = "verify-consent-registry-owner";
+
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id).
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: "verify-consent-registry-owner@verify.drasus.local".to_string(),
+            oauth_provider: None,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => {
+            return ConsentRegistryVerifyOutput::from_error(0, format!("fallo al registrar la cuenta dueña: {e}"))
+        }
+    };
+    let owner_id = owner_account.owner_id.as_str();
 
     // Paso 1 -- registra cada acción EN ORDEN, fusionando sobre el mismo
     // dueño (fuera del hot-path: esta función SÍ hace lecturas/escrituras
@@ -1502,6 +1597,32 @@ pub async fn verify_consent_registry(input: ConsentRegistryVerifyInput) -> Conse
     };
 
     ConsentRegistryVerifyOutput::from_verdict(verdict, input.actions.len())
+}
+
+#[cfg(test)]
+mod consent_registry_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña no se registra antes de `record_consent_action`, esta
+    /// prueba truena con una violación de FK sobre `consent_records`.
+    #[tokio::test]
+    async fn verify_registers_an_accept_action_and_resolves_covered() {
+        let output = verify_consent_registry(ConsentRegistryVerifyInput {
+            current_version: "v2".to_string(),
+            actions: vec![ConsentActionVerifyInput {
+                action: "ACCEPT".to_string(),
+                tos_version: Some("v2".to_string()),
+                optout_map: std::collections::BTreeMap::new(),
+            }],
+            query: ConsentQueryVerifyInput { data_type: "aggregation".to_string() },
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.verdict, Some("COVERED".to_string()));
+        assert_eq!(output.actions_recorded, 1);
+    }
 }
 
 // ── Enriched Domain Events (STORY-033, vive en `shared` -- ver ADR-0137) ────
@@ -1946,6 +2067,38 @@ pub async fn verify_enriched_domain_events(
     }
 }
 
+#[cfg(test)]
+mod enriched_domain_events_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- esta
+    /// función YA vincula la identidad vía `central-identity` (#1) antes de
+    /// persistir el evento, así que la cuenta dueña queda registrada por ese
+    /// camino; esta prueba deja constancia de que sigue siendo así si algo
+    /// cambia ese cableado (truena con violación de FK sobre `domain_events`
+    /// si deja de registrarse).
+    #[tokio::test]
+    async fn verify_records_a_capital_flow_event_and_reports_its_ledger_row() {
+        let output = verify_enriched_domain_events(EnrichedDomainEventsVerifyInput {
+            tier: "FREE".to_string(),
+            event: DomainEventVerifyEvent::CapitalFlow {
+                account_id: "acc-1".to_string(),
+                sign: "DEPOSIT".to_string(),
+                amount: 100_000_000_000,
+                currency: "USD".to_string(),
+                timestamp_ns: 0,
+            },
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.tier, Some("EXPLORER".to_string()));
+        assert_eq!(output.event_type, Some("CAPITAL_FLOW".to_string()));
+        assert!(output.event_sequence_id.is_some());
+        assert!(output.audit_hash.is_some());
+    }
+}
+
 // ── Institutional Report Engine (STORY-034, vive en `shared` -- ver ADR-0137) ─
 
 /// Submódulo público del cimiento #7 (`docs/features/institutional-report-engine.md`,
@@ -2124,8 +2277,30 @@ pub async fn verify_institutional_report_engine(
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown-host".to_string());
 
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id).
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: "verify-institutional-report-engine-owner@verify.drasus.local".to_string(),
+            oauth_provider: None,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => {
+            return InstitutionalReportEngineVerifyOutput::from_error(format!("fallo al registrar la cuenta dueña: {e}"))
+        }
+    };
+
     let identity = institutional_report_engine::ReportGenerationIdentity {
-        owner_id: "verify-institutional-report-engine-owner".to_string(),
+        owner_id: owner_account.owner_id.clone(),
         institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
         node_id,
         compliance_status_id: None,
@@ -2144,6 +2319,35 @@ pub async fn verify_institutional_report_engine(
     match institutional_report_engine::generate_report(&pool, clock.as_ref(), identity, assemble_input).await {
         Ok(row) => InstitutionalReportEngineVerifyOutput::from_row(row),
         Err(e) => InstitutionalReportEngineVerifyOutput::from_error(format!("fallo al generar el reporte: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod institutional_report_engine_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña no se registra antes de `generate_report`, esta prueba
+    /// truena con una violación de FK sobre `generated_reports`.
+    #[tokio::test]
+    async fn verify_generates_a_validation_report_and_reports_its_signature() {
+        let mut metrics = std::collections::BTreeMap::new();
+        metrics.insert("sharpe_e8".to_string(), 150_000_000i64);
+        metrics.insert("max_drawdown_e8".to_string(), -8_000_000i64);
+
+        let output = verify_institutional_report_engine(InstitutionalReportEngineVerifyInput {
+            report_type: "VALIDATION".to_string(),
+            metrics,
+            source_result_ref: None,
+            source_event_refs: vec!["evt-1".to_string()],
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.report_type, Some("VALIDATION".to_string()));
+        assert!(output.signature_hash.is_some());
+        assert!(output.audit_hash.is_some());
+        assert!(output.event_sequence_id.is_some());
     }
 }
 
@@ -2322,7 +2526,29 @@ pub async fn verify_third_party_api_gateway(
     let node_id = hostname::get()
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown-host".to_string());
-    let owner_id = "verify-third-party-api-gateway-owner";
+
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id).
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: "verify-third-party-api-gateway-owner@verify.drasus.local".to_string(),
+            oauth_provider: None,
+            institutional_tag: "DRASUS_LOCAL_VERIFY".to_string(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => {
+            return ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al registrar la cuenta dueña: {e}"))
+        }
+    };
+    let owner_id = owner_account.owner_id.as_str();
 
     // Paso 1 -- siembra una credencial ACTIVA con el secreto e endpoint
     // pedidos (fuera del hot-path: esta función SÍ hace lecturas/escrituras
@@ -2401,6 +2627,31 @@ pub async fn verify_third_party_api_gateway(
     {
         Ok(response) => ThirdPartyApiGatewayVerifyOutput::from_response(response),
         Err(e) => ThirdPartyApiGatewayVerifyOutput::from_error(format!("fallo al procesar la solicitud: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod third_party_api_gateway_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña no se registra antes de sembrar la credencial/consentimiento,
+    /// esta prueba truena con una violación de FK sobre `api_credentials`.
+    #[tokio::test]
+    async fn verify_allows_a_request_within_the_rate_limit_with_covered_consent() {
+        let output = verify_third_party_api_gateway(ThirdPartyApiGatewayVerifyInput {
+            credential: "sk-demo-123".to_string(),
+            endpoint: "CERTIFY".to_string(),
+            rate_limit_per_window: 100,
+            requests_in_window: 0,
+            window_seconds: 60,
+            consent_version: "v1".to_string(),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.outcome, Some("ALLOWED".to_string()));
+        assert!(output.delegate_to.is_some());
     }
 }
 
@@ -2627,12 +2878,43 @@ pub async fn verify_data_aggregation(input: DataAggregationVerifyInput) -> DataA
     // correspondiente (consent_out de #5, nunca un stub).
     let mut events = Vec::with_capacity(input.events.len());
     for (index, event) in input.events.iter().enumerate() {
-        let owner_id = format!("verify-data-aggregation-owner-{index}");
+        let synthetic_owner_seed = format!("verify-data-aggregation-owner-{index}");
+        // Se sobrescribe más abajo con el id REAL de la cuenta registrada
+        // cuando el evento requiere consentimiento (COVERED/OPTED_OUT) --
+        // `aggregated_indexes` no lleva FK, así que en NO_CONSENT esta
+        // semilla sintética sigue siendo válida como owner_id del evento.
+        let mut owner_id = synthetic_owner_seed.clone();
 
         match event.consent.as_str() {
-            "COVERED" => {
+            "COVERED" | "OPTED_OUT" => {
+                // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id)
+                // exige que la cuenta dueña exista ANTES de insertar la fila
+                // de consentimiento que la referencia -- registramos la
+                // cuenta primero y usamos su id real (owner_id == id de la
+                // cuenta retail) como owner_id del resto del evento.
+                let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+                    .create(NewAccount {
+                        email: format!("{synthetic_owner_seed}@verify.drasus.local"),
+                        oauth_provider: None,
+                        institutional_tag: default_institutional_tag(),
+                        access_token_id: None,
+                        node_id: node_id.clone(),
+                        owner_id: None,
+                    })
+                    .await
+                {
+                    Ok(account) => account,
+                    Err(e) => {
+                        return DataAggregationVerifyOutput::from_error(format!(
+                            "fallo al registrar la cuenta dueña del evento {index}: {e}"
+                        ))
+                    }
+                };
+                owner_id = owner_account.owner_id;
+
+                let opted_out = event.consent.as_str() == "OPTED_OUT";
                 let mut optout_changes = std::collections::BTreeMap::new();
-                optout_changes.insert(data_aggregation::DATA_AGGREGATION_CONSENT_DATA_TYPE.to_string(), false);
+                optout_changes.insert(data_aggregation::DATA_AGGREGATION_CONSENT_DATA_TYPE.to_string(), opted_out);
                 if let Err(e) = record_consent_action(
                     &pool,
                     clock.as_ref(),
@@ -2649,30 +2931,8 @@ pub async fn verify_data_aggregation(input: DataAggregationVerifyInput) -> DataA
                 .await
                 {
                     return DataAggregationVerifyOutput::from_error(format!(
-                        "fallo al registrar el consentimiento COVERED del evento {index}: {e}"
-                    ));
-                }
-            }
-            "OPTED_OUT" => {
-                let mut optout_changes = std::collections::BTreeMap::new();
-                optout_changes.insert(data_aggregation::DATA_AGGREGATION_CONSENT_DATA_TYPE.to_string(), true);
-                if let Err(e) = record_consent_action(
-                    &pool,
-                    clock.as_ref(),
-                    RecordConsentActionInput {
-                        owner_id: owner_id.clone(),
-                        institutional_tag: default_institutional_tag(),
-                        node_id: node_id.clone(),
-                        compliance_status_id: None,
-                        action: ConsentAction::Accept,
-                        tos_version: Some(input.consent_version.clone()),
-                        optout_changes,
-                    },
-                )
-                .await
-                {
-                    return DataAggregationVerifyOutput::from_error(format!(
-                        "fallo al registrar el consentimiento OPTED_OUT del evento {index}: {e}"
+                        "fallo al registrar el consentimiento {} del evento {index}: {e}",
+                        event.consent
                     ));
                 }
             }
@@ -2708,6 +2968,35 @@ pub async fn verify_data_aggregation(input: DataAggregationVerifyInput) -> DataA
     match data_aggregation::run_aggregation(&pool, clock.as_ref(), &events, &config).await {
         Ok(outcome) => DataAggregationVerifyOutput::from_outcome(outcome),
         Err(e) => DataAggregationVerifyOutput::from_error(format!("fallo al ejecutar la agregación: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod data_aggregation_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña sintética del evento no se registra antes de
+    /// `record_consent_action`, esta prueba truena con una violación de FK
+    /// sobre `consent_records` (`aggregated_indexes` en sí NO lleva FK).
+    #[tokio::test]
+    async fn verify_publishes_a_single_covered_event_meeting_min_cohort_one() {
+        let output = verify_data_aggregation(DataAggregationVerifyInput {
+            index_type: "SENTIMENT".to_string(),
+            time_window: "2026-W27".to_string(),
+            channel: "INTERNAL".to_string(),
+            min_cohort: 1,
+            noise_level_e8: 1_000_000,
+            seed: 42,
+            consent_version: "v1".to_string(),
+            external_sale_enabled: false,
+            events: vec![DataAggregationEventVerifyInput { metric_e8: 150_000_000, consent: "COVERED".to_string() }],
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.outcome, Some("PUBLISHED".to_string()));
+        assert_eq!(output.cohort_size, Some(1));
     }
 }
 
@@ -3101,7 +3390,29 @@ pub async fn verify_verified_account_registry(
     let node_id = hostname::get()
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown-host".to_string());
-    let owner_id = "verify-verified-account-registry-owner".to_string();
+
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista en `accounts` ANTES de insertar filas que la
+    // referencian (`verified_accounts`, `attested_track_records`,
+    // `consent_records`). En esta BD efímera de verificación la registramos
+    // primero y usamos su id real como owner_id del resto del ejercicio.
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: "verify-verified-account-registry-owner@verify.drasus.local".to_string(),
+            oauth_provider: None,
+            institutional_tag: default_institutional_tag(),
+            access_token_id: None,
+            node_id: node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => {
+            return VerifiedAccountRegistryVerifyOutput::from_error(format!("fallo al registrar la cuenta dueña: {e}"))
+        }
+    };
+    let owner_id = owner_account.owner_id;
 
     // Paso 1 -- registra la cuenta (default PRIVATE, estructural).
     let account = match verified_account_registry::register_account(
@@ -3237,6 +3548,53 @@ pub async fn verify_verified_account_registry(
     };
 
     VerifiedAccountRegistryVerifyOutput::from_result(&account, &track)
+}
+
+#[cfg(test)]
+mod verified_account_registry_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta dueña no se registra antes de `register_account`, esta prueba
+    /// truena con una violación de FK sobre `verified_accounts`.
+    #[tokio::test]
+    async fn verify_registers_account_and_computes_track_from_a_deposit_and_a_win() {
+        let output = verify_verified_account_registry(VerifiedAccountRegistryVerifyInput {
+            account: VerifiedAccountRegistryAccountVerifyInput {
+                broker: "ICMarkets".to_string(),
+                leverage: 100,
+                currency: "USD".to_string(),
+                account_type: "OWN".to_string(),
+                attestation_scopes: vec!["SOVEREIGN".to_string(), "BROKER_READONLY".to_string()],
+                institutional_tag: "LIVE".to_string(),
+                broker_connection_ref: None,
+            },
+            scope: "SOVEREIGN".to_string(),
+            time_window: "2026-W27".to_string(),
+            consent: "COVERED".to_string(),
+            consent_version: "v1".to_string(),
+            publish: false,
+            events: vec![
+                VerifiedAccountRegistryEventVerifyInput::CapitalFlow {
+                    sign: "DEPOSIT".to_string(),
+                    amount_e8: 35_000_000_000,
+                    day_offset: 0,
+                },
+                VerifiedAccountRegistryEventVerifyInput::OrderExecuted {
+                    pnl_e8: 15_000_000_000,
+                    day_offset: 1,
+                    duration_ns: 3_600_000_000_000,
+                },
+            ],
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert!(output.verified_account_id.is_some());
+        assert_eq!(output.publication_status, Some("PRIVATE".to_string()));
+        assert_eq!(output.scope, Some("SOVEREIGN".to_string()));
+        assert!(output.signature_hash.is_some());
+    }
 }
 
 // ── Instance Continuity (STORY-039, vive en `shared` -- ver ADR-0137) ──────
@@ -3655,6 +4013,34 @@ pub async fn verify_instance_continuity(input: InstanceContinuityVerifyInput) ->
     }
 }
 
+#[cfg(test)]
+mod instance_continuity_verify_tests {
+    use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- esta
+    /// función YA vincula la identidad vía `central-identity` (#1) antes de
+    /// registrar el respaldo, así que la cuenta dueña queda registrada por
+    /// ese camino; esta prueba deja constancia de que sigue siendo así si
+    /// algo cambia ese cableado (truena con violación de FK sobre
+    /// `instance_backups` si deja de registrarse).
+    #[tokio::test]
+    async fn verify_round_trips_a_snapshot_and_claims_custody_for_a_new_machine() {
+        let output = verify_instance_continuity(InstanceContinuityVerifyInput {
+            master_secret: "correct horse battery staple".to_string(),
+            plaintext: "snapshot-bytes".to_string(),
+            nonce_seed: 42,
+            custody: CustodyVerifyInput { titular_node_id: "node-A".to_string(), custody_epoch: 3 },
+            my_node_id: "node-A".to_string(),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.round_trip_ok, Some(true));
+        assert_eq!(output.custody_claim_outcome, Some("CLAIMED".to_string()));
+        assert!(output.event_sequence_id.is_some());
+    }
+}
+
 // ────────────────────────────────────────────────────────────────────────
 // Master Account Hierarchy (STORY-040, cimiento #12 -- vive en `shared`,
 // ver ADR-0137)
@@ -3813,6 +4199,33 @@ pub async fn verify_master_account_hierarchy(
 
     let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
 
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la hija (`child_owner_id`) exista en `accounts` ANTES de insertar
+    // cualquier fila que la referencia (`consent_records`, `account_hierarchy`,
+    // `override_attestations` -- las tres llevan la FK solo en la columna
+    // literal `owner_id`; `parent_owner_id`/el fondo queda fuera del alcance
+    // textual de la enmienda, ver migración 0018). Registramos la cuenta
+    // primero y usamos su id real como `child_owner_id` en TODO el flujo --
+    // el `input.child_owner_id` original se conserva solo como semilla del
+    // correo, trazable en el registro.
+    let child_owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: format!("{}@verify.drasus.local", input.child_owner_id),
+            oauth_provider: None,
+            institutional_tag: default_institutional_tag(),
+            access_token_id: None,
+            node_id: input.node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => {
+            return MasterAccountHierarchyVerifyOutput::from_error(format!("fallo al registrar la cuenta hija: {e}"))
+        }
+    };
+    let child_owner_id = child_owner_account.owner_id;
+
     // Siembra el consentimiento REAL de la hija según input.consent -- igual
     // que verify_verified_account_registry / verify_data_aggregation. Sin
     // esto (o con cualquier valor distinto de COVERED/OPTED_OUT) no se
@@ -3828,7 +4241,7 @@ pub async fn verify_master_account_hierarchy(
             &pool,
             clock.as_ref(),
             crate::persistence::consent_registry::RecordConsentActionInput {
-                owner_id: input.child_owner_id.clone(),
+                owner_id: child_owner_id.clone(),
                 institutional_tag: default_institutional_tag(),
                 node_id: input.node_id.clone(),
                 compliance_status_id: None,
@@ -3850,7 +4263,7 @@ pub async fn verify_master_account_hierarchy(
     if let Err(e) = master_account_hierarchy::link_child_to_parent(
         &pool,
         clock.as_ref(),
-        &input.child_owner_id,
+        &child_owner_id,
         Some(&input.parent_owner_id),
         &input.consent_version,
         &input.node_id,
@@ -3864,7 +4277,7 @@ pub async fn verify_master_account_hierarchy(
         &pool,
         clock.as_ref(),
         &input.parent_owner_id,
-        &input.child_owner_id,
+        &child_owner_id,
         &input.node_id,
         &input.node_id,
         command_kind,
@@ -3884,6 +4297,31 @@ pub async fn verify_master_account_hierarchy(
 #[cfg(test)]
 mod master_account_hierarchy_verify_tests {
     use super::*;
+
+    /// ALARMA (ADR-0141 enmienda 2026-07-11): camino feliz de humo -- si la
+    /// cuenta hija no se registra antes de sembrar consentimiento/jerarquía,
+    /// esta prueba truena con una violación de FK sobre `consent_records`
+    /// (el primer insert huérfano del flujo).
+    #[tokio::test]
+    async fn verify_executes_an_archive_override_with_covered_consent() {
+        let output = verify_master_account_hierarchy(MasterAccountHierarchyVerifyInput {
+            parent_owner_id: "fund-X".to_string(),
+            child_owner_id: "trader-7".to_string(),
+            node_id: "node-A".to_string(),
+            consent: "COVERED".to_string(),
+            consent_version: "v1".to_string(),
+            command_kind: "ARCHIVE".to_string(),
+            target_ref: "strategy-42".to_string(),
+            justification: Some("riesgo excedido".to_string()),
+        })
+        .await;
+
+        assert!(output.ok, "la verificación debe tener éxito: {:?}", output.error);
+        assert_eq!(output.outcome, Some("EXECUTED".to_string()));
+        assert_eq!(output.local_effect, Some("ARCHIVED".to_string()));
+        assert!(output.issuer_audit_hash.is_some());
+        assert!(output.executor_audit_hash.is_some());
+    }
 
     /// CRITERIO (Orden §8): JSON no filtra secretos (ADR-0093) -- fija la
     /// lista exacta de claves permitidas en el output serializado y
@@ -4087,8 +4525,29 @@ pub async fn verify_data_portability(input: DataPortabilityVerifyInput) -> DataP
         return DataPortabilityVerifyOutput::from_error(format!("fallo al sembrar el catálogo: {e}"));
     }
 
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id). El input.owner_id se conserva como semilla del
+    // correo, trazable en el registro.
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: format!("{}@verify.drasus.local", input.owner_id),
+            oauth_provider: None,
+            institutional_tag: input.institutional_tag.clone(),
+            access_token_id: None,
+            node_id: input.node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => return DataPortabilityVerifyOutput::from_error(format!("fallo al registrar la cuenta dueña: {e}")),
+    };
+
     let identity = data_portability::DataPortabilityIdentity {
-        owner_id: input.owner_id.clone(),
+        owner_id: owner_account.owner_id.clone(),
         institutional_tag: input.institutional_tag.clone(),
         node_id: input.node_id.clone(),
     };
@@ -4399,8 +4858,29 @@ pub async fn verify_operator_roles(input: OperatorRolesVerifyInput) -> OperatorR
 
     let clock: std::sync::Arc<dyn Clock> = std::sync::Arc::new(crate::orchestrator::SystemClock::default());
 
+    // ADR-0141 (enmienda 2026-07-11): la FK owner_id->accounts(id) exige que
+    // la cuenta dueña exista ANTES de insertar filas que la referencian. En
+    // esta BD efímera de verificación la registramos primero y usamos su id
+    // como owner_id del resto del ejercicio (una cuenta retail es dueña de sí
+    // misma, owner_id == id). El input.owner_id se conserva como semilla del
+    // correo, trazable en el registro.
+    let owner_account = match AccountRepository::new(&pool, clock.as_ref())
+        .create(NewAccount {
+            email: format!("{}@verify.drasus.local", input.owner_id),
+            oauth_provider: None,
+            institutional_tag: input.institutional_tag.clone(),
+            access_token_id: None,
+            node_id: input.node_id.clone(),
+            owner_id: None,
+        })
+        .await
+    {
+        Ok(account) => account,
+        Err(e) => return OperatorRolesVerifyOutput::from_error(format!("fallo al registrar la cuenta dueña: {e}")),
+    };
+
     let identity = operator_roles::OperatorRolesIdentity {
-        owner_id: input.owner_id.clone(),
+        owner_id: owner_account.owner_id.clone(),
         institutional_tag: input.institutional_tag.clone(),
         node_id: input.node_id.clone(),
     };
