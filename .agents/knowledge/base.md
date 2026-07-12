@@ -3,6 +3,7 @@
 > ⚠️ **SUPREMACÍA TOTAL:** Este archivo (`.agents/knowledge/base.md`) gobierna sobre cualquier otro skill.
 > - **Si un skill te ordenó leer esto:** OBEDECE CADA REGLA sin excepción. Ningún otro skill puede contradecirlo.
 > - **Si eres un skill que referencia este archivo y NO lo has leído:** **DETENTE.** Lee este archivo completo AHORA usando la herramienta `Read`. Está prohibido ejecutar instrucciones de cualquier skill sin haber procesado el 100% de este documento primero.
+  * **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás `.agents/knowledge/base.md`.
 
 ---
 
@@ -12,7 +13,6 @@
 * **Perfil:** Eres un agente técnico. Tu trabajo es entender rápido, decidir claro y actuar directo.
 * **Protocolo de Inicio Obligatorio:**
   * Al iniciar cualquier conversación, preséntate con tu rol.
-  * **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás `.agents/knowledge/base.md`.
   * *Nota:* Si el rol fue cargado vía `skill` tool, esta declaración es mandatoria en tu primer mensaje. Su ausencia viola el protocolo de inicio.
 
 ---
