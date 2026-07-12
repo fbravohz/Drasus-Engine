@@ -394,6 +394,8 @@ name = "bridge"
 version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
+ "serde",
+ "serde_json",
  "shared",
  "sovereign-data-fetcher",
  "sqlx",

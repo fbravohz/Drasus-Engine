@@ -4,19 +4,32 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  # 3.3.0 es el piso real: `frb_generated.web.dart` (generado por
+  # flutter_rust_bridge para el target Web) usa `extension type`, una
+  # sintaxis de Dart 3.3+. Con el piso anterior (3.0.0) el analyzer de
+  # `build_runner` trataba TODO el paquete en la versión de lenguaje 3.0
+  # (el piso declarado aquí fija la versión de lenguaje del paquete
+  # completo salvo pragma `// @dart=` por archivo) y `freezed` (necesario
+  # para el enum con datos de `api::verification` -- ver
+  # `InputStatus.Invalid { reason }`) fallaba al recorrer ese archivo. El
+  # SDK real instalado ya es 3.12 -- este piso solo formaliza lo que ya
+  # corre.
+  sdk: '>=3.3.0 <4.0.0'
   flutter: '>=3.10.0'
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_rust_bridge: ^2.0.0
+  freezed_annotation: ^3.1.0
   iconsax_plus: ^1.0.0
   shared_preferences: ^2.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  freezed: ^3.2.5
+  build_runner: ^2.15.1
 
 flutter:
   uses-material-design: true

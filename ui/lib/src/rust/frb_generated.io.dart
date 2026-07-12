@@ -13,6 +13,7 @@ import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
 import 'api/jobs.dart';
+import 'api/verification.dart';
 import 'frb_generated.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -30,6 +31,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AuditEventSummary dco_decode_audit_event_summary(dynamic raw);
 
   @protected
+  bool dco_decode_bool(dynamic raw);
+
+  @protected
   JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw);
 
   @protected
@@ -39,7 +43,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DownloadRecordDto dco_decode_download_record_dto(dynamic raw);
 
   @protected
+  FeatureDescriptor dco_decode_feature_descriptor(dynamic raw);
+
+  @protected
   PlatformInt64 dco_decode_i_64(dynamic raw);
+
+  @protected
+  InputStatus dco_decode_input_status(dynamic raw);
 
   @protected
   JobStatusDto dco_decode_job_status_dto(dynamic raw);
@@ -52,6 +62,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw);
+
+  @protected
+  List<FeatureDescriptor> dco_decode_list_feature_descriptor(dynamic raw);
 
   @protected
   List<JobSummary> dco_decode_list_job_summary(dynamic raw);
@@ -75,11 +88,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
+  VerificationOutcome dco_decode_verification_outcome(dynamic raw);
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
   AuditEventSummary sse_decode_audit_event_summary(
       SseDeserializer deserializer);
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
   JobStatusDto sse_decode_box_autoadd_job_status_dto(
@@ -94,7 +113,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  FeatureDescriptor sse_decode_feature_descriptor(SseDeserializer deserializer);
+
+  @protected
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
+  InputStatus sse_decode_input_status(SseDeserializer deserializer);
 
   @protected
   JobStatusDto sse_decode_job_status_dto(SseDeserializer deserializer);
@@ -108,6 +133,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<DownloadRecordDto> sse_decode_list_download_record_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  List<FeatureDescriptor> sse_decode_list_feature_descriptor(
       SseDeserializer deserializer);
 
   @protected
@@ -133,10 +162,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer);
+  VerificationOutcome sse_decode_verification_outcome(
+      SseDeserializer deserializer);
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer);
+  int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -144,6 +174,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_audit_event_summary(
       AuditEventSummary self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_job_status_dto(
@@ -158,7 +191,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       DownloadRecordDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_feature_descriptor(
+      FeatureDescriptor self, SseSerializer serializer);
+
+  @protected
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_input_status(InputStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_job_status_dto(JobStatusDto self, SseSerializer serializer);
@@ -173,6 +213,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_download_record_dto(
       List<DownloadRecordDto> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_feature_descriptor(
+      List<FeatureDescriptor> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_job_summary(
@@ -199,10 +243,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_unit(void self, SseSerializer serializer);
 
   @protected
-  void sse_encode_i_32(int self, SseSerializer serializer);
+  void sse_encode_verification_outcome(
+      VerificationOutcome self, SseSerializer serializer);
 
   @protected
-  void sse_encode_bool(bool self, SseSerializer serializer);
+  void sse_encode_i_32(int self, SseSerializer serializer);
 }
 
 // Section: wire_class

@@ -12,6 +12,7 @@ import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
 import 'api/jobs.dart';
+import 'api/verification.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
@@ -73,7 +74,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -475650658;
+  int get rustContentHash => 71897077;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -98,6 +99,8 @@ abstract class RustLibApi extends BaseApi {
   Future<List<DownloadRecordDto>> crateApiDataFetcherListDownloadRecords(
       {required String dbPath});
 
+  List<FeatureDescriptor> crateApiVerificationListVerifiableFeatures();
+
   Future<DownloadJobResult> crateApiDataFetcherSubmitDownloadJob(
       {required String dbPath,
       required String dataDir,
@@ -107,6 +110,9 @@ abstract class RustLibApi extends BaseApi {
       required PlatformInt64 endNs,
       required String timeframe,
       required String outputType});
+
+  Future<VerificationOutcome> crateApiVerificationVerifyFeature(
+      {required String featureId, required String inputJson});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -246,6 +252,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  List<FeatureDescriptor> crateApiVerificationListVerifiableFeatures() {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_list_feature_descriptor,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiVerificationListVerifiableFeaturesConstMeta,
+      argValues: [],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiVerificationListVerifiableFeaturesConstMeta =>
+      const TaskConstMeta(
+        debugName: "list_verifiable_features",
+        argNames: [],
+      );
+
+  @override
   Future<DownloadJobResult> crateApiDataFetcherSubmitDownloadJob(
       {required String dbPath,
       required String dataDir,
@@ -267,7 +296,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(timeframe, serializer);
         sse_encode_String(outputType, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_download_job_result,
@@ -303,6 +332,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         ],
       );
 
+  @override
+  Future<VerificationOutcome> crateApiVerificationVerifyFeature(
+      {required String featureId, required String inputJson}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(featureId, serializer);
+        sse_encode_String(inputJson, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 8, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_verification_outcome,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiVerificationVerifyFeatureConstMeta,
+      argValues: [featureId, inputJson],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiVerificationVerifyFeatureConstMeta =>
+      const TaskConstMeta(
+        debugName: "verify_feature",
+        argNames: ["featureId", "inputJson"],
+      );
+
   @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -322,6 +378,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createdAt: dco_decode_i_64(arr[3]),
       auditChainHash: dco_decode_String(arr[4]),
     );
+  }
+
+  @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
   }
 
   @protected
@@ -360,9 +422,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FeatureDescriptor dco_decode_feature_descriptor(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return FeatureDescriptor(
+      id: dco_decode_String(arr[0]),
+      displayName: dco_decode_String(arr[1]),
+      exampleInputJson: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
   PlatformInt64 dco_decode_i_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dcoDecodeI64(raw);
+  }
+
+  @protected
+  InputStatus dco_decode_input_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return const InputStatus_Valid();
+      case 1:
+        return InputStatus_Invalid(
+          reason: dco_decode_String(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   @protected
@@ -404,6 +494,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_download_record_dto).toList();
+  }
+
+  @protected
+  List<FeatureDescriptor> dco_decode_list_feature_descriptor(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_feature_descriptor).toList();
   }
 
   @protected
@@ -449,6 +545,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  VerificationOutcome dco_decode_verification_outcome(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return VerificationOutcome(
+      inputStatus: dco_decode_input_status(arr[0]),
+      ok: dco_decode_bool(arr[1]),
+      outputJson: dco_decode_String(arr[2]),
+      error: dco_decode_opt_String(arr[3]),
+    );
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -470,6 +580,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         entityType: var_entityType,
         createdAt: var_createdAt,
         auditChainHash: var_auditChainHash);
+  }
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
@@ -512,9 +628,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FeatureDescriptor sse_decode_feature_descriptor(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_displayName = sse_decode_String(deserializer);
+    var var_exampleInputJson = sse_decode_String(deserializer);
+    return FeatureDescriptor(
+        id: var_id,
+        displayName: var_displayName,
+        exampleInputJson: var_exampleInputJson);
+  }
+
+  @protected
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  InputStatus sse_decode_input_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        return const InputStatus_Valid();
+      case 1:
+        var var_reason = sse_decode_String(deserializer);
+        return InputStatus_Invalid(reason: var_reason);
+      default:
+        throw UnimplementedError('');
+    }
   }
 
   @protected
@@ -569,6 +714,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <DownloadRecordDto>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_download_record_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<FeatureDescriptor> sse_decode_list_feature_descriptor(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <FeatureDescriptor>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_feature_descriptor(deserializer));
     }
     return ans_;
   }
@@ -633,15 +791,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
+  VerificationOutcome sse_decode_verification_outcome(
+      SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getInt32();
+    var var_inputStatus = sse_decode_input_status(deserializer);
+    var var_ok = sse_decode_bool(deserializer);
+    var var_outputJson = sse_decode_String(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return VerificationOutcome(
+        inputStatus: var_inputStatus,
+        ok: var_ok,
+        outputJson: var_outputJson,
+        error: var_error);
   }
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
+  int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
+    return deserializer.buffer.getInt32();
   }
 
   @protected
@@ -659,6 +826,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.entityType, serializer);
     sse_encode_i_64(self.createdAt, serializer);
     sse_encode_String(self.auditChainHash, serializer);
+  }
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
   }
 
   @protected
@@ -690,9 +863,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_feature_descriptor(
+      FeatureDescriptor self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.displayName, serializer);
+    sse_encode_String(self.exampleInputJson, serializer);
+  }
+
+  @protected
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_input_status(InputStatus self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case InputStatus_Valid():
+        sse_encode_i_32(0, serializer);
+      case InputStatus_Invalid(reason: final reason):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(reason, serializer);
+    }
   }
 
   @protected
@@ -731,6 +925,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_download_record_dto(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_feature_descriptor(
+      List<FeatureDescriptor> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_feature_descriptor(item, serializer);
     }
   }
 
@@ -791,14 +995,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
+  void sse_encode_verification_outcome(
+      VerificationOutcome self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putInt32(self);
+    sse_encode_input_status(self.inputStatus, serializer);
+    sse_encode_bool(self.ok, serializer);
+    sse_encode_String(self.outputJson, serializer);
+    sse_encode_opt_String(self.error, serializer);
   }
 
   @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
+  void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
+    serializer.buffer.putInt32(self);
   }
 }

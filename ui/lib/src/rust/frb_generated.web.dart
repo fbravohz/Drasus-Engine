@@ -3,7 +3,6 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
@@ -16,144 +15,252 @@ import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
 import 'api/jobs.dart';
+import 'api/verification.dart';
 import 'frb_generated.dart';
 
+abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
+  RustLibApiImplPlatform({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
 
+  @protected
+  String dco_decode_String(dynamic raw);
 
+  @protected
+  AuditEventSummary dco_decode_audit_event_summary(dynamic raw);
 
-                abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
-                  RustLibApiImplPlatform({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
+  @protected
+  bool dco_decode_bool(dynamic raw);
 
-                  
+  @protected
+  JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw);
 
-                  @protected String dco_decode_String(dynamic raw);
+  @protected
+  DownloadJobResult dco_decode_download_job_result(dynamic raw);
 
-@protected AuditEventSummary dco_decode_audit_event_summary(dynamic raw);
+  @protected
+  DownloadRecordDto dco_decode_download_record_dto(dynamic raw);
 
-@protected JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw);
+  @protected
+  FeatureDescriptor dco_decode_feature_descriptor(dynamic raw);
 
-@protected DownloadJobResult dco_decode_download_job_result(dynamic raw);
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
-@protected DownloadRecordDto dco_decode_download_record_dto(dynamic raw);
+  @protected
+  InputStatus dco_decode_input_status(dynamic raw);
 
-@protected PlatformInt64 dco_decode_i_64(dynamic raw);
+  @protected
+  JobStatusDto dco_decode_job_status_dto(dynamic raw);
 
-@protected JobStatusDto dco_decode_job_status_dto(dynamic raw);
+  @protected
+  JobSummary dco_decode_job_summary(dynamic raw);
 
-@protected JobSummary dco_decode_job_summary(dynamic raw);
+  @protected
+  List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw);
 
-@protected List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw);
+  @protected
+  List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw);
 
-@protected List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw);
+  @protected
+  List<FeatureDescriptor> dco_decode_list_feature_descriptor(dynamic raw);
 
-@protected List<JobSummary> dco_decode_list_job_summary(dynamic raw);
+  @protected
+  List<JobSummary> dco_decode_list_job_summary(dynamic raw);
 
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-@protected String? dco_decode_opt_String(dynamic raw);
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
-@protected JobStatusDto? dco_decode_opt_box_autoadd_job_status_dto(dynamic raw);
+  @protected
+  JobStatusDto? dco_decode_opt_box_autoadd_job_status_dto(dynamic raw);
 
-@protected BigInt dco_decode_u_64(dynamic raw);
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
-@protected int dco_decode_u_8(dynamic raw);
+  @protected
+  int dco_decode_u_8(dynamic raw);
 
-@protected void dco_decode_unit(dynamic raw);
+  @protected
+  void dco_decode_unit(dynamic raw);
 
-@protected String sse_decode_String(SseDeserializer deserializer);
+  @protected
+  VerificationOutcome dco_decode_verification_outcome(dynamic raw);
 
-@protected AuditEventSummary sse_decode_audit_event_summary(SseDeserializer deserializer);
+  @protected
+  String sse_decode_String(SseDeserializer deserializer);
 
-@protected JobStatusDto sse_decode_box_autoadd_job_status_dto(SseDeserializer deserializer);
+  @protected
+  AuditEventSummary sse_decode_audit_event_summary(
+      SseDeserializer deserializer);
 
-@protected DownloadJobResult sse_decode_download_job_result(SseDeserializer deserializer);
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
 
-@protected DownloadRecordDto sse_decode_download_record_dto(SseDeserializer deserializer);
+  @protected
+  JobStatusDto sse_decode_box_autoadd_job_status_dto(
+      SseDeserializer deserializer);
 
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+  @protected
+  DownloadJobResult sse_decode_download_job_result(
+      SseDeserializer deserializer);
 
-@protected JobStatusDto sse_decode_job_status_dto(SseDeserializer deserializer);
+  @protected
+  DownloadRecordDto sse_decode_download_record_dto(
+      SseDeserializer deserializer);
 
-@protected JobSummary sse_decode_job_summary(SseDeserializer deserializer);
+  @protected
+  FeatureDescriptor sse_decode_feature_descriptor(SseDeserializer deserializer);
 
-@protected List<AuditEventSummary> sse_decode_list_audit_event_summary(SseDeserializer deserializer);
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
-@protected List<DownloadRecordDto> sse_decode_list_download_record_dto(SseDeserializer deserializer);
+  @protected
+  InputStatus sse_decode_input_status(SseDeserializer deserializer);
 
-@protected List<JobSummary> sse_decode_list_job_summary(SseDeserializer deserializer);
+  @protected
+  JobStatusDto sse_decode_job_status_dto(SseDeserializer deserializer);
 
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+  @protected
+  JobSummary sse_decode_job_summary(SseDeserializer deserializer);
 
-@protected String? sse_decode_opt_String(SseDeserializer deserializer);
+  @protected
+  List<AuditEventSummary> sse_decode_list_audit_event_summary(
+      SseDeserializer deserializer);
 
-@protected JobStatusDto? sse_decode_opt_box_autoadd_job_status_dto(SseDeserializer deserializer);
+  @protected
+  List<DownloadRecordDto> sse_decode_list_download_record_dto(
+      SseDeserializer deserializer);
 
-@protected BigInt sse_decode_u_64(SseDeserializer deserializer);
+  @protected
+  List<FeatureDescriptor> sse_decode_list_feature_descriptor(
+      SseDeserializer deserializer);
 
-@protected int sse_decode_u_8(SseDeserializer deserializer);
+  @protected
+  List<JobSummary> sse_decode_list_job_summary(SseDeserializer deserializer);
 
-@protected void sse_decode_unit(SseDeserializer deserializer);
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
-@protected int sse_decode_i_32(SseDeserializer deserializer);
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
-@protected bool sse_decode_bool(SseDeserializer deserializer);
+  @protected
+  JobStatusDto? sse_decode_opt_box_autoadd_job_status_dto(
+      SseDeserializer deserializer);
 
-@protected void sse_encode_String(String self, SseSerializer serializer);
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
-@protected void sse_encode_audit_event_summary(AuditEventSummary self, SseSerializer serializer);
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer);
 
-@protected void sse_encode_box_autoadd_job_status_dto(JobStatusDto self, SseSerializer serializer);
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer);
 
-@protected void sse_encode_download_job_result(DownloadJobResult self, SseSerializer serializer);
+  @protected
+  VerificationOutcome sse_decode_verification_outcome(
+      SseDeserializer deserializer);
 
-@protected void sse_encode_download_record_dto(DownloadRecordDto self, SseSerializer serializer);
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer);
 
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer);
 
-@protected void sse_encode_job_status_dto(JobStatusDto self, SseSerializer serializer);
+  @protected
+  void sse_encode_audit_event_summary(
+      AuditEventSummary self, SseSerializer serializer);
 
-@protected void sse_encode_job_summary(JobSummary self, SseSerializer serializer);
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
 
-@protected void sse_encode_list_audit_event_summary(List<AuditEventSummary> self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_job_status_dto(
+      JobStatusDto self, SseSerializer serializer);
 
-@protected void sse_encode_list_download_record_dto(List<DownloadRecordDto> self, SseSerializer serializer);
+  @protected
+  void sse_encode_download_job_result(
+      DownloadJobResult self, SseSerializer serializer);
 
-@protected void sse_encode_list_job_summary(List<JobSummary> self, SseSerializer serializer);
+  @protected
+  void sse_encode_download_record_dto(
+      DownloadRecordDto self, SseSerializer serializer);
 
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+  @protected
+  void sse_encode_feature_descriptor(
+      FeatureDescriptor self, SseSerializer serializer);
 
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
-@protected void sse_encode_opt_box_autoadd_job_status_dto(JobStatusDto? self, SseSerializer serializer);
+  @protected
+  void sse_encode_input_status(InputStatus self, SseSerializer serializer);
 
-@protected void sse_encode_u_64(BigInt self, SseSerializer serializer);
+  @protected
+  void sse_encode_job_status_dto(JobStatusDto self, SseSerializer serializer);
 
-@protected void sse_encode_u_8(int self, SseSerializer serializer);
+  @protected
+  void sse_encode_job_summary(JobSummary self, SseSerializer serializer);
 
-@protected void sse_encode_unit(void self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_audit_event_summary(
+      List<AuditEventSummary> self, SseSerializer serializer);
 
-@protected void sse_encode_i_32(int self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_download_record_dto(
+      List<DownloadRecordDto> self, SseSerializer serializer);
 
-@protected void sse_encode_bool(bool self, SseSerializer serializer);
-                }
-                
+  @protected
+  void sse_encode_list_feature_descriptor(
+      List<FeatureDescriptor> self, SseSerializer serializer);
 
+  @protected
+  void sse_encode_list_job_summary(
+      List<JobSummary> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+      Uint8List self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_job_status_dto(
+      JobStatusDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_verification_outcome(
+      VerificationOutcome self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer);
+}
 
 // Section: wire_class
 
 class RustLibWire implements BaseWire {
-            RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+  RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+}
 
-            
-        }
-        @JS('wasm_bindgen') external RustLibWasmModule get wasmModule;
+@JS('wasm_bindgen')
+external RustLibWasmModule get wasmModule;
 
-        @JS() @anonymous extension type RustLibWasmModule._(JSObject _) implements JSObject {
-            
-        }
-        
+@JS()
+@anonymous
+extension type RustLibWasmModule._(JSObject _) implements JSObject {}

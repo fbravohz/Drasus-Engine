@@ -47,3 +47,11 @@ tokio = { version = "1", features = ["full"] }
 # métodos en los repositorios de shared (ej. "últimos 20 jobs de cualquier
 # estado"). Solo se usan las features mínimas: sqlite + runtime-tokio.
 sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
+
+# serde/serde_json: el despachador genérico del Banco de Pruebas
+# (`api::verification`) deserializa `input_json` contra el tipo `Input`
+# tipado de cada feature y serializa su `Output` de vuelta a JSON -- mismas
+# versiones que usa `shared` (ADR-0003: contratos de tipo consistentes en
+# todo el workspace).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
