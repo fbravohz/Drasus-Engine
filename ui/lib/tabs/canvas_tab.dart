@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../theme/gx_tokens.dart';
 import '../gallery/gallery_painters.dart';
 import '../theme/theme_scope.dart';
+import '../app_meta.dart';
 
 // ---------------------------------------------------------------------------
 // CanvasTab — pestaña del canvas con panel lateral + lienzo interactivo.
@@ -428,7 +429,7 @@ class _FeatureListItem extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _BreadcrumbPill — pill de cristal "Canvas · Forge" arriba izquierda.
+// _BreadcrumbPill — pill de cristal "Canvas · <kCanvasName>" arriba izquierda.
 // ---------------------------------------------------------------------------
 
 // Superficie de vidrio Apple: glassFill + blur 16 + borde rim-light.
@@ -447,7 +448,7 @@ class _BreadcrumbPill extends StatelessWidget {
             border: Gx.rimLight(0.15),
           ),
           child: Text(
-            'Canvas · Forge',
+            'Canvas · $kCanvasName',
             style: Gx.dataMono(fontSize: 12, color: Gx.textBaseSecondary),
           ),
         ),

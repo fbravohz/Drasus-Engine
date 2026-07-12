@@ -10,3 +10,11 @@ const String kAppName = 'Drasus Engine';
 
 /// Versión visible del producto.
 const String kAppVersion = '0.1.0-α';
+
+/// Nombre de exhibición del lienzo visual (breadcrumb, títulos del canvas).
+///
+/// El CÓDIGO y las variables del lienzo permanecen neutrales ("canvas"); solo
+/// este string de marca cambia. Valor de marca TBD (ADR-0136, enmienda
+/// 2026-07-11): "Forge" es el placeholder actual — este es el punto ÚNICO donde
+/// se cambia, jamás horneado disperso.
+const String kCanvasName = 'Forge';
