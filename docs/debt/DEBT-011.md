@@ -1,0 +1,7 @@
+# DEBT-011 · Huecos de cobertura en `third-party-api-gateway` (#8)
+- **Severidad:** 🟡 Baja (test-coverage, no correctitud)
+- **Origen:** gate de QA con mutación en STORY-035 (10 mutantes sobrevivientes).
+- **Descripción:** dos rutas del cimiento #8 no las ejercita ninguna prueba: (a) la **ruta de reintento** del append atómico (`is_transient_write_conflict` + contador `attempt` + `WriteContention`) — como `pool.rs` usa `journal_mode=WAL` + `busy_timeout=5s`, los escritores concurrentes esperan el lock en vez de recibir "database is locked", así que el reintento es código vivo pero sin prueba que fuerce contención real; (b) en `revoke`, ningún test compara el `audit_hash` **recalculado** post-revocación contra su valor esperado (solo se verifica `audit_chain_hash`), así que si `revoke` dejara de recalcular el hash, no se cazaría.
+- **Impacto actual:** nulo de correctitud — la propiedad crítica (ningún evento se pierde bajo concurrencia real, con transacción atómica) SÍ está probada y la prueba discrimina la implementación correcta (quitar `BEGIN IMMEDIATE` la tumba 3/3). Es cobertura faltante, no un bug.
+- **Disparador de pago:** test de contención forzada (mock de `SQLITE_BUSY`) que ejercite reintento exitoso y agotamiento (`WriteContention`), + aserción de `audit_hash` cambiado en `revoke`. Barato; se pliega a la tanda de endurecimiento de tests o a la auditoría retroactiva.
+- **Estado:** Abierta.

@@ -2,7 +2,7 @@
 
 La deuda técnica deliberada es sana en greenfield — permite avanzar en el camino crítico sin frenar por cosas que aún no muerden, **siempre que quede registrada aquí con su causa, impacto y disparador de pago**.
 
-📖 **Registro canónico:** `docs/DEBT.md` (es el único lugar descubrible).
+📖 **Registro canónico:** `docs/DEBT.md` es el **índice** (una fila por deuda) y `docs/debt/DEBT-XXX.md` la **ficha completa** de cada una (patrón ADR). Es el único lugar descubrible.
 
 ---
 
@@ -11,6 +11,15 @@ La deuda técnica deliberada es sana en greenfield — permite avanzar en el cam
 **Un aplazamiento sin disparador escrito está olvidado.**
 
 > Si no está en `docs/DEBT.md` con causa raíz + disparador, no está rastreada.
+
+## Regla de Promoción (disparador cumplido)
+
+**Un disparador que se cumple y nadie promueve queda dormido — indistinguible de uno que aún no aplica.** Ese fue el fallo de DEBT-005 (2026-07-12): su disparador "al cerrar los backends del substrato" se cumplió, pero la deuda siguió viéndose 🟡 Baja y no saltó como "lo que sigue"; se recomendó el siguiente EPIC en su lugar.
+
+Por eso:
+1. **Al cerrar cualquier hito** (un substrato, una auditoría, una EPIC), es obligatorio **barrer `docs/DEBT.md` y evaluar cada disparador contra el estado nuevo.** Toda deuda cuyo disparador ese hito acaba de cumplir se **promueve**: se le sube la severidad si aplica, se marca el disparador como `✅ CUMPLIDO`, y se mueve al marcador de "Siguiente" en `PROGRESS.md`.
+2. **Al responder "¿qué sigue?"** no se contesta desde la lista de EPICs del ROADMAP. Primero se barre `DEBT.md` por disparadores cumplidos. **Una deuda que es gap de Definición de Terminado (falta la SVF / la conexión al Banco de Pruebas de ADR-0117) va ARRIBA del siguiente EPIC** — porque sin ella la feature no está Terminada.
+3. **Severidad honesta:** una deuda que bloquea la Definición de Terminado (superficie de verificación) NO es 🟡 Baja "cosmética"; es al menos 🟠 Media. 🟡 Baja se reserva para lo verdaderamente cosmético o sin impacto en correctitud NI en la verificabilidad por el propietario.
 
 ---
 
@@ -164,10 +173,12 @@ fn validate_consent(user_id: &str) -> Result<bool, Error> {
 | ¿Es causa raíz externa? | Sí | → DEBT-XXX |
 | ¿Puedes arreglarlo hoy si quisieras? | No | → DEBT-XXX |
 
-### 3. Registra en `docs/DEBT.md`
+### 3. Registra la deuda (índice + ficha)
+
+Crea la ficha en `docs/debt/DEBT-NNN.md` con la estructura completa, y añade una fila al índice `docs/DEBT.md` (`ID | Severidad | Resumen | Estado | Ficha`):
 
 ```markdown
-### DEBT-NNN · [Nombre corto]
+# DEBT-NNN · [Nombre corto]
 - **Severidad:** 🟡 Baja
 - **Origen:** STORY-YYY.
 - **Descripción:** [qué falta].

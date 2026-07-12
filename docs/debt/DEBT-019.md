@@ -1,0 +1,10 @@
+# DEBT-019 · Cobertura de mutación de la plomería EPIC-0 (`job`/`mcp_gateway`/`mcp_server`)
+- **Severidad:** 🟡 Baja (test-coverage, no correctitud) — misma naturaleza que DEBT-011/012/013 pero para la plomería de la Fundación.
+- **Origen:** gate de mutación del Tech-Lead sobre STORY-045/046 (2026-07-10): 20 mutantes `missed` + 2 `timeout` sobre `pool.rs`/`job.rs`/`persistence/mcp_gateway.rs`/`orchestrator/mcp_server.rs`/`domain/mcp_gateway.rs`.
+- **Descripción:** la **atomicidad** que STORY-046 añadió SÍ está cubierta (los mutantes del contador de reintento `+= → *=` en `record_result`/`record_decision` salen como **TIMEOUT** = no-terminación detectable; la integridad del append está cazada). Los sobrevivientes son de dos clases, ninguna es regresión de STORY-046:
+  1. **Killable, ligado al cambio (3):** fidelidad de la fila DEVUELTA por `JobRepository::update_progress` (`job.rs:466-468` — `updated_at_ns`/`audit_hash`/`audit_chain_hash` sin aserción sobre la fila devuelta). Análogo al test #3 del patrón dorado, pero en la ruta mutable.
+  2. **Ortogonal preexistente (17):** manejadores de herramientas MCP (`drasus_clock_now`/`jobs_list`/`jobs_submit`/`telemetry_latest` → `Ok(Default::default())`, `run_mcp_server` → `Ok(())`); comparaciones de lectura en `telemetry_latest` (`mcp_server.rs:316-317`); `institutional_tag_to_string` (`domain/mcp_gateway.rs:253`); impls `Display`/`Error` de `JobRepositoryError`; brazo `match JobState::Running` en `transition`. Son funciones que STORY-045/046 NO tocó — coverage de manejadores/lectura/boilerplate.
+- **Impacto actual:** nulo de correctitud (la propiedad crítica — atomicidad append, FK activas, triggers, `audit_chain_hash` NULL — SÍ está probada). Es cobertura faltante.
+- **Patrón de pago:** (1) test de fidelidad de fila devuelta en `update_progress`; (2) aserciones de resultado sobre los manejadores MCP + test de la comparación de `telemetry_latest`. Todos baratos; se pliegan a la tanda de retrofit de EPIC-0 junto a DEBT-018.
+- **Disparador de pago:** auditoría retroactiva EPIC-0 (misma ventana que DEBT-018) o Story de cobertura dedicada.
+- **Estado:** Abierta.

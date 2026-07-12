@@ -1,0 +1,7 @@
+# DEBT-017 · #3 `plan-tier-quota` — falta la cuota `MAX_CHILD_ACCOUNTS`
+- **Severidad:** 🔶 Media (extensión de catálogo pendiente; bloquea a #12/#14 para gatear la creación de cuentas hijas).
+- **Origen:** ADR-0149 (cimiento #14 `operator-roles`, 2026-07-07), banner 🔶 en `plan-tier-quota.md`. El código de STORY-029 no incluye este límite.
+- **Descripción:** añadir `MAX_CHILD_ACCOUNTS` al catálogo de planes — cuántas cuentas maestras hijas puede crear un fondo bajo `master-account-hierarchy` (#12), fijado **solo por el propietario de Drasus** según el tier, nunca por el fondo. Mismo mecanismo que `NOTIONAL_LIMIT`/activaciones máximas — un campo más del plan, no infraestructura nueva.
+- **Impacto actual:** nulo hoy (la creación de cuentas hijas — #12/#14 — aún no gatea contra cuota); necesario antes de #14.
+- **Disparador de pago:** ahora, junto con el retrabajo de #10, antes de commitear el substrato. Toca código sellado de #3 → Story dedicada + QA.
+- **Estado:** ✅ **Pagada** — [STORY-042](../execution/STORY-042-plan-tier-quota-max-child-accounts.md) (2026-07-07): `max_child_accounts` añadido al catálogo (migración `0009` in-situ + `CHECK >= 0`), `PlanCandidate`/`PlanSnapshot`/`PlanLimits` + sellado en `compute_plan_audit_hash`, sembrado por tier (FREE=`0`/PAID=`5`), expuesto en CLI. `0` válido, `< 0` rechazado. Subagente se estancó a la mitad; el TL completó el patrón. Auditoría TL + QA APTO por mutación (36/39; **0 sobrevivientes**).
