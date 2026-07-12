@@ -15,9 +15,9 @@
 -- Observables"). Por ADR-0141 ("PROHIBIDO usar el mismo nombre
 -- `event_sequence_id` para lo que es `row_version` y viceversa"), esta
 -- tabla usa `row_version` (concurrencia optimista) en vez de
--- `event_sequence_id UNIQUE`. El historial de cada cambio de plan se
--- audita en `audit_events` (feature `audit-log` ya existente, migración
--- 0002) -- esta tabla NO es su propio historial, solo el estado vigente.
+-- `event_sequence_id UNIQUE`. La integridad de cada cambio de plan se encadena
+-- en las columnas `audit_hash`/`audit_chain_hash` de la propia fila (hash-chain
+-- por fila); esta tabla NO emite a `audit_events`.
 --
 -- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", declarado
 -- en `docs/features/plan-tier-quota.md` §"Gobernanza y Estándares" y

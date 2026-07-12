@@ -20,9 +20,9 @@
 -- ("PROHIBIDO usar el mismo nombre `event_sequence_id` para lo que es
 -- `row_version` y viceversa"), esta tabla usa `row_version` (concurrencia
 -- optimista) en vez de `event_sequence_id UNIQUE` (ese patrón es solo para
--- tablas append-only). El historial de cada cambio de licencia se audita
--- en `audit_events` (feature `audit-log` ya existente, migración 0002) --
--- esta tabla NO es su propio historial, solo el estado vigente.
+-- tablas append-only). La integridad de cada cambio de licencia se encadena
+-- en las columnas `audit_hash`/`audit_chain_hash` de la propia fila (hash-chain
+-- por fila, igual que `central-identity`); esta tabla NO emite a `audit_events`.
 --
 -- Perfil ADR-0020 para esta tabla (Perfil D "Ops/Auditoría", declarado en
 -- `docs/features/licensing-system.md` §8 "Gobernanza y Estándares"):
