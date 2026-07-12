@@ -179,6 +179,7 @@ pub async fn is_titular(
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -187,9 +188,9 @@ mod tests {
         pool
     }
 
-    fn sample_identity() -> InstanceContinuityIdentity {
+    fn sample_identity(owner_id: &str) -> InstanceContinuityIdentity {
         InstanceContinuityIdentity {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-A".to_string(),
         }
@@ -202,7 +203,8 @@ mod tests {
     async fn take_encrypted_snapshot_persists_and_round_trips() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let identity = sample_identity(&owner_id);
 
         let fields = vec![
             BackupField { key: "strategy_name".to_string(), value: "mean-reversion-1".to_string() },
@@ -214,7 +216,7 @@ mod tests {
             .expect("tomar el snapshot debe tener éxito");
 
         assert_eq!(result.row.event_sequence_id, 1);
-        assert_eq!(result.row.owner_id, "owner-1");
+        assert_eq!(result.row.owner_id, owner_id);
 
         // El ciphertext nunca debe contener el secreto en claro (ni
         // codificado hex de forma reconocible) -- prueba indirecta de que
@@ -224,7 +226,7 @@ mod tests {
         // El delta filtrado (solo strategy_name) debe reconstruirse tras
         // el round-trip.
         let expected_plaintext = canonical_delta_bytes(&compute_backup_delta(&fields));
-        let round_trip_ok = round_trip_decrypts_to(&result.blob, "correct horse battery staple", "owner-1", &expected_plaintext)
+        let round_trip_ok = round_trip_decrypts_to(&result.blob, "correct horse battery staple", &owner_id, &expected_plaintext)
             .expect("el descifrado debe tener éxito con la clave correcta");
         assert!(round_trip_ok, "el round-trip debe recuperar el delta filtrado exacto");
     }
@@ -236,7 +238,8 @@ mod tests {
     async fn is_titular_reflects_the_persisted_custody_state() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let identity = sample_identity(&owner_id);
 
         assert!(
             !is_titular(&pool, &clock, &identity.owner_id, &identity.node_id).await.expect("consulta debe tener éxito"),

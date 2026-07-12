@@ -352,6 +352,7 @@ mod tests {
     use crate::domain::enriched_domain_events::{
         CapitalFlowPayload, CapitalFlowSign, OrderExecutedPayload, OrderSide,
     };
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -370,9 +371,9 @@ mod tests {
         })
     }
 
-    fn record_input(event: EnrichedDomainEvent, replicate: bool) -> RecordDomainEventInput {
+    fn record_input(owner_id: &str, event: EnrichedDomainEvent, replicate: bool) -> RecordDomainEventInput {
         RecordDomainEventInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-1".to_string(),
             process_id: "process-1".to_string(),
@@ -415,6 +416,27 @@ mod tests {
         assert!(sql.contains("STRICT"), "la tabla domain_events debe declararse STRICT");
     }
 
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `domain_events.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta -- un huérfano ya no
+    /// es un bug silencioso, la base de datos lo atrapa.
+    #[tokio::test]
+    async fn record_event_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = DomainEventRepository::new(&pool, &clock);
+
+        let result = repo
+            .record_event(record_input("cuenta-que-no-existe", capital_flow_event("acc-1", 100), true))
+            .await;
+
+        assert!(
+            matches!(result, Err(DomainEventRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
     // ── CRITERIO #6 (Orden §5): append-only -- UPDATE/DELETE rechazados ─────
 
     /// CRITERIO DE CIERRE: un `UPDATE` sobre `domain_events` es rechazado
@@ -424,10 +446,11 @@ mod tests {
     async fn update_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
         let row = repo
-            .record_event(record_input(capital_flow_event("acc-1", 100_000_000_000), true))
+            .record_event(record_input(&owner_id, capital_flow_event("acc-1", 100_000_000_000), true))
             .await
             .expect("registrar evento");
 
@@ -445,10 +468,11 @@ mod tests {
     async fn delete_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
         let row = repo
-            .record_event(record_input(capital_flow_event("acc-1", 100_000_000_000), true))
+            .record_event(record_input(&owner_id, capital_flow_event("acc-1", 100_000_000_000), true))
             .await
             .expect("registrar evento");
 
@@ -466,13 +490,14 @@ mod tests {
     async fn event_sequence_id_is_monotonic_across_inserts() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
-        let first = repo.record_event(record_input(capital_flow_event("acc-1", 100), true)).await.expect("primero");
+        let first = repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 100), true)).await.expect("primero");
         clock.tick();
-        let second = repo.record_event(record_input(capital_flow_event("acc-2", 200), true)).await.expect("segundo");
+        let second = repo.record_event(record_input(&owner_id, capital_flow_event("acc-2", 200), true)).await.expect("segundo");
         clock.tick();
-        let third = repo.record_event(record_input(capital_flow_event("acc-1", 300), true)).await.expect("tercero");
+        let third = repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 300), true)).await.expect("tercero");
 
         assert_eq!(first.event_sequence_id, 1);
         assert_eq!(second.event_sequence_id, 2);
@@ -486,9 +511,10 @@ mod tests {
     async fn duplicating_event_sequence_id_is_rejected_by_unique_constraint() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
-        repo.record_event(record_input(capital_flow_event("acc-1", 100), true))
+        repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 100), true))
             .await
             .expect("primer evento (event_sequence_id = 1)");
 
@@ -497,9 +523,10 @@ mod tests {
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, process_id, session_id, \
                 event_type, payload, replicate\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
                        'CAPITAL_FLOW', '{}', 1)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -513,15 +540,18 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_event_type() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO domain_events (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, process_id, session_id, \
                 event_type, payload, replicate\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
                        'UNKNOWN_EVENT', '{}', 1)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -534,15 +564,18 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_invalid_json_in_payload() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO domain_events (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, process_id, session_id, \
                 event_type, payload, replicate\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
                        'CAPITAL_FLOW', '{not valid json', 1)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -558,6 +591,7 @@ mod tests {
     async fn core_payload_is_valid_json_and_persists() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
         let event = EnrichedDomainEvent::OrderExecuted(OrderExecutedPayload {
@@ -577,7 +611,7 @@ mod tests {
         });
 
         let row = repo
-            .record_event(record_input(event, false))
+            .record_event(record_input(&owner_id, event, false))
             .await
             .expect("el payload del Core debe ser JSON válido y persistir");
 
@@ -599,13 +633,14 @@ mod tests {
     async fn audit_chain_hash_is_null_only_in_genesis_row_and_chains_afterwards() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
-        let first = repo.record_event(record_input(capital_flow_event("acc-1", 100), true)).await.expect("génesis");
+        let first = repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 100), true)).await.expect("génesis");
         clock.tick();
-        let second = repo.record_event(record_input(capital_flow_event("acc-2", 200), true)).await.expect("segundo");
+        let second = repo.record_event(record_input(&owner_id, capital_flow_event("acc-2", 200), true)).await.expect("segundo");
         clock.tick();
-        let third = repo.record_event(record_input(capital_flow_event("acc-1", 300), true)).await.expect("tercero");
+        let third = repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 300), true)).await.expect("tercero");
 
         assert_eq!(first.audit_chain_hash, None, "la fila génesis debe tener audit_chain_hash NULL");
         assert_eq!(second.audit_chain_hash, Some(first.audit_hash.clone()), "debe encadenar a la primera");
@@ -641,6 +676,7 @@ mod tests {
         // las filas comparten timestamp, lo cual es válido -- el orden lo
         // fija `event_sequence_id`, no el reloj.
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner-concurrente@example.com").await;
 
         const N: i64 = 16;
 
@@ -650,10 +686,11 @@ mod tests {
         for i in 0..N {
             let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = DomainEventRepository::new(&pool_c, clock_c.as_ref());
                 repo.record_event(RecordDomainEventInput {
-                    owner_id: "owner-concurrente".to_string(),
+                    owner_id: owner_id_c,
                     institutional_tag: "DRASUS_LOCAL".to_string(),
                     node_id: "node-1".to_string(),
                     process_id: "process-1".to_string(),
@@ -745,6 +782,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -779,7 +822,7 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = DomainEventRepository::new(&repo_pool, &clock);
 
-        let result = repo.record_event(record_input(capital_flow_event("acc-contention", 100), true)).await;
+        let result = repo.record_event(record_input(&owner_id, capital_flow_event("acc-contention", 100), true)).await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
 
@@ -806,6 +849,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -816,10 +861,11 @@ mod tests {
                     id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                     owner_id, institutional_tag, node_id, process_id, session_id, \
                     event_type, payload, replicate\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'DRASUS_LOCAL', 'node-1', 'process-1', NULL, \
                            'CAPITAL_FLOW', '{}', 1)",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -854,11 +900,12 @@ mod tests {
     async fn record_event_returned_row_matches_the_persisted_row_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DomainEventRepository::new(&pool, &clock);
 
-        let first = repo.record_event(record_input(capital_flow_event("acc-1", 100), true)).await.expect("primer evento");
+        let first = repo.record_event(record_input(&owner_id, capital_flow_event("acc-1", 100), true)).await.expect("primer evento");
         clock.tick();
-        let second = repo.record_event(record_input(capital_flow_event("acc-2", 200), false)).await.expect("segundo evento");
+        let second = repo.record_event(record_input(&owner_id, capital_flow_event("acc-2", 200), false)).await.expect("segundo evento");
 
         let chain = repo.load_chain().await.expect("cargar cadena");
         assert_eq!(

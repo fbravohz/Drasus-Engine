@@ -653,6 +653,7 @@ impl JobExecutor {
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     /// ADR-0020 "Gobernanza y Estándares": identidad mínima para
@@ -668,12 +669,12 @@ mod tests {
         }
     }
 
-    fn sample_new_job(job_type: &str) -> NewJob {
+    fn sample_new_job(job_type: &str, owner_id: &str) -> NewJob {
         NewJob {
             user_id: "user-1".to_string(),
             job_type: job_type.to_string(),
             parameters: "{\"strategy_id\":123}".to_string(),
-            owner_id: Some("owner-1".to_string()),
+            owner_id: Some(owner_id.to_string()),
             access_token_id: None,
             session_id: None,
             node_id: None,
@@ -718,6 +719,9 @@ mod tests {
             migrate(&pool).await.expect("migrate (pre-crash)");
 
             let clock: Arc<dyn Clock> = Arc::new(DeterministicClock::new(1_000, 100));
+            // Cuenta sembrada (FK owner_id->accounts): los jobs de este test
+            // llevan owner_id no nulo, así que deben referenciar una cuenta real.
+            let owner_id = seed_account(&pool, clock.as_ref(), "owner1@example.com").await;
             let executor = JobExecutor::new(
                 pool.clone(),
                 clock,
@@ -734,12 +738,12 @@ mod tests {
             assert!(pre_recovery.is_empty(), "fresh database has nothing to recover");
 
             // El job A queda QUEUED (nunca se toma antes del "crash").
-            let queued_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit queued job");
+            let queued_job_id = executor.submit(sample_new_job("BACKTEST", &owner_id)).await.expect("submit queued job");
 
             // El job B se lleva a RUNNING y se deja ahí -- este es el
             // job que un worker en vuelo habría estado ejecutando en el
             // momento del crash.
-            let running_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit running job");
+            let running_job_id = executor.submit(sample_new_job("BACKTEST", &owner_id)).await.expect("submit running job");
             {
                 let repo = executor.repo();
                 let job = repo.find(&running_job_id).await.expect("find running job").expect("job exists");
@@ -750,7 +754,7 @@ mod tests {
 
             // El job C completa normalmente antes del crash -- la
             // recuperación debe dejarlo intacto (no está QUEUED ni RUNNING).
-            let completed_job_id = executor.submit(sample_new_job("BACKTEST")).await.expect("submit completed job");
+            let completed_job_id = executor.submit(sample_new_job("BACKTEST", &owner_id)).await.expect("submit completed job");
             {
                 let repo = executor.repo();
                 let job = repo

@@ -575,6 +575,7 @@ fn row_to_custody(row: sqlx::sqlite::SqliteRow) -> CustodyRow {
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -583,9 +584,9 @@ mod tests {
         pool
     }
 
-    fn sample_backup_input(node_id: &str) -> RecordBackupInput {
+    fn sample_backup_input(owner_id: &str, node_id: &str) -> RecordBackupInput {
         RecordBackupInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: node_id.to_string(),
             snapshot_at_ns: 900,
@@ -662,14 +663,56 @@ mod tests {
         assert!(sql.contains("STRICT"), "la tabla custody_state debe declararse STRICT");
     }
 
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `instance_backups.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta.
+    #[tokio::test]
+    async fn record_backup_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = BackupRegistryRepository::new(&pool, &clock);
+
+        let result = repo.record_backup(sample_backup_input("cuenta-que-no-existe", "node-1")).await;
+
+        assert!(
+            matches!(result, Err(BackupRegistryRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
+    /// La FK física `custody_state.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta.
+    #[tokio::test]
+    async fn claim_titular_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = CustodyRepository::new(&pool, &clock);
+
+        let result = repo
+            .claim_titular(ClaimTitularInput {
+                owner_id: "cuenta-que-no-existe".to_string(),
+                institutional_tag: "DRASUS_LOCAL".to_string(),
+                claiming_node_id: "node-A".to_string(),
+                expected_epoch: 999,
+            })
+            .await;
+
+        assert!(
+            matches!(result, Err(CustodyRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
     // ── CRITERIO #7 (Orden §5): append-only -- UPDATE/DELETE rechazados ─────
 
     #[tokio::test]
     async fn update_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = BackupRegistryRepository::new(&pool, &clock);
-        let row = repo.record_backup(sample_backup_input("node-1")).await.expect("registrar respaldo");
+        let row = repo.record_backup(sample_backup_input(&owner_id, "node-1")).await.expect("registrar respaldo");
 
         let result = sqlx::query("UPDATE instance_backups SET blob_hash = 'otro' WHERE id = ?")
             .bind(&row.id)
@@ -682,8 +725,9 @@ mod tests {
     async fn delete_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = BackupRegistryRepository::new(&pool, &clock);
-        let row = repo.record_backup(sample_backup_input("node-1")).await.expect("registrar respaldo");
+        let row = repo.record_backup(sample_backup_input(&owner_id, "node-1")).await.expect("registrar respaldo");
 
         let result = sqlx::query("DELETE FROM instance_backups WHERE id = ?").bind(&row.id).execute(&pool).await;
         assert!(result.is_err(), "DELETE sobre instance_backups debe ser rechazado por el trigger");
@@ -693,15 +737,17 @@ mod tests {
     async fn duplicating_event_sequence_id_is_rejected_by_unique_constraint() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = BackupRegistryRepository::new(&pool, &clock);
-        repo.record_backup(sample_backup_input("node-1")).await.expect("primer respaldo (event_sequence_id = 1)");
+        repo.record_backup(sample_backup_input(&owner_id, "node-1")).await.expect("primer respaldo (event_sequence_id = 1)");
 
         let duplicate = sqlx::query(
             "INSERT INTO instance_backups (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, snapshot_at, blob_hash, blob_size_bytes, nonce_hex\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', 0, 'h', 1, 'n')",
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', 0, 'h', 1, 'n')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -712,11 +758,12 @@ mod tests {
     async fn audit_chain_hash_is_null_only_in_genesis_row_and_chains_afterwards() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = BackupRegistryRepository::new(&pool, &clock);
 
-        let first = repo.record_backup(sample_backup_input("node-1")).await.expect("génesis");
+        let first = repo.record_backup(sample_backup_input(&owner_id, "node-1")).await.expect("génesis");
         clock.tick();
-        let second = repo.record_backup(sample_backup_input("node-2")).await.expect("segundo");
+        let second = repo.record_backup(sample_backup_input(&owner_id, "node-2")).await.expect("segundo");
 
         assert_eq!(first.audit_chain_hash, None);
         assert_eq!(second.audit_chain_hash, Some(first.audit_hash.clone()));
@@ -743,16 +790,18 @@ mod tests {
         migrate(&pool).await.expect("migrar");
 
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner-concurrente@example.com").await;
         const N: i64 = 16;
 
         let mut handles = Vec::new();
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = BackupRegistryRepository::new(&pool_c, clock_c.as_ref());
                 repo.record_backup(RecordBackupInput {
-                    owner_id: "owner-concurrente".to_string(),
+                    owner_id: owner_id_c,
                     institutional_tag: "DRASUS_LOCAL".to_string(),
                     node_id: format!("node-{i}"),
                     snapshot_at_ns: 900 + i,
@@ -807,11 +856,12 @@ mod tests {
     async fn bootstrap_claim_always_succeeds_for_a_new_owner() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = CustodyRepository::new(&pool, &clock);
 
         let row = repo
             .claim_titular(ClaimTitularInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 claiming_node_id: "node-A".to_string(),
                 expected_epoch: 999, // ignorado en bootstrap
@@ -836,11 +886,12 @@ mod tests {
     async fn two_claims_from_the_same_epoch_only_one_wins() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = CustodyRepository::new(&pool, &clock);
 
         // Estado inicial: node-A es titular en el epoch 3 (simulado vía
         // seed_initial_state -- equivalente a "esta cuenta ya existía").
-        repo.seed_initial_state("owner-1", "DRASUS_LOCAL", "node-A", 3)
+        repo.seed_initial_state(&owner_id, "DRASUS_LOCAL", "node-A", 3)
             .await
             .expect("sembrar estado inicial");
 
@@ -849,7 +900,7 @@ mod tests {
         clock.tick();
         let winner = repo
             .claim_titular(ClaimTitularInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 claiming_node_id: "node-B".to_string(),
                 expected_epoch: 3,
@@ -862,7 +913,7 @@ mod tests {
         clock.tick();
         let loser = repo
             .claim_titular(ClaimTitularInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 claiming_node_id: "node-C".to_string(),
                 expected_epoch: 3, // sigue creyendo que el epoch vigente es 3
@@ -871,14 +922,14 @@ mod tests {
 
         assert!(
             matches!(
-                loser,
-                Err(CustodyRepositoryError::CustodyConflict { ref owner_id, expected_epoch: 3 }) if owner_id == "owner-1"
+                &loser,
+                Err(CustodyRepositoryError::CustodyConflict { owner_id: conflict_owner, expected_epoch: 3 }) if conflict_owner == &owner_id
             ),
             "el segundo reclamo desde el epoch 3 debe dar CustodyConflict, no éxito silencioso; fue: {loser:?}"
         );
 
         // La fila en disco conserva al GANADOR (node-B), no al perdedor.
-        let reloaded = repo.find_by_owner("owner-1").await.expect("releer").expect("existe");
+        let reloaded = repo.find_by_owner(&owner_id).await.expect("releer").expect("existe");
         assert_eq!(reloaded.titular_node_id, "node-B");
         assert_eq!(reloaded.custody_epoch, 4);
     }
@@ -891,14 +942,15 @@ mod tests {
     async fn reclaiming_ones_own_titularity_advances_the_epoch() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = CustodyRepository::new(&pool, &clock);
 
-        repo.seed_initial_state("owner-1", "DRASUS_LOCAL", "node-A", 3).await.expect("sembrar");
+        repo.seed_initial_state(&owner_id, "DRASUS_LOCAL", "node-A", 3).await.expect("sembrar");
 
         clock.tick();
         let row = repo
             .claim_titular(ClaimTitularInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 claiming_node_id: "node-A".to_string(),
                 expected_epoch: 3,
@@ -945,6 +997,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -979,7 +1037,7 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = BackupRegistryRepository::new(&repo_pool, &clock);
 
-        let result = repo.record_backup(sample_backup_input("node-contention")).await;
+        let result = repo.record_backup(sample_backup_input(&owner_id, "node-contention")).await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
 
@@ -1006,6 +1064,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -1015,9 +1075,10 @@ mod tests {
                 "INSERT INTO instance_backups (\
                     id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                     owner_id, institutional_tag, node_id, snapshot_at, blob_hash, blob_size_bytes, nonce_hex\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'DRASUS_LOCAL', 'node-1', 0, 'h', 1, 'n')",
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'DRASUS_LOCAL', 'node-1', 0, 'h', 1, 'n')",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -1052,11 +1113,12 @@ mod tests {
     async fn record_backup_returned_row_matches_the_persisted_row_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = BackupRegistryRepository::new(&pool, &clock);
 
-        let first = repo.record_backup(sample_backup_input("node-1")).await.expect("primer respaldo");
+        let first = repo.record_backup(sample_backup_input(&owner_id, "node-1")).await.expect("primer respaldo");
         clock.tick();
-        let second = repo.record_backup(sample_backup_input("node-2")).await.expect("segundo respaldo");
+        let second = repo.record_backup(sample_backup_input(&owner_id, "node-2")).await.expect("segundo respaldo");
 
         let chain = repo.load_chain().await.expect("cargar cadena");
         assert_eq!(

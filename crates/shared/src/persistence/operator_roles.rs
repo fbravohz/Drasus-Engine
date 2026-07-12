@@ -1283,6 +1283,7 @@ mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
     use crate::domain::operator_roles::CAPABILITY_MANAGE_ROLES;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -1358,10 +1359,11 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = OperatorRoleRepository::new(&pool, &clock);
 
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
         let (role, event) = repo
             .create_role(
                 NewOperatorRole {
-                    owner_id: "acc-1".to_string(),
+                    owner_id: owner_id.clone(),
                     institutional_tag: "LIVE".to_string(),
                     role_name: "Analyst".to_string(),
                     capability_matrix: analyst_matrix(),
@@ -1387,9 +1389,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = OperatorRoleRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
 
         repo.create_role(
-            NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
+            NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
             "node-A",
         )
         .await
@@ -1397,7 +1400,7 @@ mod tests {
 
         let dup = repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: admin_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: admin_matrix() },
                 "node-A",
             )
             .await;
@@ -1411,13 +1414,16 @@ mod tests {
     async fn seed_single_admin<'a>(
         pool: &'a SqlitePool,
         clock: &'a DeterministicClock,
-    ) -> (OperatorRoleRepository<'a>, OperatorAssignmentRepository<'a>, OperatorRoleRow, OperatorAssignmentRow) {
+    ) -> (OperatorRoleRepository<'a>, OperatorAssignmentRepository<'a>, String, OperatorRoleRow, OperatorAssignmentRow) {
         let role_repo = OperatorRoleRepository::new(pool, clock);
         let assignment_repo = OperatorAssignmentRepository::new(pool, clock);
+        // Cuenta sembrada: la FK owner_id -> accounts(id) exige que exista
+        // antes de crear el rol/asignación que la referencian.
+        let owner_id = seed_account(pool, clock, "acc1@example.com").await;
 
         let (admin_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Admin".to_string(), capability_matrix: admin_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Admin".to_string(), capability_matrix: admin_matrix() },
                 "node-A",
             )
             .await
@@ -1426,7 +1432,7 @@ mod tests {
         let (admin_assignment, _) = assignment_repo
             .set_assignment(
                 SetAssignmentInput {
-                    owner_id: "acc-1".to_string(),
+                    owner_id: owner_id.clone(),
                     institutional_tag: "LIVE".to_string(),
                     access_token_id: "tok-owner".to_string(),
                     operator_type: OperatorType::Human,
@@ -1439,7 +1445,7 @@ mod tests {
             .await
             .expect("asignar admin");
 
-        (role_repo, assignment_repo, admin_role, admin_assignment)
+        (role_repo, assignment_repo, owner_id, admin_role, admin_assignment)
     }
 
     /// CRITERIO DE CIERRE: revocar la asignación del ÚNICO admin se
@@ -1448,7 +1454,7 @@ mod tests {
     async fn revoking_the_only_admin_assignment_is_rejected_and_writes_nothing() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (_, assignment_repo, _, admin_assignment) = seed_single_admin(&pool, &clock).await;
+        let (_, assignment_repo, owner_id, _, admin_assignment) = seed_single_admin(&pool, &clock).await;
 
         let event_repo = OperatorRoleEventRepository::new(&pool, &clock);
         let events_before = event_repo.load_chain().await.expect("cargar cadena").len();
@@ -1458,7 +1464,7 @@ mod tests {
         assert!(matches!(result, Err(OperatorRoleError::LastAdmin(_))), "resultado fue: {result:?}");
 
         let reloaded = assignment_repo
-            .find_assignment("acc-1", "tok-owner")
+            .find_assignment(&owner_id, "tok-owner")
             .await
             .expect("releer")
             .expect("debe seguir existiendo");
@@ -1474,12 +1480,12 @@ mod tests {
     async fn reassigning_one_of_two_admins_succeeds() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, assignment_repo, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, assignment_repo, owner_id, admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         clock.tick();
         let (analyst_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
                 "node-A",
             )
             .await
@@ -1489,7 +1495,7 @@ mod tests {
         assignment_repo
             .set_assignment(
                 SetAssignmentInput {
-                    owner_id: "acc-1".to_string(),
+                    owner_id: owner_id.clone(),
                     institutional_tag: "LIVE".to_string(),
                     access_token_id: "tok-second-admin".to_string(),
                     operator_type: OperatorType::Human,
@@ -1506,7 +1512,7 @@ mod tests {
         let reassigned = assignment_repo
             .set_assignment(
                 SetAssignmentInput {
-                    owner_id: "acc-1".to_string(),
+                    owner_id: owner_id.clone(),
                     institutional_tag: "LIVE".to_string(),
                     access_token_id: "tok-owner".to_string(),
                     operator_type: OperatorType::Human,
@@ -1526,7 +1532,7 @@ mod tests {
     async fn stripping_manage_roles_from_the_only_admin_role_is_rejected() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, _, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         let mut stripped = admin_matrix();
         stripped.set(CAPABILITY_MANAGE_ROLES, false);
@@ -1542,7 +1548,7 @@ mod tests {
     async fn revoking_the_only_admin_role_is_rejected() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, _, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         clock.tick();
         let result = role_repo.revoke_role(&admin_role, "node-A", None).await;
@@ -1557,11 +1563,12 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let role_repo = OperatorRoleRepository::new(&pool, &clock);
         let assignment_repo = OperatorAssignmentRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
 
         // Dos admins para que revocar uno de los roles no viole el invariante.
         let (admin_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Admin".to_string(), capability_matrix: admin_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Admin".to_string(), capability_matrix: admin_matrix() },
                 "node-A",
             )
             .await
@@ -1569,7 +1576,7 @@ mod tests {
         clock.tick();
         let (spare_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "SpareAdmin".to_string(), capability_matrix: admin_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "SpareAdmin".to_string(), capability_matrix: admin_matrix() },
                 "node-A",
             )
             .await
@@ -1577,7 +1584,7 @@ mod tests {
         clock.tick();
         assignment_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-1".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-1".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -1585,7 +1592,7 @@ mod tests {
         clock.tick();
         assignment_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -1614,7 +1621,7 @@ mod tests {
         let pool = migrated_pool().await;
         sqlx::query("PRAGMA foreign_keys = ON").execute(&pool).await.expect("activar FKs");
         let clock = DeterministicClock::new(1_000, 100);
-        let (_, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (_, _, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         let result = sqlx::query("DELETE FROM operator_roles WHERE id = ?").bind(&admin_role.id).execute(&pool).await;
         assert!(result.is_err(), "DELETE físico de un rol con asignación viva debe ser rechazado por la FK RESTRICT");
@@ -1639,10 +1646,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let event_repo = OperatorRoleEventRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
 
         let row = event_repo
             .record_event(RecordOperatorRoleEventInput {
-                owner_id: "acc-1".to_string(),
+                owner_id,
                 institutional_tag: "LIVE".to_string(),
                 node_id: "node-A".to_string(),
                 compliance_status_id: None,
@@ -1665,10 +1673,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let event_repo = OperatorRoleEventRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
 
         let row = event_repo
             .record_event(RecordOperatorRoleEventInput {
-                owner_id: "acc-1".to_string(),
+                owner_id,
                 institutional_tag: "LIVE".to_string(),
                 node_id: "node-A".to_string(),
                 compliance_status_id: None,
@@ -1704,20 +1713,24 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let role_repo = OperatorRoleRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
         let (role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
                 "node-A",
             )
             .await
             .expect("crear rol");
 
+        // owner_id sembrado (FK válida) bindeado vía `?` para que la ÚNICA
+        // violación sea el CHECK de operator_type, no la FK.
         let result = sqlx::query(
             "INSERT INTO operator_assignments (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
                 owner_id, institutional_tag, access_token_id, operator_type, role_id, status\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'acc-1', 'LIVE', 'tok-1', 'ROBOT', ?, 'ACTIVE')",
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'LIVE', 'tok-1', 'ROBOT', ?, 'ACTIVE')",
         )
+        .bind(&owner_id)
         .bind(&role.id)
         .execute(&pool)
         .await;
@@ -1737,16 +1750,22 @@ mod tests {
         migrate(&pool).await.expect("migrar");
 
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        // Una sola cuenta sembrada (FK owner_id->accounts): los 16 escritores
+        // comparten owner_id -- el ledger es append-only y admite owner
+        // repetido; lo que este test ejerce es la secuencia densa bajo
+        // concurrencia, no owners distintos.
+        let owner_id = seed_account(&pool, clock.as_ref(), "acc1@example.com").await;
         const N: i64 = 16;
 
         let mut handles = Vec::new();
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = OperatorRoleEventRepository::new(&pool_c, clock_c.as_ref());
                 repo.record_event(RecordOperatorRoleEventInput {
-                    owner_id: format!("owner-{i}"),
+                    owner_id: owner_id_c,
                     institutional_tag: "LIVE".to_string(),
                     node_id: format!("node-{i}"),
                     compliance_status_id: None,
@@ -1835,15 +1854,20 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        // owner_id sembrado (FK válida): la primera fila debe INSERTARSE con
+        // éxito para que la SEGUNDA choque con la PK, no con la FK.
+        let owner_id = seed_account(&pool, &clock, "acc1@example.com").await;
 
         let insert_with_id_dup = |event_sequence_id: i64| {
             sqlx::query(
                 "INSERT INTO operator_role_events \
                  (id, created_at, updated_at, audit_hash, event_sequence_id, owner_id, \
                   institutional_tag, node_id, change_type, subject_ref) \
-                 VALUES ('dup-id', 1, 1, 'h', ?, 'o', 'LIVE', 'n', 'ROLE_CREATED', 'role-1')",
+                 VALUES ('dup-id', 1, 1, 'h', ?, ?, 'LIVE', 'n', 'ROLE_CREATED', 'role-1')",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -1868,7 +1892,7 @@ mod tests {
     async fn update_role_matrix_returned_row_reflects_new_hash_chain_and_timestamp() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, _, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         assert_eq!(admin_role.updated_at_ns, 1_000, "precondición: la fila génesis nace en el now inicial");
         assert!(admin_role.audit_chain_hash.is_none(), "precondición: la fila génesis no encadena");
@@ -1899,12 +1923,12 @@ mod tests {
     async fn set_assignment_returned_row_reflects_new_hash_chain_and_timestamp_on_reassignment() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, assignment_repo, admin_role, first_assignment) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, assignment_repo, owner_id, admin_role, first_assignment) = seed_single_admin(&pool, &clock).await;
 
         clock.tick();
         let (spare_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "SpareAdmin".to_string(), capability_matrix: admin_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "SpareAdmin".to_string(), capability_matrix: admin_matrix() },
                 "node-A",
             )
             .await
@@ -1912,7 +1936,7 @@ mod tests {
         clock.tick();
         assignment_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -1923,7 +1947,7 @@ mod tests {
         analyst.set("execute.send_order", false);
         let (analyst_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst },
                 "node-A",
             )
             .await
@@ -1935,7 +1959,7 @@ mod tests {
                 // operator_type Human -> Agent: DISTINTO del valor previo, para
                 // que el campo devuelto discrimine (si se borrara de la
                 // proyección, caería al Human previo vía `..current`).
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-owner".to_string(), operator_type: OperatorType::Agent, role_id: analyst_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-owner".to_string(), operator_type: OperatorType::Agent, role_id: analyst_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -1965,21 +1989,21 @@ mod tests {
     async fn set_assignment_reactivates_a_revoked_operator_returning_active_status() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, assignment_repo, _admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, assignment_repo, owner_id, _admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         // Operador NO admin: revocarlo y reactivarlo no toca el invariante
         // "último admin en pie" (el admin `tok-owner` permanece).
         clock.tick();
         let (analyst_role, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Analyst".to_string(), capability_matrix: analyst_matrix() },
                 "node-A",
             )
             .await
             .expect("crear rol analyst");
 
         let analyst_input = || SetAssignmentInput {
-            owner_id: "acc-1".to_string(),
+            owner_id: owner_id.clone(),
             institutional_tag: "LIVE".to_string(),
             access_token_id: "tok-analyst".to_string(),
             operator_type: OperatorType::Human,
@@ -2020,7 +2044,7 @@ mod tests {
     async fn update_role_matrix_from_stale_version_conflicts_instead_of_overwriting() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, _, _, admin_role, _) = seed_single_admin(&pool, &clock).await;
         let stale_view = admin_role.clone();
 
         clock.tick();
@@ -2096,21 +2120,24 @@ mod tests {
     }
 
     /// Datos de un rol admin listos para sembrar en un test.
-    fn new_admin_role(name: &str) -> NewOperatorRole {
-        NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: name.to_string(), capability_matrix: admin_matrix() }
+    fn new_admin_role(owner_id: &str, name: &str) -> NewOperatorRole {
+        NewOperatorRole { owner_id: owner_id.to_string(), institutional_tag: "LIVE".to_string(), role_name: name.to_string(), capability_matrix: admin_matrix() }
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn create_role_exhausts_max_attempts_under_sustained_write_lock() {
-        let (_dir, url, _setup) = contention_fixture().await;
+        let (_dir, url, setup) = contention_fixture().await;
         let clock = DeterministicClock::new(1_000, 100);
+        // Cuenta sembrada sobre el pool migrado ANTES de tomar el lock -- no
+        // interfiere con el escenario de contención de abajo.
+        let owner_id = seed_account(&setup, &clock, "acc1@example.com").await;
 
         let lock_pool = immediate_pool(&url).await;
         let lock_tx = lock_pool.begin_with("BEGIN IMMEDIATE").await.expect("tomar el lock de escritura");
 
         let repo_pool = immediate_pool(&url).await;
         let repo = OperatorRoleRepository::new(&repo_pool, &clock);
-        let result = repo.create_role(new_admin_role("Admin"), "node-A").await;
+        let result = repo.create_role(new_admin_role(&owner_id, "Admin"), "node-A").await;
 
         drop(lock_tx);
         assert_exhausted_contention(result);
@@ -2120,9 +2147,10 @@ mod tests {
     async fn update_role_matrix_exhausts_max_attempts_under_sustained_write_lock() {
         let (_dir, url, setup) = contention_fixture().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&setup, &clock, "acc1@example.com").await;
 
         let setup_repo = OperatorRoleRepository::new(&setup, &clock);
-        let (admin_role, _) = setup_repo.create_role(new_admin_role("Admin"), "node-A").await.expect("sembrar rol admin");
+        let (admin_role, _) = setup_repo.create_role(new_admin_role(&owner_id, "Admin"), "node-A").await.expect("sembrar rol admin");
 
         let lock_pool = immediate_pool(&url).await;
         let lock_tx = lock_pool.begin_with("BEGIN IMMEDIATE").await.expect("tomar el lock de escritura");
@@ -2142,12 +2170,13 @@ mod tests {
         let (_dir, url, setup) = contention_fixture().await;
         let clock = DeterministicClock::new(1_000, 100);
 
+        let owner_id = seed_account(&setup, &clock, "acc1@example.com").await;
         let setup_role_repo = OperatorRoleRepository::new(&setup, &clock);
         let setup_assign_repo = OperatorAssignmentRepository::new(&setup, &clock);
-        let (admin_role, _) = setup_role_repo.create_role(new_admin_role("Admin"), "node-A").await.expect("admin");
+        let (admin_role, _) = setup_role_repo.create_role(new_admin_role(&owner_id, "Admin"), "node-A").await.expect("admin");
         setup_assign_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-owner".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-owner".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -2155,7 +2184,7 @@ mod tests {
         // Rol desechable a revocar -- revocarlo deja el admin en pie.
         let (spare_role, _) = setup_role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Disposable".to_string(), capability_matrix: analyst_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Disposable".to_string(), capability_matrix: analyst_matrix() },
                 "node-A",
             )
             .await
@@ -2176,9 +2205,10 @@ mod tests {
     async fn set_assignment_exhausts_max_attempts_under_sustained_write_lock() {
         let (_dir, url, setup) = contention_fixture().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&setup, &clock, "acc1@example.com").await;
 
         let setup_repo = OperatorRoleRepository::new(&setup, &clock);
-        let (admin_role, _) = setup_repo.create_role(new_admin_role("Admin"), "node-A").await.expect("sembrar admin");
+        let (admin_role, _) = setup_repo.create_role(new_admin_role(&owner_id, "Admin"), "node-A").await.expect("sembrar admin");
 
         let lock_pool = immediate_pool(&url).await;
         let lock_tx = lock_pool.begin_with("BEGIN IMMEDIATE").await.expect("tomar el lock de escritura");
@@ -2187,7 +2217,7 @@ mod tests {
         let repo = OperatorAssignmentRepository::new(&repo_pool, &clock);
         let result = repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-new".to_string(), operator_type: OperatorType::Agent, role_id: admin_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-new".to_string(), operator_type: OperatorType::Agent, role_id: admin_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await;
@@ -2200,21 +2230,22 @@ mod tests {
     async fn revoke_assignment_exhausts_max_attempts_under_sustained_write_lock() {
         let (_dir, url, setup) = contention_fixture().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&setup, &clock, "acc1@example.com").await;
 
         let setup_role_repo = OperatorRoleRepository::new(&setup, &clock);
         let setup_assign_repo = OperatorAssignmentRepository::new(&setup, &clock);
-        let (admin_role, _) = setup_role_repo.create_role(new_admin_role("Admin"), "node-A").await.expect("admin");
+        let (admin_role, _) = setup_role_repo.create_role(new_admin_role(&owner_id, "Admin"), "node-A").await.expect("admin");
         setup_assign_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-1".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-1".to_string(), operator_type: OperatorType::Human, role_id: admin_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
             .expect("primer admin");
-        let (spare_role, _) = setup_role_repo.create_role(new_admin_role("SpareAdmin"), "node-A").await.expect("spare admin role");
+        let (spare_role, _) = setup_role_repo.create_role(new_admin_role(&owner_id, "SpareAdmin"), "node-A").await.expect("spare admin role");
         let (spare_assignment, _) = setup_assign_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -2240,14 +2271,14 @@ mod tests {
     async fn revoke_role_returned_row_reflects_revoked_status_chain_and_row_version() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, _, _admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, _, owner_id, _admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         // Rol desechable (no admin, sin asignación): revocarlo no toca el
         // invariante "último admin en pie".
         clock.tick(); // -> 1_100
         let (disposable, _) = role_repo
             .create_role(
-                NewOperatorRole { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), role_name: "Disposable".to_string(), capability_matrix: analyst_matrix() },
+                NewOperatorRole { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), role_name: "Disposable".to_string(), capability_matrix: analyst_matrix() },
                 "node-A",
             )
             .await
@@ -2273,15 +2304,15 @@ mod tests {
     async fn revoke_assignment_returned_row_reflects_revoked_status_chain_and_row_version() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (role_repo, assignment_repo, _admin_role, _) = seed_single_admin(&pool, &clock).await;
+        let (role_repo, assignment_repo, owner_id, _admin_role, _) = seed_single_admin(&pool, &clock).await;
 
         // Segundo admin para que revocar UNA asignación no viole el invariante.
         clock.tick(); // -> 1_100
-        let (spare_role, _) = role_repo.create_role(new_admin_role("SpareAdmin"), "node-A").await.expect("crear spare admin");
+        let (spare_role, _) = role_repo.create_role(new_admin_role(&owner_id, "SpareAdmin"), "node-A").await.expect("crear spare admin");
         clock.tick(); // -> 1_200
         let (spare_assignment, _) = assignment_repo
             .set_assignment(
-                SetAssignmentInput { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
+                SetAssignmentInput { owner_id: owner_id.clone(), institutional_tag: "LIVE".to_string(), access_token_id: "tok-2".to_string(), operator_type: OperatorType::Human, role_id: spare_role.id.clone() },
                 "node-A", None, OperatorRoleChangeType::AssignmentSet,
             )
             .await
@@ -2311,10 +2342,10 @@ mod tests {
     async fn load_assignments_returns_the_created_assignment_not_empty() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let (_, _, admin_role, admin_assignment) = seed_single_admin(&pool, &clock).await;
+        let (_, _, owner_id, admin_role, admin_assignment) = seed_single_admin(&pool, &clock).await;
 
         let repo = OperatorAssignmentRepository::new(&pool, &clock);
-        let all = repo.load_assignments("acc-1").await.expect("cargar asignaciones");
+        let all = repo.load_assignments(&owner_id).await.expect("cargar asignaciones");
 
         assert_eq!(all.len(), 1, "debe devolver la asignación creada, nunca un vector vacío");
         assert_eq!(all[0].access_token_id, admin_assignment.access_token_id, "debe traer el operador correcto");

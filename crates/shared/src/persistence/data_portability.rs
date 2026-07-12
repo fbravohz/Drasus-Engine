@@ -591,6 +591,7 @@ fn row_to_request(
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -608,9 +609,9 @@ mod tests {
         }
     }
 
-    fn sample_request_input(request_group_id: &str, status: RequestStatus) -> RecordDataPortabilityRequestInput {
+    fn sample_request_input(owner_id: &str, request_group_id: &str, status: RequestStatus) -> RecordDataPortabilityRequestInput {
         RecordDataPortabilityRequestInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "LIVE".to_string(),
             node_id: "node-A".to_string(),
             compliance_status_id: None,
@@ -732,14 +733,36 @@ mod tests {
 
     // ── data_portability_requests: append-only, secuencia, estado vigente ──
 
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `data_portability_requests.owner_id -> accounts(id)`
+    /// rechaza un `owner_id` que no corresponde a ninguna cuenta -- un
+    /// huérfano ya no es un bug silencioso, la base de datos lo atrapa.
     #[tokio::test]
-    async fn update_is_rejected_by_trigger_on_data_portability_requests() {
+    async fn record_event_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = DataPortabilityRequestRepository::new(&pool, &clock);
 
+        let result = repo
+            .record_event(sample_request_input("cuenta-que-no-existe", "grp-1", RequestStatus::Received))
+            .await;
+
+        assert!(
+            matches!(result, Err(DataPortabilityRequestRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_is_rejected_by_trigger_on_data_portability_requests() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let repo = DataPortabilityRequestRepository::new(&pool, &clock);
+
         let row = repo
-            .record_event(sample_request_input("grp-1", RequestStatus::Received))
+            .record_event(sample_request_input(&owner_id, "grp-1", RequestStatus::Received))
             .await
             .expect("registrar evento");
 
@@ -754,10 +777,11 @@ mod tests {
     async fn delete_is_rejected_by_trigger_on_data_portability_requests() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DataPortabilityRequestRepository::new(&pool, &clock);
 
         let row = repo
-            .record_event(sample_request_input("grp-1", RequestStatus::Received))
+            .record_event(sample_request_input(&owner_id, "grp-1", RequestStatus::Received))
             .await
             .expect("registrar evento");
 
@@ -768,14 +792,17 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_request_type() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let result = sqlx::query(
             "INSERT INTO data_portability_requests (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 request_type, status, request_group_id, disposition_detail\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'LIVE', 'node-A', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'LIVE', 'node-A', NULL, \
                        'UNKNOWN_TYPE', 'RECEIVED', 'grp-1', NULL)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
         assert!(result.is_err(), "un request_type fuera del catálogo debe ser rechazado por el CHECK");
@@ -784,14 +811,17 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_invalid_json_in_disposition_detail() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let result = sqlx::query(
             "INSERT INTO data_portability_requests (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 request_type, status, request_group_id, disposition_detail\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'LIVE', 'node-A', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'LIVE', 'node-A', NULL, \
                        'FORGET', 'RECEIVED', 'grp-1', '{not valid json')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
         assert!(result.is_err(), "disposition_detail con JSON corrupto debe ser rechazado por el CHECK(json_valid)");
@@ -801,11 +831,12 @@ mod tests {
     async fn event_sequence_id_is_monotonic_and_chain_is_recomputable() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DataPortabilityRequestRepository::new(&pool, &clock);
 
-        let first = repo.record_event(sample_request_input("grp-1", RequestStatus::Received)).await.expect("primero");
+        let first = repo.record_event(sample_request_input(&owner_id, "grp-1", RequestStatus::Received)).await.expect("primero");
         clock.tick();
-        let second = repo.record_event(sample_request_input("grp-2", RequestStatus::Received)).await.expect("segundo");
+        let second = repo.record_event(sample_request_input(&owner_id, "grp-2", RequestStatus::Received)).await.expect("segundo");
 
         assert_eq!(first.event_sequence_id, 1);
         assert_eq!(second.event_sequence_id, 2);
@@ -825,11 +856,12 @@ mod tests {
     async fn latest_status_for_returns_the_most_recent_event_of_the_group() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = DataPortabilityRequestRepository::new(&pool, &clock);
 
-        repo.record_event(sample_request_input("grp-1", RequestStatus::Received)).await.expect("evento 1");
+        repo.record_event(sample_request_input(&owner_id, "grp-1", RequestStatus::Received)).await.expect("evento 1");
         clock.tick();
-        repo.record_event(sample_request_input("grp-1", RequestStatus::Processing)).await.expect("evento 2");
+        repo.record_event(sample_request_input(&owner_id, "grp-1", RequestStatus::Processing)).await.expect("evento 2");
 
         let status = repo.latest_status_for("grp-1").await.expect("consultar estado vigente");
         assert_eq!(status, Some(RequestStatus::Processing), "debe devolver el estado del evento MÁS RECIENTE");
@@ -861,14 +893,25 @@ mod tests {
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
         const N: i64 = 16;
 
+        // Sembrar N cuentas reales ANTES de la fase concurrente -- la FK
+        // owner_id->accounts(id) exige que cada una ya exista; sembrarlas
+        // secuencialmente aquí no interfiere con la concurrencia que se
+        // ejercita abajo (esa es sobre `record_event`, no sobre el alta de
+        // cuentas).
+        let mut owner_ids = Vec::with_capacity(N as usize);
+        for i in 0..N {
+            owner_ids.push(seed_account(&pool, clock.as_ref(), &format!("owner{i}@example.com")).await);
+        }
+
         let mut handles = Vec::new();
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_ids[i as usize].clone();
             handles.push(tokio::spawn(async move {
                 let repo = DataPortabilityRequestRepository::new(&pool_c, clock_c.as_ref());
                 repo.record_event(RecordDataPortabilityRequestInput {
-                    owner_id: format!("owner-{i}"),
+                    owner_id: owner_id_c,
                     institutional_tag: "LIVE".to_string(),
                     node_id: format!("node-{i}"),
                     compliance_status_id: None,
@@ -925,6 +968,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida (sin esto, 5 reintentos × 5s = 25s de espera).
@@ -960,7 +1009,7 @@ mod tests {
         let repo = DataPortabilityRequestRepository::new(&repo_pool, &clock);
 
         let result = repo
-            .record_event(sample_request_input("grp-contention", RequestStatus::Received))
+            .record_event(sample_request_input(&owner_id, "grp-contention", RequestStatus::Received))
             .await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
@@ -989,6 +1038,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -998,9 +1049,10 @@ mod tests {
                 "INSERT INTO data_portability_requests \
                  (id, created_at, updated_at, audit_hash, event_sequence_id, owner_id, \
                   institutional_tag, node_id, request_type, status, request_group_id) \
-                 VALUES ('dup-id', 1, 1, 'h', ?, 'o', 'LIVE', 'n', 'EXPORT', 'RECEIVED', 'g')",
+                 VALUES ('dup-id', 1, 1, 'h', ?, ?, 'LIVE', 'n', 'EXPORT', 'RECEIVED', 'g')",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");

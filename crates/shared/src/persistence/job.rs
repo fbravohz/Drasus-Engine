@@ -741,12 +741,17 @@ mod tests {
         pool
     }
 
+    // `owner_id: None` -- FK física owner_id->accounts(id) (ADR-0141
+    // enmienda 2026-07-11): `jobs.owner_id` es nullable ("no todo job tiene
+    // dueño") y ninguna prueba de este archivo examina su valor, así que el
+    // builder por defecto usa el camino sin dueño (válido bajo la FK, que
+    // exime NULL). El camino CON dueño real se cubre aparte, abajo.
     fn sample_new_job() -> NewJob {
         NewJob {
             user_id: "user-1".to_string(),
             job_type: "BACKTEST".to_string(),
             parameters: "{\"strategy_id\":123}".to_string(),
-            owner_id: Some("owner-1".to_string()),
+            owner_id: None,
             access_token_id: None,
             session_id: Some("session-1".to_string()),
             node_id: Some("node-1".to_string()),
@@ -772,6 +777,44 @@ mod tests {
 
         let found = repo.find(&job.id).await.expect("find job").expect("job exists");
         assert_eq!(found, job);
+    }
+
+    /// CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6): un `owner_id`
+    /// real (cuenta existente en `accounts`) se persiste y se puede
+    /// recuperar sin fricción -- el camino feliz con dueño real, distinto
+    /// del default `None` de `sample_new_job`.
+    #[tokio::test]
+    async fn submit_persists_a_real_owner_id_when_provided() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = crate::persistence::central_identity::test_support::seed_account(&pool, &clock, "user@example.com").await;
+        let repo = JobRepository::new(&pool, &clock);
+
+        let mut new_job = sample_new_job();
+        new_job.owner_id = Some(owner_id.clone());
+        let job = repo.submit(new_job).await.expect("submit job con dueño real");
+
+        assert_eq!(job.owner_id, Some(owner_id));
+    }
+
+    /// CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6): la FK física
+    /// `jobs.owner_id -> accounts(id)` rechaza un `owner_id` que no
+    /// corresponde a ninguna cuenta -- un huérfano ya no es un bug
+    /// silencioso, la base de datos lo atrapa.
+    #[tokio::test]
+    async fn submit_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = JobRepository::new(&pool, &clock);
+
+        let mut new_job = sample_new_job();
+        new_job.owner_id = Some("cuenta-que-no-existe".to_string());
+        let result = repo.submit(new_job).await;
+
+        assert!(
+            matches!(result, Err(JobRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
     }
 
     /// TTR-002: un job en cola transiciona a RUNNING, su process_id se

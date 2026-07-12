@@ -153,6 +153,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::third_party_api_gateway::GatewayOutcome;
     use crate::orchestrator::consent_registry::record_consent_action;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::consent_registry::RecordConsentActionInput;
     use crate::persistence::pool::{connect, migrate};
     use crate::persistence::third_party_api_gateway::{ApiUsageRepository, NewApiCredential};
@@ -169,13 +170,14 @@ mod tests {
     async fn seed_credential(
         pool: &SqlitePool,
         clock: &dyn Clock,
+        owner_id: &str,
         secret: &str,
         rate_limit_per_window: i64,
         endpoints_enabled: &[&str],
     ) -> crate::persistence::third_party_api_gateway::ApiCredentialRow {
         let repo = ApiCredentialRepository::new(pool, clock);
         repo.create(NewApiCredential {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_hash: crate::domain::third_party_api_gateway::hash_api_credential(secret),
@@ -188,15 +190,15 @@ mod tests {
     }
 
     /// Registra la aceptación de ToS que cubre `API_GATEWAY_CONSENT_DATA_TYPE`
-    /// para `owner-1`, con la MISMA versión que se usará al resolver.
-    async fn accept_gateway_consent(pool: &SqlitePool, clock: &dyn Clock, version: &str) {
+    /// para `owner_id`, con la MISMA versión que se usará al resolver.
+    async fn accept_gateway_consent(pool: &SqlitePool, clock: &dyn Clock, owner_id: &str, version: &str) {
         let mut optout_changes = std::collections::BTreeMap::new();
         optout_changes.insert(API_GATEWAY_CONSENT_DATA_TYPE.to_string(), false);
         record_consent_action(
             pool,
             clock,
             RecordConsentActionInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.to_string(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 node_id: "node-1".to_string(),
                 compliance_status_id: None,
@@ -215,9 +217,10 @@ mod tests {
     async fn handle_gateway_request_allows_and_delegates_when_everything_checks_out() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        seed_credential(&pool, &clock, "sk-demo-123", 100, &["CERTIFY"]).await;
-        accept_gateway_consent(&pool, &clock, "v2").await;
+        seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 100, &["CERTIFY"]).await;
+        accept_gateway_consent(&pool, &clock, &owner_id, "v2").await;
 
         let response = handle_gateway_request(&pool, &clock, "sk-demo-123", "CERTIFY", "v2")
             .await
@@ -243,8 +246,9 @@ mod tests {
     async fn handle_gateway_request_denies_without_delegating_when_consent_not_covered() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        seed_credential(&pool, &clock, "sk-demo-123", 100, &["CERTIFY"]).await;
+        seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 100, &["CERTIFY"]).await;
         // Sin accept_gateway_consent: el dueño no tiene ningún consentimiento.
 
         let response = handle_gateway_request(&pool, &clock, "sk-demo-123", "CERTIFY", "v2")
@@ -266,9 +270,10 @@ mod tests {
     async fn handle_gateway_request_denies_when_consent_version_is_stale() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        seed_credential(&pool, &clock, "sk-demo-123", 100, &["CERTIFY"]).await;
-        accept_gateway_consent(&pool, &clock, "v1").await; // acepta v1
+        seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 100, &["CERTIFY"]).await;
+        accept_gateway_consent(&pool, &clock, &owner_id, "v1").await; // acepta v1
 
         // Se resuelve contra v2 (vigente) -- v1 quedó obsoleta.
         let response = handle_gateway_request(&pool, &clock, "sk-demo-123", "CERTIFY", "v2")
@@ -303,9 +308,10 @@ mod tests {
     async fn handle_gateway_request_denies_after_revocation_even_with_correct_secret() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let credential = seed_credential(&pool, &clock, "sk-demo-123", 100, &["CERTIFY"]).await;
-        accept_gateway_consent(&pool, &clock, "v2").await;
+        let credential = seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 100, &["CERTIFY"]).await;
+        accept_gateway_consent(&pool, &clock, &owner_id, "v2").await;
 
         let credential_repo = ApiCredentialRepository::new(&pool, &clock);
         credential_repo.revoke(&credential).await.expect("revocar credencial");
@@ -323,9 +329,10 @@ mod tests {
     async fn handle_gateway_request_denies_when_endpoint_not_enabled() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        seed_credential(&pool, &clock, "sk-demo-123", 100, &["FEED"]).await;
-        accept_gateway_consent(&pool, &clock, "v2").await;
+        seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 100, &["FEED"]).await;
+        accept_gateway_consent(&pool, &clock, &owner_id, "v2").await;
 
         let response = handle_gateway_request(&pool, &clock, "sk-demo-123", "CERTIFY", "v2")
             .await
@@ -344,9 +351,10 @@ mod tests {
     async fn handle_gateway_request_rate_limits_after_quota_exhausted_in_window() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let credential = seed_credential(&pool, &clock, "sk-demo-123", 2, &["CERTIFY"]).await;
-        accept_gateway_consent(&pool, &clock, "v2").await;
+        let credential = seed_credential(&pool, &clock, &owner_id, "sk-demo-123", 2, &["CERTIFY"]).await;
+        accept_gateway_consent(&pool, &clock, &owner_id, "v2").await;
 
         // Siembra 2 solicitudes ALLOWED previas dentro de la ventana --
         // exactamente el cupo (rate_limit_per_window = 2).

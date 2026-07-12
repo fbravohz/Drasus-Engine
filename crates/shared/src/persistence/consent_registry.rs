@@ -465,6 +465,7 @@ fn row_to_consent_record(row: sqlx::sqlite::SqliteRow) -> Result<ConsentRecordRo
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -528,12 +529,13 @@ mod tests {
     async fn update_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
         let mut changes = BTreeMap::new();
         changes.insert("aggregation".to_string(), false);
         let row = repo
-            .record_action(accept_input("owner-1", "v2", changes))
+            .record_action(accept_input(&owner_id, "v2", changes))
             .await
             .expect("registrar aceptación");
 
@@ -551,12 +553,13 @@ mod tests {
     async fn delete_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
         let mut changes = BTreeMap::new();
         changes.insert("aggregation".to_string(), false);
         let row = repo
-            .record_action(accept_input("owner-1", "v2", changes))
+            .record_action(accept_input(&owner_id, "v2", changes))
             .await
             .expect("registrar aceptación");
 
@@ -577,13 +580,15 @@ mod tests {
     async fn event_sequence_id_is_monotonic_across_inserts() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_1 = seed_account(&pool, &clock, "owner1@example.com").await;
+        let owner_2 = seed_account(&pool, &clock, "owner2@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
-        let first = repo.record_action(accept_input("owner-1", "v2", BTreeMap::new())).await.expect("primera acción");
+        let first = repo.record_action(accept_input(&owner_1, "v2", BTreeMap::new())).await.expect("primera acción");
         clock.tick();
-        let second = repo.record_action(accept_input("owner-2", "v2", BTreeMap::new())).await.expect("segunda acción");
+        let second = repo.record_action(accept_input(&owner_2, "v2", BTreeMap::new())).await.expect("segunda acción");
         clock.tick();
-        let third = repo.record_action(accept_input("owner-1", "v2", BTreeMap::new())).await.expect("tercera acción");
+        let third = repo.record_action(accept_input(&owner_1, "v2", BTreeMap::new())).await.expect("tercera acción");
 
         assert_eq!(first.event_sequence_id, 1);
         assert_eq!(second.event_sequence_id, 2);
@@ -597,9 +602,10 @@ mod tests {
     async fn duplicating_event_sequence_id_is_rejected_by_unique_constraint() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
-        repo.record_action(accept_input("owner-1", "v2", BTreeMap::new()))
+        repo.record_action(accept_input(&owner_id, "v2", BTreeMap::new()))
             .await
             .expect("primera acción (event_sequence_id = 1)");
 
@@ -608,9 +614,10 @@ mod tests {
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 tos_version, consent_action, optout_map, accepted_at\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                        'v2', 'ACCEPT', '{}', 0)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -628,12 +635,13 @@ mod tests {
     async fn changing_an_optout_inserts_a_new_row_and_keeps_the_previous_one_intact() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
         let mut initial_optouts = BTreeMap::new();
         initial_optouts.insert("aggregation".to_string(), false);
         let first = repo
-            .record_action(accept_input("owner-1", "v2", initial_optouts))
+            .record_action(accept_input(&owner_id, "v2", initial_optouts))
             .await
             .expect("aceptación inicial");
 
@@ -642,7 +650,7 @@ mod tests {
         changes.insert("aggregation".to_string(), true);
         let second = repo
             .record_action(RecordConsentActionInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 node_id: "node-1".to_string(),
                 compliance_status_id: None,
@@ -663,7 +671,7 @@ mod tests {
         assert_eq!(chain[1].optout_map.get("aggregation"), Some(&true), "la fila nueva trae el cambio");
 
         // El estado vigente debe reflejar la ÚLTIMA fila, no la primera.
-        let latest = repo.load_latest_for_owner("owner-1").await.expect("cargar vigente").expect("debe existir");
+        let latest = repo.load_latest_for_owner(&owner_id).await.expect("cargar vigente").expect("debe existir");
         assert_eq!(latest.id, second.id, "el estado vigente debe ser la fila con event_sequence_id máximo");
         assert_eq!(latest.optout_map.get("aggregation"), Some(&true));
     }
@@ -678,13 +686,15 @@ mod tests {
     async fn audit_chain_hash_is_null_only_in_genesis_row_and_chains_afterwards() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_1 = seed_account(&pool, &clock, "owner1@example.com").await;
+        let owner_2 = seed_account(&pool, &clock, "owner2@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
-        let first = repo.record_action(accept_input("owner-1", "v2", BTreeMap::new())).await.expect("primera (génesis)");
+        let first = repo.record_action(accept_input(&owner_1, "v2", BTreeMap::new())).await.expect("primera (génesis)");
         clock.tick();
-        let second = repo.record_action(accept_input("owner-2", "v2", BTreeMap::new())).await.expect("segunda");
+        let second = repo.record_action(accept_input(&owner_2, "v2", BTreeMap::new())).await.expect("segunda");
         clock.tick();
-        let third = repo.record_action(accept_input("owner-1", "v2", BTreeMap::new())).await.expect("tercera");
+        let third = repo.record_action(accept_input(&owner_1, "v2", BTreeMap::new())).await.expect("tercera");
 
         assert_eq!(first.audit_chain_hash, None, "la fila génesis debe tener audit_chain_hash NULL");
         assert_eq!(second.audit_chain_hash, Some(first.audit_hash.clone()), "debe encadenar a la primera");
@@ -696,15 +706,18 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_consent_action() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO consent_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 tos_version, consent_action, optout_map, accepted_at\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                        'v2', 'UNKNOWN_ACTION', '{}', 0)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -717,19 +730,43 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_invalid_json_in_optout_map() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO consent_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 tos_version, consent_action, optout_map, accepted_at\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                        'v2', 'ACCEPT', '{not valid json', 0)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
         assert!(result.is_err(), "optout_map con JSON corrupto debe ser rechazado por el CHECK(json_valid) de la BD");
+    }
+
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `consent_records.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta -- un huérfano ya no
+    /// es un bug silencioso, la base de datos lo atrapa.
+    #[tokio::test]
+    async fn record_action_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = ConsentRepository::new(&pool, &clock);
+
+        let result = repo
+            .record_action(accept_input("cuenta-que-no-existe", "v2", BTreeMap::new()))
+            .await;
+
+        assert!(
+            matches!(result, Err(ConsentRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
     }
 
     // ── Estado vigente ausente ────────────────────────────────────────────────
@@ -797,11 +834,12 @@ mod tests {
     async fn optout_change_after_accept_still_succeeds() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
         let mut initial = BTreeMap::new();
         initial.insert("aggregation".to_string(), false);
-        repo.record_action(accept_input("owner-1", "v2", initial))
+        repo.record_action(accept_input(&owner_id, "v2", initial))
             .await
             .expect("aceptación inicial debe tener éxito");
 
@@ -810,7 +848,7 @@ mod tests {
         changes.insert("aggregation".to_string(), true);
         let result = repo
             .record_action(RecordConsentActionInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 node_id: "node-1".to_string(),
                 compliance_status_id: None,
@@ -852,9 +890,9 @@ mod tests {
         // las filas comparten timestamp, lo cual es válido -- el orden lo
         // fija `event_sequence_id`, no el reloj.
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner-concurrente@example.com").await;
 
         const N: i64 = 16;
-        let owner_id = "owner-concurrente";
 
         // Lanza N tareas en paralelo, cada una registrando un ACCEPT con una
         // clave de opt-out DISTINTA sobre el mismo dueño.
@@ -862,7 +900,7 @@ mod tests {
         for i in 0..N {
             let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
             let clock_c = clock.clone();
-            let owner = owner_id.to_string();
+            let owner = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = ConsentRepository::new(&pool_c, clock_c.as_ref());
                 let mut changes = BTreeMap::new();
@@ -941,7 +979,7 @@ mod tests {
         // el snapshot previo (si dos hubieran leído el mismo estado base
         // fuera de la transacción, se perdería alguna clave).
         let latest = repo
-            .load_latest_for_owner(owner_id)
+            .load_latest_for_owner(&owner_id)
             .await
             .expect("cargar vigente")
             .expect("el dueño concurrente debe tener estado vigente");
@@ -979,6 +1017,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner-contention@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -1013,7 +1057,7 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ConsentRepository::new(&repo_pool, &clock);
 
-        let result = repo.record_action(accept_input("owner-contention", "v2", BTreeMap::new())).await;
+        let result = repo.record_action(accept_input(&owner_id, "v2", BTreeMap::new())).await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
 
@@ -1040,6 +1084,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -1050,10 +1096,11 @@ mod tests {
                     id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                     owner_id, institutional_tag, node_id, compliance_status_id, \
                     tos_version, consent_action, optout_map, accepted_at\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                            'v2', 'ACCEPT', '{}', 0)",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -1088,12 +1135,13 @@ mod tests {
     async fn record_action_returned_row_matches_the_persisted_row_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = ConsentRepository::new(&pool, &clock);
 
-        let first = repo.record_action(accept_input("owner-1", "v2", BTreeMap::new())).await.expect("primera acción");
+        let first = repo.record_action(accept_input(&owner_id, "v2", BTreeMap::new())).await.expect("primera acción");
         clock.tick();
         let second = repo
-            .record_action(accept_input("owner-1", "v3", BTreeMap::new()))
+            .record_action(accept_input(&owner_id, "v3", BTreeMap::new()))
             .await
             .expect("segunda acción");
 

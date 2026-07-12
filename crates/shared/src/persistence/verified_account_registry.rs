@@ -746,6 +746,7 @@ impl From<&AttestedTrackRecordRow> for AttestedTrackRecord {
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -754,9 +755,9 @@ mod tests {
         pool
     }
 
-    fn sample_new_account() -> NewVerifiedAccount {
+    fn sample_new_account(owner_id: &str) -> NewVerifiedAccount {
         NewVerifiedAccount {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             // Eje B, STORY-041: en esta tabla `institutional_tag` ES el Eje
             // B -- ya no acepta el placeholder genérico "DRASUS_LOCAL" del
             // resto del substrato (CHECK restringido a LIVE/PAPER/DEMO/CHALLENGE).
@@ -906,8 +907,9 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = VerifiedAccountRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = repo.create(sample_new_account()).await.expect("registrar cuenta");
+        let account = repo.create(sample_new_account(&owner_id)).await.expect("registrar cuenta");
         assert_eq!(account.row_version, 1);
         assert_eq!(account.publication_status, PublicationStatus::Private);
         assert_eq!(account.attestation_scopes, vec![AttestationScope::Sovereign]);
@@ -924,8 +926,9 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = VerifiedAccountRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = repo.create(sample_new_account()).await.expect("registrar cuenta");
+        let account = repo.create(sample_new_account(&owner_id)).await.expect("registrar cuenta");
         clock.tick();
         let updated = repo
             .update_publication_and_scopes(&account, PublicationStatus::Public, &[AttestationScope::Sovereign])
@@ -947,8 +950,9 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = VerifiedAccountRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = repo.create(sample_new_account()).await.expect("registrar cuenta");
+        let account = repo.create(sample_new_account(&owner_id)).await.expect("registrar cuenta");
         let first_writer_view = account.clone();
         let second_writer_view = account;
 
@@ -1053,9 +1057,9 @@ mod tests {
         }
     }
 
-    fn record_input(verified_account_id: &str, scope: AttestationScope) -> RecordTrackRecordInput {
+    fn record_input(owner_id: &str, verified_account_id: &str, scope: AttestationScope) -> RecordTrackRecordInput {
         RecordTrackRecordInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             // Eje B, STORY-041: en esta tabla `institutional_tag` ES el Eje
             // B -- ya no acepta el placeholder genérico "DRASUS_LOCAL".
             institutional_tag: CapitalReality::Live.as_str().to_string(),
@@ -1073,9 +1077,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = AttestedTrackRecordRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let row = repo
-            .record_track_record(record_input("acc-1", AttestationScope::Sovereign))
+            .record_track_record(record_input(&owner_id, "acc-1", AttestationScope::Sovereign))
             .await
             .expect("registrar track");
 
@@ -1091,9 +1096,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = AttestedTrackRecordRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let row = repo
-            .record_track_record(record_input("acc-1", AttestationScope::Sovereign))
+            .record_track_record(record_input(&owner_id, "acc-1", AttestationScope::Sovereign))
             .await
             .expect("registrar track");
 
@@ -1148,10 +1154,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = AttestedTrackRecordRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let first = repo.record_track_record(record_input("acc-1", AttestationScope::Sovereign)).await.expect("primero");
+        let first = repo.record_track_record(record_input(&owner_id, "acc-1", AttestationScope::Sovereign)).await.expect("primero");
         clock.tick();
-        let second = repo.record_track_record(record_input("acc-1", AttestationScope::BrokerReadonly)).await.expect("segundo");
+        let second = repo.record_track_record(record_input(&owner_id, "acc-1", AttestationScope::BrokerReadonly)).await.expect("segundo");
 
         assert_eq!(first.event_sequence_id, 1);
         assert_eq!(second.event_sequence_id, 2);
@@ -1189,15 +1196,20 @@ mod tests {
         migrate(&pool).await.expect("migrar");
 
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        // Una sola cuenta sembrada (FK owner_id->accounts): los 16 escritores
+        // comparten owner_id -- el ledger es append-only y admite owner
+        // repetido.
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner1@example.com").await;
         const N: i64 = 16;
 
         let mut handles = Vec::new();
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = AttestedTrackRecordRepository::new(&pool_c, clock_c.as_ref());
-                repo.record_track_record(record_input(&format!("acc-{i}"), AttestationScope::Sovereign)).await
+                repo.record_track_record(record_input(&owner_id_c, &format!("acc-{i}"), AttestationScope::Sovereign)).await
             }));
         }
 
@@ -1309,6 +1321,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -1343,7 +1361,7 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = AttestedTrackRecordRepository::new(&repo_pool, &clock);
 
-        let result = repo.record_track_record(record_input("acc-contention", AttestationScope::Sovereign)).await;
+        let result = repo.record_track_record(record_input(&owner_id, "acc-contention", AttestationScope::Sovereign)).await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
 
@@ -1371,6 +1389,10 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        // owner_id sembrado (FK válida): la primera fila debe INSERTARSE con
+        // éxito para que la SEGUNDA choque con la PK, no con la FK.
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -1382,10 +1404,11 @@ mod tests {
                     owner_id, institutional_tag, node_id, signature_hash, verified_account_id, scope, \
                     time_window, equity_curve, balance_curve, max_drawdown_e8, gain_pct_e8, win_rate_e8, \
                     avg_holding_time_ns, trading_days, total_realized_pnl_e8, total_deposits_e8, total_withdrawals_e8\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'LIVE', 'node-1', 'sig', 'acc-1', \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'LIVE', 'node-1', 'sig', 'acc-1', \
                            'SOVEREIGN', '2026-W27', '[]', '[]', 0, 0, 0, 0, 0, 0, 0, 0)",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -1427,8 +1450,9 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = VerifiedAccountRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = repo.create(sample_new_account()).await.expect("registrar cuenta");
+        let account = repo.create(sample_new_account(&owner_id)).await.expect("registrar cuenta");
         assert_eq!(account.updated_at_ns, 1_000, "precondición: la fila génesis nace en el now inicial");
         assert!(account.audit_chain_hash.is_none(), "precondición: la fila génesis no encadena");
 

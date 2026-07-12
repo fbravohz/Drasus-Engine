@@ -310,6 +310,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::mcp_gateway::Pipeline;
     use crate::domain::operator_roles::{CAPABILITY_CREATE_CHILD_ACCOUNT, CAPABILITY_MANAGE_ROLES};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -318,8 +319,11 @@ mod tests {
         pool
     }
 
-    fn sample_identity() -> OperatorRolesIdentity {
-        OperatorRolesIdentity { owner_id: "acc-1".to_string(), institutional_tag: "LIVE".to_string(), node_id: "node-A".to_string() }
+    /// Siembra una cuenta real (FK owner_id -> accounts) y devuelve la
+    /// identidad lista para usar en las operaciones del cimiento #14.
+    async fn sample_identity(pool: &SqlitePool, clock: &dyn crate::domain::clock::Clock) -> OperatorRolesIdentity {
+        let owner_id = seed_account(pool, clock, "acc1@example.com").await;
+        OperatorRolesIdentity { owner_id, institutional_tag: "LIVE".to_string(), node_id: "node-A".to_string() }
     }
 
     fn open_pipeline_request(scope: &str) -> PermissionRequest {
@@ -338,7 +342,7 @@ mod tests {
     async fn seed_admin_bootstrap_creates_admin_role_and_assigns_root_operator() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let identity = sample_identity(&pool, &clock).await;
 
         let (role, assignment) = seed_admin_bootstrap(&pool, &clock, &identity, "tok-owner").await.expect("sembrar admin");
 
@@ -352,7 +356,7 @@ mod tests {
     async fn seed_admin_bootstrap_is_idempotent() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let identity = sample_identity(&pool, &clock).await;
 
         let first = seed_admin_bootstrap(&pool, &clock, &identity, "tok-owner").await.expect("primera siembra");
         clock.tick();
@@ -372,7 +376,7 @@ mod tests {
     async fn evaluate_call_grants_when_admin_role_allows_and_pipeline_is_open() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let identity = sample_identity(&pool, &clock).await;
         seed_admin_bootstrap(&pool, &clock, &identity, "tok-owner").await.expect("sembrar admin");
 
         // El rol ADMIN sembrado no trae "generate.run_search" -- se declara
@@ -402,7 +406,7 @@ mod tests {
     async fn evaluate_call_denies_operator_without_any_assignment_human_and_agent() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let identity = sample_identity(&pool, &clock).await;
         seed_admin_bootstrap(&pool, &clock, &identity, "tok-owner").await.expect("sembrar admin");
 
         for token in ["tok-human-sin-rol", "tok-agent-sin-rol"] {
@@ -420,7 +424,7 @@ mod tests {
     async fn request_child_account_denies_non_admin_and_grants_admin_under_quota() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let identity = sample_identity();
+        let identity = sample_identity(&pool, &clock).await;
         let (_, admin_assignment) = seed_admin_bootstrap(&pool, &clock, &identity, "tok-owner").await.expect("sembrar admin");
 
         clock.tick();
@@ -450,7 +454,8 @@ mod tests {
     async fn apply_authority_override_reassigns_a_child_operator_and_tags_the_event() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let child_identity = OperatorRolesIdentity { owner_id: "child-1".to_string(), institutional_tag: "LIVE".to_string(), node_id: "node-child".to_string() };
+        let child_owner_id = seed_account(&pool, &clock, "child1@example.com").await;
+        let child_identity = OperatorRolesIdentity { owner_id: child_owner_id, institutional_tag: "LIVE".to_string(), node_id: "node-child".to_string() };
 
         let (_, admin_assignment) = seed_admin_bootstrap(&pool, &clock, &child_identity, "tok-child-owner").await.expect("sembrar admin de la hija");
 

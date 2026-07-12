@@ -211,6 +211,7 @@ pub async fn request_forget(
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -219,9 +220,9 @@ mod tests {
         pool
     }
 
-    fn sample_identity() -> DataPortabilityIdentity {
+    fn sample_identity(owner_id: &str) -> DataPortabilityIdentity {
         DataPortabilityIdentity {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "LIVE".to_string(),
             node_id: "node-A".to_string(),
         }
@@ -259,14 +260,15 @@ mod tests {
     async fn request_export_records_received_event_and_excludes_secret_tables_from_manifest() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         seed_known_catalog(&pool, &clock).await.expect("sembrar catálogo");
 
-        let result = request_export(&pool, &clock, &sample_identity()).await.expect("solicitar export");
+        let result = request_export(&pool, &clock, &sample_identity(&owner_id)).await.expect("solicitar export");
 
         assert_eq!(result.request.request_type, RequestType::Export);
         assert_eq!(result.request.status, RequestStatus::Received);
         assert_eq!(result.request.disposition_detail, None, "un EXPORT no lleva disposition_detail");
-        assert_eq!(result.manifest.owner_id, "owner-1");
+        assert_eq!(result.manifest.owner_id, owner_id);
 
         let table_names: Vec<&str> = result.manifest.tables.iter().map(|t| t.table_name.as_str()).collect();
         assert!(
@@ -294,9 +296,10 @@ mod tests {
     async fn request_forget_records_disposition_consistent_with_retention_flags() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         seed_known_catalog(&pool, &clock).await.expect("sembrar catálogo");
 
-        let result = request_forget(&pool, &clock, &sample_identity()).await.expect("solicitar olvido");
+        let result = request_forget(&pool, &clock, &sample_identity(&owner_id)).await.expect("solicitar olvido");
 
         assert_eq!(result.request.request_type, RequestType::Forget);
         assert_eq!(result.request.status, RequestStatus::Received);
@@ -325,11 +328,12 @@ mod tests {
     async fn export_and_forget_requests_get_independent_request_group_ids() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         seed_known_catalog(&pool, &clock).await.expect("sembrar catálogo");
 
-        let export_result = request_export(&pool, &clock, &sample_identity()).await.expect("export");
+        let export_result = request_export(&pool, &clock, &sample_identity(&owner_id)).await.expect("export");
         clock.tick();
-        let forget_result = request_forget(&pool, &clock, &sample_identity()).await.expect("forget");
+        let forget_result = request_forget(&pool, &clock, &sample_identity(&owner_id)).await.expect("forget");
 
         assert_ne!(export_result.request.request_group_id, forget_result.request.request_group_id);
 

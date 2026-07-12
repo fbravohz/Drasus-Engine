@@ -325,15 +325,16 @@ mod tests {
     use super::*;
     use crate::domain::audit_log::{verify_chain, ChainVerificationResult};
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
-    fn sample_content(action_type: &str, entity_id: &str) -> AuditEventContent {
+    fn sample_content(action_type: &str, entity_id: &str, owner_id: &str) -> AuditEventContent {
         AuditEventContent {
             action_type: action_type.to_string(),
             entity_type: "ORDER".to_string(),
             entity_id: entity_id.to_string(),
             details_json: "{\"from\":\"NEW\",\"to\":\"FILLED\"}".to_string(),
-            owner_id: Some("owner-1".to_string()),
+            owner_id: Some(owner_id.to_string()),
             institutional_tag: "BACKTEST".to_string(),
             manifest_id: None,
             access_token_id: None,
@@ -357,10 +358,11 @@ mod tests {
     async fn append_builds_a_valid_chain() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "user@example.com").await;
         let repo = AuditLogRepository::new(&pool, &clock);
 
         let first = repo
-            .append(sample_content("ORDER_STATE_CHANGE", "order-1"))
+            .append(sample_content("ORDER_STATE_CHANGE", "order-1", &owner_id))
             .await
             .expect("append first event");
         assert_eq!(first.event_sequence_id, 1);
@@ -368,7 +370,7 @@ mod tests {
 
         clock.tick();
         let second = repo
-            .append(sample_content("USER_VETO", "order-1"))
+            .append(sample_content("USER_VETO", "order-1", &owner_id))
             .await
             .expect("append second event");
         assert_eq!(second.event_sequence_id, 2);
@@ -388,10 +390,11 @@ mod tests {
     async fn update_on_audit_events_is_rejected_by_append_only_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "user@example.com").await;
         let repo = AuditLogRepository::new(&pool, &clock);
 
         let event = repo
-            .append(sample_content("ORDER_STATE_CHANGE", "order-1"))
+            .append(sample_content("ORDER_STATE_CHANGE", "order-1", &owner_id))
             .await
             .expect("append event");
 
@@ -422,10 +425,11 @@ mod tests {
     async fn delete_on_audit_events_is_rejected_by_append_only_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "user@example.com").await;
         let repo = AuditLogRepository::new(&pool, &clock);
 
         let event = repo
-            .append(sample_content("ORDER_STATE_CHANGE", "order-1"))
+            .append(sample_content("ORDER_STATE_CHANGE", "order-1", &owner_id))
             .await
             .expect("append event");
 
@@ -451,17 +455,18 @@ mod tests {
     async fn events_for_entity_filters_and_orders() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "user@example.com").await;
         let repo = AuditLogRepository::new(&pool, &clock);
 
-        repo.append(sample_content("ORDER_STATE_CHANGE", "order-1"))
+        repo.append(sample_content("ORDER_STATE_CHANGE", "order-1", &owner_id))
             .await
             .expect("append 1");
         clock.tick();
-        repo.append(sample_content("ANOMALY_DETECTED", "order-2"))
+        repo.append(sample_content("ANOMALY_DETECTED", "order-2", &owner_id))
             .await
             .expect("append 2");
         clock.tick();
-        repo.append(sample_content("USER_VETO", "order-1"))
+        repo.append(sample_content("USER_VETO", "order-1", &owner_id))
             .await
             .expect("append 3");
 
@@ -508,6 +513,7 @@ mod tests {
         // filas comparten timestamp -- válido, el orden lo fija
         // event_sequence_id, no el reloj.
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "user@example.com").await;
 
         const N: i64 = 16;
 
@@ -517,9 +523,10 @@ mod tests {
         for i in 0..N {
             let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = AuditLogRepository::new(&pool_c, clock_c.as_ref());
-                repo.append(sample_content("CONCURRENT_EVENT", &format!("order-{i}")))
+                repo.append(sample_content("CONCURRENT_EVENT", &format!("order-{i}"), &owner_id_c))
                     .await
             }));
         }

@@ -351,6 +351,7 @@ mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
     use crate::domain::institutional_report_engine::{assemble_report, compute_report_signature, AssembleReportInput, ReportType};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
     use std::collections::BTreeMap;
 
@@ -372,11 +373,11 @@ mod tests {
         }
     }
 
-    fn record_input(metric_value: i64) -> RecordGeneratedReportInput {
+    fn record_input(owner_id: &str, metric_value: i64) -> RecordGeneratedReportInput {
         let report = assemble_report(sample_report_input(metric_value));
         let signature_hash = compute_report_signature(&report);
         RecordGeneratedReportInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-1".to_string(),
             compliance_status_id: None,
@@ -448,6 +449,7 @@ mod tests {
         // las filas comparten timestamp, lo cual es válido -- el orden lo
         // fija `event_sequence_id`, no el reloj.
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner1@example.com").await;
 
         const N: i64 = 16;
 
@@ -457,9 +459,10 @@ mod tests {
         for i in 0..N {
             let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = GeneratedReportRepository::new(&pool_c, clock_c.as_ref());
-                repo.record_report(record_input((i + 1) * 100_000_000)).await
+                repo.record_report(record_input(&owner_id_c, (i + 1) * 100_000_000)).await
             }));
         }
 
@@ -527,9 +530,10 @@ mod tests {
     async fn source_event_refs_are_persisted_as_valid_json_array() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let row = repo.record_report(record_input(150_000_000)).await.expect("registrar reporte");
+        let row = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("registrar reporte");
 
         let parsed: serde_json::Value = serde_json::from_str(&row.source_event_refs).expect("JSON válido");
         assert_eq!(parsed, serde_json::json!(["evt-1", "evt-2"]));
@@ -541,11 +545,12 @@ mod tests {
     async fn audit_chain_hash_is_null_only_in_genesis_row_and_chains_afterwards() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let first = repo.record_report(record_input(100_000_000)).await.expect("génesis");
+        let first = repo.record_report(record_input(&owner_id, 100_000_000)).await.expect("génesis");
         clock.tick();
-        let second = repo.record_report(record_input(200_000_000)).await.expect("segundo");
+        let second = repo.record_report(record_input(&owner_id, 200_000_000)).await.expect("segundo");
 
         assert_eq!(first.audit_chain_hash, None, "la fila génesis debe tener audit_chain_hash NULL");
         assert_eq!(second.audit_chain_hash, Some(first.audit_hash.clone()), "debe encadenar a la primera");
@@ -557,9 +562,10 @@ mod tests {
     async fn signature_hash_and_audit_hash_are_present_and_distinct() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let row = repo.record_report(record_input(150_000_000)).await.expect("registrar reporte");
+        let row = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("registrar reporte");
 
         assert_ne!(row.signature_hash, row.audit_hash, "signature_hash (contenido) y audit_hash (fila) deben ser distintos");
         assert!(!row.signature_hash.is_empty());
@@ -572,9 +578,10 @@ mod tests {
     async fn persisted_report_body_has_no_secrets_and_no_floating_point() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let row = repo.record_report(record_input(150_000_000)).await.expect("registrar reporte");
+        let row = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("registrar reporte");
 
         assert!(!row.report_body.contains('.'), "report_body no debe contener coma flotante");
         let lowercase_body = row.report_body.to_lowercase();
@@ -583,15 +590,34 @@ mod tests {
         }
     }
 
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `generated_reports.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta.
+    #[tokio::test]
+    async fn record_report_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = GeneratedReportRepository::new(&pool, &clock);
+
+        let result = repo.record_report(record_input("cuenta-que-no-existe", 150_000_000)).await;
+
+        assert!(
+            matches!(result, Err(GeneratedReportRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
     // ── Append-only: UPDATE/DELETE rechazados por trigger ───────────────────
 
     #[tokio::test]
     async fn update_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let row = repo.record_report(record_input(150_000_000)).await.expect("registrar reporte");
+        let row = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("registrar reporte");
 
         let result = sqlx::query("UPDATE generated_reports SET signature_hash = 'tampered' WHERE id = ?")
             .bind(&row.id)
@@ -605,9 +631,10 @@ mod tests {
     async fn delete_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let row = repo.record_report(record_input(150_000_000)).await.expect("registrar reporte");
+        let row = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("registrar reporte");
 
         let result = sqlx::query("DELETE FROM generated_reports WHERE id = ?")
             .bind(&row.id)
@@ -624,9 +651,10 @@ mod tests {
     async fn duplicating_event_sequence_id_is_rejected_by_unique_constraint() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        repo.record_report(record_input(150_000_000))
+        repo.record_report(record_input(&owner_id, 150_000_000))
             .await
             .expect("primer reporte (event_sequence_id = 1)");
 
@@ -636,9 +664,10 @@ mod tests {
                 owner_id, institutional_tag, node_id, \
                 signature_hash, compliance_status_id, \
                 report_type, source_result_ref, source_event_refs, report_body\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', \
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', \
                        'sig', NULL, 'VALIDATION', NULL, '[]', '{}')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -650,6 +679,8 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_report_type() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO generated_reports (\
@@ -657,9 +688,10 @@ mod tests {
                 owner_id, institutional_tag, node_id, \
                 signature_hash, compliance_status_id, \
                 report_type, source_result_ref, source_event_refs, report_body\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', \
                        'sig', NULL, 'UNKNOWN_TYPE', NULL, '[]', '{}')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -672,6 +704,8 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_invalid_json_in_source_event_refs() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO generated_reports (\
@@ -679,9 +713,10 @@ mod tests {
                 owner_id, institutional_tag, node_id, \
                 signature_hash, compliance_status_id, \
                 report_type, source_result_ref, source_event_refs, report_body\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', \
                        'sig', NULL, 'VALIDATION', NULL, '{not valid json', '{}')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -693,6 +728,8 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_invalid_json_in_report_body() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO generated_reports (\
@@ -700,9 +737,10 @@ mod tests {
                 owner_id, institutional_tag, node_id, \
                 signature_hash, compliance_status_id, \
                 report_type, source_result_ref, source_event_refs, report_body\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', \
                        'sig', NULL, 'VALIDATION', NULL, '[]', '{not valid json')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -732,6 +770,12 @@ mod tests {
         // Migrar con el pool normal (busy_timeout de 5s).
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
+
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
 
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
@@ -767,7 +811,7 @@ mod tests {
         let clock = DeterministicClock::new(1_000, 100);
         let repo = GeneratedReportRepository::new(&repo_pool, &clock);
 
-        let result = repo.record_report(record_input(150_000_000)).await;
+        let result = repo.record_report(record_input(&owner_id, 150_000_000)).await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
 
@@ -794,6 +838,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -805,10 +851,11 @@ mod tests {
                     owner_id, institutional_tag, node_id, \
                     signature_hash, compliance_status_id, \
                     report_type, source_result_ref, source_event_refs, report_body\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'DRASUS_LOCAL', 'node-1', \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'DRASUS_LOCAL', 'node-1', \
                            'sig', NULL, 'VALIDATION', NULL, '[]', '{}')",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -843,11 +890,12 @@ mod tests {
     async fn record_report_returned_row_matches_the_persisted_row_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = GeneratedReportRepository::new(&pool, &clock);
 
-        let first = repo.record_report(record_input(150_000_000)).await.expect("primer reporte");
+        let first = repo.record_report(record_input(&owner_id, 150_000_000)).await.expect("primer reporte");
         clock.tick();
-        let second = repo.record_report(record_input(250_000_000)).await.expect("segundo reporte");
+        let second = repo.record_report(record_input(&owner_id, 250_000_000)).await.expect("segundo reporte");
 
         let chain = repo.load_chain().await.expect("cargar cadena");
         assert_eq!(

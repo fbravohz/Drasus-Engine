@@ -67,6 +67,7 @@ mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
     use crate::domain::consent_registry::{ConsentAction, NotCoveredReason};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
     use std::collections::BTreeMap;
 
@@ -98,6 +99,7 @@ mod tests {
     async fn record_then_resolve_covers_when_version_matches_and_no_optout() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let mut optout_changes = BTreeMap::new();
         optout_changes.insert("aggregation".to_string(), false);
@@ -106,7 +108,7 @@ mod tests {
             &pool,
             &clock,
             RecordConsentActionInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id.clone(),
                 institutional_tag: "DRASUS_LOCAL".to_string(),
                 node_id: "node-1".to_string(),
                 compliance_status_id: None,
@@ -118,7 +120,7 @@ mod tests {
         .await
         .expect("registrar aceptación");
 
-        let verdict = resolve_consent_verdict(&pool, &clock, "owner-1", "aggregation", "v2")
+        let verdict = resolve_consent_verdict(&pool, &clock, &owner_id, "aggregation", "v2")
             .await
             .expect("la consulta debe tener éxito");
 

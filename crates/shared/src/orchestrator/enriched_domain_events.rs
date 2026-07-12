@@ -83,6 +83,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::enriched_domain_events::{CapitalFlowPayload, CapitalFlowSign};
     use crate::domain::licensing_system::{GateVerdict, LicenseTier};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -91,9 +92,9 @@ mod tests {
         pool
     }
 
-    fn sample_identity() -> EventEmissionIdentity {
+    fn sample_identity(owner_id: &str) -> EventEmissionIdentity {
         EventEmissionIdentity {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-1".to_string(),
             process_id: "process-1".to_string(),
@@ -132,8 +133,9 @@ mod tests {
     async fn suppressing_gate_persists_event_with_replicate_false() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let row = record_domain_event(&pool, &clock, sample_identity(), &sample_gate(true), sample_event())
+        let row = record_domain_event(&pool, &clock, sample_identity(&owner_id), &sample_gate(true), sample_event())
             .await
             .expect("registrar evento");
 
@@ -146,8 +148,9 @@ mod tests {
     async fn non_suppressing_gate_persists_event_with_replicate_true() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let row = record_domain_event(&pool, &clock, sample_identity(), &sample_gate(false), sample_event())
+        let row = record_domain_event(&pool, &clock, sample_identity(&owner_id), &sample_gate(false), sample_event())
             .await
             .expect("registrar evento");
 

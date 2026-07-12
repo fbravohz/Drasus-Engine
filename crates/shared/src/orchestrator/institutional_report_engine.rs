@@ -95,6 +95,7 @@ mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
     use crate::domain::institutional_report_engine::{compute_report_signature, ReportType};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
     use std::collections::BTreeMap;
 
@@ -120,9 +121,9 @@ mod tests {
         }
     }
 
-    fn identity() -> ReportGenerationIdentity {
+    fn identity(owner_id: &str) -> ReportGenerationIdentity {
         ReportGenerationIdentity {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-1".to_string(),
             compliance_status_id: None,
@@ -137,8 +138,9 @@ mod tests {
     async fn generate_report_persists_a_signature_consistent_with_the_injected_clock() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(5_000, 0);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let row = generate_report(&pool, &clock, identity(), sample_input())
+        let row = generate_report(&pool, &clock, identity(&owner_id), sample_input())
             .await
             .expect("generar y persistir el reporte");
 
@@ -164,11 +166,12 @@ mod tests {
     async fn generate_report_never_mutates_the_caller_input() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let input = sample_input();
         let original_refs = input.source_event_refs.clone();
 
-        let row = generate_report(&pool, &clock, identity(), input)
+        let row = generate_report(&pool, &clock, identity(&owner_id), input)
             .await
             .expect("generar y persistir el reporte");
 

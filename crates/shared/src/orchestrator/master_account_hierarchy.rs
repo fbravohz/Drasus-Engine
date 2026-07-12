@@ -238,6 +238,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::consent_registry::ConsentAction;
     use crate::orchestrator::consent_registry::record_consent_action;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::consent_registry::RecordConsentActionInput;
     use crate::persistence::pool::{connect, migrate};
 
@@ -275,8 +276,9 @@ mod tests {
     async fn link_child_to_parent_registers_row_version_one() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
 
-        let row = link_child_to_parent(&pool, &clock, "trader-7", Some("fund-X"), "v1", "node-A")
+        let row = link_child_to_parent(&pool, &clock, &owner_id, Some("fund-X"), "v1", "node-A")
             .await
             .expect("vincular hija");
         assert_eq!(row.row_version, 1);
@@ -294,12 +296,13 @@ mod tests {
     async fn execute_override_denies_both_sides_without_any_real_consent() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
 
         let result = execute_override(
             &pool,
             &clock,
             "fund-X",
-            "trader-7",
+            &owner_id,
             "node-fund",
             "node-child",
             OverrideCommandKind::Archive,
@@ -326,13 +329,14 @@ mod tests {
     async fn execute_override_produces_exactly_one_issuer_and_one_executor_row_when_executed() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        seed_covered_consent(&pool, &clock, "trader-7", "v1").await;
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
+        seed_covered_consent(&pool, &clock, &owner_id, "v1").await;
 
         let result = execute_override(
             &pool,
             &clock,
             "fund-X",
-            "trader-7",
+            &owner_id,
             "node-fund",
             "node-child",
             OverrideCommandKind::Archive,
@@ -370,13 +374,14 @@ mod tests {
     async fn archive_command_archives_and_never_deletes_the_chain() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        seed_covered_consent(&pool, &clock, "trader-7", "v1").await;
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
+        seed_covered_consent(&pool, &clock, &owner_id, "v1").await;
 
         let result = execute_override(
             &pool,
             &clock,
             "fund-X",
-            "trader-7",
+            &owner_id,
             "node-fund",
             "node-child",
             OverrideCommandKind::Archive,
@@ -402,13 +407,14 @@ mod tests {
     async fn non_archive_commands_never_produce_a_local_archive_effect() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        seed_covered_consent(&pool, &clock, "trader-7", "v1").await;
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
+        seed_covered_consent(&pool, &clock, &owner_id, "v1").await;
 
         let result = execute_override(
             &pool,
             &clock,
             "fund-X",
-            "trader-7",
+            &owner_id,
             "node-fund",
             "node-child",
             OverrideCommandKind::RequestAuditReport,

@@ -533,6 +533,7 @@ fn row_to_attestation(
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -541,18 +542,21 @@ mod tests {
         pool
     }
 
-    fn sample_new_hierarchy() -> NewAccountHierarchy {
+    // `parent_owner_id` ("fund-X") queda como literal libre a propósito: la
+    // FK física de ADR-0141 solo alcanza a la columna `owner_id` (ver nota
+    // en la migración 0018) -- `parent_owner_id` no la exige.
+    fn sample_new_hierarchy(owner_id: &str) -> NewAccountHierarchy {
         NewAccountHierarchy {
-            owner_id: "trader-7".to_string(),
+            owner_id: owner_id.to_string(),
             parent_owner_id: Some("fund-X".to_string()),
             consent_ref: "v1".to_string(),
             node_id: "node-A".to_string(),
         }
     }
 
-    fn sample_attestation_input(side: AttestationSide, outcome: OverrideOutcomeLabel) -> RecordOverrideAttestationInput {
+    fn sample_attestation_input(owner_id: &str, side: AttestationSide, outcome: OverrideOutcomeLabel) -> RecordOverrideAttestationInput {
         RecordOverrideAttestationInput {
-            owner_id: "trader-7".to_string(),
+            owner_id: owner_id.to_string(),
             parent_owner_id: "fund-X".to_string(),
             node_id: "node-A".to_string(),
             attestation_side: side,
@@ -630,14 +634,15 @@ mod tests {
     async fn link_child_persists_row_version_one_and_reloads_identically() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = AccountHierarchyRepository::new(&pool, &clock);
 
-        let row = repo.link_child(sample_new_hierarchy()).await.expect("vincular hija");
+        let row = repo.link_child(sample_new_hierarchy(&owner_id)).await.expect("vincular hija");
         assert_eq!(row.row_version, 1);
         assert_eq!(row.audit_chain_hash, None);
         assert_eq!(row.parent_owner_id.as_deref(), Some("fund-X"));
 
-        let reloaded = repo.find_by_owner("trader-7").await.expect("releer").expect("debe existir");
+        let reloaded = repo.find_by_owner(&owner_id).await.expect("releer").expect("debe existir");
         assert_eq!(reloaded, row);
     }
 
@@ -649,9 +654,10 @@ mod tests {
     async fn concurrent_updates_from_same_row_version_conflict_instead_of_overwriting() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = AccountHierarchyRepository::new(&pool, &clock);
 
-        let hierarchy = repo.link_child(sample_new_hierarchy()).await.expect("vincular hija");
+        let hierarchy = repo.link_child(sample_new_hierarchy(&owner_id)).await.expect("vincular hija");
         let first_writer_view = hierarchy.clone();
         let second_writer_view = hierarchy;
 
@@ -670,7 +676,7 @@ mod tests {
             "el segundo update desde la versión 1 debe dar VersionConflict; fue: {conflict:?}"
         );
 
-        let reloaded = repo.find_by_owner("trader-7").await.expect("releer").expect("existe");
+        let reloaded = repo.find_by_owner(&owner_id).await.expect("releer").expect("existe");
         assert_eq!(reloaded.row_version, 2);
         assert_eq!(
             reloaded.parent_owner_id.as_deref(),
@@ -696,10 +702,11 @@ mod tests {
     async fn update_parent_and_consent_returned_row_reflects_fresh_fields_and_matches_persisted() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = AccountHierarchyRepository::new(&pool, &clock);
 
         // Génesis: parent "fund-X", consent "v1", updated_at 1_000, sin cadena.
-        let hierarchy = repo.link_child(sample_new_hierarchy()).await.expect("vincular hija");
+        let hierarchy = repo.link_child(sample_new_hierarchy(&owner_id)).await.expect("vincular hija");
         assert_eq!(hierarchy.updated_at_ns, 1_000, "precondición: la fila génesis nace en el now inicial");
         assert!(hierarchy.audit_chain_hash.is_none(), "precondición: la fila génesis no encadena");
         assert_eq!(hierarchy.consent_ref, "v1", "precondición: consent génesis");
@@ -732,7 +739,7 @@ mod tests {
         // Espejo contra lo PERSISTIDO en disco -- la fila devuelta debe ser
         // bit-a-bit igual a la que quedó en la BD (mata cualquier campo
         // borrado que aún no cubran las aserciones puntuales de arriba).
-        let reloaded = repo.find_by_owner("trader-7").await.expect("releer").expect("existe");
+        let reloaded = repo.find_by_owner(&owner_id).await.expect("releer").expect("existe");
         assert_eq!(
             updated, reloaded,
             "la fila devuelta por update_parent_and_consent debe coincidir campo por campo con la persistida"
@@ -742,13 +749,18 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_attestation_side() {
         let pool = migrated_pool().await;
+        // owner_id sembrado (FK válida) para que la ÚNICA violación sea el
+        // CHECK de attestation_side, no la FK owner_id->accounts.
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let result = sqlx::query(
             "INSERT INTO override_attestations (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, parent_owner_id, node_id, attestation_side, command_kind, target_ref, outcome, justification\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'trader-7', 'fund-X', 'node-A', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'fund-X', 'node-A', \
                        'UNKNOWN_SIDE', 'ARCHIVE', 'strategy-42', 'EXECUTED', NULL)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
         assert!(result.is_err(), "un attestation_side fuera del catálogo debe ser rechazado por el CHECK");
@@ -757,13 +769,17 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_command_kind() {
         let pool = migrated_pool().await;
+        // owner_id sembrado (FK válida) para aislar el CHECK de command_kind.
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let result = sqlx::query(
             "INSERT INTO override_attestations (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, parent_owner_id, node_id, attestation_side, command_kind, target_ref, outcome, justification\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'trader-7', 'fund-X', 'node-A', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'fund-X', 'node-A', \
                        'ISSUER', 'UNKNOWN_KIND', 'strategy-42', 'EXECUTED', NULL)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
         assert!(result.is_err(), "un command_kind fuera del catálogo debe ser rechazado por el CHECK");
@@ -772,13 +788,17 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_outcome() {
         let pool = migrated_pool().await;
+        // owner_id sembrado (FK válida) para aislar el CHECK de outcome.
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let result = sqlx::query(
             "INSERT INTO override_attestations (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, parent_owner_id, node_id, attestation_side, command_kind, target_ref, outcome, justification\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'trader-7', 'fund-X', 'node-A', \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'fund-X', 'node-A', \
                        'ISSUER', 'ARCHIVE', 'strategy-42', 'UNKNOWN_OUTCOME', NULL)",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
         assert!(result.is_err(), "un outcome fuera del catálogo debe ser rechazado por el CHECK");
@@ -790,10 +810,11 @@ mod tests {
     async fn update_is_rejected_by_trigger_on_override_attestations() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = OverrideAttestationRepository::new(&pool, &clock);
 
         let row = repo
-            .record_attestation(sample_attestation_input(AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
+            .record_attestation(sample_attestation_input(&owner_id, AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
             .await
             .expect("registrar atestación");
 
@@ -808,10 +829,11 @@ mod tests {
     async fn delete_is_rejected_by_trigger_on_override_attestations() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = OverrideAttestationRepository::new(&pool, &clock);
 
         let row = repo
-            .record_attestation(sample_attestation_input(AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
+            .record_attestation(sample_attestation_input(&owner_id, AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
             .await
             .expect("registrar atestación");
 
@@ -823,15 +845,16 @@ mod tests {
     async fn event_sequence_id_is_monotonic_and_chain_is_recomputable() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
         let repo = OverrideAttestationRepository::new(&pool, &clock);
 
         let issuer = repo
-            .record_attestation(sample_attestation_input(AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
+            .record_attestation(sample_attestation_input(&owner_id, AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
             .await
             .expect("issuer");
         clock.tick();
         let executor = repo
-            .record_attestation(sample_attestation_input(AttestationSide::Executor, OverrideOutcomeLabel::Executed))
+            .record_attestation(sample_attestation_input(&owner_id, AttestationSide::Executor, OverrideOutcomeLabel::Executed))
             .await
             .expect("executor");
 
@@ -867,17 +890,23 @@ mod tests {
         migrate(&pool).await.expect("migrar");
 
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        // Una sola cuenta sembrada (FK owner_id->accounts): los 16 escritores
+        // comparten owner_id -- el ledger es append-only y admite owner
+        // repetido; lo que este test ejerce es la secuencia densa bajo
+        // contención, no owners distintos.
+        let owner_id = seed_account(&pool, clock.as_ref(), "trader7@example.com").await;
         const N: i64 = 16;
 
         let mut handles = Vec::new();
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = OverrideAttestationRepository::new(&pool_c, clock_c.as_ref());
                 let side = if i % 2 == 0 { AttestationSide::Issuer } else { AttestationSide::Executor };
                 repo.record_attestation(RecordOverrideAttestationInput {
-                    owner_id: format!("trader-{i}"),
+                    owner_id: owner_id_c,
                     parent_owner_id: "fund-X".to_string(),
                     node_id: format!("node-{i}"),
                     attestation_side: side,
@@ -931,6 +960,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla aquí
+        // no interfiere con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "trader7@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -966,7 +1001,7 @@ mod tests {
         let repo = OverrideAttestationRepository::new(&repo_pool, &clock);
 
         let result = repo
-            .record_attestation(sample_attestation_input(AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
+            .record_attestation(sample_attestation_input(&owner_id, AttestationSide::Issuer, OverrideOutcomeLabel::Executed))
             .await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
@@ -994,6 +1029,11 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        // owner_id sembrado (FK válida): la primera fila debe INSERTARSE con
+        // éxito; sin cuenta real la FK la rechazaría antes de poder provocar
+        // la violación de PK que este test necesita.
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "trader7@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -1003,10 +1043,11 @@ mod tests {
                 "INSERT INTO override_attestations (\
                     id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                     owner_id, parent_owner_id, node_id, attestation_side, command_kind, target_ref, outcome, justification\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'trader-7', 'fund-X', 'node-A', \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'fund-X', 'node-A', \
                            'ISSUER', 'ARCHIVE', 'strategy-42', 'EXECUTED', NULL)",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");

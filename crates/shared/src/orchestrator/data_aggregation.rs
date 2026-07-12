@@ -200,6 +200,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::consent_registry::ConsentAction;
     use crate::orchestrator::consent_registry::record_consent_action;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::consent_registry::RecordConsentActionInput;
     use crate::persistence::pool::{connect, migrate};
     use std::collections::BTreeMap;
@@ -208,6 +209,18 @@ mod tests {
         let pool = connect("sqlite::memory:").await.expect("conectar en memoria");
         migrate(&pool).await.expect("aplicar migraciones");
         pool
+    }
+
+    /// Siembra tres cuentas reales y devuelve sus `owner_id` (== `id`) --
+    /// ADR-0141 enmienda 2026-07-11: `consent_records.owner_id` ahora tiene
+    /// FK física a `accounts(id)`, así que los contribuyentes de la cohorte
+    /// que registran consentimiento necesitan una cuenta real, no un
+    /// literal como "owner-1".
+    async fn seed_three_owners(pool: &SqlitePool, clock: &dyn Clock) -> (String, String, String) {
+        let owner_1 = seed_account(pool, clock, "owner1@example.com").await;
+        let owner_2 = seed_account(pool, clock, "owner2@example.com").await;
+        let owner_3 = seed_account(pool, clock, "owner3@example.com").await;
+        (owner_1, owner_2, owner_3)
     }
 
     fn base_config(channel: Channel, external_sale_enabled: bool) -> AggregationRunConfig {
@@ -286,16 +299,17 @@ mod tests {
     async fn run_aggregation_excludes_events_with_explicit_optout() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
         // owner-1 y owner-2 cubiertos; owner-3 en opt-out explícito.
-        cover_owner(&pool, &clock, "owner-1", "v2", false).await;
-        cover_owner(&pool, &clock, "owner-2", "v2", false).await;
-        cover_owner(&pool, &clock, "owner-3", "v2", true).await;
+        cover_owner(&pool, &clock, &owner_1, "v2", false).await;
+        cover_owner(&pool, &clock, &owner_2, "v2", false).await;
+        cover_owner(&pool, &clock, &owner_3, "v2", true).await;
 
         let events = vec![
-            AggregationEventInput { owner_id: "owner-1".to_string(), metric_e8: 100_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 999_999_999, raw_topology: None },
+            AggregationEventInput { owner_id: owner_1.clone(), metric_e8: 100_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 999_999_999, raw_topology: None },
         ];
 
         // min_cohort = 3, pero owner-3 queda excluido -> cohorte cubierta
@@ -319,15 +333,16 @@ mod tests {
     async fn run_aggregation_includes_covered_events_and_publishes_with_sufficient_cohort() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
-        for owner in ["owner-1", "owner-2", "owner-3"] {
+        for owner in [&owner_1, &owner_2, &owner_3] {
             cover_owner(&pool, &clock, owner, "v2", false).await;
         }
 
         let events = vec![
-            AggregationEventInput { owner_id: "owner-1".to_string(), metric_e8: 100_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 300_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_1.clone(), metric_e8: 100_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 300_000_000, raw_topology: None },
         ];
 
         let outcome = run_aggregation(&pool, &clock, &events, &base_config(Channel::Internal, false))
@@ -352,15 +367,16 @@ mod tests {
     async fn run_aggregation_never_produces_external_channel_when_sale_disabled() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
-        for owner in ["owner-1", "owner-2", "owner-3"] {
+        for owner in [&owner_1, &owner_2, &owner_3] {
             cover_owner(&pool, &clock, owner, "v2", false).await;
         }
 
         let events = vec![
-            AggregationEventInput { owner_id: "owner-1".to_string(), metric_e8: 100_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 300_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_1.clone(), metric_e8: 100_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 300_000_000, raw_topology: None },
         ];
 
         let outcome = run_aggregation(&pool, &clock, &events, &base_config(Channel::External, false))
@@ -379,15 +395,16 @@ mod tests {
     async fn run_aggregation_produces_internal_channel_regardless_of_external_sale_flag() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
-        for owner in ["owner-1", "owner-2", "owner-3"] {
+        for owner in [&owner_1, &owner_2, &owner_3] {
             cover_owner(&pool, &clock, owner, "v2", false).await;
         }
 
         let events = vec![
-            AggregationEventInput { owner_id: "owner-1".to_string(), metric_e8: 100_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 300_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_1.clone(), metric_e8: 100_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 300_000_000, raw_topology: None },
         ];
 
         let outcome = run_aggregation(&pool, &clock, &events, &base_config(Channel::Internal, false))
@@ -406,15 +423,16 @@ mod tests {
     async fn run_aggregation_produces_external_channel_when_sale_enabled_and_covered() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
-        for owner in ["owner-1", "owner-2", "owner-3"] {
+        for owner in [&owner_1, &owner_2, &owner_3] {
             cover_owner(&pool, &clock, owner, "v2", false).await;
         }
 
         let events = vec![
-            AggregationEventInput { owner_id: "owner-1".to_string(), metric_e8: 100_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 300_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_1.clone(), metric_e8: 100_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 300_000_000, raw_topology: None },
         ];
 
         let outcome = run_aggregation(&pool, &clock, &events, &base_config(Channel::External, true))
@@ -437,19 +455,20 @@ mod tests {
     async fn run_aggregation_accepts_raw_topology_without_changing_the_outcome() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let (owner_1, owner_2, owner_3) = seed_three_owners(&pool, &clock).await;
 
-        for owner in ["owner-1", "owner-2", "owner-3"] {
+        for owner in [&owner_1, &owner_2, &owner_3] {
             cover_owner(&pool, &clock, owner, "v2", false).await;
         }
 
         let events = vec![
             AggregationEventInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_1.clone(),
                 metric_e8: 100_000_000,
                 raw_topology: Some("RSI(14)+MACD(12,26,9)".to_string()),
             },
-            AggregationEventInput { owner_id: "owner-2".to_string(), metric_e8: 200_000_000, raw_topology: None },
-            AggregationEventInput { owner_id: "owner-3".to_string(), metric_e8: 300_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_2.clone(), metric_e8: 200_000_000, raw_topology: None },
+            AggregationEventInput { owner_id: owner_3.clone(), metric_e8: 300_000_000, raw_topology: None },
         ];
 
         let outcome = run_aggregation(&pool, &clock, &events, &base_config(Channel::Internal, false))

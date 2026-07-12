@@ -98,6 +98,7 @@ mod tests {
     use crate::domain::clock::DeterministicClock;
     use crate::domain::usage_metering::QuotaVerdict;
     use crate::orchestrator::plan_tier_quota::{seed_default_catalog, LocalStubPlanCatalogConfig};
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -116,6 +117,7 @@ mod tests {
     async fn record_metered_operation_uses_real_plan_limits_to_detect_crossing() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         seed_default_catalog(&pool, &clock, "drasus-system", "seed-node", "DRASUS_LOCAL", &LocalStubPlanCatalogConfig::default())
             .await
@@ -125,7 +127,7 @@ mod tests {
         let within = record_metered_operation(
             &pool,
             &clock,
-            "owner-1",
+            &owner_id,
             "DRASUS_LOCAL",
             "node-1",
             PlanTier::Free,
@@ -139,7 +141,7 @@ mod tests {
         let crossed = record_metered_operation(
             &pool,
             &clock,
-            "owner-1",
+            &owner_id,
             "DRASUS_LOCAL",
             "node-1",
             PlanTier::Free,
@@ -157,6 +159,7 @@ mod tests {
     async fn record_metered_operation_uses_the_correct_tier_limit() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner2@example.com").await;
 
         seed_default_catalog(&pool, &clock, "drasus-system", "seed-node", "DRASUS_LOCAL", &LocalStubPlanCatalogConfig::default())
             .await
@@ -165,7 +168,7 @@ mod tests {
         let paid_result = record_metered_operation(
             &pool,
             &clock,
-            "owner-2",
+            &owner_id,
             "DRASUS_LOCAL",
             "node-1",
             PlanTier::Paid,

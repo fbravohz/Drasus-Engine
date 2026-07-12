@@ -163,6 +163,7 @@ mod tests {
     };
     use crate::domain::verified_account_registry::{AccountType, NS_PER_DAY};
     use crate::orchestrator::consent_registry::record_consent_action;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::consent_registry::RecordConsentActionInput;
     use crate::persistence::pool::{connect, migrate};
 
@@ -172,17 +173,17 @@ mod tests {
         pool
     }
 
-    fn sample_new_account() -> NewVerifiedAccount {
-        sample_new_account_with_capital_reality(CapitalReality::Live)
+    fn sample_new_account(owner_id: &str) -> NewVerifiedAccount {
+        sample_new_account_with_capital_reality(owner_id, CapitalReality::Live)
     }
 
     /// Igual que [`sample_new_account`], pero con el Eje B configurable --
     /// necesario para el test discriminante `SOVEREIGN`+`PAPER`. Escribe
     /// `capital_reality` en `institutional_tag` (STORY-041: en esta tabla
     /// ES el Eje B, ya no acepta el placeholder genérico "DRASUS_LOCAL").
-    fn sample_new_account_with_capital_reality(capital_reality: CapitalReality) -> NewVerifiedAccount {
+    fn sample_new_account_with_capital_reality(owner_id: &str, capital_reality: CapitalReality) -> NewVerifiedAccount {
         NewVerifiedAccount {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: capital_reality.as_str().to_string(),
             node_id: "node-1".to_string(),
             broker: "ICMarkets".to_string(),
@@ -200,8 +201,9 @@ mod tests {
     async fn register_account_always_starts_private() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = register_account(&pool, &clock, sample_new_account()).await.expect("registrar");
+        let account = register_account(&pool, &clock, sample_new_account(&owner_id)).await.expect("registrar");
         assert_eq!(account.publication_status, PublicationStatus::Private);
         assert_eq!(account.row_version, 1);
     }
@@ -212,8 +214,9 @@ mod tests {
     async fn attest_track_record_computes_gain_pct_excluding_capital_flow_end_to_end() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
-        let account = register_account(&pool, &clock, sample_new_account()).await.expect("registrar");
+        let account = register_account(&pool, &clock, sample_new_account(&owner_id)).await.expect("registrar");
 
         let events = vec![
             EnrichedDomainEvent::AccountSnapshot(AccountSnapshotPayload {
@@ -272,7 +275,8 @@ mod tests {
     async fn sovereign_and_broker_readonly_tracks_of_the_same_account_stay_distinct() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let account = register_account(&pool, &clock, sample_new_account()).await.expect("registrar");
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let account = register_account(&pool, &clock, sample_new_account(&owner_id)).await.expect("registrar");
 
         let events = vec![EnrichedDomainEvent::OrderExecuted(OrderExecutedPayload {
             instrument_id: "BTCUSDT".to_string(),
@@ -321,7 +325,8 @@ mod tests {
     async fn sovereign_paper_account_is_attested_but_never_presented_as_real_capital() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let account = register_account(&pool, &clock, sample_new_account_with_capital_reality(CapitalReality::Paper))
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let account = register_account(&pool, &clock, sample_new_account_with_capital_reality(&owner_id, CapitalReality::Paper))
             .await
             .expect("registrar cuenta PAPER");
         assert_eq!(
@@ -368,7 +373,8 @@ mod tests {
     async fn request_publication_denies_without_any_real_consent() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let account = register_account(&pool, &clock, sample_new_account()).await.expect("registrar");
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let account = register_account(&pool, &clock, sample_new_account(&owner_id)).await.expect("registrar");
         assert_eq!(account.publication_status, PublicationStatus::Private);
 
         // Ningún evento de consentimiento registrado -- el consent_out REAL
@@ -386,7 +392,8 @@ mod tests {
     async fn request_publication_publishes_with_real_covered_consent() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
-        let account = register_account(&pool, &clock, sample_new_account()).await.expect("registrar");
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
+        let account = register_account(&pool, &clock, sample_new_account(&owner_id)).await.expect("registrar");
 
         // Registra el opt-in REAL vía consent-registry (#5) -- no un stub.
         let mut optout_changes = std::collections::BTreeMap::new();

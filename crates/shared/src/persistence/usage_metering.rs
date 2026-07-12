@@ -377,6 +377,7 @@ fn row_to_usage_record(row: sqlx::sqlite::SqliteRow) -> Result<UsageRecordRow, U
 mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -385,9 +386,9 @@ mod tests {
         pool
     }
 
-    fn sample_input(billing_cycle_id: &str, size: i64, price: i64, notional_limit: i64) -> RecordOperationInput {
+    fn sample_input(owner_id: &str, billing_cycle_id: &str, size: i64, price: i64, notional_limit: i64) -> RecordOperationInput {
         RecordOperationInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             institutional_tag: "DRASUS_LOCAL".to_string(),
             node_id: "node-1".to_string(),
             compliance_status_id: None,
@@ -451,6 +452,27 @@ mod tests {
         }
     }
 
+    // ── CRITERIO DE CIERRE (ADR-0141 enmienda 2026-07-11, M6) ────────────────
+
+    /// La FK física `usage_records.owner_id -> accounts(id)` rechaza un
+    /// `owner_id` que no corresponde a ninguna cuenta -- un huérfano ya no
+    /// es un bug silencioso, la base de datos lo atrapa.
+    #[tokio::test]
+    async fn record_operation_with_nonexistent_owner_id_is_rejected_by_foreign_key() {
+        let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = UsageRepository::new(&pool, &clock);
+
+        let result = repo
+            .record_operation(sample_input("cuenta-que-no-existe", "2026-07", 100_000_000, 100_000_000_000, 1_000_000_000_000))
+            .await;
+
+        assert!(
+            matches!(result, Err(UsageRepositoryError::Database(_))),
+            "un owner_id huérfano debe rechazarse por la FK, no persistirse: {result:?}"
+        );
+    }
+
     // ── CRITERIO #1 (Orden §5): append-only -- UPDATE/DELETE rechazados ─────
 
     /// CRITERIO DE CIERRE: un `UPDATE` sobre `usage_records` es rechazado
@@ -460,10 +482,11 @@ mod tests {
     async fn update_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let row = repo
-            .record_operation(sample_input("2026-07", 250_000_000, 4_000_000_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 250_000_000, 4_000_000_000_000, 1_000_000_000_000))
             .await
             .expect("registrar operación");
 
@@ -481,10 +504,11 @@ mod tests {
     async fn delete_is_rejected_by_trigger() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let row = repo
-            .record_operation(sample_input("2026-07", 250_000_000, 4_000_000_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 250_000_000, 4_000_000_000_000, 1_000_000_000_000))
             .await
             .expect("registrar operación");
 
@@ -505,20 +529,21 @@ mod tests {
     async fn event_sequence_id_is_monotonic_across_inserts() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let first = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
             .await
             .expect("primera operación");
         clock.tick();
         let second = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
             .await
             .expect("segunda operación");
         clock.tick();
         let third = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
             .await
             .expect("tercera operación");
 
@@ -534,9 +559,10 @@ mod tests {
     async fn duplicating_event_sequence_id_is_rejected_by_unique_constraint() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
-        repo.record_operation(sample_input("2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
+        repo.record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000, 1_000_000_000_000))
             .await
             .expect("primera operación (event_sequence_id = 1)");
 
@@ -545,9 +571,10 @@ mod tests {
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 notional_per_op, cycle_accumulated, billing_cycle_id, instrument_id, quota_verdict\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                        0, 0, '2026-07', 'BTCUSDT', 'WITHIN')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -563,21 +590,22 @@ mod tests {
     async fn multiple_operations_in_the_same_cycle_accumulate_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         // Tres operaciones de $1,000.00 cada una ($100_000_000_00 en ×1e8:
         // size=1e8 (1.0), price=100_000_000_000 ($1,000.00) -> nocional $1,000.00.
         let notional_limit = 1_000_000_000_000_000; // límite alto, no cruza en esta prueba
         let first = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("primera operación");
         let second = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("segunda operación");
         let third = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("tercera operación");
 
@@ -594,21 +622,22 @@ mod tests {
     async fn changing_billing_cycle_resets_accumulation_but_keeps_history() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let notional_limit = 1_000_000_000_000_000;
-        repo.record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+        repo.record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("operación del ciclo de julio");
         clock.tick();
-        repo.record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+        repo.record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("segunda operación del ciclo de julio");
 
         clock.tick();
         // Ciclo nuevo (agosto) -- el acumulado debe arrancar en cero, no en 200_000_000_000.
         let august_first = repo
-            .record_operation(sample_input("2026-08", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-08", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("primera operación del ciclo de agosto");
 
@@ -632,6 +661,7 @@ mod tests {
     async fn quota_verdict_transitions_from_within_to_crossed() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         // Límite FREE real de plan-tier-quota: $10,000.00 * 1e8 = 1_000_000_000_000.
@@ -639,14 +669,14 @@ mod tests {
 
         // Primera operación: nocional $1,000.00 -- sigue dentro.
         let first = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("primera operación");
         assert_eq!(first.quota_verdict, QuotaVerdict::Within);
 
         // Segunda operación: nocional $100,000.00 -- el acumulado ($101,000.00) cruza el límite ($10,000.00).
         let second = repo
-            .record_operation(sample_input("2026-07", 250_000_000, 4_000_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 250_000_000, 4_000_000_000_000, notional_limit))
             .await
             .expect("segunda operación");
         assert_eq!(second.quota_verdict, QuotaVerdict::Crossed, "el acumulado debe haber cruzado el límite FREE");
@@ -662,21 +692,22 @@ mod tests {
     async fn audit_chain_hash_is_null_only_in_genesis_row_and_chains_afterwards() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let notional_limit = 1_000_000_000_000_000;
         let first = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("primera operación (génesis)");
         clock.tick();
         let second = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("segunda operación");
         clock.tick();
         let third = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("tercera operación");
 
@@ -698,15 +729,18 @@ mod tests {
     #[tokio::test]
     async fn database_check_rejects_unknown_quota_verdict() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let result = sqlx::query(
             "INSERT INTO usage_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, institutional_tag, node_id, compliance_status_id, \
                 notional_per_op, cycle_accumulated, billing_cycle_id, instrument_id, quota_verdict\
-            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+            ) VALUES ('id-1', 0, 0, 'hash', NULL, 1, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                        0, 0, '2026-07', 'BTCUSDT', 'UNKNOWN')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -719,10 +753,11 @@ mod tests {
     async fn record_operation_propagates_notional_error_without_persisting() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let result = repo
-            .record_operation(sample_input("2026-07", -1, 100_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", -1, 100_000_000, 1_000_000_000_000))
             .await;
         assert!(matches!(result, Err(UsageRepositoryError::Notional(NotionalError::NegativeSize))));
 
@@ -766,6 +801,7 @@ mod tests {
         // filas comparten timestamp -- válido, el orden lo fija
         // event_sequence_id, no el reloj.
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner1@example.com").await;
 
         const N: i64 = 16;
         // Cada operación: size=1e8 (1.0), price=$1,000.00 (1e8 * 1e11 en
@@ -781,9 +817,10 @@ mod tests {
         for _ in 0..N {
             let pool_c = pool.clone(); // SqlitePool es un Arc interno: clonar es barato.
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = UsageRepository::new(&pool_c, clock_c.as_ref());
-                repo.record_operation(sample_input("2026-07", SIZE, PRICE, notional_limit)).await
+                repo.record_operation(sample_input(&owner_id_c, "2026-07", SIZE, PRICE, notional_limit)).await
             }));
         }
 
@@ -849,6 +886,12 @@ mod tests {
         let pool = connect(&database_url).await.expect("conectar");
         migrate(&pool).await.expect("migrar");
 
+        // Sembrar la cuenta ANTES de que el escritor A tome el lock -- la FK
+        // owner_id->accounts(id) exige que la cuenta ya exista; sembrarla
+        // aquí evita interferir con el escenario de contención de abajo.
+        let seed_clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &seed_clock, "owner1@example.com").await;
+
         // Opciones con busy_timeout=0: un lock ocupado falla de INMEDIATO con
         // "database is locked" en vez de esperar 5s -- hace la contención
         // determinista y rápida.
@@ -884,7 +927,7 @@ mod tests {
         let repo = UsageRepository::new(&repo_pool, &clock);
 
         let result = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, 1_000_000_000_000))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, 1_000_000_000_000))
             .await;
 
         drop(lock_tx); // libera el lock (limpieza; el resultado ya está tomado)
@@ -912,6 +955,8 @@ mod tests {
     #[tokio::test]
     async fn is_transient_is_false_for_a_permanent_non_sequence_unique_violation() {
         let pool = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         // Inserta una fila válida y luego otra con el MISMO `id`: viola la
         // PRIMARY KEY `id`, NO el UNIQUE de `event_sequence_id`. Error UNIQUE
@@ -922,10 +967,11 @@ mod tests {
                     id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                     owner_id, institutional_tag, node_id, compliance_status_id, \
                     notional_per_op, cycle_accumulated, billing_cycle_id, instrument_id, quota_verdict\
-                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, 'owner-1', 'DRASUS_LOCAL', 'node-1', NULL, \
+                ) VALUES ('dup-id', 0, 0, 'hash', NULL, ?, ?, 'DRASUS_LOCAL', 'node-1', NULL, \
                            0, 0, '2026-07', 'BTCUSDT', 'WITHIN')",
             )
             .bind(event_sequence_id)
+            .bind(&owner_id)
             .execute(&pool)
         };
         insert_with_id_dup(1).await.expect("primera fila válida");
@@ -960,16 +1006,17 @@ mod tests {
     async fn record_operation_returned_row_matches_the_persisted_row_exactly() {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let repo = UsageRepository::new(&pool, &clock);
 
         let notional_limit = 1_000_000_000_000_000;
         let first = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("primera operación");
         clock.tick();
         let second = repo
-            .record_operation(sample_input("2026-07", 100_000_000, 100_000_000_000, notional_limit))
+            .record_operation(sample_input(&owner_id, "2026-07", 100_000_000, 100_000_000_000, notional_limit))
             .await
             .expect("segunda operación");
 

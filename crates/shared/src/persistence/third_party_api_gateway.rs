@@ -605,6 +605,7 @@ mod tests {
     use super::*;
     use crate::domain::clock::DeterministicClock;
     use crate::domain::third_party_api_gateway::hash_api_credential;
+    use crate::persistence::central_identity::test_support::seed_account;
     use crate::persistence::pool::{connect, migrate};
 
     async fn migrated_pool() -> SqlitePool {
@@ -613,9 +614,9 @@ mod tests {
         pool
     }
 
-    fn sample_new_credential(credential_hash: &str) -> NewApiCredential {
+    fn sample_new_credential(owner_id: &str, credential_hash: &str) -> NewApiCredential {
         NewApiCredential {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.to_string(),
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_hash: credential_hash.to_string(),
@@ -696,10 +697,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiCredentialRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let secret = "sk-super-secret-do-not-leak";
         let stored_hash = hash_api_credential(secret);
 
-        repo.create(sample_new_credential(&stored_hash)).await.expect("crear credencial");
+        repo.create(sample_new_credential(&owner_id, &stored_hash)).await.expect("crear credencial");
 
         let raw: String = sqlx::query("SELECT credential_hash FROM api_credentials LIMIT 1")
             .fetch_one(&pool)
@@ -715,9 +717,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiCredentialRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let stored_hash = hash_api_credential("sk-demo-123");
 
-        let created = repo.create(sample_new_credential(&stored_hash)).await.expect("crear credencial");
+        let created = repo.create(sample_new_credential(&owner_id, &stored_hash)).await.expect("crear credencial");
 
         let found = repo
             .find_by_credential_hash(&stored_hash)
@@ -740,9 +743,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiCredentialRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let stored_hash = hash_api_credential("sk-demo-123");
 
-        let credential = repo.create(sample_new_credential(&stored_hash)).await.expect("crear credencial");
+        let credential = repo.create(sample_new_credential(&owner_id, &stored_hash)).await.expect("crear credencial");
         assert_eq!(credential.status, CredentialStatus::Active);
 
         clock.tick();
@@ -764,9 +768,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiCredentialRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
         let stored_hash = hash_api_credential("sk-demo-123");
 
-        let credential = repo.create(sample_new_credential(&stored_hash)).await.expect("crear credencial");
+        let credential = repo.create(sample_new_credential(&owner_id, &stored_hash)).await.expect("crear credencial");
         let first_view = credential.clone();
         let second_view = credential;
 
@@ -789,10 +794,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiUsageRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let row = repo
             .record_usage(RecordApiUsageInput {
-                owner_id: "owner-1".to_string(),
+                owner_id,
                 access_token_id: None,
                 node_id: "node-1".to_string(),
                 credential_id: "cred-1".to_string(),
@@ -814,10 +820,11 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiUsageRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let row = repo
             .record_usage(RecordApiUsageInput {
-                owner_id: "owner-1".to_string(),
+                owner_id,
                 access_token_id: None,
                 node_id: "node-1".to_string(),
                 credential_id: "cred-1".to_string(),
@@ -841,9 +848,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiUsageRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         let make_input = |endpoint: &str| RecordApiUsageInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.clone(),
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_id: "cred-1".to_string(),
@@ -866,9 +874,10 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(1_000, 100);
         let repo = ApiUsageRepository::new(&pool, &clock);
+        let owner_id = seed_account(&pool, &clock, "owner1@example.com").await;
 
         repo.record_usage(RecordApiUsageInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id.clone(),
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_id: "cred-1".to_string(),
@@ -878,12 +887,15 @@ mod tests {
         .await
         .expect("primer registro (event_sequence_id = 1)");
 
+        // owner_id sembrado (FK válida) bindeado vía `?` para que la ÚNICA
+        // violación sea el UNIQUE de event_sequence_id, no la FK.
         let duplicate = sqlx::query(
             "INSERT INTO api_usage_records (\
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 owner_id, access_token_id, node_id, credential_id, endpoint, outcome\
-            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, 'owner-1', NULL, 'node-1', 'cred-1', 'CERTIFY', 'ALLOWED')",
+            ) VALUES ('id-dup', 0, 0, 'hash', NULL, 1, ?, NULL, 'node-1', 'cred-1', 'CERTIFY', 'ALLOWED')",
         )
+        .bind(&owner_id)
         .execute(&pool)
         .await;
 
@@ -951,10 +963,12 @@ mod tests {
         let pool = migrated_pool().await;
         let clock = DeterministicClock::new(10_000_000_000, 1); // 10s en ns, paso de 1ns
         let repo = ApiUsageRepository::new(&pool, &clock);
+        let owner_id_1 = seed_account(&pool, &clock, "owner1@example.com").await;
+        let owner_id_2 = seed_account(&pool, &clock, "owner2@example.com").await;
 
         // Una solicitud DENIED no debe contar para el rate-limit.
         repo.record_usage(RecordApiUsageInput {
-            owner_id: "owner-1".to_string(),
+            owner_id: owner_id_1.clone(),
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_id: "cred-1".to_string(),
@@ -967,7 +981,7 @@ mod tests {
         // Dos solicitudes ALLOWED de la MISMA credencial.
         for _ in 0..2 {
             repo.record_usage(RecordApiUsageInput {
-                owner_id: "owner-1".to_string(),
+                owner_id: owner_id_1.clone(),
                 access_token_id: None,
                 node_id: "node-1".to_string(),
                 credential_id: "cred-1".to_string(),
@@ -980,7 +994,7 @@ mod tests {
 
         // Una solicitud ALLOWED de OTRA credencial no debe contarse.
         repo.record_usage(RecordApiUsageInput {
-            owner_id: "owner-2".to_string(),
+            owner_id: owner_id_2,
             access_token_id: None,
             node_id: "node-1".to_string(),
             credential_id: "cred-2".to_string(),
@@ -1016,6 +1030,10 @@ mod tests {
         migrate(&pool).await.expect("migrar");
 
         let clock: Arc<DeterministicClock> = Arc::new(DeterministicClock::new(1_000, 100));
+        // Una sola cuenta sembrada (FK owner_id->accounts): los 16 escritores
+        // comparten owner_id -- el ledger es append-only y admite owner
+        // repetido.
+        let owner_id = seed_account(&pool, clock.as_ref(), "owner-concurrente@example.com").await;
 
         const N: i64 = 16;
 
@@ -1023,10 +1041,11 @@ mod tests {
         for i in 0..N {
             let pool_c = pool.clone();
             let clock_c = clock.clone();
+            let owner_id_c = owner_id.clone();
             handles.push(tokio::spawn(async move {
                 let repo = ApiUsageRepository::new(&pool_c, clock_c.as_ref());
                 repo.record_usage(RecordApiUsageInput {
-                    owner_id: "owner-concurrente".to_string(),
+                    owner_id: owner_id_c,
                     access_token_id: None,
                     node_id: "node-1".to_string(),
                     credential_id: "cred-1".to_string(),

@@ -346,6 +346,41 @@ impl From<&Account> for AccountIdentity {
     }
 }
 
+/// Utilidad de pruebas compartida por TODO el crate (ADR-0141 enmienda
+/// 2026-07-11, M6): con la FK física `owner_id -> accounts(id)` activa en
+/// `PRAGMA foreign_keys=ON`, cualquier test que inserte una fila con
+/// `owner_id` en otra tabla del substrato necesita una cuenta real
+/// preexistente cuyo `id` use como `owner_id` -- un literal como
+/// `"owner-1"` ya no basta, la FK lo rechaza. `seed_account` crea esa
+/// cuenta mínima y devuelve su `id`. Vive aquí (no duplicado por archivo)
+/// porque `AccountRepository`/`NewAccount` son de este módulo.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use super::{AccountRepository, NewAccount};
+    use crate::domain::clock::Clock;
+    use sqlx::SqlitePool;
+
+    /// Crea una cuenta semilla con `email` dado y devuelve su `owner_id`
+    /// (== su propio `id`, una cuenta retail es dueña de sí misma). Falla
+    /// el test con `.expect(...)` si la inserción falla -- una cuenta
+    /// semilla que no se pudo crear invalida cualquier aserción posterior.
+    pub(crate) async fn seed_account(pool: &SqlitePool, clock: &dyn Clock, email: &str) -> String {
+        let repo = AccountRepository::new(pool, clock);
+        let account = repo
+            .create(NewAccount {
+                email: email.to_string(),
+                oauth_provider: None,
+                institutional_tag: "DRASUS_LOCAL".to_string(),
+                access_token_id: None,
+                node_id: "seed-node".to_string(),
+                owner_id: None,
+            })
+            .await
+            .expect("crear cuenta semilla");
+        account.owner_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
