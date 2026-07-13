@@ -24,6 +24,17 @@ import 'verification_bridge.dart';
 // negocio: solo gobierna qué zona de la UI se muestra.
 enum _VerifyState { idle, sending, success, invalidInput, backendError }
 
+// Firma de la función de verificación FFI real (misma firma que
+// `verifyFeature` de verification_bridge.dart). Seam de inyección MÍNIMO
+// (DEBT-022): permite a los tests de widget sustituirla por un doble que
+// devuelve un VerificationOutcome fabricado, sin cruzar el puente FFI real
+// (no ejecutable dentro de un widget test). Producción nunca la pasa —
+// siempre cae al default `verifyFeature` real (ver constructor).
+typedef VerifyFn = Future<VerificationOutcome> Function({
+  required String featureId,
+  required String inputJson,
+});
+
 // GenericVerificationSection — widget único reutilizado por todas las
 // entradas del registro. StatefulWidget porque gestiona el texto editable
 // del input y el resultado del último envío.
@@ -36,6 +47,9 @@ class GenericVerificationSection extends StatefulWidget {
   // JSON de ejemplo precargado en el editor — string crudo (se formatea al
   // montar el widget solo para presentación, no altera el contrato).
   final String defaultInputJson;
+  // Seam de inyección opcional para tests de widget (DEBT-022). Producción
+  // nunca lo pasa: queda `null` y `_enviar()` cae al `verifyFeature` real.
+  final VerifyFn? verifyOverride;
 
   const GenericVerificationSection({
     super.key,
@@ -43,6 +57,7 @@ class GenericVerificationSection extends StatefulWidget {
     required this.title,
     required this.icon,
     required this.defaultInputJson,
+    this.verifyOverride,
   });
 
   @override
@@ -94,7 +109,10 @@ class _GenericVerificationSectionState
       _outputJsonPretty = null;
     });
 
-    final outcome = await verifyFeature(
+    // Usa el doble inyectado en tests si existe; en producción `verifyOverride`
+    // siempre es null y esto resuelve al `verifyFeature` real (FFI).
+    final verify = widget.verifyOverride ?? verifyFeature;
+    final outcome = await verify(
       featureId: widget.featureId,
       inputJson: _inputCtrl.text,
     );
