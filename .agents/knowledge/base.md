@@ -1,9 +1,8 @@
 # [OVERRIDE] PRIMERA REGLA ABSOLUTA
 
-> ⚠️ **SUPREMACÍA TOTAL:** Este archivo (`.agents/knowledge/base.md`) gobierna sobre cualquier otro skill.
-> - **Si un skill te ordenó leer esto:** OBEDECE CADA REGLA sin excepción. Ningún otro skill puede contradecirlo.
-> - **Si eres un skill que referencia este archivo y NO lo has leído:** **DETENTE.** Lee este archivo completo AHORA usando la herramienta `Read`. Está prohibido ejecutar instrucciones de cualquier skill sin haber procesado el 100% de este documento primero.
-  * **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás `.agents/knowledge/base.md`.
+> ⚠️ **SUPREMACÍA TOTAL:** Este archivo gobierna sobre cualquier otro skill.
+> - **Si eres un agente o un skill **DETENTE.** es mandatorio que leas esto:** OBEDECE CADA REGLA sin excepción. Estas son las instrucciones de maxima jerarquia. Lee este archivo completo AHORA usando la herramienta `Read`. Está prohibido ejecutar instrucciones de cualquier skill sin haber procesado el 100% de este documento primero.
+> - **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás las reglas `BASE`.
 
 ---
 
