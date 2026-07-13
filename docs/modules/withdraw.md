@@ -16,7 +16,9 @@ El retiro no es un acto de monitoreo (eso lo hace Feedback), sino un acto de **G
 
 ## Épica 0: Esqueleto Fundacional
 
-### Estructura de Archivos (FCIS — ADR-0003)
+> 🔶 **Corregido por ADR-0137 (2026-07-12, reconciliación pendiente aplicada):** la estructura de abajo describía el modelo pre-hexagonal (módulo = dueño de tablas propias). Bajo ADR-0137, `withdraw` es una **composición preset** de features hexagonales — no posee crate ni tablas propias. Las tablas `retirement_records`/`terminal_snapshots` mencionadas abajo son propiedad de [`order-fsm`](../features/order-fsm.md) (la feature que ejecuta la transición `OPERATING → PAUSED → RETIRED`, Regla de Tabla Única, ADR-0003), no de este módulo. Este módulo orquesta el cableado por defecto entre `order-fsm` y las demás features listadas en "Features Consumidas" — ver `crates/features/<dominio>/order-fsm/` por la estructura real de crate.
+
+### Estructura de Archivos (histórica, pre-ADR-0137 — ver corrección arriba)
 
 ```
 crates/withdraw/
@@ -24,7 +26,7 @@ crates/withdraw/
 ├── logic.rs              # Lógica pura: detección de degradación, veredicto de retiro (sin DB, sin I/O)
 ├── orchestrator.rs       # Coordinación: invoca Performance Monitor, Regime Guard, Order FSM
 ├── persistence.rs        # Acceso a SQLite WAL (lectura/escritura)
-├── schemas.rs            # Definición de tablas: retirement_records, terminal_snapshots
+├── schemas.rs            # (histórico) Definición de tablas: retirement_records, terminal_snapshots — ahora propiedad de order-fsm
 └── types.rs              # Tipos de entrada/salida: DegradationAlert, RetirementReason, ArchivalConfirmation
 ```
 
@@ -90,8 +92,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 ## Restricciones
 
-- NUNCA una estrategia puede pasar directamente de OPERANDO a RETIRADA sin pasar por PAUSADA primero
-- La ventana de veto tiene un mínimo configurable (no puede ser instantánea) y un máximo configurable (no puede ser infinita)
+- NUNCA una estrategia pasa de OPERANDO a RETIRADA **por degradación automática** (Sharpe/Drawdown/Régimen) sin pasar por PAUSADA primero — la ventana de veto es la protección contra falsos positivos del monitoreo automático. **Excepción explícita (reconciliación 2026-07-12):** un retiro **manual forzado por el usuario** (`ReasonCode=User`) SÍ puede saltar PAUSADA — es una decisión consciente ya tomada, no una detección algorítmica que necesite ventana de reconsideración. Ver Lifecycle §4 abajo.
+- La ventana de veto tiene un mínimo configurable (no puede ser instantánea) y un máximo configurable (no puede ser infinita) — aplica solo a la vía automática, nunca al retiro manual forzado
 - El monitoreo no puede interferir con la ejecución de órdenes (corre en paralelo sin bloquear)
 
 ---
@@ -135,7 +137,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Entrada:** `live_performance_feed`, `strategy_baseline`.
 *   **Salida:** `degradation_alert`.
 *   **Precondición:** Estrategia en estado `OPERATING`.
-*   **Postcondición:** Registro de la alerta en `retirement_records` con `institutional_tag`.
+*   **Postcondición:** Registro de la alerta en `retirement_records` (tabla propiedad de [`order-fsm`](../features/order-fsm.md), ADR-0003) con `institutional_tag`.
 
 ### **TTR-002: Orquestación de Cierre de Ciclo de Vida (Order FSM)**
 *   **Descripción:** Gestiona la transición final de la estrategia en [`order-fsm`](../features/order-fsm.md) de `OPERATING` a `RETIRED`.
@@ -164,7 +166,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Entrada:** `historical_fills`.
 *   **Salida:** `terminal_equity_snapshot`.
 *   **Precondición:** Posiciones cerradas.
-*   **Postcondición:** Legado financiero registrado.
+*   **Postcondición:** Legado financiero registrado en `terminal_snapshots` (tabla propiedad de [`order-fsm`](../features/order-fsm.md), ADR-0003).
 
 ### **TTR-005: Orquestación de KPIs de Decadencia (Institutional Metrics)**
 *   **Descripción:** Invoca a [`institutional-metrics`](../features/institutional-metrics.md) para documentar el fallo.
@@ -269,7 +271,7 @@ Cuando una estrategia llega a este módulo está en estado **OPERATING**:
    - No puede reactivarse sin override manual explícito
    
 4. **OPERATING** → (usuario fuerza retiro manual) → **RETIRED**
-   - Bypasea PAUSED directamente
+   - Bypasea PAUSED directamente — excepción explícita a la regla de "Restricciones" arriba: solo válida para retiro **manual** (`ReasonCode=User`), nunca para degradación automática
    - Efecto inmediato
 
 ---

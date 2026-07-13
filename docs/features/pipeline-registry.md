@@ -3,13 +3,17 @@
 **Carpeta:** `./features/pipeline-registry/`
 **Estado:** En Diseño
 **Última actualización:** 2026-07-11
-**Decisión Arquitectónica Asociada:** ADR-0150 (Expedition — Ledger de Ejecución + Linaje + Pipeline Versionado) · ADR-0005 (mecanismo de versionado git-like reutilizado) · ADR-0137 (formaliza el "custom module")
+**Decisión Arquitectónica Asociada:** ADR-0150 (Expedition — Ledger de Ejecución + Linaje + Pipeline Versionado) · ADR-0005 (mecanismo de versionado git-like reutilizado) · ADR-0137 (formaliza el "custom module") · ADR-0153 (Workspace, nivel 0 del Eje de Proceso)
+
+> 🔶 **Extendido por ADR-0153 (2026-07-12):** esta feature también posee **Workspace** — contenedor visual/organizacional de N Pipelines, nivel 0 del Eje de Proceso del Canvas, navegado con el mismo zoom in-place que Pipeline (nunca una segunda superficie de canvas). Un Workspace **no aísla datos**: un Pipeline de un Workspace puede referenciar la misma Strategy/Portfolio que un Pipeline de otro Workspace simultáneamente — la separación es puramente organizacional.
 
 ---
 
 ## ¿Qué es esta feature?
 
 El Pipeline Registry es el dueño de la **definición** de un Pipeline: el flujo custom, nombrado y ordenado, de features/módulos que el usuario arma en el Canvas — la "ruta" reutilizable. Persiste esa definición y la **versiona** con el mismo patrón git-like de ADR-0005: cada cambio en la topología crea un nodo de versión inmutable content-addressed, de modo que dos corridas distintas (Expeditions) pueden apoyarse en versiones distintas de la misma ruta y ese cambio es diffeable.
+
+También posee **Workspace**: una cabecera simple (`id`, `name`, `owner_id`) que agrupa Pipelines. Cada Pipeline tiene un `workspace_id` opcional (un Pipeline sin Workspace asignado vive en un bucket "Sin Workspace" por defecto). Workspace no se versiona git-like — es metadato organizacional mutable, igual de liviano que una carpeta.
 
 **Problema que resuelve:** hoy el "custom module" de ADR-0137 (una composición de features guardada) es un concepto sin entidad persistida ni historial. Sin un Pipeline versionado no se puede saber *con qué ruta exacta* corrió una Expedition, ni diffear la ruta entre la corrida N y la N+1. Esta feature aporta ese eslabón.
 
@@ -52,12 +56,22 @@ Persistir una topología de Pipeline como nodo inmutable con `version_hash` dete
 ### TTR-002: Diff de versiones de Pipeline
 Calcular en el Core la diferencia de topología (nodos/conexiones añadidos, quitados, recableados) entre dos `version_hash`.
 
+### TTR-003: Workspace — Cabecera Organizacional de Pipelines (ADR-0153)
+*   **¿Cuál es el problema?** No existe forma de agrupar visualmente N Pipelines con propósitos distintos (ej. "I+D Forex" vs. "I+D Cripto") sin caer en aislamiento físico de datos.
+*   **¿Qué tiene que pasar?** Persistir la tabla `workspaces` (`id`, `name`, `owner_id`, `created_at`) y el campo `workspace_id` (FK opcional) en la cabecera de Pipeline. El Canvas lee `workspaces` para renderizar el nivel 0 del Eje de Proceso.
+*   **¿Cómo sé que está hecho?**
+    - [ ] El usuario crea un Workspace, le asigna Pipelines existentes, y navega a él con zoom in-place desde el Canvas.
+    - [ ] Un Pipeline referenciado por un Workspace sigue siendo referenciable en cualquier otro contexto — mover un Pipeline de Workspace es solo reasignar `workspace_id`, nunca migrar datos.
+*   **¿Qué no puede pasar?**
+    - Ninguna tabla del Eje de Entidad (Strategy/Portfolio/Cluster) gana un campo `workspace_id` — el aislamiento es solo del Eje de Proceso, nunca del banco de estrategias.
+
 ## Puertos de Integración (ADR-0137)
 
 | Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
 |---|---|---|---|---|
 | `pipeline_definition_out` | `PipelineDefinition` (tipo de dominio nuevo — se cataloga en ADR-0137 con color de procedencia al construir el nodo Canvas, patrón progresivo) | Output | `1` | Definición vigente de un Pipeline (cabecera + versión activa). Consumida por `expedition-ledger`, `visual-dag-editor` y `event-driven-pipeline-triggers`. |
 | `pipeline_version_out` | `PipelineVersion` (tipo de dominio nuevo — cableado de Canvas diferido, ídem) | Output | `1..N` | Nodos de versión inmutables de la ruta; referencia *locked* de cada Expedition. |
+| `workspace_out` | `WorkspaceContext` (tipo de dominio nuevo — ADR-0153, cableado de Canvas diferido) | Output | `0..1` | Workspace al que pertenece el Pipeline (opcional); alimenta el nivel 0 del Eje de Proceso en el Canvas. |
 
 > Los nombres canónicos de `struct`/tipo Rust los fija el ingeniero (anti-alucinación, ADR-0144). El cableado en Canvas de estos tipos se difiere a EPIC-8 (ADR-0136 §Enmienda 2026-06-28); el subsistema no depende del Canvas para existir.
 

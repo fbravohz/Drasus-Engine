@@ -7,7 +7,7 @@
 | **ID** | TASK-049 |
 | **Tipo** | Task (escalamiento) |
 | **Épica** | EPIC-0 — Fundación (retroactiva) |
-| **Estado** | Redactada — pendiente de decisión del Architect |
+| **Estado** | ✅ Resuelta (2026-07-11/12) — Architect decidió E1–E6; ver §Resolución |
 | **Creada** | 2026-07-10 |
 | **Origen** | Diagnóstico de la auditoría (6 lotes) — plan `.agents/plans/magical-sprouting-quasar.md` §"Desincronización documental" |
 
@@ -59,3 +59,16 @@ Cada ítem se presenta con **contraste bidireccional**: puede estar equivocado e
 ## Cierre
 
 Este paquete se entrega al usuario. El Architect (Opus, invocado por el usuario con `/architect`) decide E1–E6 y edita los documentos de `docs/`/`CLAUDE.md` que correspondan. Tras su decisión, el Tech-Lead relee los documentos modificados y traduce cada regla nueva a checks del Gate de Coherencia (cierre del bucle de trazabilidad).
+
+## Resolución (2026-07-11/12) — verificada por el Tech-Lead archivo por archivo y en git
+
+El Architect procesó el paquete en una sesión previa. Estado de cada ítem:
+
+- **E1 ✅ RESUELTO** — `docs/adr/ADR-0137.md` gana la **enmienda 2026-07-11** que registra formalmente los tipos de puerto `textLabel` de #11–#14 en el bloque "Infraestructura (crosscutting)". Deuda de gobernanza cerrada.
+- **E2 ✅ RESUELTO** — `CLAUDE.md §1` remite ahora a ADR-0137 como fuente canónica de la lista de cimientos (14), en vez de duplicar los 6 originales.
+- **E3 ✅ RESUELTO** — FK física `owner_id → accounts(id) ON DELETE RESTRICT` + índice de FK-hijo (M7) homogeneizada en el substrato (commit `7e870f0`, ADR-0141 enmienda 2026-07-11). 10 migraciones portan `REFERENCES accounts`.
+- **E4 ✅ DECIDIDO — con cabo de código pendiente** — `docs/adr/ADR-0133.md` gana la **enmienda 2026-07-11**: la enumeración exhaustiva de un dominio finito satisface la Capa 3 (más fuerte que `proptest`); `proptest` sigue obligatorio en dominios numéricos NO acotados. **Residual de código (dominio del TL):** falta `proptest` en `usage_metering.rs::compute_notional`/`accumulate` y `data_aggregation.rs::apply_differential_privacy` → rastreado como **DEBT-023**.
+- **E5 ✅ RESUELTO** — nombre del lienzo parametrizado en `kCanvasName` (`ui/lib/app_meta.dart`, commit `032727c`); identificadores de código neutrales. `reactorGreen`/`gradReactor` verificados como **codename de color** (token de "encendido"), no acople al nombre del lienzo → sin acción.
+- **E6 ✅ RESUELTO** — comentarios de `migrations/0008/0009` corregidos (commit `2bcee71`); contradicción de `verified-account-registry.md` (banner vs. línea 95) alineada al estado real (pagado, STORY-041).
+
+**Cierre del bucle de trazabilidad:** las reglas nuevas (distinción de cardinalidad de ADR-0133; FK física de ADR-0141; catálogo cerrado de ADR-0137) se incorporan al Gate de Coherencia por referencia a sus ADR. Único trabajo de código remanente: **DEBT-023** (proptest numérico).

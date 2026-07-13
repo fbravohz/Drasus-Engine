@@ -5,6 +5,8 @@
 **Última actualización:** 2026-04-09
 **Decisión Arquitectónica Asociada:** ADR-0004 (Máquina de Estados FSM)
 
+> 🔶 **Corrección ADR-0003/ADR-0137 (2026-07-12):** las tablas `retirement_records` y `terminal_snapshots` (alerta de degradación + snapshot terminal de equity al retirar una estrategia) son propiedad de esta feature — es la que ejecuta la transición `OPERATING → PAUSED → RETIRED`. `docs/modules/withdraw.md` las mencionaba como propias por un residuo de la estructura pre-hexagonal; quedan reconciliadas aquí bajo la Regla de Tabla Única (ADR-0003).
+
 ---
 
 ## ¿Qué es?
@@ -167,6 +169,10 @@ Híbrido: Perfil C (Ops/Hot-Path = I + II + IV + V latencia) + linaje III legít
 | **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de transición interna (hot-path) |
 | | `source_signal_id` | Señal de origen que disparó la transición |
 | | `indicator_state_hash` | Snapshot técnico T-0 de la ejecución (Margen/Precio) — Grupo V, recategorizado desde III |
+
+**Tablas de retiro (propiedad de esta feature, orquestadas por `withdraw` — ADR-0003):**
+- `retirement_records`: una fila por alerta de degradación (`ReasonCode`: Performance | Regime | User) y por transición terminal a `RETIRED`, con `institutional_tag`.
+- `terminal_snapshots`: snapshot final e inmutable del PnL/equity acumulado de una estrategia al momento del retiro (`terminal_equity_snapshot`).
 
 - **Decisión Arquitectónica Asociada:**
     - ADR-0004: Máquina de Estados FSM (int64).

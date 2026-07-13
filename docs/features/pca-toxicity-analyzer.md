@@ -5,6 +5,8 @@
 **Última actualización:** 2026-04-30
 **Decisión Arquitectónica Asociada:** ADR-0072 (PCA Toxicity Clustering)
 
+> 🔶 **Enmienda ADR-0153 (2026-07-12):** la columna `cluster_label` se renombra a `family_label` — elimina la colisión léxica con la entidad de negocio Cluster (ADR-0136/ADR-0090, fusionadas en `federated-portfolio`). Sigue siendo una etiqueta estadística automática calculada por PCA/K-Means; nunca tiene tabla propia ni se crea/nombra manualmente.
+
 ## ¿Qué es?
 
 Es un módulo de validación avanzada que aplica técnicas de aprendizaje no supervisado para agrupar y purgar familias de estrategias que demuestran comportamientos tóxicos ocultos (bajo número de operaciones, dependencia excesiva de valores atípicos o sobreajustadas). El sistema reduce las métricas de riesgo relevantes a un número menor de componentes y agrupa las estrategias mediante clústeres.
@@ -47,7 +49,7 @@ Es un módulo de validación avanzada que aplica técnicas de aprendizaje no sup
 - Calcula la puntuación de toxicidad por estrategia y clúster.
 
 ### Salida
-- El databank enriquecido con las columnas inmutables `cluster_label` y `toxicity_score`.
+- El databank enriquecido con las columnas inmutables `family_label` (ex `cluster_label`, ADR-0153) y `toxicity_score`.
 
 ### Contextos de Uso
 
@@ -62,7 +64,7 @@ Es un módulo de validación avanzada que aplica técnicas de aprendizaje no sup
 * **¿Cuál es el problema?**
   Las métricas de riesgo de las estrategias están altamente correlacionadas, lo que dificulta el análisis mediante umbrales independientes.
 * **¿Qué tiene que pasar?**
-  El sistema extrae las métricas del databank, las normaliza y calcula los clústeres junto con las puntuaciones de toxicidad por estrategia.
+  El sistema extrae las métricas del databank, las normaliza y calcula las familias estadísticas (`family_label`) junto con las puntuaciones de toxicidad por estrategia.
 * **¿Cómo sé que está hecho?**
   - [ ] El proceso retorna el databank con las nuevas etiquetas y puntuaciones asignadas correctamente.
 * **¿Qué no puede pasar?**

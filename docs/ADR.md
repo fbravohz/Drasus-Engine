@@ -156,3 +156,4 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0150](./adr/ADR-0150.md) | Expedition — Ledger de Ejecución Inmutable, Linaje de Procedencia y Pipeline Versionado (columna vertebral de procedencia + presupuesto de pruebas del DSR) |
 | [ADR-0151](./adr/ADR-0151.md) | Modelo de Aplicación de la Corrección por Pruebas Múltiples — Por Punto de Decisión, N desde el Linaje, Correlación por V[{SR_n}] (reconcilia PBO/CSCV ↔ DSR ↔ PSR; guardia de límite degenerado) |
 | [ADR-0152](./adr/ADR-0152.md) | Banco de Pruebas como Gate Permanente de Definición de Terminado — Realización Canónica de la SVF Genérica · enmienda ADR-0117 |
+| [ADR-0153](./adr/ADR-0153.md) | Banco de Estrategias Unificado — Cluster Fusionado (enmienda ADR-0090/ADR-0072), Eje de Proceso Workspace→Pipeline (extiende ADR-0136) y Selección Efímera (extiende ADR-0137) |

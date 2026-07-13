@@ -3,7 +3,9 @@
 **Carpeta:** `./features/canvas-navigation/`
 **Estado:** Lista para implementar
 **Última actualización:** 2026-06-23
-**Decisión Arquitectónica Asociada:** ADR-0136 (Canvas [Forge/Reactor] — supersede ADR-0028)
+**Decisión Arquitectónica Asociada:** ADR-0136 (Canvas [Forge/Reactor] — supersede ADR-0028) · ADR-0153 (Eje de Proceso Workspace→Pipeline, comportamiento de descarte)
+
+> 🔶 **Extendido por ADR-0153 (2026-07-12):** esta feature también navega el Eje de Proceso (`Workspace → Pipeline × N → Módulo/Feature`) con el mismo mecanismo de zoom in-place — ver Comportamientos Observables abajo. Además define el comportamiento de "eliminar" un nodo de entidad (Strategy/Portfolio/Cluster): nunca es un DELETE físico, escribe una fila de linaje `DISCARDED` (ADR-0150) y el nodo se oculta pero permanece recuperable.
 
 ---
 
@@ -27,6 +29,10 @@ Sin esta feature el Canvas no tiene memoria de posición ni transiciones suaves 
 - [ ] El nodo Portfolio muestra una mini equity curve que es la suma vectorial de las equity curves de sus Strategies activas.
 - [ ] La transición de zoom entre niveles completa en < 300ms.
 - [ ] Al reabrir la app, el canvas restaura la última posición y nivel de jerarquía de la sesión anterior.
+- [ ] Al hacer doble clic en un nodo Workspace → el canvas anima zoom in-place y aparecen sus Pipelines. El breadcrumb flotante muestra `Workspace A`. (ADR-0153)
+- [ ] Al hacer doble clic en un nodo Pipeline → el canvas muestra sus nodos de Módulo/Feature. El breadcrumb muestra `Workspace A › Pipeline B`. (ADR-0153)
+- [ ] El usuario descarta un nodo Strategy/Portfolio/Cluster (Eje de Entidad) desde el Canvas o el Grid View → se escribe una fila de linaje `touch_nature=DISCARDED` (ADR-0150); el nodo desaparece de la vista activa por defecto pero nunca se borra del DAG (ADR-0005). Un filtro "ver descartadas" lo recupera. (ADR-0153)
+- [ ] El usuario elimina un nodo Feature/Módulo del lienzo de un Pipeline → solo se edita la topología del Pipeline (nueva versión en `pipeline-registry`, ADR-0150); no se escribe ninguna fila de linaje `DISCARDED` — Feature/Módulo/Pipeline no tienen `artifact_kind` en el linaje (ADR-0153).
 
 ---
 
@@ -35,6 +41,8 @@ Sin esta feature el Canvas no tiene memoria de posición ni transiciones suaves 
 - **NUNCA** bloquear el hilo de renderizado (60fps) durante el cálculo de correlación Pearson o la agregación vectorial de equity — ambos corren en workers Rust y pasan el resultado via FFI.
 - **NUNCA** renderizar más de `DOWNSAMPLING_POINTS` puntos por serie de equity — el downsampling LTTB se aplica en el backend antes de pasar al canvas.
 - **NUNCA** saltar niveles intermedios de la jerarquía de entidades (no se puede ir de Cluster directo a Logic Block sin pasar por Portfolio y Strategy).
+- **NUNCA** saltar niveles intermedios de la jerarquía de proceso (no se puede ir de Workspace directo a un nodo Feature sin pasar por Pipeline). (ADR-0153)
+- **NUNCA** un descarte (`DISCARDED`) borra un nodo del DAG — solo lo oculta de la vista activa (ADR-0005, ADR-0150).
 - **Límite Técnico:** Latencia de transición de zoom < 300ms en dispositivo objetivo.
 
 ---

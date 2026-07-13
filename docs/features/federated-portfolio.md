@@ -1,9 +1,11 @@
-# Federated Portfolio
+# Federated Portfolio — Dueña de la Entidad Cluster
 
 **Carpeta:** `./features/federated-portfolio/`
 **Estado:** Lista para implementar
-**Última actualización:** 2026-05-31
-**Decisión Arquitectónica Asociada:** ADR-0090 (Arquitectura de Portafolios Federados)
+**Última actualización:** 2026-07-12
+**Decisión Arquitectónica Asociada:** ADR-0090 (Arquitectura de Portafolios Federados) · ADR-0153 (fusión con Cluster del Canvas, enmienda 2026-07-12)
+
+> 🔶 **Enmienda ADR-0153 (2026-07-12):** esta feature pasa a ser dueña de la entidad **Cluster** — el "contenedor de portafolios federados" descrito abajo y el nivel 0 del Eje de Entidad del Canvas (`Cluster → Portfolio × N`, ADR-0136) son la misma entidad. La tabla `portfolio_containers` (TTR-001) se complementa con `clusters` (ver Persistencia). Nada del comportamiento de aislamiento de reglas descrito abajo cambia; solo se formaliza que este contenedor es también el nodo Cluster navegable/nombrable del Canvas.
 
 ---
 
@@ -92,6 +94,15 @@ El **Federated Portfolio** es una arquitectura avanzada que permite la coexisten
 
 ## Tareas (TTRs)
 
+### **TTR-000: Entidad Cluster — Nodo Navegable del Canvas (ADR-0153)**
+*   **¿Cuál es el problema?** El nivel 0 del Eje de Entidad del Canvas (`Cluster`, ADR-0136) no tenía tabla propia ni feature dueña antes de esta enmienda; solo existía como nivel visual sin persistencia.
+*   **¿Qué tiene que pasar?** Se crea la tabla `clusters` (id, `name`, `owner_id`, `created_at`) como cabecera nombrable del contenedor federado ya definido en TTR-001. Cada fila de `portfolio_containers` referencia su `cluster_id`. El Canvas lee `clusters` para renderizar el nodo nivel-0 y sus Portfolios anidados (`canvas-navigation`).
+*   **¿Cómo sé que está hecho?**
+    - [ ] El usuario nombra/crea un Cluster desde el Canvas y aparece como nodo nivel-0 navegable (zoom in-place a sus Portfolios).
+    - [ ] Un Cluster sin Portfolios asignados es válido (contenedor vacío).
+*   **¿Qué no puede pasar?**
+    - No se duplica el esquema de `portfolio_containers` — `clusters` es solo la cabecera nombrable, el aislamiento de reglas sigue viviendo en `portfolio_containers` (TTR-001/TTR-002).
+
 ### **TTR-001: Estructura de Contenedor de Portafolio y persistencia JSON**
 *   **¿Cuál es el problema?** El sistema necesita guardar de forma persistente y estructurada la gobernanza, las estrategias y los límites de cada portafolio federado de forma multi-tenant y local-first.
 *   **¿Qué tiene que pasar?** Se crea la tabla relacional `portfolio_containers` en SQLite para el estado operativo y el esquema JSON inmutable para registrar de forma unificada el ruleset del contenedor (rebalanceo, correlaciones, drawdowns, capital asignado).
@@ -157,3 +168,4 @@ Toda transacción y cambio de estado del portafolio federado registra los metada
 **Consumido por:**
 *   [`manage`](../modules/manage.md) — para la optimización de pesos y control del clúster.
 *   [`execute`](../modules/execute.md) — para el ruteo de ejecuciones en el LiveNode.
+*   [`canvas-navigation`](../features/canvas-navigation.md) — lee `clusters` para renderizar el nivel 0 del Eje de Entidad (ADR-0153).

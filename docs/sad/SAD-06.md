@@ -9,7 +9,11 @@ El sistema se organiza en **dos superficies**:
    - **Vista Relacional:** nodos pequeños con conexiones visibles — conectar, reordenar, crear pipelines.
    - **Vista Interior:** zoom in-place en un nodo — editar lógica interna, Logic Blocks, parámetros.
 
-   El Canvas expresa la jerarquía de entidades (Cluster → Portfolio → Strategy → Logic Blocks) mediante anidación in-place, con breadcrumb flotante. Los feature nodes (hojas atómicas) abren Inspector Panel lateral sin salir del canvas.
+   El Canvas expresa **dos ejes ortogonales** (ADR-0153), ambos navegados por el mismo mecanismo de anidación in-place con breadcrumb flotante — no son dos canvas, son dos jerarquías dentro del canvas único:
+   - **Eje de Entidad** (el "qué existe", el dato): `Cluster → Portfolio → Strategy → Logic Blocks`.
+   - **Eje de Proceso** (el "qué opera sobre el dato"): `Workspace → Pipeline → Módulo/Feature`.
+
+   Los dos ejes se conectan por puerto tipado (ADR-0137), nunca por containment: un nodo de Feature no "posee" las estrategias que procesa, las referencia. Los feature nodes (hojas atómicas) abren Inspector Panel lateral sin salir del canvas.
 
 ### 6.1 El "Happy Path" (Máxima Confianza)
 `Dashboard` (Detección oportunidad) → `Canvas — Vista Relacional` (Construir / ejecutar Generate/Validate) → `Canvas — Inspector Panel` (Inspección robustez) → `Deploy` (Incubación; perfil configurable: Cuarentena 7 días / Extendido 21 días / Legacy 3-6 meses — ADR-0088) → `Live Trading`.

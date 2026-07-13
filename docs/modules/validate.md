@@ -634,11 +634,11 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca al [`pca-toxicity-analyzer`](../features/pca-toxicity-analyzer.md) para procesar reducción de dimensiones y agrupamiento de estrategias.
 *   **Reglas de Orquestación:**
     - Extrae el dataset del databank y lo envía al subproceso de IA en la CPU.
-    - Actualiza el rastro de evidencia en el módulo de feedback si se produce la purga de un clúster.
+    - Actualiza el rastro de evidencia en el módulo de feedback si se produce la purga de una familia estadística.
 *   **Entrada:** `strategies_data`.
-*   **Salida:** `toxicity_scores`, `cluster_labels`.
+*   **Salida:** `toxicity_scores`, `family_labels` (ex `cluster_labels`, ADR-0153).
 *   **Precondición:** Databank disponible.
-*   **Postcondición:** Purga de clústeres tóxicos completada.
+*   **Postcondición:** Purga de familias tóxicas completada.
 
 ### **TTR-044: Orquestación del Laboratorio de Estrés Interactivo (Interactive Stress Lab)**
 *   **Descripción:** Invoca a [`interactive-stress-lab`](../features/interactive-stress-lab.md) para que el analista deforme la curva de capital de la candidata en tiempo real antes de aprobarla.
@@ -789,7 +789,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     *   Exige la confirmación multi-paso con previsualización de KPIs y la generación obligatoria de un `snapshot_id` en SQLite antes de despachar el comando de soft-delete (`is_purged=true`).
     *   Provee el canal FFI para mandar el comando de rollback restaurando el catálogo.
     *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020).
-*   **Entrada:** `databank_path`, `cluster_label_to_purge`, `rollback_snapshot_id` (opcional).
+*   **Entrada:** `databank_path`, `family_label_to_purge` (ex `cluster_label_to_purge`, ADR-0153), `rollback_snapshot_id` (opcional).
 *   **Salida:** `toxicity_clusters_list`, `purge_status` (SUCCESS | ROLLBACK_SUCCESS), `new_snapshot_id`.
 *   **Precondición:** Módulo `validate` con análisis PCA completado.
 *   **Postcondición:** Databank limpio de clústeres tóxicos y logs forenses registrados.

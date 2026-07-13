@@ -40,7 +40,9 @@
 | DEBT-019 | 🟡 Baja | Cobertura de mutación de la plomería EPIC-0 (`job`/`mcp_*`) | Abierta | [detalle](./debt/DEBT-019.md) |
 | DEBT-020 | 🟡 Baja | `N_eff` por clustering (ONC) — política diferida del DSR | Abierta | [detalle](./debt/DEBT-020.md) |
 | DEBT-021 | 🟡 Baja | Deflación de compuestas (PBO/CSCV) — política diferida | Abierta | [detalle](./debt/DEBT-021.md) |
-| DEBT-022 | 🟡 Baja | Banco de Pruebas — sin test de widget de la distinción rojo/ámbar | Abierta | [detalle](./debt/DEBT-022.md) |
+| DEBT-022 | 🟡 Baja | Banco de Pruebas — sin test de widget de la distinción rojo/ámbar | ✅ Pagada (2026-07-12) | [detalle](./debt/DEBT-022.md) |
+| DEBT-023 | 🟠 Media | `proptest` ausente en funciones numéricas de dominio no acotado (E4/TASK-049) | Abierta | [detalle](./debt/DEBT-023.md) |
+| DEBT-024 | 🟠 Media | Pipeline como proceso recurrente/en bucle — diseño cerrado, falta implementación | Abierta | [detalle](./debt/DEBT-024.md) |
 
 ---
 
@@ -53,5 +55,6 @@
 - **DEBT-017** (falta cuota `MAX_CHILD_ACCOUNTS` en #3) → [STORY-042](./execution/STORY-042-plan-tier-quota-max-child-accounts.md), 2026-07-07.
 - **DEBT-018** (cobertura de mutación del patrón append-only en cimientos #4–#12) → [STORY-047](./execution/STORY-045-foundation-audit-remediation.md), 2026-07-10 (gate de mutación 0 `missed`).
 - **DEBT-005** (tanda de UI del substrato — SVF + harness genérico, gap de DoD) → [STORY-050](./execution/STORY-050-verification-bench.md), 2026-07-12 (QA APTO; Banco de Pruebas con 15 features enchufadas; residual de cobertura → DEBT-022).
+- **DEBT-022** (test de widget de la distinción rojo/ámbar del Banco) → saldada 2026-07-12 (Flutter-Engineer; `ui/test/verification_bench_status_test.dart`, 3 casos, prueba discriminante verificada por el TL).
 
 > Las fichas de las deudas pagadas se conservan en `docs/debt/` con su historia completa y Estado ✅ Pagada.

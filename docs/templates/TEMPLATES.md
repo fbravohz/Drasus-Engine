@@ -8,12 +8,14 @@ Cómo escribir decisiones arquitectónicas vs requisitos de funcionalidad, en le
 | **SAD** | Visión general del sistema, flujos, invariantes | [`SAD.md`](./SAD.md) |
 | **Feature** | Especificación funcional completa de un módulo/componente | [`FEATURE.md`](./FEATURE.md) |
 | **TTR** | Tarea concreta de funcionalidad, dentro de una Feature | [`TTR.md`](./TTR.md) |
+| **Modelo de Datos** | Una tabla SQL real (columnas, FKs) — única plantilla donde el detalle técnico literal SÍ es obligatorio | [`DATA-MODEL.md`](./DATA-MODEL.md) |
 
 **Checklist rápido para decidir cuál usar:**
 - [ ] ¿Es arquitectura (dura años, NUNCA/SIEMPRE)? → ADR
 - [ ] ¿Es la visión/invariante de TODO el sistema? → SAD
 - [ ] ¿Es una funcionalidad completa (módulo/componente reutilizable)? → Feature
 - [ ] ¿Es una tarea concreta dentro de una Feature ya definida? → TTR
+- [ ] ¿Es la ficha de una tabla SQL real, para navegar relaciones sin leer la migración? → Modelo de Datos (única excepción a "Lo Prohibido" de abajo — ahí el detalle técnico literal es el propósito, no un error)
 
 ---
 
