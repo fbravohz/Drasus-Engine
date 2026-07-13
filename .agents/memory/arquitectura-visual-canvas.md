@@ -15,7 +15,7 @@ Los términos MACRO/MESO/MICRO como niveles de navegación están descontinuados
 - **Dashboard**: monitoreo read-only + bento grid de widgets de features. No hace zoom. Navega al canvas.
 - **Canvas [Forge/Reactor — nombre TBD]**: lienzo infinito único. Card-nodes estilo N8N/React Flow. Dos estados: Vista Relacional (nodos pequeños, conexiones) y Vista Interior (zoom in-place, edición). Zoom continuo con breadcrumb flotante.
 - Jerarquía de entidades: Cluster → Portfolio → Strategy → Logic Blocks (anidación in-place)
-- Jerarquía de proceso: Pipeline → Módulo (compound node) → Feature (atomic node, abre inspector panel lateral)
+- Jerarquía de proceso: **Workspace** → Pipeline → Módulo (compound node) → Feature (atomic node, abre inspector panel lateral) — nivel Workspace añadido 2026-07-12, ver [[banco-estrategias-portafolios-clusters]]
 - Módulos = presets de composición de features, no wrappers obligatorios
 
 **ADR-0137**: Feature como unidad hexagonal autónoma con puertos tipados. 108 tipos identificados (Bars, Signal, Order, ExecutableContainer, RobustnessScore, IncubationVerdict, etc.). `ExecutableContainer` es el tipo omnipresente del pipeline. Ver ADR-0137 para catálogo completo.
