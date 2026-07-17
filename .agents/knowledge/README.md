@@ -10,6 +10,7 @@ Los documentos de `knowledge/` son **HOW-TOs de lectura bajo demanda**, no conte
 | [`ponytail.md`](./ponytail.md) | Simplificación deliberada (Capa 3 de comentarios): cuándo NO sobre-ingenierizar. | Al decidir el alcance de una implementación (evitar sobre-diseño). | TL + ingenieros |
 | [`memory-policy.md`](./memory-policy.md) | Qué y cómo recordar entre sesiones (`.agents/memory/` vs. `.agents/state/`). | Al cerrar trabajo, aprender algo durable, o dudar de qué persistir. | TL + Architect |
 | [`critical-domain-reasoning.md`](./critical-domain-reasoning.md) | Ojo crítico experto antes de **sellar decisiones de dominio** (7 comprobaciones + gate de especialista). Nació del casi-desastre del DSR. | Al canonizar/sellar cualquier regla cuantitativa, estadística, financiera, criptográfica, de microestructura, fiscal o legal — o cuando el concepto en curso toca ese terreno. | Architect, TL, ingenieros especialistas |
+| [`WRITING-EFFICIENCY.MD`](./WRITING-EFFICIENCY.MD) | Fuente única de escritura/comunicación/claridad: economía de tokens (60-75% menos, medido), traducción de términos al usuario, Contexto Antes de Detalle, formato visual de bloques. | Al escribir cualquier documento o respuesta — sobre todo con 2+ ítems paralelos, jerga interna, o una explicación estructurada. | Todos los agentes |
 
 ## Gate de Reportaje de Conocimiento (OBLIGATORIO)
 
