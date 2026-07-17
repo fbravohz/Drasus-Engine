@@ -1,4 +1,4 @@
-# CLAUDE.md — Mapa de Orientación y Protocolo de Contexto
+# CLAUDE.md — Protocolo de Contexto Eficiente
 
 Este archivo se carga automáticamente al inicio de cada sesión y se cachea. Es el lugar **más barato** para el contexto que siempre se necesita. Por eso es un **mapa**, no un volcado: orienta y dice dónde está cada cosa. Nadie debe copiar aquí el contenido de otros documentos.
 
