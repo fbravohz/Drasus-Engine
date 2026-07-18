@@ -50,13 +50,13 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 
 **Base de Conocimiento (obligatoria para skills):** índice con disparadores en **`.agents/knowledge/README.md`** (qué documento abrir y cuándo).
 - `.agents/knowledge/base.md` — Gobernanza meta + mapa de referencias (supremacía absoluta).
-- `.agents/knowledge/commenting-policy.md` — HOW TO: escribir comentarios (4 capas jerárquicas).
+- `.agents/knowledge/COMMENTING-POLICY.md` — HOW TO: escribir comentarios (4 capas jerárquicas).
 - `.agents/knowledge/debt-management.md` — HOW TO: registrar deuda técnica (`ponytail:` vs. DEBT-XXX).
 - `.agents/knowledge/ponytail.md` — HOW TO: simplificación deliberada (Capa 3 de comentarios).
 - `.agents/knowledge/memory-policy.md` — HOW TO: qué y cómo recordar entre sesiones (mecánica del harness + disciplina de Drasus + `.agents/memory/` vs. `.agents/state/`).
 - `.agents/knowledge/critical-domain-reasoning.md` — HOW TO: ojo crítico experto antes de sellar decisiones de dominio (7 comprobaciones + gate de especialista); obligatorio para Architect/TL/ingenieros al canonizar reglas cuant/estadística/cripto/legal.
 
-Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `base.md` (~234 líneas). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.
+Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `COMMENTING-POLICY.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `base.md` (~234 líneas). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.
 
 **Gate de Reportaje de Conocimiento (OBLIGATORIO):** cuando detectes que el concepto en el que trabajas toca el área de un documento de knowledge (los del índice), léelo bajo demanda y **declara explícitamente al invocador** qué documento consultaste y por qué (`[knowledge consultado: <doc> — <motivo>]`). `base.md` se declara siempre al arrancar; los demás, cuando se consultan. El invocador (usuario / Architect / Tech-Lead) debe saber qué conocimiento se usó para resolver cada conflicto real.
 

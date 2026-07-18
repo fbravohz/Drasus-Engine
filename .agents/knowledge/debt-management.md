@@ -220,7 +220,7 @@ Cuando pagues una deuda:
 ## Relación con Otros Archivos
 
 - **`docs/DEBT.md`** — Registro canónico (si no está ahí, no existe).
-- **`.agents/knowledge/commenting-policy.md`** — Capas 1–3 (en código).
+- **`.agents/knowledge/COMMENTING-POLICY.md`** — Capas 1–3 (en código).
 - **`.agents/knowledge/ponytail.md`** — Capa 3 (`ponytail:`).
 - **`.agents/memory/comentarios-ponytail-reconciliacion.md`** — Reconciliación histórica.
 - **`.agents/state/tech-lead/PROGRESS.md`** — Bitácora de hallazgos (apunta a DEBT-XXX).

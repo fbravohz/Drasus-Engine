@@ -1,5 +1,7 @@
 # Política de Comentarios — Las 4 Capas
 
+**Declara explicitamente que leiste este archivo para la tarea en cuestion**
+
 El propietario del proyecto debe poder leer cualquier archivo de código y entender cada sección sin ser experto en el tema/lenguaje. Esta política prioriza el contexto sobre las convenciones de "clean code" restrictivas.
 
 Los comentarios operan en **4 capas jerárquicas**, cada una con su lugar, regla y precedencia. **Todas coexisten** — Ponytail (que minimiza complejidad/líneas) NO invalida las capas 1–2 de esta política.

@@ -8,9 +8,7 @@ Slug ID: `WRITING_EFFICIENCY` para búsqueda rápida de secciones.
 
 ## WRITING_EFFICIENCY-1 — Eficiencia de Redacción
 
-El objetivo no es gastar menos tokens: es que el texto se entienda en una sola pasada. Simple, no simplificado — el 100% del contenido se preserva, nunca se recorta. El ahorro de tokens es la prueba medible de que funcionó, no la meta.
-
-**Por qué esto y no otra cosa:** En `WRITING-EFFICIENCY-7.1` se escribió un ejemplo con el mismo contenido dos veces — una vez con conectores narrativos, otra sin ellos — y se le pidió a alguien que lo leyera. La versión sin conectores no solo midió menos tokens: se entendió más rápido, porque lo que sobraba en la primera no era información, era ruido que el lector tenía que atravesar para llegar a lo que importaba.
+El objetivo es que el texto se entienda en una sola pasada, no gastar menos tokens — el ahorro es la prueba medible de que funcionó, no la meta. Simple, no simplificado: el 100% del contenido se preserva, nunca se recorta.
 
 **Aplica a:** todo texto que un agente produce.
 

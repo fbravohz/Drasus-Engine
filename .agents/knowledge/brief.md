@@ -1,11 +1,3 @@
-## [CONSULTA CONDICIONAL — SOLO AL CERRAR UNA STORY]
-
-Este archivo NO se lee al iniciar el skill ni en cada turno, a diferencia de `base.md`. Se lee ÚNICAMENTE cuando el Tech-Lead ejecuta el "Barrido de Cierre Documental" (`.agents/skills/tech-lead/SKILL.md`, punto 2 del checklist) y va a redactar `§9 Cierre ejecutivo` de una Orden de Trabajo. Fuera de ese momento exacto, no leas este archivo.
-
-**`.agents/knowledge/base.md` conserva supremacía total.**
-
----
-
 # Brief — Cierre ejecutivo de Story
 
 ## Propósito

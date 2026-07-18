@@ -1,21 +1,3 @@
-# [OVERRIDE] PRIMERA REGLA ABSOLUTA
-
-> ⚠️ **SUPREMACÍA TOTAL:** Este archivo gobierna sobre cualquier otro skill.
-> - **Si eres un agente o un skill **DETENTE.** es mandatorio que leas esto:** OBEDECE CADA REGLA sin excepción. Estas son las instrucciones de maxima jerarquia. Lee este archivo completo AHORA usando la herramienta `Read`. Está prohibido ejecutar instrucciones de cualquier skill sin haber procesado el 100% de este documento primero.
-> - **DECLARA EXPLÍCITAMENTE** que has leído y aplicarás las reglas `BASE`.
-
----
-
-# 1. Directrices de Identidad y Rol
-
-## 1.1. Tu Rol
-* **Perfil:** Eres un agente técnico. Tu trabajo es entender a profundidad, tomar decisiones cuando la tarea lo requiere, ser claro y actuar directo.
-* **Protocolo de Inicio Obligatorio:**
-  * Al iniciar cualquier conversación, preséntate con tu rol.
-  * *Nota:* Si el rol fue cargado vía `skill` tool, esta declaración es mandatoria en tu primer mensaje. Su ausencia viola el protocolo de inicio.
-
----
-
 # 2. Comunicación y Claridad
 
 Toda regla sobre redacción, claridad, traducción de términos y formato de bloques de respuesta vive en un único documento — no se replica aquí para evitar deriva.
@@ -58,7 +40,7 @@ Read offset=1051 → cubre líneas 1051-1546
 * **Precisión Quirúrgica:** Al editar archivos extensos (>50 líneas), realiza cambios en bloques pequeños. EVITA reescribir el archivo completo para prevenir la pérdida involuntaria de densidad documental.
 
 ## 3.5. Formato Canónico de Reglas Nuevas
-Toda regla nueva que un agente escriba dentro de `.agents/knowledge/`, `.claude/skills/` o `.agents/skills/` sigue el formato de `.agents/templates/RULE.md` (ID, espaciado, campos de cierre) — nunca un formato inventado o parcial. Si el documento agrupa varias reglas, se usa además `.agents/templates/KNOWLEDGE.md` para ensamblarlas y cerrar con la sección de Ejemplos.
+Todo bloque nuevo que un agente escriba dentro de `.agents/knowledge/`, `.claude/skills/` o `.agents/skills/` sigue el catálogo de `.agents/templates/INSTRUCTION-FORMATS.md` (Lecturas Obligatorias, Regla, Filtro de Verificación, Ejemplos — ID, espaciado, campos de cierre) — nunca un formato inventado o parcial. Si el documento agrupa varios bloques, se usa además `.agents/templates/KNOWLEDGE.md` para ensamblarlos.
 
 ---
 
@@ -68,7 +50,7 @@ Toda regla nueva que un agente escriba dentro de `.agents/knowledge/`, `.claude/
 
 El propietario del proyecto debe poder leer cualquier archivo de código y entender cada sección sin ser experto en el tema/lenguaje. Esta política prioriza el contexto sobre las convenciones de "clean code" restrictivas.
 
-**📖 Documento completo:** [`./commenting-policy.md`](./commenting-policy.md)
+**📖 Documento completo:** [`./COMMENTING-POLICY.md`](./COMMENTING-POLICY.md)
 
 ### Resumen de 4 Capas
 
@@ -112,7 +94,7 @@ Existe memoria nativa de proyecto en `.agents/memory/` (índice `MEMORY.md` + un
 
 | Documento | Cuándo Leer |
 |---|---|
-| **`./commenting-policy.md`** | Antes de escribir código (skill, ingeniero) |
+| **`./COMMENTING-POLICY.md`** | Antes de escribir código (skill, ingeniero) |
 | **`./debt-management.md`** | Cuando detectes un aplazamiento o leas DEBT.md |
 | **`./ponytail.md`** | Cuando necesites simplificar (opcional) |
 | **`./memory-policy.md`** | Cuando escribas/leas `.agents/memory/` o dudes si algo es memoria o state |

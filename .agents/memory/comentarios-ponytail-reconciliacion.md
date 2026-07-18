@@ -68,7 +68,7 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 
 ## Archivos Que Lo Formalizan
 
-- **`.agents/knowledge/commenting-policy.md`** — Política de Comentarios completa (4 capas, reglas, ejemplos, prohibiciones).
+- **`.agents/knowledge/COMMENTING-POLICY.md`** — Política de Comentarios completa (4 capas, reglas, ejemplos, prohibiciones).
 - **`.agents/knowledge/debt-management.md`** — Gestión de Deuda Técnica (cuándo `ponytail:` vs. DEBT-XXX, severidad, ejemplos).
 - **`.agents/knowledge/base.md`** — Resumen + referencias a los archivos anteriores (§4.1 y §4.2).
 - **`.agents/knowledge/ponytail.md`** — Sección "Relación con Políticas de Comentarios" (reconciliación explícita).
@@ -79,11 +79,11 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 
 Si hay conflicto de interpretación:
 1. `.agents/knowledge/base.md` (mapa de referencias, ley suprema).
-2. `.agents/knowledge/commenting-policy.md` (capas 1–2 obligatorias, Capa 3 si aplica).
+2. `.agents/knowledge/COMMENTING-POLICY.md` (capas 1–2 obligatorias, Capa 3 si aplica).
 3. `.agents/knowledge/debt-management.md` (cuándo DEBT-XXX vs. ponytail:).
 4. `.agents/knowledge/ponytail.md` (Capa 3: simplificación deliberada).
 5. `docs/DEBT.md` (registro canónico de deuda, ortogonal).
 
-**Why:** el usuario necesita código legible (commenting-policy), eficiente (ponytail), y rastreable (debt-management + DEBT.md). Las 4 capas coexisten. Cada archivo se lee bajo demanda para minimizar tokens.
+**Why:** el usuario necesita código legible (COMMENTING-POLICY), eficiente (ponytail), y rastreable (debt-management + DEBT.md). Las 4 capas coexisten. Cada archivo se lee bajo demanda para minimizar tokens.
 
 **How to apply:** al principio de cada Story/Task, skills y el usuario leen el archivo que necesitan (no todos). Nunca simplificar Capas 1–2 en nombre de Ponytail. Nunca dejar deuda sin registrar en DEBT.md si tiene disparador externo.

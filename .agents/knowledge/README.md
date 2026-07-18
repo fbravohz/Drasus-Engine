@@ -5,7 +5,7 @@ Los documentos de `knowledge/` son **HOW-TOs de lectura bajo demanda**, no conte
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
 | [`base.md`](./base.md) | Gobernanza meta + mapa de referencias. **Supremacía absoluta** sobre cualquier skill. | **SIEMPRE** al iniciar cualquier skill (gate de arranque obligatorio). No es bajo demanda. | Todos los agentes |
-| [`commenting-policy.md`](./commenting-policy.md) | Cómo escribir comentarios (4 capas jerárquicas). | Al escribir/revisar comentarios en código. | Ingenieros de código |
+| [`COMMENTING-POLICY.md`](./COMMENTING-POLICY.md) | Cómo escribir comentarios (4 capas jerárquicas). | Al escribir/revisar comentarios en código. | Ingenieros de código |
 | [`debt-management.md`](./debt-management.md) | Cómo registrar deuda técnica (`ponytail:` inline vs. `DEBT-XXX` en `docs/DEBT.md`). | Al detectar/registrar deuda o un atajo deliberado. | TL + ingenieros |
 | [`ponytail.md`](./ponytail.md) | Simplificación deliberada (Capa 3 de comentarios): cuándo NO sobre-ingenierizar. | Al decidir el alcance de una implementación (evitar sobre-diseño). | TL + ingenieros |
 | [`memory-policy.md`](./memory-policy.md) | Qué y cómo recordar entre sesiones (`.agents/memory/` vs. `.agents/state/`). | Al cerrar trabajo, aprender algo durable, o dudar de qué persistir. | TL + Architect |
