@@ -1,0 +1,44 @@
+# Muestra real pequeña de cripto, congelada en el repositorio (STORY-051 §4.1).
+#
+# Origen: Binance REST público, endpoint /api/v3/aggTrades, símbolo BTCUSDT,
+# ventana [2024-01-01T00:00:00.000Z, 2024-01-01T00:00:00.916Z) (20 trades
+# agregados reales, IDs 2807759891-2807759910). Descargada UNA VEZ al
+# construir esta Story y congelada aquí -- ningún test vuelve a tocar la red;
+# esta es la ÚNICA fuente de datos "reales" que usan las pruebas de
+# integración (el resto de casos borde usa datos fabricados a mano en
+# domain.rs e integration_tests.rs).
+#
+# Columnas ya conformadas al esquema canónico (ADR-0141): precio y volumen
+# como enteros escalados x10^8, tiempo en nanosegundos Unix UTC. La
+# conversión desde el JSON crudo de Binance (precio/cantidad como texto
+# decimal de 8 posiciones, timestamp en milisegundos) se hizo a mano UNA
+# VEZ al congelar esta muestra -- exactamente el trabajo que en producción
+# hace la Cáscara de `sovereign-data-fetcher` antes de entregarle ticks a
+# este transformador.
+#
+# origin_seq = aggTradeId real de Binance (clave de desempate de origen
+# genuina, no inventada) -- once several trades comparten el mismo
+# milisegundo (Binance no reporta sub-milisegundo), lo que hace de esta
+# muestra un caso real de "timestamps duplicados, contenido distinto"
+# (criterio 8 de la Orden), sin tener que fabricarlo.
+event_timestamp_ns,price_scaled,volume_scaled,origin_seq
+1704067200000000000,4228358000000,69000,2807759891
+1704067200001000000,4228359000000,144000,2807759892
+1704067200003000000,4228358000000,102000,2807759893
+1704067200003000000,4228359000000,219000,2807759894
+1704067200004000000,4228359000000,163000,2807759895
+1704067200005000000,4228359000000,188000,2807759896
+1704067200005000000,4228359000000,234000,2807759897
+1704067200006000000,4228358000000,157000,2807759898
+1704067200006000000,4228359000000,66000,2807759899
+1704067200007000000,4228358000000,189000,2807759900
+1704067200008000000,4228358000000,263000,2807759901
+1704067200009000000,4228358000000,114000,2807759902
+1704067200009000000,4228359000000,38000,2807759903
+1704067200009000000,4228359000000,204000,2807759904
+1704067200012000000,4228358000000,248000,2807759905
+1704067200012000000,4228358000000,121000,2807759906
+1704067200016000000,4228358000000,71000,2807759907
+1704067200016000000,4228359000000,50000,2807759908
+1704067200496000000,4228358000000,57000,2807759909
+1704067200916000000,4228359000000,352000,2807759910

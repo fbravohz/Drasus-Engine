@@ -24,6 +24,9 @@ use shared::public_interface::{
     UsageMeteringVerifyInput, VerifiedAccountRegistryVerifyInput,
 };
 use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
+use hybrid_data_transformer::public_interface::{
+    verify as verify_hybrid_data_transformer, VerifyInput as HybridDataTransformerVerifyInput,
+};
 
 // ────────────────────────────────────────────────────────────────────────────
 // CLI declarativa (Clap 4 con el macro `derive`)
@@ -62,6 +65,7 @@ enum Commands {
     ///
     /// Ejemplo:
     ///   drasus verify sovereign-data-fetcher --input '{"symbol":"BTCUSDT","interval":"1h"}'
+    ///   drasus verify hybrid-data-transformer --input '{"target_aggregation":"1h","interop_threshold":100000}'
     ///   drasus verify central-identity --input '{"email":"a@b.com"}'
     ///   drasus verify licensing-system --input '{"tier":"SOVEREIGN"}'
     ///   drasus verify plan-tier-quota --input '{"tier":"FREE"}'
@@ -80,7 +84,7 @@ enum Commands {
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `hybrid-data-transformer`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -162,6 +166,34 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
 
             // Si la verificación falló, emite el código de salida 1 para que los scripts
             // puedan detectar el fallo (exit code 0 solo en éxito).
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
+        // ── Hybrid Data Transformer ────────────────────────────────────────────
+        "hybrid-data-transformer" => {
+            let input: HybridDataTransformerVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                // Sin --input: usa los valores por defecto (agregación 1h,
+                // umbral 100 000, muestra sintética embebida de ticks).
+                None => HybridDataTransformerVerifyInput::default(),
+            };
+
+            let output = verify_hybrid_data_transformer(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("VerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
             if !output.ok {
                 std::process::exit(1);
             }
@@ -659,7 +691,7 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, hybrid-data-transformer, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles"
             );
             std::process::exit(1);
         }

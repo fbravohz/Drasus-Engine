@@ -27,6 +27,10 @@ standard-pipeline = { path = "../presets/standard-pipeline" }
 # Se añade para soportar el subcomando `verify sovereign-data-fetcher` (ADR-0142).
 sovereign-data-fetcher = { path = "../features/data/sovereign-data-fetcher" }
 
+# Feature de transformación de datos (Polars nativo, ADR-0105/ADR-0141).
+# Se añade para soportar el subcomando `verify hybrid-data-transformer` (ADR-0142).
+hybrid-data-transformer = { path = "../features/data/hybrid-data-transformer" }
+
 # Serialización/deserialización JSON para el input/output del subcomando `verify`.
 # Reutiliza la misma versión que ya usa el workspace (ya presente en el feature crate).
 serde_json = "1"

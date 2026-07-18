@@ -1,0 +1,48 @@
+[package]
+name = "hybrid-data-transformer"
+description = "Transformador híbrido de datos de mercado (Polars nativo + puente Zero-Copy a ndarray). Crate hexagonal de dominio (ADR-0137). EPIC-1 / Ingest, TTR-007."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ÚNICA dependencia interna permitida para un feature crate (ADR-0137).
+# Prohibido depender de otros feature crates o presets.
+shared = { path = "../../../shared" }
+
+# ── Cáscara (shell) — ETL columnar y puente de interoperabilidad ────────────
+# DataFrames 100% nativos en Rust (ADR-0105). `lazy` habilita LazyFrame/scan_*
+# (evaluación perezosa, restricción FIJA de la feature); `parquet` habilita
+# `LazyFrame::scan_parquet`/`ParquetWriter` (entrada/salida real de la
+# feature); `ndarray` habilita `DataFrame::to_ndarray` — el puente Zero-Copy
+# vía Arrow de TTR-002.
+polars = { version = "0.54", default-features = false, features = ["lazy", "parquet", "ndarray"] }
+# Matrices densas en memoria contigua — único formato que consume el álgebra
+# lineal estadística aguas abajo (ADR-0112, primer peldaño de la escalera).
+# Versión fijada a la misma que activa el feature `ndarray` de Polars
+# (evita dos versiones simultáneas de `ndarray` en el árbol de dependencias).
+ndarray = "0.17"
+# Runtime asíncrono: la persistencia (SQLite) es async, igual que el resto
+# del substrato.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+# Generación de UUIDs. v7 (ordenable por tiempo, ADR-0141 "Claves primarias")
+# es el generador canónico del sistema.
+uuid = { version = "1", features = ["v4", "v7"] }
+# Hash SHA-256 para los campos de integridad (audit_hash, audit_chain_hash,
+# logic_hash).
+sha2 = "0.10"
+# Serialización/deserialización para el plan de transformación y el input/
+# output del harness de verificación CLI (ADR-0142).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Acceso a SQLite para la persistencia del registro de transformación.
+# El feature crate no crea su propio pool — usa el de shared.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
+# Mensajes de error propios de la cáscara.
+thiserror = "1"
+
+[dev-dependencies]
+# Directorios/archivos temporales con limpieza automática para tests de
+# integración (durabilidad — SQLite en archivo real, nunca `:memory:`).
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
