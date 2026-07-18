@@ -107,6 +107,22 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 
 ---
 
+### Esquema Canónico de Datos de Mercado (ADR-0155)
+
+Cinco datasets Parquet (no tablas SQLite — Grupo I de ADR-0020 no aplica por fila, ver corrección en ADR-0155) cubren cotización, ejecución, barra y profundidad de libro:
+
+| Dataset | Cardinalidad | Reemplaza / añade |
+|---|---|---|
+| `QuoteTick` | 1 fila por actualización de cotización (Nivel 1 BBO) | Mitad de `Tick` (ADR-0137, enmienda 2026-07-18) |
+| `TradeTick` | 1 fila por ejecución | Mitad de `Tick`; única fuente válida de agregación a `Bars` |
+| `Bars` | 1 fila por barra cerrada | Volumen desagregado en cuatro magnitudes: `volume_traded`/`volume_ticks`/`trade_count`/`volume_buy` |
+| `DepthLevel` | 1 fila por (instantánea, lado, nivel) | Nuevo — Nivel 2, Market-by-Price, esquema-listo |
+| `OrderEvent` | 1 fila por evento de orden | Nuevo — Nivel 3, Market-by-Order, esquema-listo |
+
+**Regla rectora heredada de ADR-0141, generalizada por ADR-0155:** "guarda el hecho, calcula la interpretación". Ningún campo cuyo valor cambie con una reinterpretación retroactiva del pasado (precio ajustado por split, contrato continuo de futuro, cualquier caso futuro de la misma forma) se persiste como columna — se persiste el evento crudo, la interpretación se calcula en cada lectura. `data-normalization-layer` es la dueña del demultiplexado cotización/ejecución cuando la fuente los mezcla en un mismo archivo (MT5, por bitmask).
+
+---
+
 ### Claves Primarias y Generadores de Secuencia (ADR-0141)
 
 **Claves primarias:** `TEXT NOT NULL PRIMARY KEY`, valor UUIDv7 generado con `Uuid::now_v7()` del crate `uuid` (feature `v7`). Uniformidad total — sin UUID v4, sin ULID.

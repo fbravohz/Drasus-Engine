@@ -3,11 +3,13 @@
 **Carpeta:** `./features/data-import-wizard/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal)
+**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos — resuelve el pendiente citado abajo)
 
 ## ¿Qué es?
 
 Es el componente que permite al usuario incorporar datos externos (EJ: CSV de MetaTrader, TXT de NinjaTrader) al sistema Drasus Engine. Automatiza la detección de columnas y el mapeo de campos, traduciendo cualquier formato externo al estándar institucional del "Ingest".
+
+> **Rol arquitectónico (ADR-0154):** esta feature materializa la **tercera vía de ingesta** — la única en la que Drasus no hace red. El usuario exporta desde su propio terminal y entrega el archivo; Drasus lee, valida, normaliza y particiona. Es la vía que garantiza el precio del bróker de ejecución real, con compra y venta, sin depender de que ese bróker publique volcado alguno.
 
 **Problema:** Cada broker exporta CSVs con nombres de columnas y formatos de fecha distintos. Mapearlos a mano es lento y propenso a errores.
 **Solución:** Un asistente inteligente que detecta automáticamente qué columna es el precio, cuál es la fecha y qué formato tiene.
@@ -21,7 +23,8 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 
 ## Restricciones
 
-- NUNCA se importan datos que no cumplan el esquema mandatorio (OHLCV + Timestamp).
+- NUNCA se descarta un campo que el archivo de origen entregue. El esquema de importación es **abierto por arriba**: marca de tiempo y precio son el mínimo exigido, pero todo lo demás que traiga la fuente —compra, venta, volúmenes por lado, banderas de sesión, identificadores de orden— se conserva y se persiste (ADR-0154, ADR-0020). Reducir la importación a "OHLCV + Timestamp" está **prohibido**: es lo que convierte el spread simulado en un parámetro inventado en vez de un dato observado.
+  > ✅ **Pendiente resuelto — ADR-0155 (2026-07-18):** el esquema canónico de campos de la operación y de la vela ya existe (`QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`). Un CSV de MT5 que mezcla cotización y ejecución en las mismas columnas (`Bid, Ask, Last, Volumen`) se importa crudo aquí tal cual llega; el demultiplexado a `QuoteTick`/`TradeTick` es responsabilidad de [`data-normalization-layer`](data-normalization-layer.md) aguas abajo, no de este wizard. El mapeo de columnas del asistente debe reconocer los nombres canónicos de ADR-0155 (`bid`/`ask`/`price`/`trade_volume`/`aggressor_side`/`spread_reported`/`volume_traded`/`volume_ticks`/`trade_count`/`volume_buy`) además de los ya cubiertos (OHLCV/Timestamp).
 - NUNCA se sobreescriben datos existentes sin una confirmación explícita del usuario.
 - El proceso de importación masiva debe ejecutarse en segundo plano (vía Download Manager) para no bloquear la UI.
 

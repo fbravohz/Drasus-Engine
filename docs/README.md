@@ -296,7 +296,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0031**](./adr/ADR-0031.md) | Inteligencia Artificial Híbrida (Hybrid Genesis Engine) |
 | [**ADR-0032**](./adr/ADR-0032.md) | Estándares de Hardware Soberano (Single Machine Sovereignty) |
 | [**ADR-0033**](./adr/ADR-0033.md) | Arquitectura de Despliegue Trimodal |
-| [**ADR-0034**](./adr/ADR-0034.md) | Ingesta Híbrida Soberana (Bulk S3 + API Delta) |
+| [**ADR-0034**](./adr/ADR-0034.md) | Ingesta Híbrida Soberana (Bulk S3 + API Delta) 🔶 Generalizado por ADR-0154 |
 | [**ADR-0035**](./adr/ADR-0035.md) | Persistencia en Particionado Hive-Style (Parquet) |
 | [**ADR-0036**](./adr/ADR-0036.md) | Remuestreo Dinámico Multidimensional (DuckDB) |
 | [**ADR-0037**](./adr/ADR-0037.md) | Protocolo de Calidad "The Sanitizer" |
@@ -414,6 +414,10 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0149**](./adr/ADR-0149.md) | Roles de Operador a la Carta — Control de Acceso Granular por Puerto de Feature, Cascada de Autoridad Jerárquica (cimiento #14) |
 | [**ADR-0150**](./adr/ADR-0150.md) | Expedition — Ledger de Ejecución Inmutable, Linaje de Procedencia y Pipeline Versionado (columna vertebral de procedencia + presupuesto de pruebas del DSR) |
 | [**ADR-0151**](./adr/ADR-0151.md) | Modelo de Aplicación de la Corrección por Pruebas Múltiples — Por Punto de Decisión, N desde el Linaje, Correlación por V[{SR_n}] (reconcilia PBO/CSCV ↔ DSR ↔ PSR; guardia de límite degenerado) |
+| [**ADR-0152**](./adr/ADR-0152.md) | Banco de Pruebas como Gate Permanente de Definición de Terminado — Realización Canónica de la SVF Genérica |
+| [**ADR-0153**](./adr/ADR-0153.md) | Banco de Estrategias Unificado — Cluster Fusionado, Eje de Proceso Workspace→Pipeline y Selección Efímera |
+| [**ADR-0154**](./adr/ADR-0154.md) | Drasus Provee Conectores, No Datos de Mercado — Tres Vías de Ingesta, Tabla de Capacidades por Bróker y Frontera de Responsabilidad sobre el Dato |
+| [**ADR-0155**](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo |
 
 ---
 

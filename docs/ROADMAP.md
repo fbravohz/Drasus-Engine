@@ -160,19 +160,30 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 ### EPIC-1 — Soberanía de Datos (`ingest`)
 
-**Objetivo:** datos en los que se puede confiar. Sin esto, todo backtest es ficción.
+**Objetivo:** datos en los que se puede confiar. Sin esto, todo backtest es ficción. **Drasus no aporta los datos: aporta los conectores que traen los del usuario y el motor que los refina** (ADR-0154).
 
-**Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), descarga híbrida Bulk+Delta (ADR-0034) de 2 fuentes (prioridad de clase de activo: una Forex/CFD primero; una cripto como segunda fuente), transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118); almacén PIT de eventos fundamentales ([`fundamental-event-store`](./features/fundamental-event-store.md): ingesta de hecho crudo con linaje de proveedor + versionado vintage/as-of first-print vs revisiones, ADR-0126/0127).
+**Alcance:** el 100% del núcleo de `ingest`. Ver su tabla de TTRs: [`docs/modules/ingest.md`](./modules/ingest.md#ttrs-etiquetados-por-fase). Incluye anti look-ahead (`data-validator` + `pit-data-validator`), sanitización de 6 capas (ADR-0037), persistencia Hive/Parquet + DuckDB (ADR-0035/0036), conectores de ingesta por **al menos dos de las tres vías canónicas** de ADR-0154 (interfaz de programación autenticada — que incluye el mecanismo Bulk+Delta de ADR-0034 —, credenciales de bróker, exportación manual desde el terminal del usuario) con su **tabla de capacidades declaradas** por bróker × vía × clase de activo × granularidad, transformación Polars (ADR-0105), barras algorítmicas, diferenciación fraccional y microestructura histórica (CVD, parte histórica del split de [`order-flow-microstructure`](./features/order-flow-microstructure.md), ADR-0118); almacén PIT de eventos fundamentales ([`fundamental-event-store`](./features/fundamental-event-store.md): ingesta de hecho crudo con linaje de proveedor + versionado vintage/as-of first-print vs revisiones, ADR-0126/0127).
 
 **Estado de las entregas de EPIC-1:**
 
 | Entrega | Estado | Orden de Trabajo |
 |---|---|---|
 | STORY-024 — Descarga híbrida soberana (Bulk + Delta) — primer crate hexagonal de dominio | ✅ terminado (2026-06-27, Modo Docente; QA APTO) | [STORY-024](./execution/STORY-024-sovereign-data-fetcher.md) |
+| STORY-051 — Transformador de datos de mercado (motor Polars, TTR-007) | 🚧 en curso (2026-07-18, Modo Docente) | [STORY-051](./execution/STORY-051-hybrid-data-transformer.md) |
+| TASK-052 — Fuentes de datos de mercado (escalamiento al Architect) | 🟡 abierta (2026-07-18) — **replanteada por la doctrina de ADR-0154**: la pregunta deja de ser "qué proveedor adopta Drasus" (Drasus no provee datos) y pasa a ser "qué conectores se construyen primero y con qué tabla de capacidades". El plan de decisión previo queda parcialmente obsoleto en su mitad de selección de proveedor | [TASK-052](./execution/TASK-052-architect-escalation-market-data-sources.md) |
+| Conector de exportación local (vía 3, ADR-0154) — tercer canal de ingesta, sin red | 🔵 diferido — **disparador:** primera Story de ingesta posterior a ADR-0154 | pendiente de Orden de Trabajo |
+| Tabla de capacidades por bróker (declarado vs. observado, ADR-0154) | 🔵 diferido — **disparador:** segundo conector de ingesta (con uno solo no hay qué declarar) | pendiente de Orden de Trabajo |
 
 > **Nota:** EPIC-1 estrena el patrón hexagonal de dominio (ADR-0137): la primera feature (`sovereign-data-fetcher`) puebla `crates/features/data/`, hasta ahora vacío. Los tipos de puerto del catálogo (`Tick`, `Bars`) viven en `crates/shared/src/types/` (invariante: cada crate de feature depende solo de `shared`).
 
-**Criterio de salida:** un comando CLI descarga, sanitiza y particiona 5+ años de 2 símbolos; el PIT validator rechaza un dataset con leakage inyectado a propósito; una consulta DuckDB de remuestreo responde <200ms.
+**Criterio de salida** (capacidad del sistema, **no** volumen de dato aportado por Drasus — ADR-0154):
+
+1. **Ingesta soberana por dos vías.** El usuario conecta una fuente propia por **al menos dos de las tres vías** de ADR-0154 (p. ej. credenciales de bróker + exportación desde su terminal) y obtiene, para **al menos dos símbolos y dos temporalidades que él elige**, un lago particionado, sanitizado y validado. Drasus no aporta ni un dato: la profundidad obtenida es la que su fuente le dé, y el sistema la declara en vez de prometerla.
+2. **Degradación declarada.** Ante una combinación que el bróker no soporta, el sistema la **inhabilita antes del intento** y dice por qué en lenguaje del usuario. Nunca falla con un error de transporte opaco.
+3. **Captura total verificable.** Ningún campo entregado por la fuente se pierde entre el origen y la partición — se demuestra por contraste campo a campo contra el archivo crudo. Si la fuente trae compra y venta, el lago las tiene.
+4. **Linaje de procedencia.** Cada partición declara proveedor y vía; dos series del mismo símbolo con procedencia distinta **no se funden** — el sistema lo impide, no lo desaconseja.
+5. **Anti-fuga.** El validador punto-en-el-tiempo rechaza un conjunto con fuga inyectada a propósito.
+6. **Rendimiento.** Una consulta DuckDB de remuestreo responde en **menos de 200 ms**.
 
 ### EPIC-2 — Motor de Backtest (`validate` núcleo)
 

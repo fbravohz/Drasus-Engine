@@ -3,7 +3,7 @@
 **Carpeta:** `./features/data-sanitizer-pipeline/`
 **Estado:** En Diseño
 **Última actualización:** 2026-06-09
-**Decisión Arquitectónica Asociada:** ADR-0037 (Protocolo de Calidad "The Sanitizer")
+**Decisión Arquitectónica Asociada:** ADR-0037 (Protocolo de Calidad "The Sanitizer") · ADR-0155 (esquema canónico — `spread_reported` habilita la Capa 5)
 
 ## ¿Qué es?
 
@@ -18,7 +18,7 @@ Es el guardian de la calidad de datos de Drasus Engine y el cerebro del Módulo 
 - [ ] **Capa 2: Gap Infusion (Detección y Relleno de Huecos).** Identifica huecos temporales en la serie (fines de semana, lag de red). Si el hueco es menor al umbral configurable (`MAX_GAP_FILL_LIMIT`), aplica interpolación lineal automática (Gap Auto-fill / Forward Fill); si lo excede, marca el tramo como `INVALID` para backtesting.
 - [ ] **Capa 3: Outlier Scrubbing.** Elimina picos de precios imposibles (fat fingers) usando filtros de desviación estándar.
 - [ ] **Capa 4: OHLC Sanity (Integrity Check).** Valida que `High >= (Open, Close, Low)` y `Low <= (Open, Close, High)`. Si una vela falla esta validación, la fila es descartada e incluida en el `error_log`, o reparada si es posible.
-- [ ] **Capa 5: Volume & Spread Corroboration.** Filtra ticks con volumen cero o inconsistente. Si la diferencia entre Bid/Ask supera `SPREAD_SIGMA_THRESHOLD` (default 3σ), genera una alerta automática de anomalía de spread.
+- [ ] **Capa 5: Volume & Spread Corroboration.** Filtra ticks con volumen cero o inconsistente (distinguiendo `volume_traded`/`volume_ticks`/`trade_count`/`volume_buy` — ADR-0155, nunca una columna `volume` genérica). Compara dos señales de spread: el derivado (`ask − bid` de `QuoteTick`) contra `spread_reported` cuando la fuente lo entrega como columna propia (ADR-0155 §"segunda observación independiente"); si la desviación entre ambos supera `SPREAD_SIGMA_THRESHOLD` (default 3σ), genera una alerta automática de anomalía — el defecto concreto que este esquema existe para atrapar es un bróker que reporta un spread que no coincide con su propia cotización.
 - [ ] **Capa 6: Point-in-Time Injection & Parquet Final Inundation.** Reconstruye el mercado ignorando eventos que ocurrieron "en el futuro" respecto a la fecha de simulación, y escribe el rastro auditable (ADR-0020) en el archivo de salida.
 
 ## Restricciones

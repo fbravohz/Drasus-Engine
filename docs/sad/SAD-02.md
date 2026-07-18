@@ -250,7 +250,9 @@ Para garantizar la máxima velocidad en la ruta de ejecución crítica, el siste
 #### Flujos de Datos por Caso de Uso
 
 1.  **Ingesta de Datos de Mercado (Pipeline ETL Soberano):**
-    *   **Extracción Híbrida:** Priorización de descarga **Bulk** (S3) + **API Delta** (HTTP Nativo). 
+    *   **Procedencia (ADR-0154):** Drasus **no provee datos de mercado**. El dato entra por las fuentes del propio usuario, por **tres vías canónicas** — interfaz de programación autenticada, credenciales de bróker, o exportación manual desde su terminal (esta última sin red). Qué soporta cada fuente vive como **tabla de capacidades declarada** (bróker × vía × clase de activo × granularidad), verificada contra lo observado en la primera conexión; la interfaz inhabilita lo no soportado antes del intento, con motivo escrito.
+    *   **Extracción Híbrida:** Priorización de descarga **Bulk** + **API Delta** — mecanismo de la primera vía (ADR-0034), no la arquitectura completa de ingesta. Ningún proveedor ni endpoint es invariante: la fuente es dato de configuración.
+    *   **Captura total:** se persiste **todo** campo que la fuente entregue (ADR-0020); prohibido recortar al mínimo común denominador entre fuentes. El esquema canónico de campos es un pendiente declarado a cargo del Quant-Engineer.
     *   **The Sanitizer (Quality Protocol):** Flujo secuencial: `Raw Data → Delisted Filter → Corporate Events Adjuster → PIT Validator → Clean Data`. Incluye detección de gaps e integridad OHLC.
     *   **Transformación y Carga:** Procesamiento **Polars** nativo y escritura en **Hive-Style Parquet**.
     *   **Remuestreo Dinámico:** **DuckDB** agrupa barras crudas (1m/Ticks) en temporalidades personalizadas (ej. 7 min, 21 min) al vuelo via SQL.

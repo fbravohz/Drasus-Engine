@@ -255,6 +255,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Reglas de Orquestación:**
     * Valida que el `institutional_tag` sea correcto para el mapeo (ADR-0020).
     * Escala precios a la precisión interna predefinida.
+    * Demultiplexa cotización/ejecución cuando la fuente las mezcla en el mismo archivo (MT5, por bitmask) en `QuoteTick`/`TradeTick` separados — nunca un tipo mixto (ADR-0155).
 *   **Entrada:** `transformed_dataframe`.
 *   **Salida:** `normalized_golden_source`.
 *   **Precondición:** TTR-007 finalizado.

@@ -1,7 +1,7 @@
 # DATA-MODEL.md — Índice del Modelo de Datos Real
 
 > **Propósito:** el mapa de las tablas SQLite que existen HOY (`migrations/*.sql`), quién es su dueña, y cómo se relacionan — sin tener que abrir el `.sql` ni el código. Igual que `docs/ADR.md`/`docs/SAD.md`, este archivo es el **índice**; la ficha completa de cada tabla vive en `docs/data-model/<tabla>.md` (plantilla: [`docs/templates/DATA-MODEL.md`](./templates/DATA-MODEL.md)).
-> **Cobertura:** 29 tablas reales en 20 migraciones (`migrations/0001` a `migrations/0020`), verificado 2026-07-12 leyendo el 100% de las migraciones línea por línea — cero tablas inventadas o supuestas.
+> **Cobertura:** 30 tablas reales en 21 migraciones (`migrations/0001` a `migrations/0021`), verificado 2026-07-12 leyendo el 100% de las migraciones línea por línea — cero tablas inventadas o supuestas (`transformation_records`/`0021` añadida 2026-07-18, STORY-051).
 > **Protocolo de sincronización (OBLIGATORIO):** toda migración nueva/modificada actualiza su ficha correspondiente en el MISMO cambio. Si una migración no tiene ficha, o la ficha no coincide con la migración real, la migración es la fuente de verdad y la ficha está desactualizada — repórtalo.
 
 ---
@@ -50,6 +50,7 @@
 | [`operator_roles`](./data-model/operator_roles.md) | [`operator-roles`](./features/operator-roles.md) | `0020` | Mutable | `owner_id → accounts` |
 | [`operator_assignments`](./data-model/operator_assignments.md) | [`operator-roles`](./features/operator-roles.md) | `0020` | Mutable | `owner_id → accounts`, `role_id → operator_roles` |
 | [`operator_role_events`](./data-model/operator_role_events.md) | [`operator-roles`](./features/operator-roles.md) | `0020` | Append-only | `owner_id → accounts` |
+| [`transformation_records`](./data-model/transformation_records.md) | [`hybrid-data-transformer`](./features/hybrid-data-transformer.md) | `0021` | Append-only | — |
 
 ---
 

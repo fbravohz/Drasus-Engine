@@ -37,7 +37,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0031](./adr/ADR-0031.md) | Inteligencia Artificial Híbrida (Hybrid Genesis Engine) |
 | [ADR-0032](./adr/ADR-0032.md) | Estándares de Hardware Soberano (Single Machine Sovereignty) |
 | [ADR-0033](./adr/ADR-0033.md) | Arquitectura de Despliegue Trimodal |
-| [ADR-0034](./adr/ADR-0034.md) | Ingesta Híbrida Soberana (Bulk S3 + API Delta) |
+| [ADR-0034](./adr/ADR-0034.md) | Ingesta Híbrida Soberana (Bulk S3 + API Delta) 🔶 Generalizado por ADR-0154 |
 | [ADR-0035](./adr/ADR-0035.md) | Persistencia en Particionado Hive-Style (Parquet) |
 | [ADR-0036](./adr/ADR-0036.md) | Remuestreo Dinámico Multidimensional (DuckDB) |
 | [ADR-0037](./adr/ADR-0037.md) | Protocolo de Calidad "The Sanitizer" |
@@ -157,3 +157,5 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0151](./adr/ADR-0151.md) | Modelo de Aplicación de la Corrección por Pruebas Múltiples — Por Punto de Decisión, N desde el Linaje, Correlación por V[{SR_n}] (reconcilia PBO/CSCV ↔ DSR ↔ PSR; guardia de límite degenerado) |
 | [ADR-0152](./adr/ADR-0152.md) | Banco de Pruebas como Gate Permanente de Definición de Terminado — Realización Canónica de la SVF Genérica · enmienda ADR-0117 |
 | [ADR-0153](./adr/ADR-0153.md) | Banco de Estrategias Unificado — Cluster Fusionado (enmienda ADR-0090/ADR-0072), Eje de Proceso Workspace→Pipeline (extiende ADR-0136) y Selección Efímera (extiende ADR-0137) |
+| [ADR-0154](./adr/ADR-0154.md) | Drasus Provee Conectores, No Datos de Mercado — Tres Vías de Ingesta, Tabla de Capacidades por Bróker y Frontera de Responsabilidad sobre el Dato · generaliza ADR-0034 |
+| [ADR-0155](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo, Principio "Guarda el Hecho, Calcula la Interpretación" · concreta ADR-0154, extiende ADR-0141/ADR-0140/ADR-0137 |

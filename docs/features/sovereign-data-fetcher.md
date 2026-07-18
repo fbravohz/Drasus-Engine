@@ -5,7 +5,9 @@
 **Carpeta:** `./features/sovereign-data-fetcher/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0034 (Ingesta Híbrida Soberana)
+**Decisión Arquitectónica Asociada:** ADR-0034 (Ingesta Híbrida Soberana) · ADR-0154 (doctrina de procedencia: Drasus provee conectores, no datos) · ADR-0155 (esquema canónico de `QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`)
+
+> ⚠️ **Corrección de doctrina (ADR-0154, 2026-07-18):** esta feature es un **conector**, no un proveedor. La fuente **nunca es un invariante**: `BULK_SOURCE` pasó de `[FIJO] Binance Vision` a **CONFIG sin valor por defecto** — la elige el usuario entre las fuentes que él tenga, declaradas en la tabla de capacidades por bróker × vía × clase de activo × granularidad. El literal `https://data.binance.vision` que hoy vive en el código (`schemas.rs`) es un **defecto pendiente de corrección**, no el diseño. Además: se persiste **todo** campo que la fuente entregue (ADR-0020); está prohibido recortar el esquema al mínimo común denominador entre fuentes.
 
 ## ¿Qué es?
 
@@ -34,7 +36,7 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 | Parámetro | Default | Rango | Qué hace | FIJO/CONFIG |
 |---|---|---|---|---|
 | CONCURRENT_DOWNLOADS | 5 | 1 - 20 | Cuántos archivos descargar simultáneamente | CONFIG |
-| BULK_SOURCE_URL | Binance Vision | - | URL base para buscar volcados S3 | [FIJO] |
+| BULK_SOURCE | (ninguna por defecto) | fuentes declaradas en la tabla de capacidades | Qué fuente del usuario se consulta para el volcado masivo | **CONFIG** |
 | DELTA_SYNC_RETRY | 3 | 1 - 10 | Reintentos para la sincronización REST | CONFIG |
 
 ## Estructura Interna (FCIS — ADR-0002)
@@ -92,19 +94,23 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 
 | Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
 |---|---|---|---|---|
-| `ticks_out` | `Tick` | Output | 0..N | Transacciones crudas Bid/Ask/Last descargadas (volcados de trades + Delta REST) |
+| `quote_ticks_out` | `QuoteTick` | Output | 0..N | Cotizaciones crudas Bid/Ask descargadas (volcados de quotes + Delta REST) |
+| `trade_ticks_out` | `TradeTick` | Output | 0..N | Ejecuciones crudas Last/Volumen descargadas (volcados de trades + Delta REST) |
 | `bars_out` | `Bars` | Output | 0..N | Barras OHLCV crudas cuando la fuente entrega volcados de klines directamente |
+| `depth_levels_out` | `DepthLevel` | Output | 0..N | Profundidad de libro Nivel 2, cuando el proveedor histórico la entrega (sin fuente construida hoy — esquema-listo, ADR-0155) |
+| `order_events_out` | `OrderEvent` | Output | 0..N | Eventos de libro Nivel 3, cuando el proveedor histórico los entrega (sin fuente construida hoy — esquema-listo, ADR-0155) |
 
-> El catálogo de tipos de ADR-0137 declara a `sovereign-data-fetcher` como feature productora canónica de `Tick`. Las dos salidas son mutuamente excluyentes por solicitud: una descarga de trades produce `Tick`; una descarga de klines produce `Bars`.
+> **División Tick → QuoteTick/TradeTick (ADR-0155, enmienda 2026-07-18 de ADR-0137).** El catálogo de tipos declara a `sovereign-data-fetcher` como feature productora canónica de `QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`. Una fuente que mezcla cotización y ejecución en el mismo archivo (MT5, por bitmask) se descarga cruda aquí y se demultiplexa en [`data-normalization-layer`](data-normalization-layer.md) — esta feature no decide a cuál de los dos tipos pertenece cada fila, solo transporta el archivo íntegro. Los tres tipos de salida son mutuamente excluyentes por solicitud: una descarga de trades produce `TradeTick`; una de quotes produce `QuoteTick`; una de klines produce `Bars`.
 
 ## Contrato de Integración UI (ADR-0117 / ADR-0136)
 
-**Superficie propia: Inspector Panel** (nodo fuente del canvas). Como produce tipos de dominio (`Tick`/`Bars`) y recibe configuración del usuario, NO es plomería: al hacer clic en su nodo del Forge se abre un inspector panel lateral (ADR-0136) con su UI de configuración:
+**Superficie propia: Inspector Panel** (nodo fuente del canvas). Como produce tipos de dominio (`QuoteTick`/`TradeTick`/`Bars`) y recibe configuración del usuario, NO es plomería: al hacer clic en su nodo del Forge se abre un inspector panel lateral (ADR-0136) con su UI de configuración:
 
-- Selector de **broker/exchange** (ej. Binance Vision).
+- Selector de **fuente del usuario** (bróker o proveedor que él tenga conectado; ej. Binance Vision como una fuente más, nunca como valor por defecto).
+- **Degradación declarada (ADR-0154):** al elegir la fuente, los controles siguientes se recortan a lo que esa combinación de bróker × vía × clase de activo × granularidad soporta según la tabla de capacidades. Lo no soportado aparece **deshabilitado con el motivo escrito**, antes de que el usuario lo intente — nunca habilitado para fallar después con un error de transporte.
 - Selector de **símbolo** (ej. BTCUSDT).
 - **Rango de fechas** (desde / hasta).
-- **Timeframe/intervalo** (1m, 5m, 1h, 1D, …) y tipo de salida (trades → `Tick` / klines → `Bars`).
+- **Timeframe/intervalo** (1m, 5m, 1h, 1D, …) y tipo de salida (trades → `TradeTick` / klines → `Bars`). El selector de dos opciones ya implementado (`GlowSegmented`, STORY-024) no cubre `QuoteTick` — extenderlo a un tercer valor (quotes) es deuda de UI pendiente, fuera del alcance de este ADR (ADR-0155 solo fija el esquema de campos, no re-diseña la Cáscara Visual ya construida).
 - Disparador de descarga + estimación de tamaño y verificación de espacio en disco.
 
 UX complementaria provista por features hermanas del módulo `ingest` (NO por esta feature):
