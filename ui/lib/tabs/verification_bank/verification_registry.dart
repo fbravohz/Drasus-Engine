@@ -191,4 +191,17 @@ final List<VerificationEntry> kVerificationRegistry = [
     exampleJson:
         '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}',
   ),
+
+  // ── hybrid-data-transformer (STORY-051 Etapa 4) ──────────────────────────
+  // JSON de ejemplo copiado literalmente del catálogo real del backend
+  // (crates/bridge/src/api/verification.rs::list_verifiable_features) — no
+  // se inventa. Sin sección a mano: el harness genérico basta (ver
+  // "Entrada al Banco de Pruebas (SVF)" en docs/features/hybrid-data-transformer.md).
+  _generic(
+    id: 'hybrid-data-transformer',
+    title: 'Transformador de Datos de Mercado',
+    icon: IconsaxPlusLinear.convert,
+    exampleJson:
+        '{"instrument_id":"BTCUSDT","venue":"BINANCE","source_provider":"BINANCE","bar_type":"TIME","timeframe_value":"1H","data_snapshot_id":"binance_btcusdt_1h_202607","target_aggregation":"1h","interop_threshold":100000,"polars_threads":null}',
+  ),
 ];

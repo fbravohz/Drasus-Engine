@@ -11,6 +11,7 @@ import '../theme/theme_scope.dart';
 import '../components/components.dart' as custom_ui;
 import 'dashboard_registry.dart';
 import 'sovereign_data_fetcher_dashboard_widget.dart';
+import 'hybrid_data_transformer/hybrid_data_transformer_dashboard_widget.dart';
 
 // ---------------------------------------------------------------------------
 // DashboardTab — pestaña principal del tablero.
@@ -185,6 +186,10 @@ class _BentoGrid extends StatelessWidget {
                 // Widget real del Sovereign Data Fetcher (STORY-024).
                 // Muestra el último registro de sovereign_download_records por FFI.
                 const SovereignDataFetcherDashboardWidget(),
+                const SizedBox(height: 12),
+                // Widget real del Hybrid Data Transformer (STORY-051).
+                // Muestra el último registro de transformation_records por FFI.
+                const HybridDataTransformerDashboardWidget(),
               ],
             ),
           ),

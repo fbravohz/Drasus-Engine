@@ -115,4 +115,13 @@ const List<DashboardWidgetMeta> kDashboardRegistry = [
     icon: IconsaxPlusLinear.document_download,
     available: true,
   ),
+  // Widget de última transformación de datos — implementado en STORY-051.
+  DashboardWidgetMeta(
+    id: 'hybrid-data-transformer',
+    name: 'Transformación de Datos',
+    description:
+        'Estado de la última transformación: filas de salida, dataset y hash.',
+    icon: IconsaxPlusLinear.convert,
+    available: true,
+  ),
 ];

@@ -11,6 +11,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
+import 'api/hybrid_data_transformer.dart';
 import 'api/jobs.dart';
 import 'api/verification.dart';
 import 'frb_generated.dart';
@@ -74,7 +75,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 71897077;
+  int get rustContentHash => 1617610923;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -99,6 +100,13 @@ abstract class RustLibApi extends BaseApi {
   Future<List<DownloadRecordDto>> crateApiDataFetcherListDownloadRecords(
       {required String dbPath});
 
+  Future<List<SourceDatasetDto>>
+      crateApiHybridDataTransformerListSourceDatasets({required String dbPath});
+
+  Future<List<TransformationRecordDto>>
+      crateApiHybridDataTransformerListTransformationRecords(
+          {required String dbPath});
+
   List<FeatureDescriptor> crateApiVerificationListVerifiableFeatures();
 
   Future<DownloadJobResult> crateApiDataFetcherSubmitDownloadJob(
@@ -110,6 +118,25 @@ abstract class RustLibApi extends BaseApi {
       required PlatformInt64 endNs,
       required String timeframe,
       required String outputType});
+
+  Future<TransformOutcomeDto>
+      crateApiHybridDataTransformerSubmitHybridDataTransformation(
+          {required String dbPath,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          required String barType,
+          required String timeframeValue,
+          required String dataSnapshotId,
+          required String targetAggregation,
+          required BigInt interopThreshold,
+          int? polarsThreads,
+          required List<TradeTickDto> ticks,
+          String? sourceParquetPath,
+          String? parentId,
+          String? nodeId,
+          String? processId,
+          String? sessionId});
 
   Future<VerificationOutcome> crateApiVerificationVerifyFeature(
       {required String featureId, required String inputJson});
@@ -252,11 +279,67 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<SourceDatasetDto>>
+      crateApiHybridDataTransformerListSourceDatasets(
+          {required String dbPath}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(dbPath, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 6, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_list_source_dataset_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiHybridDataTransformerListSourceDatasetsConstMeta,
+      argValues: [dbPath],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiHybridDataTransformerListSourceDatasetsConstMeta =>
+      const TaskConstMeta(
+        debugName: "list_source_datasets",
+        argNames: ["dbPath"],
+      );
+
+  @override
+  Future<List<TransformationRecordDto>>
+      crateApiHybridDataTransformerListTransformationRecords(
+          {required String dbPath}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(dbPath, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 7, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_list_transformation_record_dto,
+        decodeErrorData: null,
+      ),
+      constMeta:
+          kCrateApiHybridDataTransformerListTransformationRecordsConstMeta,
+      argValues: [dbPath],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta
+      get kCrateApiHybridDataTransformerListTransformationRecordsConstMeta =>
+          const TaskConstMeta(
+            debugName: "list_transformation_records",
+            argNames: ["dbPath"],
+          );
+
+  @override
   List<FeatureDescriptor> crateApiVerificationListVerifiableFeatures() {
     return handler.executeSync(SyncTask(
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_feature_descriptor,
@@ -296,7 +379,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(timeframe, serializer);
         sse_encode_String(outputType, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 9, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_download_job_result,
@@ -333,6 +416,99 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<TransformOutcomeDto>
+      crateApiHybridDataTransformerSubmitHybridDataTransformation(
+          {required String dbPath,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          required String barType,
+          required String timeframeValue,
+          required String dataSnapshotId,
+          required String targetAggregation,
+          required BigInt interopThreshold,
+          int? polarsThreads,
+          required List<TradeTickDto> ticks,
+          String? sourceParquetPath,
+          String? parentId,
+          String? nodeId,
+          String? processId,
+          String? sessionId}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(dbPath, serializer);
+        sse_encode_String(instrumentId, serializer);
+        sse_encode_String(venue, serializer);
+        sse_encode_String(sourceProvider, serializer);
+        sse_encode_String(barType, serializer);
+        sse_encode_String(timeframeValue, serializer);
+        sse_encode_String(dataSnapshotId, serializer);
+        sse_encode_String(targetAggregation, serializer);
+        sse_encode_u_64(interopThreshold, serializer);
+        sse_encode_opt_box_autoadd_u_32(polarsThreads, serializer);
+        sse_encode_list_trade_tick_dto(ticks, serializer);
+        sse_encode_opt_String(sourceParquetPath, serializer);
+        sse_encode_opt_String(parentId, serializer);
+        sse_encode_opt_String(nodeId, serializer);
+        sse_encode_opt_String(processId, serializer);
+        sse_encode_opt_String(sessionId, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 10, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_transform_outcome_dto,
+        decodeErrorData: null,
+      ),
+      constMeta:
+          kCrateApiHybridDataTransformerSubmitHybridDataTransformationConstMeta,
+      argValues: [
+        dbPath,
+        instrumentId,
+        venue,
+        sourceProvider,
+        barType,
+        timeframeValue,
+        dataSnapshotId,
+        targetAggregation,
+        interopThreshold,
+        polarsThreads,
+        ticks,
+        sourceParquetPath,
+        parentId,
+        nodeId,
+        processId,
+        sessionId
+      ],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta
+      get kCrateApiHybridDataTransformerSubmitHybridDataTransformationConstMeta =>
+          const TaskConstMeta(
+            debugName: "submit_hybrid_data_transformation",
+            argNames: [
+              "dbPath",
+              "instrumentId",
+              "venue",
+              "sourceProvider",
+              "barType",
+              "timeframeValue",
+              "dataSnapshotId",
+              "targetAggregation",
+              "interopThreshold",
+              "polarsThreads",
+              "ticks",
+              "sourceParquetPath",
+              "parentId",
+              "nodeId",
+              "processId",
+              "sessionId"
+            ],
+          );
+
+  @override
   Future<VerificationOutcome> crateApiVerificationVerifyFeature(
       {required String featureId, required String inputJson}) {
     return handler.executeNormal(NormalTask(
@@ -341,7 +517,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(featureId, serializer);
         sse_encode_String(inputJson, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
+            funcId: 11, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_verification_outcome,
@@ -381,15 +557,64 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BarDto dco_decode_bar_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 27)
+      throw Exception('unexpected arr length: expect 27 but see ${arr.length}');
+    return BarDto(
+      instrumentId: dco_decode_String(arr[0]),
+      venue: dco_decode_String(arr[1]),
+      sourceProvider: dco_decode_String(arr[2]),
+      barType: dco_decode_String(arr[3]),
+      timeframeValue: dco_decode_String(arr[4]),
+      dataSnapshotId: dco_decode_String(arr[5]),
+      barTimestampNs: dco_decode_i_64(arr[6]),
+      barCloseTimestampNs: dco_decode_i_64(arr[7]),
+      open: dco_decode_i_64(arr[8]),
+      high: dco_decode_i_64(arr[9]),
+      low: dco_decode_i_64(arr[10]),
+      close: dco_decode_i_64(arr[11]),
+      volumeTraded: dco_decode_i_64(arr[12]),
+      tradeCount: dco_decode_i_64(arr[13]),
+      volumeBuy: dco_decode_opt_box_autoadd_i_64(arr[14]),
+      volumeTicks: dco_decode_opt_box_autoadd_i_64(arr[15]),
+      quoteAssetVolume: dco_decode_opt_box_autoadd_i_64(arr[16]),
+      spreadReported: dco_decode_opt_box_autoadd_i_64(arr[17]),
+      openInterest: dco_decode_opt_box_autoadd_i_64(arr[18]),
+      settlementPrice: dco_decode_opt_box_autoadd_i_64(arr[19]),
+      impliedVolatilityReported: dco_decode_opt_box_autoadd_i_64(arr[20]),
+      deltaReported: dco_decode_opt_box_autoadd_i_64(arr[21]),
+      gammaReported: dco_decode_opt_box_autoadd_i_64(arr[22]),
+      thetaReported: dco_decode_opt_box_autoadd_i_64(arr[23]),
+      vegaReported: dco_decode_opt_box_autoadd_i_64(arr[24]),
+      rhoReported: dco_decode_opt_box_autoadd_i_64(arr[25]),
+      theoreticalPriceReported: dco_decode_opt_box_autoadd_i_64(arr[26]),
+    );
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
   }
 
   @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_i_64(raw);
+  }
+
+  @protected
   JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_job_status_dto(raw);
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -491,6 +716,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<BarDto> dco_decode_list_bar_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_bar_dto).toList();
+  }
+
+  @protected
   List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_download_record_dto).toList();
@@ -515,15 +746,120 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<SourceDatasetDto> dco_decode_list_source_dataset_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_source_dataset_dto).toList();
+  }
+
+  @protected
+  List<TradeTickDto> dco_decode_list_trade_tick_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_trade_tick_dto).toList();
+  }
+
+  @protected
+  List<TransformationRecordDto> dco_decode_list_transformation_record_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_transformation_record_dto)
+        .toList();
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
   }
 
   @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_i_64(raw);
+  }
+
+  @protected
   JobStatusDto? dco_decode_opt_box_autoadd_job_status_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_job_status_dto(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_32(raw);
+  }
+
+  @protected
+  SourceDatasetDto dco_decode_source_dataset_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SourceDatasetDto(
+      id: dco_decode_String(arr[0]),
+      dataSnapshotId: dco_decode_String(arr[1]),
+      sourceEndpoint: dco_decode_String(arr[2]),
+      createdAt: dco_decode_i_64(arr[3]),
+    );
+  }
+
+  @protected
+  TradeTickDto dco_decode_trade_tick_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return TradeTickDto(
+      eventTimestampNs: dco_decode_i_64(arr[0]),
+      priceScaled: dco_decode_i_64(arr[1]),
+      tradeVolumeScaled: dco_decode_i_64(arr[2]),
+      aggressorSide: dco_decode_opt_String(arr[3]),
+      originSeq: dco_decode_u_64(arr[4]),
+    );
+  }
+
+  @protected
+  TransformOutcomeDto dco_decode_transform_outcome_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return TransformOutcomeDto(
+      recordId: dco_decode_String(arr[0]),
+      rowsIn: dco_decode_i_64(arr[1]),
+      rowsOut: dco_decode_i_64(arr[2]),
+      logicHash: dco_decode_String(arr[3]),
+      auditHash: dco_decode_String(arr[4]),
+      transformDurationNs: dco_decode_i_64(arr[5]),
+      bars: dco_decode_list_bar_dto(arr[6]),
+      matrixOutPresent: dco_decode_bool(arr[7]),
+      error: dco_decode_opt_String(arr[8]),
+    );
+  }
+
+  @protected
+  TransformationRecordDto dco_decode_transformation_record_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return TransformationRecordDto(
+      id: dco_decode_String(arr[0]),
+      createdAt: dco_decode_i_64(arr[1]),
+      dataSnapshotId: dco_decode_opt_String(arr[2]),
+      logicHash: dco_decode_String(arr[3]),
+      rowsIn: dco_decode_i_64(arr[4]),
+      rowsOut: dco_decode_i_64(arr[5]),
+      transformDurationNs: dco_decode_i_64(arr[6]),
+      schemaVersion: dco_decode_String(arr[7]),
+    );
+  }
+
+  @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -583,9 +919,77 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BarDto sse_decode_bar_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_instrumentId = sse_decode_String(deserializer);
+    var var_venue = sse_decode_String(deserializer);
+    var var_sourceProvider = sse_decode_String(deserializer);
+    var var_barType = sse_decode_String(deserializer);
+    var var_timeframeValue = sse_decode_String(deserializer);
+    var var_dataSnapshotId = sse_decode_String(deserializer);
+    var var_barTimestampNs = sse_decode_i_64(deserializer);
+    var var_barCloseTimestampNs = sse_decode_i_64(deserializer);
+    var var_open = sse_decode_i_64(deserializer);
+    var var_high = sse_decode_i_64(deserializer);
+    var var_low = sse_decode_i_64(deserializer);
+    var var_close = sse_decode_i_64(deserializer);
+    var var_volumeTraded = sse_decode_i_64(deserializer);
+    var var_tradeCount = sse_decode_i_64(deserializer);
+    var var_volumeBuy = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_volumeTicks = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_quoteAssetVolume = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_spreadReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_openInterest = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_settlementPrice = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_impliedVolatilityReported =
+        sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_deltaReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_gammaReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_thetaReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_vegaReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_rhoReported = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_theoreticalPriceReported =
+        sse_decode_opt_box_autoadd_i_64(deserializer);
+    return BarDto(
+        instrumentId: var_instrumentId,
+        venue: var_venue,
+        sourceProvider: var_sourceProvider,
+        barType: var_barType,
+        timeframeValue: var_timeframeValue,
+        dataSnapshotId: var_dataSnapshotId,
+        barTimestampNs: var_barTimestampNs,
+        barCloseTimestampNs: var_barCloseTimestampNs,
+        open: var_open,
+        high: var_high,
+        low: var_low,
+        close: var_close,
+        volumeTraded: var_volumeTraded,
+        tradeCount: var_tradeCount,
+        volumeBuy: var_volumeBuy,
+        volumeTicks: var_volumeTicks,
+        quoteAssetVolume: var_quoteAssetVolume,
+        spreadReported: var_spreadReported,
+        openInterest: var_openInterest,
+        settlementPrice: var_settlementPrice,
+        impliedVolatilityReported: var_impliedVolatilityReported,
+        deltaReported: var_deltaReported,
+        gammaReported: var_gammaReported,
+        thetaReported: var_thetaReported,
+        vegaReported: var_vegaReported,
+        rhoReported: var_rhoReported,
+        theoreticalPriceReported: var_theoreticalPriceReported);
+  }
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_i_64(deserializer));
   }
 
   @protected
@@ -593,6 +997,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_job_status_dto(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_32(deserializer));
   }
 
   @protected
@@ -706,6 +1116,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<BarDto> sse_decode_list_bar_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <BarDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_bar_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<DownloadRecordDto> sse_decode_list_download_record_dto(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -751,11 +1173,61 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<SourceDatasetDto> sse_decode_list_source_dataset_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <SourceDatasetDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_source_dataset_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<TradeTickDto> sse_decode_list_trade_tick_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <TradeTickDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_trade_tick_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<TransformationRecordDto> sse_decode_list_transformation_record_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <TransformationRecordDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_transformation_record_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_i_64(deserializer));
     } else {
       return null;
     }
@@ -771,6 +1243,101 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     } else {
       return null;
     }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  SourceDatasetDto sse_decode_source_dataset_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_dataSnapshotId = sse_decode_String(deserializer);
+    var var_sourceEndpoint = sse_decode_String(deserializer);
+    var var_createdAt = sse_decode_i_64(deserializer);
+    return SourceDatasetDto(
+        id: var_id,
+        dataSnapshotId: var_dataSnapshotId,
+        sourceEndpoint: var_sourceEndpoint,
+        createdAt: var_createdAt);
+  }
+
+  @protected
+  TradeTickDto sse_decode_trade_tick_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_eventTimestampNs = sse_decode_i_64(deserializer);
+    var var_priceScaled = sse_decode_i_64(deserializer);
+    var var_tradeVolumeScaled = sse_decode_i_64(deserializer);
+    var var_aggressorSide = sse_decode_opt_String(deserializer);
+    var var_originSeq = sse_decode_u_64(deserializer);
+    return TradeTickDto(
+        eventTimestampNs: var_eventTimestampNs,
+        priceScaled: var_priceScaled,
+        tradeVolumeScaled: var_tradeVolumeScaled,
+        aggressorSide: var_aggressorSide,
+        originSeq: var_originSeq);
+  }
+
+  @protected
+  TransformOutcomeDto sse_decode_transform_outcome_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_recordId = sse_decode_String(deserializer);
+    var var_rowsIn = sse_decode_i_64(deserializer);
+    var var_rowsOut = sse_decode_i_64(deserializer);
+    var var_logicHash = sse_decode_String(deserializer);
+    var var_auditHash = sse_decode_String(deserializer);
+    var var_transformDurationNs = sse_decode_i_64(deserializer);
+    var var_bars = sse_decode_list_bar_dto(deserializer);
+    var var_matrixOutPresent = sse_decode_bool(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return TransformOutcomeDto(
+        recordId: var_recordId,
+        rowsIn: var_rowsIn,
+        rowsOut: var_rowsOut,
+        logicHash: var_logicHash,
+        auditHash: var_auditHash,
+        transformDurationNs: var_transformDurationNs,
+        bars: var_bars,
+        matrixOutPresent: var_matrixOutPresent,
+        error: var_error);
+  }
+
+  @protected
+  TransformationRecordDto sse_decode_transformation_record_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_createdAt = sse_decode_i_64(deserializer);
+    var var_dataSnapshotId = sse_decode_opt_String(deserializer);
+    var var_logicHash = sse_decode_String(deserializer);
+    var var_rowsIn = sse_decode_i_64(deserializer);
+    var var_rowsOut = sse_decode_i_64(deserializer);
+    var var_transformDurationNs = sse_decode_i_64(deserializer);
+    var var_schemaVersion = sse_decode_String(deserializer);
+    return TransformationRecordDto(
+        id: var_id,
+        createdAt: var_createdAt,
+        dataSnapshotId: var_dataSnapshotId,
+        logicHash: var_logicHash,
+        rowsIn: var_rowsIn,
+        rowsOut: var_rowsOut,
+        transformDurationNs: var_transformDurationNs,
+        schemaVersion: var_schemaVersion);
+  }
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
   }
 
   @protected
@@ -829,9 +1396,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_bar_dto(BarDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.instrumentId, serializer);
+    sse_encode_String(self.venue, serializer);
+    sse_encode_String(self.sourceProvider, serializer);
+    sse_encode_String(self.barType, serializer);
+    sse_encode_String(self.timeframeValue, serializer);
+    sse_encode_String(self.dataSnapshotId, serializer);
+    sse_encode_i_64(self.barTimestampNs, serializer);
+    sse_encode_i_64(self.barCloseTimestampNs, serializer);
+    sse_encode_i_64(self.open, serializer);
+    sse_encode_i_64(self.high, serializer);
+    sse_encode_i_64(self.low, serializer);
+    sse_encode_i_64(self.close, serializer);
+    sse_encode_i_64(self.volumeTraded, serializer);
+    sse_encode_i_64(self.tradeCount, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.volumeBuy, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.volumeTicks, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.quoteAssetVolume, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.spreadReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.openInterest, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.settlementPrice, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.impliedVolatilityReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.deltaReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.gammaReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.thetaReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.vegaReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.rhoReported, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.theoreticalPriceReported, serializer);
+  }
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_i_64(
+      PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self, serializer);
   }
 
   @protected
@@ -839,6 +1445,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       JobStatusDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_job_status_dto(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self, serializer);
   }
 
   @protected
@@ -919,6 +1531,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_bar_dto(List<BarDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_bar_dto(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_download_record_dto(
       List<DownloadRecordDto> self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -957,12 +1578,53 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_source_dataset_dto(
+      List<SourceDatasetDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_source_dataset_dto(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_trade_tick_dto(
+      List<TradeTickDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_trade_tick_dto(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_transformation_record_dto(
+      List<TransformationRecordDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_transformation_record_dto(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+      PlatformInt64? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_i_64(self, serializer);
     }
   }
 
@@ -975,6 +1637,71 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (self != null) {
       sse_encode_box_autoadd_job_status_dto(self, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_source_dataset_dto(
+      SourceDatasetDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.dataSnapshotId, serializer);
+    sse_encode_String(self.sourceEndpoint, serializer);
+    sse_encode_i_64(self.createdAt, serializer);
+  }
+
+  @protected
+  void sse_encode_trade_tick_dto(TradeTickDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.eventTimestampNs, serializer);
+    sse_encode_i_64(self.priceScaled, serializer);
+    sse_encode_i_64(self.tradeVolumeScaled, serializer);
+    sse_encode_opt_String(self.aggressorSide, serializer);
+    sse_encode_u_64(self.originSeq, serializer);
+  }
+
+  @protected
+  void sse_encode_transform_outcome_dto(
+      TransformOutcomeDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.recordId, serializer);
+    sse_encode_i_64(self.rowsIn, serializer);
+    sse_encode_i_64(self.rowsOut, serializer);
+    sse_encode_String(self.logicHash, serializer);
+    sse_encode_String(self.auditHash, serializer);
+    sse_encode_i_64(self.transformDurationNs, serializer);
+    sse_encode_list_bar_dto(self.bars, serializer);
+    sse_encode_bool(self.matrixOutPresent, serializer);
+    sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_transformation_record_dto(
+      TransformationRecordDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_i_64(self.createdAt, serializer);
+    sse_encode_opt_String(self.dataSnapshotId, serializer);
+    sse_encode_String(self.logicHash, serializer);
+    sse_encode_i_64(self.rowsIn, serializer);
+    sse_encode_i_64(self.rowsOut, serializer);
+    sse_encode_i_64(self.transformDurationNs, serializer);
+    sse_encode_String(self.schemaVersion, serializer);
+  }
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
   }
 
   @protected

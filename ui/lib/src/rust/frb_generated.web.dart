@@ -14,6 +14,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
+import 'api/hybrid_data_transformer.dart';
 import 'api/jobs.dart';
 import 'api/verification.dart';
 import 'frb_generated.dart';
@@ -33,10 +34,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AuditEventSummary dco_decode_audit_event_summary(dynamic raw);
 
   @protected
+  BarDto dco_decode_bar_dto(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
   JobStatusDto dco_decode_box_autoadd_job_status_dto(dynamic raw);
+
+  @protected
+  int dco_decode_box_autoadd_u_32(dynamic raw);
 
   @protected
   DownloadJobResult dco_decode_download_job_result(dynamic raw);
@@ -63,6 +73,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw);
 
   @protected
+  List<BarDto> dco_decode_list_bar_dto(dynamic raw);
+
+  @protected
   List<DownloadRecordDto> dco_decode_list_download_record_dto(dynamic raw);
 
   @protected
@@ -75,10 +88,41 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<SourceDatasetDto> dco_decode_list_source_dataset_dto(dynamic raw);
+
+  @protected
+  List<TradeTickDto> dco_decode_list_trade_tick_dto(dynamic raw);
+
+  @protected
+  List<TransformationRecordDto> dco_decode_list_transformation_record_dto(
+      dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
+
+  @protected
   JobStatusDto? dco_decode_opt_box_autoadd_job_status_dto(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
+
+  @protected
+  SourceDatasetDto dco_decode_source_dataset_dto(dynamic raw);
+
+  @protected
+  TradeTickDto dco_decode_trade_tick_dto(dynamic raw);
+
+  @protected
+  TransformOutcomeDto dco_decode_transform_outcome_dto(dynamic raw);
+
+  @protected
+  TransformationRecordDto dco_decode_transformation_record_dto(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -100,11 +144,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  BarDto sse_decode_bar_dto(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
   JobStatusDto sse_decode_box_autoadd_job_status_dto(
       SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
   DownloadJobResult sse_decode_download_job_result(
@@ -134,6 +187,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  List<BarDto> sse_decode_list_bar_dto(SseDeserializer deserializer);
+
+  @protected
   List<DownloadRecordDto> sse_decode_list_download_record_dto(
       SseDeserializer deserializer);
 
@@ -148,11 +204,46 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<SourceDatasetDto> sse_decode_list_source_dataset_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  List<TradeTickDto> sse_decode_list_trade_tick_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  List<TransformationRecordDto> sse_decode_list_transformation_record_dto(
+      SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
   JobStatusDto? sse_decode_opt_box_autoadd_job_status_dto(
       SseDeserializer deserializer);
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+
+  @protected
+  SourceDatasetDto sse_decode_source_dataset_dto(SseDeserializer deserializer);
+
+  @protected
+  TradeTickDto sse_decode_trade_tick_dto(SseDeserializer deserializer);
+
+  @protected
+  TransformOutcomeDto sse_decode_transform_outcome_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  TransformationRecordDto sse_decode_transformation_record_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -178,11 +269,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       AuditEventSummary self, SseSerializer serializer);
 
   @protected
+  void sse_encode_bar_dto(BarDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_i_64(
+      PlatformInt64 self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_job_status_dto(
       JobStatusDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_download_job_result(
@@ -213,6 +314,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       List<AuditEventSummary> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_bar_dto(List<BarDto> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_download_record_dto(
       List<DownloadRecordDto> self, SseSerializer serializer);
 
@@ -229,11 +333,48 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       Uint8List self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_source_dataset_dto(
+      List<SourceDatasetDto> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_trade_tick_dto(
+      List<TradeTickDto> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_transformation_record_dto(
+      List<TransformationRecordDto> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+      PlatformInt64? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_job_status_dto(
       JobStatusDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_source_dataset_dto(
+      SourceDatasetDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_trade_tick_dto(TradeTickDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_transform_outcome_dto(
+      TransformOutcomeDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_transformation_record_dto(
+      TransformationRecordDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);
