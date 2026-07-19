@@ -22,12 +22,13 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 
 - [ ] El sistema recibe datos de Binance y Oanda; ambos se guardan en la DB interna con el mismo formato de columnas y nomenclatura.
 - [ ] Si un activo tiene una escala de precios inusual (ej: centavos de Yen), la capa de normalización la escala a una representación interna consistente (Enteros int64 si se requiere ADR-0004).
-- [ ] Cualquier módulo (Backtest, Execute) pide datos usando el "Símbolo Normalizado" (ej: `BTC/USDT`) y el sistema sabe a qué tabla de broker corresponde.
+- [ ] Cualquier módulo (Backtest, Execute) pide datos usando la **tripleta de identidad** símbolo × temporalidad × bróker (`instrument_id`/`timeframe_value`/`venue`, forma canónica `EURUSD-1M-PEPPERSTONE`, ADR-0155) — nunca el símbolo solo. El "Símbolo Normalizado" (ej: `BTC/USDT`) resuelve la traducción de nombre entre fuentes, pero jamás sustituye al bróker como parte de la clave: el mismo símbolo en dos brokers es una serie distinta, nunca la misma tabla.
 - [ ] **Demultiplexado cotización/ejecución (ADR-0155).** Cuando la fuente entrega ambos eventos mezclados en el mismo archivo, distinguidos por una bandera propia del terminal (MT5: bitmask `TICK_FLAG_BID`/`ASK` frente a `TICK_FLAG_LAST`/`VOLUME`), esta capa enruta cada registro crudo a `QuoteTick` o `TradeTick` según esa bandera de origen, nunca a un tipo mixto con columnas opcionales. Un mismo evento de fuente puede, en casos raros, generar ambas filas (un trade que también actualiza el BBO).
 
 ## Restricciones
 
 - NUNCA se permiten símbolos duplicados con diferentes configuraciones de normalización.
+- NUNCA se funden dos series con el mismo símbolo y la misma temporalidad pero distinto bróker (`venue`) en una sola identidad — la clave de identidad es la tripleta símbolo × temporalidad × bróker, no el símbolo solo (ADR-0155, decisión del propietario 2026-07-18).
 - NUNCA se procesan barras que no hayan pasado por la normalización de tipado. **Corrección (ADR-0141):** los precios se normalizan a **`INTEGER` con escala fija ×10⁸**, NO a coma flotante — la referencia previa a `float64` contradecía la prohibición canónica de `REAL` para precios y queda derogada. El tiempo se normaliza a marca de tiempo UTC de resolución fija.
 - La normalización debe ser "Zero-Loss": los datos originales crudos deben poder reconstruirse o estar disponibles en una columna de auditoría. **Esto no es solo sobre el valor, es sobre el conjunto de campos (ADR-0154):** está prohibido normalizar recortando al mínimo común denominador entre fuentes. Los campos que una fuente concreta no entrega quedan nulos; nunca se eliminan del esquema.
 
@@ -104,7 +105,7 @@ Cada mapeo de símbolo registra el set de relevancia técnica para Datos:
 | | `audit_hash` | Hash de la configuración del símbolo |
 | | `audit_chain_hash` | Hash encadenado del historial del registro |
 | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
-| **III. Linaje** | `data_snapshot_id` | ID del broker fuente |
+| **III. Linaje** | `data_snapshot_id` | Ref. al dataset crudo origen, formato canónico ADR-0141 (no es solo el ID del bróker: incluye símbolo, temporalidad y periodo) |
 | | `transformation_id` | ID del mapeo institucional |
 | | `logic_hash` | Hash del traductor de esquemas |
 | **IV. Hardware** | `node_id` | ID del hardware físico |

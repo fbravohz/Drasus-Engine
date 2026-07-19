@@ -21,7 +21,7 @@ Es el componente encargado de organizar físicamente los archivos Parquet en el 
 ## Restricciones
 
 - NUNCA se permiten rutas "hardcoded" fuera de la configuración central.
-- NUNCA se mezclan datos de diferentes exchanges o símbolos en la misma partición terminal.
+- NUNCA se mezclan datos de diferentes exchanges/brokers, símbolos o temporalidades en la misma partición terminal — la partición terminal materializa en disco la tripleta de identidad símbolo × temporalidad × bróker (ADR-0155); dos series con la misma ruta salvo el segmento `exchange=` no son la misma serie y nunca comparten partición.
 - El sistema debe validar que los nombres de las carpetas sigan estrictamente el formato `key=value`.
 
 ## Parámetros Configurables

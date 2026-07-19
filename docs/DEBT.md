@@ -48,6 +48,10 @@
 | DEBT-027 | 🔴 Alta | Descarga anónima de Binance en el código viola ADR-0154 y el veredicto legal | Abierta | [detalle](./debt/DEBT-027.md) |
 | DEBT-028 | 🟡 Baja | Precio medio ponderado en la barra: es indicador, no primitivo — sale de la ingesta | ✅ Pagada (STORY-051) | [detalle](./debt/DEBT-028.md) |
 | DEBT-029 | 🟠 Media | Los contratos de entrada aceptan campos desconocidos en silencio (payload híbrido cotización+ejecución) | Abierta | [detalle](./debt/DEBT-029.md) |
+| DEBT-030 | 🟠 Media | La reagregación barra→barra hereda la temporalidad de la sub-barra: etiqueta `1M` una serie horaria | Abierta | [detalle](./debt/DEBT-030.md) |
+| DEBT-031 | 🟠 Media | La identidad de la serie se teclea a mano en la interfaz y queda sellada en el hash de auditoría | Abierta | [detalle](./debt/DEBT-031.md) |
+| DEBT-032 | 🟠 Media | El patrón de ledger de referencia tiene dos huecos (prueba del clasificador no discriminante + migración sin triggers) y se propagan por copia | Abierta | [detalle](./debt/DEBT-032.md) |
+| DEBT-033 | 🟠 Media | El techo de magnitud de la escala ×10⁸ excluye las cripto de oferta extrema (SHIB/PEPE): una barra horaria normal desborda `i64` — requiere decisión del Architect sobre ADR-0141 | Abierta | [detalle](./debt/DEBT-033.md) |
 
 ---
 

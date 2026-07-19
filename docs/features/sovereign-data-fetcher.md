@@ -43,7 +43,7 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 
 - **Core (Lógica Pura):** Algoritmos de reconciliación de timestamps, detección de huecos (Gaps) y priorización de descargas en `fetcher_core.rs`.
 - **Shell (Infraestructura):** Cliente HTTP asíncrono, descompresor de archivos y gestión de sistema de archivos local.
-- **Frontera Pública:** Contrato `fetch_data(symbol, timeframe, range)`.
+- **Frontera Pública:** Contrato `fetch_data(symbol, timeframe, broker, range)`. El bróker es parte obligatoria de la identidad de la serie solicitada (tripleta símbolo × temporalidad × bróker, ADR-0155) — nunca un parámetro implícito o resuelto por defecto.
 
 ## Ciclo de Vida de la Feature — Sovereign Data Fetcher
 
