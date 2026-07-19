@@ -331,3 +331,27 @@
 - **`kill -9` real (subproceso + SIGKILL):** diferido a STORY-009 (necesita binario raíz). El gate de STORY-005 ya está demostrado con el test de cierre/reapertura de DB en archivo.
 - **Spikes de gates SPIKE-001–SPIKE-006:** aún no despachados (se decidió arrancar por cimientos). SPIKE-001 (smoke test NautilusTrader) es el único sin validar de fondo; SPIKE-002–SPIKE-006 tienen veredicto en ADR, resta validación residual. Bloquean el inicio de EPIC-1.
 - **Git:** el árbol tiene cambios sin commitear (Orden STORY-007 nueva, ediciones a ROADMAP.md y PROGRESS.md). No se ha commiteado nada (regla: git solo si el usuario lo pide).
+
+---
+
+## 2026-07-19 · STORY-051 CERRADA + Gate de Aprendizajes aplicado
+
+**Volcado íntegro de la sesión:** [`.agents/plans/sesion-2026-07-19-cierre-story-051-y-gate-aprendizajes.md`](../../plans/sesion-2026-07-19-cierre-story-051-y-gate-aprendizajes.md). Todo lo de abajo es el resumen; el detalle vive ahí.
+
+**Cerrado:** STORY-051 (QA APTO · Quant APTO-CON-CONDICIONES) — primera pieza real de EPIC-1. También STORY-057 (identidad de serie en la barra) y STORY-058 (migración de tipos; el marcador `Tick` genérico se retiró del catálogo). DEBT-028 saldada.
+
+**🔴 BLOQUEADO EN EL PROPIETARIO — TASK-060:** muestra real de Forex/CFD. Se necesitan **archivos CSV exportados de terminal, sin credenciales**: un par de divisas, dos granularidades (1 minuto y ticks), sin limpiar, e idealmente **de dos brókers distintos** del mismo par para probar que la tripleta los mantiene separados. No avanza sin él; salda DEBT-025 y alimenta TASK-052.
+
+**Hallazgo de arquitectura (TASK-061 + DEBT-033):** ADR-0141 eligió la escala ×10⁸ por *precisión decimal* y nunca comprobó el *rango*. El techo de `i64` son ~92 200 millones de unidades; **una barra horaria de SHIB a volumen normal lo desborda 1,13×** (4,52× en día activo). Verificado aritméticamente. Directiva del propietario: **no se descarta la clase de activo** — se decide cómo soportarla.
+
+**Dos decisiones que ya existían y nadie recordaba** (ambas detectadas por el propietario, no por los agentes): la regla del cierre de vela está **FIJA en ADR-0114** ("Bar-Open Alignment"), y la agregación a tipos de barra ya está especificada en `algorithmic-bars.md` (Renko, Rango, Volumen, Tick). Es la causa raíz que motivó la **Etapa 0.3**.
+
+**Etapa 0.3 — Barrido de Coherencia Pre-Orden (NUEVA, obligatoria).** El Architect revisa toda feature ANTES de que el TL redacte su Orden: produce las preguntas que un ingeniero se hará, las responde citando documento y línea, y clasifica lo que queda en resoluble / contradicción / **bloqueo duro que se consulta al propietario**. Entrega una sección "Preguntas resueltas antes de implementar" que viaja con el despacho. Nació del caso del precio medio ponderado: se construyó, debatió y auditó algo que nunca debió existir en esa fase, porque la doctrina existía dispersa en prosa y nunca como respuesta localizable.
+
+**Gate de mutación:** lo corre **solo el TL**, con `scripts/mutation-gate.sh`. Tres agentes agotaron su presupuesto esperando corridas sin entregar nada. El script resuelve además el fallo de RAM (`/tmp` es tmpfs; el enlazado de Polars la agota y muere con un Bus error que aparenta fallo de compilación). Doctrina completa en `.agents/knowledge/mutation-gate.md`.
+
+**Molde canónico del ledger:** `.agents/knowledge/ledger-pattern.md`. Regla nueva: "sigue el patrón de ledger" se refiere a ESE documento, nunca a "la feature que ya lo tiene". Elegir referencia por antigüedad propagó dos huecos durante meses (DEBT-032).
+
+**Deuda abierta:** DEBT-025, 029, 030, 031, 032, 033. **Tasks abiertas:** 052, 053, 054, 055, 056, 059, **060 (bloqueada en el propietario)**, 061, 062.
+
+**Gate de aprendizajes: las nueve mejoras aplicadas**, incluidas la sincronía documental por etapa y correr mutación durante el trabajo del ingeniero (no solo en el gate final: en STORY-051 eso costó tres rondas donde bastaba una).

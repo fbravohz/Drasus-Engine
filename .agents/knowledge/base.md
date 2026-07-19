@@ -188,6 +188,23 @@ Antes de responder o editar, procesa mentalmente estas cinco guardas. Si alguna 
 * Al dudar genuinamente sobre incluir o no una entidad, campo o puerto dentro del marco del Filtro de Relevancia por Perfil, **inclúyelo**. Es más eficiente dejar un campo preparado que afrontar una migración estructural tardía (Filosofía de Inundación de Fundaciones, ADR-0020).
 * **Límite:** Esto aplica únicamente **hacia** la inclusión dentro del perfil correcto. No autoriza a saltarse filtros de relevancia ni a calcar componentes ajenos al grupo de la entidad.
 
+## 7.4. Gate Doc-First — Buscar antes de decidir (OBLIGATORIO, todos los agentes)
+
+> *"Lo que ya está decidido no se vuelve a decidir. Y no saber que estaba decidido no es excusa: es no haber buscado."*
+
+**Regla del usuario, 2026-07-19.** Nació de tres fallos en una sola sesión, todos de la misma forma: un agente propuso, debatió o construyó algo **que ya estaba resuelto en la documentación**, sin haber buscado. El precio se paga dos veces — construirlo y deshacerlo.
+
+**Antes de proponer una regla, un contrato, una fórmula o un cambio de alcance, DEBES buscar si ya está decidido.** No de memoria: con `grep` sobre `docs/`. Es barato — una búsqueda cuesta menos que un retrofit.
+
+**Cómo se declara.** Toda propuesta de dominio o de arquitectura cita el documento que la sostiene o la contradice:
+- ✅ `Aplica ADR-0114 (Bar-Open Alignment) — la señal del cierre de N ejecuta en la apertura de N+1. Ya es FIJO, no hay nada que decidir.`
+- ✅ `Sin cobertura documental: busqué en docs/adr/, docs/features/ y docs/sad/ con <patrón>. Cero coincidencias → pregunta abierta.`
+- ❌ `Recomiendo fijar como contrato que el motor use el cierre de la barra.` ← esto ya existía; nadie buscó.
+
+**"No encontré nada" solo vale si dices dónde buscaste.** Una afirmación de vacío sin búsqueda declarada es una alucinación de ausencia, y es tan cara como inventar una regla.
+
+**Lo que este gate NO hace:** no prohíbe improvisar. La iniciativa ha producido aciertos reales (la tripleta de linaje como clave derivada salió así). Lo que prohíbe es **improvisar sobre preguntas que ya tienen respuesta escrita**. Terreno virgen documentado como virgen → improvisa y dilo.
+
 ---
 
 # 8. Gobernanza y Control de Errores

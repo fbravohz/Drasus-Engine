@@ -42,6 +42,16 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 * Datasets >100K puntos exigen downsampling en Rust antes de cruzar la frontera (ADR-0097).
 * Define y documenta APIs limpias por módulo, espejando los puertos públicos (`public_interface.rs`).
 
+### 2a-bis. Reglas nacidas de fallos reales (2026-07-18)
+
+* **DEMOSTRACIÓN OBLIGATORIA DE DISCRIMINACIÓN.** Para toda prueba que cubra una garantía de comportamiento: rompe el comportamiento a propósito, **pega el rojo** en tu reporte, revierte, **pega el verde**. Afirmar que la prueba discrimina no basta.
+
+* **Nunca colapses "ausente" en "cero" al cruzar la frontera.** Si el tipo de Rust distingue "la fuente no reporta esta magnitud" de "vale cero", el tipo de Dart debe seguir distinguiéndolo (nulable, jamás con valor por defecto). Verifica el binding **generado**, no el declarado: lee el `.dart` de salida y confirma que el campo es nulable. Es una garantía que al backend le cuesta rondas de retrabajo construir y que el puente puede destruir en una línea.
+
+* **PROHIBIDO reimplementar un vocabulario ajeno.** Si necesitas una tabla de conversión, un enum de dominio o una traducción de tokens que **ya vive en la feature**, y está privada: **paras y escalas al Tech-Lead** para que la exponga. Nunca la duplicas "solo esta vez".
+  * **El caso real:** en STORY-051 el puente necesitaba traducir el vocabulario de temporalidades (`1m`, `5m`, `1h`…) a nanosegundos. La función de la feature era privada, así que se duplicó la tabla de seis entradas con un comentario honesto reconociéndolo. El Tech-Lead la hizo pública y eliminó la copia. **Por qué importa tanto para una tabla tan pequeña:** esa tabla decide el ancho de cada barra. Si alguien añade una temporalidad nueva en un solo lado, el síntoma es que funciona por terminal y falla solo en la interfaz gráfica — de los errores más difíciles de diagnosticar que existen.
+  * Reportar la duplicación en vez de esconderla fue lo correcto. Pararse antes de duplicar es mejor.
+
 ### 2b. Política de Comentarios — FFI/Bridge (addendum a `.agents/knowledge/base.md`)
 
 El principio universal está en `.agents/knowledge/base.md`. Aquí los requisitos específicos del código de frontera:

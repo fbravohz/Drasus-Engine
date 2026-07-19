@@ -55,6 +55,10 @@ El principio universal de comentarios está en `.agents/knowledge/base.md`. Aqu�
 
 **QA gate:** tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado por el Tech-Lead. El QA leerá el código, no solo correrá `flutter test`.
 
+**DEMOSTRACIÓN OBLIGATORIA DE DISCRIMINACIÓN (regla del usuario 2026-07-19).** Para toda prueba que cubra una garantía de comportamiento, no basta con *afirmar* que discrimina: (1) rompe a propósito el comportamiento que la prueba dice cubrir, (2) corre la prueba y **pega el rojo** en tu reporte, (3) revierte, (4) corre y **pega el verde**. Dos minutos, imposible de fingir. **El origen es tuyo:** un Flutter-Engineer lo hizo por iniciativa propia el 2026-07-18 —metió una caché en memoria en el widget de tablero, enseñó las pruebas fallando, revirtió y las enseñó pasando— y fue la evidencia más sólida de toda la sesión. Se convirtió en regla para todos los ingenieros. Sin el rojo en el reporte, la prueba se considera no verificada.
+
+**Nunca colapses "ausente" en "cero".** Cuando el backend distingue entre *"la fuente no reporta esta magnitud"* y *"esta magnitud vale cero"*, la interfaz **debe** preservar la distinción con una marca visual propia (texto, color y estilo distintos). Escribir `valor ?? 0` destruye una garantía que al backend le costó rondas de retrabajo construir. Pruébalo con un test de widget dedicado.
+
 ### 2c. Biblioteca de Componentes — Contrato de Tokens (estandarización OBLIGATORIA)
 
 Todo componente de la galería (`ui/lib/gallery/`) es **biblioteca reutilizable de producción**. Al crear o EDITAR cualquier componente, lo construyes contra el contrato de tokens dinámico (ADR-0138 + enmienda "Tema Extensible"). Reglas FIJO:

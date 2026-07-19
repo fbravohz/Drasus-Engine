@@ -23,6 +23,37 @@ Por eso:
 
 ---
 
+## DEBT vs. TASK — Los Dos Registros No Se Mezclan (regla del usuario, 2026-07-19)
+
+**El propietario detectó deriva real:** este documento definía `ponytail:` vs. `DEBT-XXX`, pero **nunca definió cuándo algo es una TASK**. Sin criterio escrito, la elección era intuición del Tech-Lead. Se cierra aquí.
+
+**No se fusionan, porque responden a preguntas distintas:**
+
+| | **DEBT-XXX** (`docs/debt/`) | **TASK-XXX** (`docs/execution/`) |
+|---|---|---|
+| **Qué es** | Algo **ya construido** que tiene un hueco conocido | Algo **aún no decidido** o no construido |
+| **Pregunta que responde** | *¿Qué le falta a lo que ya existe?* | *¿Qué hay que decidir o hacer a continuación?* |
+| **Existe código hoy** | Sí — funciona, pero incompleto o frágil | No necesariamente; a menudo es solo una decisión |
+| **Campo que la gobierna** | **Disparador de pago** (condición verificable) | **Bloqueante** (quién debe actuar) |
+| **Cierra con** | Una Story que la salda | Una decisión canonizada (ADR/enmienda) o un entregable |
+| **Si nadie la toca** | El sistema sigue funcionando, con el hueco latente | El trabajo que depende de ella **no puede empezar** |
+
+**La prueba de una línea:** *¿esto es un hueco en algo que ya corre, o una pregunta que alguien tiene que contestar?* Hueco → DEBT. Pregunta → TASK.
+
+**Casos reales para calibrar:**
+- El sello de auditoría hereda la temporalidad equivocada al reagregar → **DEBT-030.** El código existe y corre; le falta una derivación.
+- La escala entera no admite cripto de oferta extrema → **DEBT-033** (el hueco) **y TASK-061** (la decisión de qué escala adoptar). **Ambas, legítimamente:** el hueco es de código, la elección es de arquitectura. Cuando un hallazgo tiene las dos caras, se registran las dos y se enlazan.
+- El catálogo de tipos de barra no coincide entre la base de datos y la especificación → **TASK-062.** No hay código que arreglar: hay un catálogo que decidir.
+- Falta muestra real de Forex/CFD → **TASK-060.** No es un hueco de código: es un insumo que solo el propietario puede entregar.
+
+### Accionables bloqueados en el propietario
+
+**Todo accionable que dependa de una decisión o un insumo del propietario se registra como TASK con `🔴 BLOQUEADO POR EL USUARIO` en el encabezado**, y aparece marcado así en `PROGRESS.md` y en el ROADMAP. Regla del usuario, 2026-07-19: *"debe estar bien claro que el usuario bloquea"*.
+
+Nunca se deja en prosa dentro de un chat. Un bloqueo que solo existe en una conversación **se pierde con la conversación**, y el trabajo que dependía de él se descubre parado semanas después.
+
+---
+
 ## Cuándo Abrir DEBT-XXX vs. Usar `ponytail:`
 
 ### ✅ Usa `ponytail:` (Capa 3 — en el código)
