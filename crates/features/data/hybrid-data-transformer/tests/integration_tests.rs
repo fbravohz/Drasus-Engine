@@ -17,9 +17,9 @@ use tempfile::TempDir;
 
 use shared::public_interface::{create_pool, run_migrations, DeterministicClock};
 use hybrid_data_transformer::public_interface::{
-    execute, load_ticks_from_parquet, transform, verify, AggressorSideInput, ExecuteRequest, NewTransformationRecord,
-    TradeTickInput, TransformError, TransformRequest, TransformerConfig, TransformationRepository,
-    TransformationRepositoryError, VerifyInput,
+    execute, load_ticks_from_parquet, transform, verify, AggressorSideInput, BarTypeInput, ExecuteRequest,
+    NewTransformationRecord, TradeTickInput, TransformError, TransformRequest, TransformerConfig,
+    TransformationRepository, TransformationRepositoryError, VerifyInput,
 };
 
 // ── Helpers de test ──────────────────────────────────────────────────────────
@@ -66,8 +66,21 @@ fn load_frozen_binance_sample() -> Vec<TradeTickInput> {
 }
 
 fn sample_request(ticks: Vec<TradeTickInput>, target_interval_ns: i64) -> TransformRequest {
+    sample_request_with_venue(ticks, target_interval_ns, "BINANCE")
+}
+
+/// Igual que [`sample_request`] pero con un `venue` explícito -- usado por
+/// las pruebas discriminantes de identidad de STORY-057 (ADR-0155 enmienda
+/// de tripleta: dos series con OHLCV idéntico pero distinto bróker nunca
+/// deben producir el mismo `audit_hash`).
+fn sample_request_with_venue(ticks: Vec<TradeTickInput>, target_interval_ns: i64, venue: &str) -> TransformRequest {
     TransformRequest {
-        data_snapshot_id: Some("binance_BTCUSDT_1m_202401".to_string()),
+        instrument_id: "BTCUSDT".to_string(),
+        venue: venue.to_string(),
+        source_provider: "BINANCE".to_string(),
+        bar_type: BarTypeInput::Time,
+        timeframe_value: "1H".to_string(),
+        data_snapshot_id: "binance_BTCUSDT_1m_202401".to_string(),
         ticks,
         target_interval_ns,
         parent_id: None,
@@ -237,7 +250,12 @@ async fn execute_resolves_ticks_from_parquet_path_when_ticks_empty() {
     ParquetWriter::new(file).finish(&mut df).unwrap();
 
     let request = ExecuteRequest {
-        data_snapshot_id: None,
+        instrument_id: "BTCUSDT".to_string(),
+        venue: "BINANCE".to_string(),
+        source_provider: "BINANCE".to_string(),
+        bar_type: BarTypeInput::Time,
+        timeframe_value: "1H".to_string(),
+        data_snapshot_id: "binance_BTCUSDT_1m_202401".to_string(),
         ticks: vec![],
         source_parquet_path: Some(path),
         target_interval_ns: 1_000,
@@ -471,6 +489,42 @@ async fn transformation_record_returned_row_reflects_fresh_hash_chain_and_timest
     assert_eq!(second.event_sequence_id, 2);
 }
 
+/// CORRECCIÓN TECH-LEAD 2026-07-18 (patrón obligatorio de todo ledger
+/// append-only, `0019_data_portability.sql`): un `UPDATE` crudo sobre
+/// `transformation_records` debe ser rechazado por el trigger
+/// `trg_transformation_records_no_update` a nivel de base de datos -- la
+/// inmutabilidad del ledger no puede depender solo de que el repositorio
+/// nunca emita ese `UPDATE`.
+#[tokio::test(flavor = "multi_thread")]
+async fn update_is_rejected_by_trigger_on_transformation_records() {
+    let (pool, _dir) = setup_db().await;
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = TransformationRepository::new(&pool, &clock);
+
+    let record = repo.record(sample_new_transformation_record("v1")).await.expect("registrar transformación");
+
+    let result = sqlx::query("UPDATE transformation_records SET schema_version = 'tampered' WHERE id = ?")
+        .bind(&record.id)
+        .execute(&pool)
+        .await;
+    assert!(result.is_err(), "UPDATE sobre transformation_records debe ser rechazado por el trigger");
+}
+
+/// CORRECCIÓN TECH-LEAD 2026-07-18: mismo patrón para `DELETE` --
+/// `trg_transformation_records_no_delete` debe rechazarlo a nivel de base de
+/// datos.
+#[tokio::test(flavor = "multi_thread")]
+async fn delete_is_rejected_by_trigger_on_transformation_records() {
+    let (pool, _dir) = setup_db().await;
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = TransformationRepository::new(&pool, &clock);
+
+    let record = repo.record(sample_new_transformation_record("v1")).await.expect("registrar transformación");
+
+    let result = sqlx::query("DELETE FROM transformation_records WHERE id = ?").bind(&record.id).execute(&pool).await;
+    assert!(result.is_err(), "DELETE sobre transformation_records debe ser rechazado por el trigger");
+}
+
 /// El registro persistido en `transformation_records` trae los campos del
 /// Perfil A (ADR-0020) completos -- verificación de humo del cableado
 /// completo (`transform()` -> `TransformationRepository`).
@@ -494,7 +548,7 @@ async fn transformation_record_persisted_with_profile_a_fields() {
     assert_eq!(record.logic_hash, result.logic_hash);
     assert_eq!(record.rows_in, 1);
     assert_eq!(record.rows_out, 1);
-    assert_eq!(record.schema_version, "2.1", "corrección DEBT-028: el retiro de vwap cambió la forma de Bar de forma incompatible");
+    assert_eq!(record.schema_version, "3.0", "STORY-057: los seis campos de identidad obligatorios cambiaron la forma de Bar de forma incompatible");
     assert_eq!(record.data_snapshot_id.as_deref(), Some("binance_BTCUSDT_1m_202401"));
 }
 
@@ -617,4 +671,73 @@ async fn four_volume_magnitudes_remain_independent_through_the_full_pipeline() {
         .expect("la transformación debe completarse sin lado conocido");
     assert_eq!(result_no_side.bars[0].volume_buy, None, "sin fuente que distinga el lado, volume_buy NUNCA se rellena por defecto");
     assert_eq!(result_no_side.bars[0].volume_traded, 10, "volume_traded se sigue calculando igual -- es independiente de volume_buy");
+}
+
+// ── STORY-057: campos de identidad -- pruebas discriminantes end-to-end ────
+
+/// CRITERIO 3 DE LA ORDEN, a nivel de orquestación completa: dos
+/// `TransformRequest` idénticos salvo `venue` deben producir `Bar`s con
+/// `venue` distinto en `TransformResult` -- ejercita el camino completo
+/// (Polars -> Núcleo -> persistencia -> `TransformResult`), no solo el
+/// `BarIdentity` que consume `aggregate_trades_to_bars` en `domain.rs`.
+#[tokio::test(flavor = "multi_thread")]
+async fn transform_produces_bars_with_distinct_venue_when_requests_differ_only_in_venue() {
+    let ticks = vec![TradeTickInput { event_timestamp_ns: 0, price_scaled: 100, trade_volume_scaled: 1, aggressor_side: None, origin_seq: 0 }];
+
+    let (pool_a, _dir_a) = setup_db().await;
+    let clock_a = DeterministicClock::new(1_000_000, 1_000);
+    let config = TransformerConfig::default();
+    let result_a = transform(&config, sample_request_with_venue(ticks.clone(), 1_000, "PEPPERSTONE"), &pool_a, &clock_a)
+        .await
+        .expect("corrida con venue PEPPERSTONE debe tener éxito");
+
+    let (pool_b, _dir_b) = setup_db().await;
+    let clock_b = DeterministicClock::new(1_000_000, 1_000);
+    let result_b = transform(&config, sample_request_with_venue(ticks, 1_000, "ICMARKETS"), &pool_b, &clock_b)
+        .await
+        .expect("corrida con venue ICMARKETS debe tener éxito");
+
+    assert_eq!(result_a.bars[0].venue, "PEPPERSTONE");
+    assert_eq!(result_b.bars[0].venue, "ICMARKETS");
+    assert_ne!(result_a.bars[0].venue, result_b.bars[0].venue, "el venue nunca debe fundirse entre dos corridas distintas");
+    assert_eq!(result_a.bars[0].open, result_b.bars[0].open, "precondición: mismo OHLCV, solo cambia el venue");
+    assert_eq!(result_a.bars[0].bar_type, BarTypeInput::Time);
+}
+
+/// PRUEBA CENTRAL DEL ENCARGO, a nivel de orquestación completa: dos barras
+/// con OHLCV byte a byte idéntico pero de brókers distintos deben producir
+/// `audit_hash` DISTINTOS -- el mismo defecto de ADR-0155 ("el mismo símbolo
+/// en dos brókers no es la misma serie") verificado end-to-end (Polars ->
+/// Núcleo -> `TransformResult.audit_hash`), no solo contra
+/// `compute_bars_audit_hash` en aislamiento.
+#[tokio::test(flavor = "multi_thread")]
+async fn audit_hash_differs_when_only_identity_differs_end_to_end() {
+    // Mismo tick exacto (mismo precio, mismo volumen, mismo timestamp) en
+    // ambas corridas -- la ÚNICA variable es el `venue` del `TransformRequest`.
+    let ticks = vec![TradeTickInput { event_timestamp_ns: 0, price_scaled: 4_300_000_000_000, trade_volume_scaled: 150_000_000, aggressor_side: None, origin_seq: 0 }];
+
+    let (pool_a, _dir_a) = setup_db().await;
+    let clock_a = DeterministicClock::new(1_000_000, 1_000);
+    let config = TransformerConfig::default();
+    let result_a = transform(&config, sample_request_with_venue(ticks.clone(), 1_000, "PEPPERSTONE"), &pool_a, &clock_a)
+        .await
+        .expect("corrida A debe tener éxito");
+
+    let (pool_b, _dir_b) = setup_db().await;
+    let clock_b = DeterministicClock::new(1_000_000, 1_000);
+    let result_b = transform(&config, sample_request_with_venue(ticks, 1_000, "ICMARKETS"), &pool_b, &clock_b)
+        .await
+        .expect("corrida B debe tener éxito");
+
+    // Precondición: el OHLCV (y todo lo demás salvo identidad) es idéntico.
+    assert_eq!(result_a.bars[0].open, result_b.bars[0].open);
+    assert_eq!(result_a.bars[0].high, result_b.bars[0].high);
+    assert_eq!(result_a.bars[0].low, result_b.bars[0].low);
+    assert_eq!(result_a.bars[0].close, result_b.bars[0].close);
+    assert_eq!(result_a.bars[0].volume_traded, result_b.bars[0].volume_traded);
+
+    assert_ne!(
+        result_a.audit_hash, result_b.audit_hash,
+        "dos series con OHLCV idéntico pero distinto bróker deben producir audit_hash distintos"
+    );
 }

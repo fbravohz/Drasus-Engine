@@ -278,3 +278,152 @@ fn row_to_record(r: sqlx::sqlite::SqliteRow) -> TransformationRecord {
         schema_version: r.get("schema_version"),
     }
 }
+
+// ── Pruebas de la capa de persistencia ───────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared::public_interface::{create_pool, run_migrations};
+
+    /// Crea una base de datos SQLite en un archivo temporal y aplica todas
+    /// las migraciones -- mismo patrón que `tests/integration_tests.rs`
+    /// (nunca `:memory:`, para que un error real de SQLite tenga el mensaje
+    /// real del motor).
+    async fn migrated_pool() -> (SqlitePool, tempfile::TempDir) {
+        let dir = tempfile::tempdir().expect("crear directorio temporal");
+        let db_path = dir.path().join("test.sqlite");
+        let url = format!("sqlite://{}", db_path.display());
+        let pool = create_pool(&url).await.expect("abrir base de datos temporal");
+        run_migrations(&pool).await.expect("aplicar migraciones");
+        (pool, dir)
+    }
+
+    /// CRITERIO DE CIERRE (QA por mutación): `is_transient_write_conflict`
+    /// distingue una violación UNIQUE PERMANENTE (PK `id`, que NUNCA debe
+    /// reintentarse) de una violación TRANSITORIA (colisión de
+    /// `event_sequence_id` entre dos escritores, que SÍ debe reintentarse) --
+    /// ejercitando la función DIRECTAMENTE con errores reales de SQLite. El
+    /// test de integración `duplicate_primary_key_insert_is_a_permanent_error_not_a_sequence_collision`
+    /// solo comparaba el mensaje crudo de un `INSERT`, nunca llamaba a esta
+    /// función -- un mutante que la hiciera devolver siempre `true` (o
+    /// cambiara `&&` por `||`) pasaba sin que nada lo detectara: si el
+    /// clasificador se rompiera así, el ledger reintentaría indefinidamente
+    /// una violación de PK que nunca puede tener éxito.
+    #[tokio::test]
+    async fn is_transient_write_conflict_distinguishes_permanent_pk_from_transient_sequence_collision() {
+        let (pool, _dir) = migrated_pool().await;
+
+        let insert = |id: &'static str, event_sequence_id: i64| {
+            let pool = pool.clone();
+            async move {
+                sqlx::query(
+                    "INSERT INTO transformation_records \
+                     (id, created_at, updated_at, audit_hash, event_sequence_id, transformation_id, logic_hash, transform_duration_ns, rows_in, rows_out, schema_version) \
+                     VALUES (?, 1, 1, 'h', ?, 'OHLCV_AGGREGATION', 'lh', 0, 0, 0, '1.0')",
+                )
+                .bind(id)
+                .bind(event_sequence_id)
+                .execute(&pool)
+                .await
+            }
+        };
+
+        insert("row-a", 1).await.expect("primera fila válida");
+
+        // Violación PERMANENTE: mismo `id`, distinto `event_sequence_id` --
+        // el mensaje de SQLite NO menciona `event_sequence_id`.
+        let permanent_err = insert("row-a", 2).await.expect_err("debe violar la PRIMARY KEY id");
+        let permanent = TransformationRepositoryError::Database(permanent_err);
+        assert!(
+            !is_transient_write_conflict(&permanent),
+            "una violación UNIQUE de la PK (no de event_sequence_id) es PERMANENTE, nunca transitoria"
+        );
+
+        // Violación TRANSITORIA: `id` distinto, MISMO `event_sequence_id` --
+        // colisión de secuencia entre dos escritores, se resuelve
+        // re-derivando y reintentando.
+        let transient_err = insert("row-b", 1).await.expect_err("debe violar el UNIQUE de event_sequence_id");
+        let transient = TransformationRepositoryError::Database(transient_err);
+        assert!(
+            is_transient_write_conflict(&transient),
+            "una violación UNIQUE de event_sequence_id es TRANSITORIA -- debe reintentarse"
+        );
+
+        // Control: un error que ni siquiera es de base de datos jamás es
+        // transitorio (fija la rama temprana `let ... else`).
+        let non_database = TransformationRepositoryError::WriteContention { attempts: 5 };
+        assert!(
+            !is_transient_write_conflict(&non_database),
+            "un error no-Database nunca es contención transitoria"
+        );
+    }
+
+    // ── Hallazgo de mutación: Display / Error::source ────────────────────
+
+    /// El mensaje de `WriteContention` debe ser específico (incluir el
+    /// número de intentos), no una cadena vacía o genérica.
+    #[test]
+    fn write_contention_display_message_includes_attempt_count() {
+        let err = TransformationRepositoryError::WriteContention { attempts: 5 };
+        let msg = err.to_string();
+        assert!(!msg.is_empty(), "el mensaje de Display nunca debe ser la cadena vacía");
+        assert!(msg.contains('5'), "el mensaje debe incluir el número de intentos agotados: {msg}");
+    }
+
+    /// `WriteContention` no envuelve ningún error subyacente (`source() ==
+    /// None`) -- es un error de dominio propio, no un wrapper.
+    #[test]
+    fn write_contention_has_no_source() {
+        use std::error::Error;
+        let err = TransformationRepositoryError::WriteContention { attempts: 1 };
+        assert!(err.source().is_none(), "WriteContention no envuelve ningún error subyacente");
+    }
+
+    /// La variante `Database` SÍ envuelve el error de `sqlx` original
+    /// (`source() == Some(...)`) y su `Display` incluye el mensaje real del
+    /// motor -- ninguna de las dos propiedades se verificaba antes.
+    #[tokio::test]
+    async fn database_variant_display_and_source_expose_the_underlying_sqlx_error() {
+        use std::error::Error;
+
+        let (pool, _dir) = migrated_pool().await;
+        sqlx::query(
+            "INSERT INTO transformation_records \
+             (id, created_at, updated_at, audit_hash, event_sequence_id, transformation_id, logic_hash, transform_duration_ns, rows_in, rows_out, schema_version) \
+             VALUES ('dup', 1, 1, 'h', 1, 'OHLCV_AGGREGATION', 'lh', 0, 0, 0, '1.0')",
+        )
+        .execute(&pool)
+        .await
+        .expect("primera fila válida");
+        let sqlx_err = sqlx::query(
+            "INSERT INTO transformation_records \
+             (id, created_at, updated_at, audit_hash, event_sequence_id, transformation_id, logic_hash, transform_duration_ns, rows_in, rows_out, schema_version) \
+             VALUES ('dup', 1, 1, 'h', 2, 'OHLCV_AGGREGATION', 'lh', 0, 0, 0, '1.0')",
+        )
+        .execute(&pool)
+        .await
+        .expect_err("debe violar la PRIMARY KEY id");
+
+        let underlying_message = sqlx_err.to_string();
+        let wrapped = TransformationRepositoryError::Database(sqlx_err);
+
+        assert!(!wrapped.to_string().is_empty(), "el mensaje de Display nunca debe ser la cadena vacía");
+        assert!(
+            wrapped.to_string().contains(&underlying_message),
+            "el Display de la variante Database debe incluir el mensaje real del error de sqlx"
+        );
+        assert!(wrapped.source().is_some(), "la variante Database debe exponer su error subyacente vía source()");
+    }
+
+    /// El `From<sqlx::Error>` (usado por el operador `?` de `try_record_once`)
+    /// produce exactamente la variante `Database`.
+    #[tokio::test]
+    async fn from_sqlx_error_produces_database_variant() {
+        let (pool, _dir) = migrated_pool().await;
+        pool.close().await;
+        let sqlx_err = sqlx::query("SELECT 1").execute(&pool).await.expect_err("el pool ya cerrado debe fallar");
+        let converted: TransformationRepositoryError = sqlx_err.into();
+        assert!(matches!(converted, TransformationRepositoryError::Database(_)));
+    }
+}

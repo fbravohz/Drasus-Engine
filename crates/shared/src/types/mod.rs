@@ -47,10 +47,33 @@ pub enum PortDomain {
 
 // ── Tipos de datos de mercado ────────────────────────────────────────────────
 
+// El marcador `Tick` genérico se retiró el 2026-07-18, tras la migración de
+// `sovereign-data-fetcher` a puertos separados (STORY-058). Un tick nunca fue
+// un solo tipo físico: es cotización (`QuoteTick`) o ejecución (`TradeTick`),
+// dos primitivos distintos que jamás se mezclan en la misma fila (ADR-0155
+// restricción 2). El catálogo de ADR-0137 ya no lo declara.
+
+/// Cotización individual Bid/Ask (Nivel 1 de profundidad de libro). Sustituye
+/// a `Tick` para el evento de cotización (ADR-0155). `bid`/`ask` son
+/// obligatorios en el esquema físico; `spread_reported` es la única
+/// excepción de "guarda el hecho, calcula la interpretación" (observación
+/// independiente de la fuente, no `ask − bid`).
 #[derive(Debug, Clone)]
-pub struct Tick;
-impl TypedPort for Tick {
-    fn type_id() -> &'static str { "Tick" }
+pub struct QuoteTick;
+impl TypedPort for QuoteTick {
+    fn type_id() -> &'static str { "QuoteTick" }
+    fn canvas_color() -> &'static str { "#56A8FF" }
+    fn cardinality() -> &'static str { "0..N" }
+}
+
+/// Ejecución individual: `price`/`trade_volume` obligatorios. Sustituye a
+/// `Tick` para el evento de ejecución (ADR-0155). Única fuente física válida
+/// de agregación a `Bars` — una `QuoteTick` nunca se agrega a barra porque el
+/// volumen no existe en una cotización.
+#[derive(Debug, Clone)]
+pub struct TradeTick;
+impl TypedPort for TradeTick {
+    fn type_id() -> &'static str { "TradeTick" }
     fn canvas_color() -> &'static str { "#56A8FF" }
     fn cardinality() -> &'static str { "0..N" }
 }
@@ -67,6 +90,28 @@ impl TypedPort for Bars {
 pub struct AlgoBar;
 impl TypedPort for AlgoBar {
     fn type_id() -> &'static str { "AlgoBar" }
+    fn canvas_color() -> &'static str { "#56A8FF" }
+    fn cardinality() -> &'static str { "0..N" }
+}
+
+/// Profundidad de libro Nivel 2 (Market-by-Price): N niveles de precio
+/// agregados por lado (ADR-0155). Esquema-listo — sin fuente L2 histórica
+/// elegida hoy; costo de diseño cero (Inundación de Fundaciones, ADR-0020).
+#[derive(Debug, Clone)]
+pub struct DepthLevel;
+impl TypedPort for DepthLevel {
+    fn type_id() -> &'static str { "DepthLevel" }
+    fn canvas_color() -> &'static str { "#56A8FF" }
+    fn cardinality() -> &'static str { "0..N" }
+}
+
+/// Profundidad de libro Nivel 3 (Market-by-Order): eventos individuales de
+/// alta/modificación/cancelación/ejecución de orden (ADR-0155). Esquema-listo
+/// — sin fuente L3 histórica elegida hoy; costo de diseño cero.
+#[derive(Debug, Clone)]
+pub struct OrderEvent;
+impl TypedPort for OrderEvent {
+    fn type_id() -> &'static str { "OrderEvent" }
     fn canvas_color() -> &'static str { "#56A8FF" }
     fn cardinality() -> &'static str { "0..N" }
 }

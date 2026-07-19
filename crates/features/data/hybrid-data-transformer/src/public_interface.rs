@@ -25,15 +25,15 @@ use crate::orchestrator;
 // ── Re-exports para que los tests de integración puedan acceder a ellos ─────
 
 pub use crate::domain::{
-    aggregate_trades_to_bars, checked_scaled_product, compute_bars_audit_hash, compute_logic_hash,
-    decide_matrix_conversion, floor_bar_timestamp, reaggregate_bars, round_half_to_even_div_i128,
-    sort_trades_canonical, verify_exact_f64_representable, AggressorSide, Bar, RawTrade, TransformationPlan,
-    MAX_EXACT_F64_INTEGER,
+    aggregate_trades_to_bars, build_series_identity_triplet, checked_scaled_product, compute_bars_audit_hash,
+    compute_logic_hash, decide_matrix_conversion, floor_bar_timestamp, reaggregate_bars, round_half_to_even_div_i128,
+    sort_trades_canonical, verify_exact_f64_representable, AggressorSide, Bar, BarIdentity, BarType, RawTrade,
+    TransformationPlan, MAX_EXACT_F64_INTEGER,
 };
 pub use crate::persistence::{TransformationRepository, TransformationRepositoryError};
 pub use crate::schemas::{
-    AggressorSideInput, BarOutput, NewTransformationRecord, TradeTickInput, TransformRequest, TransformResult,
-    TransformationRecord, TransformerConfig,
+    AggressorSideInput, BarOutput, BarTypeInput, NewTransformationRecord, TradeTickInput, TransformRequest,
+    TransformResult, TransformationRecord, TransformerConfig,
 };
 
 // ── Tipo de error público ────────────────────────────────────────────────────
@@ -156,9 +156,18 @@ pub async fn load_ticks_from_parquet(path: &Path) -> Result<Vec<TradeTickInput>,
 /// ambas traen datos, `ticks` gana (permite pruebas deterministas sin tocar
 /// disco incluso cuando `source_parquet_path` está presente por completitud
 /// del contrato).
+///
+/// **STORY-057:** los seis campos de identidad de serie son obligatorios --
+/// mismo cambio incompatible que en [`TransformRequest`], del que este
+/// struct es el equivalente de producción (Bridge FFI/CLI).
 #[derive(Debug, Clone)]
 pub struct ExecuteRequest {
-    pub data_snapshot_id: Option<String>,
+    pub instrument_id: String,
+    pub venue: String,
+    pub source_provider: String,
+    pub bar_type: BarTypeInput,
+    pub timeframe_value: String,
+    pub data_snapshot_id: String,
     pub ticks: Vec<TradeTickInput>,
     pub source_parquet_path: Option<PathBuf>,
     pub target_interval_ns: i64,
@@ -192,6 +201,11 @@ pub async fn execute(
         polars_threads: request.polars_threads,
     };
     let transform_request = TransformRequest {
+        instrument_id: request.instrument_id,
+        venue: request.venue,
+        source_provider: request.source_provider,
+        bar_type: request.bar_type,
+        timeframe_value: request.timeframe_value,
         data_snapshot_id: request.data_snapshot_id,
         ticks,
         target_interval_ns: request.target_interval_ns,
@@ -208,7 +222,14 @@ pub async fn execute(
 
 /// Mapea el vocabulario de timeframe de la UI (`data_fetcher.dart`) a
 /// nanosegundos. Vocabulario FIJO: `1m`, `5m`, `15m`, `1h`, `4h`, `1d`.
-fn parse_target_aggregation(value: &str) -> Result<i64, TransformError> {
+///
+/// **Pública a propósito, y debe seguir siéndolo:** el puente FFI necesita
+/// esta misma traducción para el camino de la interfaz gráfica. Mientras
+/// estuvo privada, el puente se vio obligado a duplicar la tabla — y una
+/// tabla de vocabulario duplicada se desincroniza en cuanto alguien añade una
+/// temporalidad en un lado y no en el otro. Esta feature es la dueña del
+/// vocabulario; nadie más lo reimplementa.
+pub fn parse_target_aggregation(value: &str) -> Result<i64, TransformError> {
     const NS_PER_SEC: i64 = 1_000_000_000;
     match value {
         "1m" => Ok(60 * NS_PER_SEC),
@@ -240,12 +261,36 @@ fn default_smoke_ticks() -> Vec<TradeTickInput> {
 
 /// Input para la verificación del Hybrid Data Transformer vía CLI.
 /// Se deserializa desde el JSON que pasa el usuario con `--input '...'`.
+///
+/// **STORY-057:** los cinco campos de identidad nuevos y `data_snapshot_id`
+/// (ahora obligatorio en `TransformRequest`) tienen default de humo -- para
+/// que `drasus verify hybrid-data-transformer` sin `--input` siga
+/// funcionando sin que el usuario tenga que declarar identidad de mercado
+/// real para una verificación de cableado.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerifyInput {
+    /// Símbolo/instrumento. Default: `"SMOKE"`.
+    #[serde(default = "default_instrument_id")]
+    pub instrument_id: String,
+    /// Bróker/venue. Default: `"SMOKE_VENUE"`.
+    #[serde(default = "default_venue")]
+    pub venue: String,
+    /// Proveedor del dato. Default: `"SMOKE_PROVIDER"`.
+    #[serde(default = "default_source_provider")]
+    pub source_provider: String,
+    /// Tipo de barra. Default: `Time` (única variante que esta feature produce).
+    #[serde(default = "default_bar_type")]
+    pub bar_type: BarTypeInput,
+    /// Forma de texto del intervalo. Default: `"1H"` (coherente con
+    /// `target_aggregation` default `"1h"`).
+    #[serde(default = "default_timeframe_value")]
+    pub timeframe_value: String,
     /// Referencia de linaje al dataset crudo (no se resuelve a un path físico
     /// en esta Story -- ver `load_ticks_from_parquet` para el mecanismo real).
-    #[serde(default)]
-    pub data_snapshot_id: Option<String>,
+    /// Default satisface el `CHECK` de formato de `transformation_records`
+    /// (ADR-0141: mínimo 4 segmentos separados por `_`).
+    #[serde(default = "default_data_snapshot_id")]
+    pub data_snapshot_id: String,
     /// Timeframe destino: `1m`, `5m`, `15m`, `1h`, `4h`, `1d`. Default: `1h`.
     #[serde(default = "default_target_aggregation")]
     pub target_aggregation: String,
@@ -261,6 +306,30 @@ pub struct VerifyInput {
     pub ticks: Option<Vec<TradeTickInput>>,
 }
 
+fn default_instrument_id() -> String {
+    "SMOKE".to_string()
+}
+
+fn default_venue() -> String {
+    "SMOKE_VENUE".to_string()
+}
+
+fn default_source_provider() -> String {
+    "SMOKE_PROVIDER".to_string()
+}
+
+fn default_bar_type() -> BarTypeInput {
+    BarTypeInput::Time
+}
+
+fn default_timeframe_value() -> String {
+    "1H".to_string()
+}
+
+fn default_data_snapshot_id() -> String {
+    "smoke_symbol_1h_202607".to_string()
+}
+
 fn default_target_aggregation() -> String {
     "1h".to_string()
 }
@@ -272,7 +341,12 @@ fn default_interop_threshold() -> usize {
 impl Default for VerifyInput {
     fn default() -> Self {
         Self {
-            data_snapshot_id: None,
+            instrument_id: default_instrument_id(),
+            venue: default_venue(),
+            source_provider: default_source_provider(),
+            bar_type: default_bar_type(),
+            timeframe_value: default_timeframe_value(),
+            data_snapshot_id: default_data_snapshot_id(),
             target_aggregation: default_target_aggregation(),
             interop_threshold: default_interop_threshold(),
             polars_threads: None,
@@ -317,9 +391,16 @@ impl VerifyOutput {
 
     fn from_result(r: TransformResult) -> Self {
         // Esquema canónico de la barra (ADR-0155 + ADR-0141): mismo orden de
-        // columnas que persistiría en Parquet. Volumen en cuatro magnitudes
+        // columnas que persistiría en Parquet. Seis campos de identidad de
+        // serie (STORY-057, texto/`Utf8`) + volumen en cuatro magnitudes
         // independientes + campos de Futuros/Opciones esquema-listo.
         let schema = vec![
+            "instrument_id:Utf8".to_string(),
+            "venue:Utf8".to_string(),
+            "source_provider:Utf8".to_string(),
+            "bar_type:Utf8".to_string(),
+            "timeframe_value:Utf8".to_string(),
+            "data_snapshot_id:Utf8".to_string(),
             "bar_timestamp_ns:Int64".to_string(),
             "bar_close_timestamp_ns:Int64".to_string(),
             "open:Int64".to_string(),
@@ -390,6 +471,11 @@ pub async fn verify(input: VerifyInput) -> VerifyOutput {
 
     let config = TransformerConfig { interop_threshold: input.interop_threshold, polars_threads: input.polars_threads };
     let request = TransformRequest {
+        instrument_id: input.instrument_id,
+        venue: input.venue,
+        source_provider: input.source_provider,
+        bar_type: input.bar_type,
+        timeframe_value: input.timeframe_value,
         data_snapshot_id: input.data_snapshot_id,
         ticks,
         target_interval_ns,
@@ -402,5 +488,114 @@ pub async fn verify(input: VerifyInput) -> VerifyOutput {
     match transform(&config, request, &pool, &clock).await {
         Ok(result) => VerifyOutput::from_result(result),
         Err(e) => VerifyOutput::from_error(e.to_string()),
+    }
+}
+
+// ── Pruebas unitarias de la superficie pública ──────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// PRUEBA DE VALORES DORADOS (hallazgo de mutación): ningún test previo
+    /// verificaba el valor exacto en nanosegundos de cada token del
+    /// vocabulario -- los operadores `*` de `parse_target_aggregation` podían
+    /// mutarse a `/` o `+` sin que nada protestara. Esta tabla determina el
+    /// ancho de cada barra; si `5m` produjera un número equivocado, las
+    /// barras saldrían agrupadas a una temporalidad distinta de la pedida sin
+    /// que ningún dato se corrompiera -- el error es silencioso aguas abajo.
+    /// Cada valor esperado está calculado a mano, no derivado de la misma
+    /// fórmula que el código bajo prueba (evita la tautología "el código se
+    /// compara consigo mismo").
+    #[test]
+    fn parse_target_aggregation_matches_hand_calculated_nanosecond_values() {
+        // 1 minuto = 60 segundos * 1_000_000_000 ns/s = 60_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("1m").unwrap(), 60_000_000_000, "1m debe ser exactamente 60 * 10^9 ns");
+        // 5 minutos = 300 segundos * 1_000_000_000 ns/s = 300_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("5m").unwrap(), 300_000_000_000, "5m debe ser exactamente 300 * 10^9 ns");
+        // 15 minutos = 900 segundos * 1_000_000_000 ns/s = 900_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("15m").unwrap(), 900_000_000_000, "15m debe ser exactamente 900 * 10^9 ns");
+        // 1 hora = 3_600 segundos * 1_000_000_000 ns/s = 3_600_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("1h").unwrap(), 3_600_000_000_000, "1h debe ser exactamente 3600 * 10^9 ns");
+        // 4 horas = 14_400 segundos * 1_000_000_000 ns/s = 14_400_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("4h").unwrap(), 14_400_000_000_000, "4h debe ser exactamente 14400 * 10^9 ns");
+        // 1 día = 86_400 segundos * 1_000_000_000 ns/s = 86_400_000_000_000 ns.
+        assert_eq!(parse_target_aggregation("1d").unwrap(), 86_400_000_000_000, "1d debe ser exactamente 86400 * 10^9 ns");
+    }
+
+    /// Un token fuera del vocabulario fijo (`1m`, `5m`, `15m`, `1h`, `4h`,
+    /// `1d`) debe rechazarse explícitamente en vez de aproximarse a alguno de
+    /// los válidos -- el puente FFI delega en esta misma función, así que un
+    /// token desconocido debe fallar igual por CLI y por interfaz gráfica.
+    #[test]
+    fn parse_target_aggregation_rejects_unknown_token() {
+        let err = parse_target_aggregation("2m").expect_err("un token fuera del vocabulario fijo debe rechazarse");
+        assert!(
+            matches!(err, TransformError::Internal(_)),
+            "el rechazo debe ser un error interno explícito, no un pánico ni una aproximación"
+        );
+    }
+
+    /// PRUEBA DE VALORES DORADOS (hallazgo de mutación): los `default_*` de
+    /// `VerifyInput` son centinelas explícitos del arranque de humo (dicen
+    /// literalmente "SMOKE", nunca fabrican identidad de forma silenciosa) --
+    /// disposición del Tech-Lead: correctos como diseño, no se cambian. Lo
+    /// que faltaba es fijar estos valores con una prueba, para que nadie los
+    /// cambie sin darse cuenta de que está cambiando el contrato del arranque
+    /// de humo del comando de verificación (`drasus verify
+    /// hybrid-data-transformer` sin `--input`).
+    #[test]
+    fn verify_input_default_values_are_golden_smoke_sentinels() {
+        assert_eq!(default_instrument_id(), "SMOKE");
+        assert_eq!(default_venue(), "SMOKE_VENUE");
+        assert_eq!(default_source_provider(), "SMOKE_PROVIDER");
+        assert_eq!(default_timeframe_value(), "1H");
+        assert_eq!(default_interop_threshold(), 100_000);
+
+        // Verificación de cableado: `VerifyInput::default()` debe usar
+        // EXACTAMENTE estos mismos valores, no una copia divergente.
+        let input = VerifyInput::default();
+        assert_eq!(input.instrument_id, "SMOKE");
+        assert_eq!(input.venue, "SMOKE_VENUE");
+        assert_eq!(input.source_provider, "SMOKE_PROVIDER");
+        assert_eq!(input.bar_type, BarTypeInput::Time);
+        assert_eq!(input.timeframe_value, "1H");
+        assert_eq!(input.data_snapshot_id, "smoke_symbol_1h_202607");
+        assert_eq!(input.target_aggregation, "1h");
+        assert_eq!(input.interop_threshold, 100_000);
+        assert!(input.polars_threads.is_none());
+        assert!(input.ticks.is_none());
+    }
+
+    /// El lado agresor leído de un archivo Parquet real alimenta
+    /// `volume_buy` (una de las cuatro magnitudes independientes que
+    /// ADR-0155 exige no colapsar). Cada brazo del `match` de texto (`BUY`,
+    /// `SELL`, `UNKNOWN`) se ejercita con su valor de entrada real -- si un
+    /// brazo se borrara, ese lado conocido pasaría a leerse como `None`
+    /// (desconocido) sin que nada lo señale, porque `None` es un valor
+    /// legítimo en este campo.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn load_ticks_from_parquet_maps_each_aggressor_side_text_value() {
+        let dir = tempfile::tempdir().expect("crear directorio temporal");
+        let path = dir.path().join("aggressor_sides.parquet");
+
+        let mut df = df![
+            "event_timestamp_ns" => [1_i64, 2, 3],
+            "price_scaled" => [100_i64, 200, 300],
+            "trade_volume_scaled" => [10_i64, 20, 30],
+            "origin_seq" => [0_u64, 1, 2],
+            "aggressor_side" => ["BUY", "SELL", "UNKNOWN"],
+        ]
+        .expect("construir DataFrame de prueba");
+
+        let file = std::fs::File::create(&path).expect("crear archivo Parquet de prueba");
+        ParquetWriter::new(file).finish(&mut df).expect("escribir Parquet de prueba");
+
+        let ticks = load_ticks_from_parquet(&path).await.expect("leer Parquet de prueba");
+
+        assert_eq!(ticks.len(), 3);
+        assert_eq!(ticks[0].aggressor_side, Some(AggressorSideInput::Buy), "brazo 'BUY' debe mapear a Buy");
+        assert_eq!(ticks[1].aggressor_side, Some(AggressorSideInput::Sell), "brazo 'SELL' debe mapear a Sell");
+        assert_eq!(ticks[2].aggressor_side, Some(AggressorSideInput::Unknown), "brazo 'UNKNOWN' debe mapear a Unknown -- distinto de None");
     }
 }

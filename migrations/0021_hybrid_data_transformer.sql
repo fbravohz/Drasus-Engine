@@ -19,7 +19,16 @@
 -- campo propio equivalente, ya declarado arriba).
 --
 -- Idempotencia (ADR-0006): CREATE TABLE IF NOT EXISTS + índices IF NOT
--- EXISTS — volver a correr esta migración es un no-op.
+-- EXISTS + triggers IF NOT EXISTS — volver a correr esta migración es un
+-- no-op.
+--
+-- Enforzamiento append-only (corrección Tech-Lead 2026-07-18, patrón
+-- obligatorio de ADR-0141/STORY-051 §4.1, referencia `0019_data_portability.sql`):
+-- la inmutabilidad de este ledger NO puede depender solo de que el
+-- repositorio nunca emita un UPDATE/DELETE -- eso es una convención, no una
+-- garantía. Los triggers `trg_transformation_records_no_update`/`_no_delete`
+-- (al final de este archivo) hacen que la propia base de datos rechace
+-- cualquier intento de modificar o borrar una fila ya persistida.
 --
 -- audit_hash / audit_chain_hash (semántica propia de esta tabla, distinta de
 -- sovereign_download_records): `audit_hash` es el hash del CONTENIDO
@@ -73,3 +82,19 @@ CREATE INDEX IF NOT EXISTS idx_transformation_records_node_id
 -- Acceso por parent_id (para recorrer la cadena de un pipeline multi-paso).
 CREATE INDEX IF NOT EXISTS idx_transformation_records_parent_id
     ON transformation_records (parent_id);
+
+-- Enforzamiento append-only: rechaza UPDATE (patrón obligatorio de todo
+-- ledger append-only, ver `0019_data_portability.sql` -- cada registro de
+-- transformación es un hecho histórico permanente, nunca se corrige in-place).
+CREATE TRIGGER IF NOT EXISTS trg_transformation_records_no_update
+BEFORE UPDATE ON transformation_records
+BEGIN
+    SELECT RAISE(ABORT, 'transformation_records is append-only: UPDATE is forbidden');
+END;
+
+-- Enforzamiento append-only: rechaza DELETE.
+CREATE TRIGGER IF NOT EXISTS trg_transformation_records_no_delete
+BEFORE DELETE ON transformation_records
+BEGIN
+    SELECT RAISE(ABORT, 'transformation_records is append-only: DELETE is forbidden');
+END;

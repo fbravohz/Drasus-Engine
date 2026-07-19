@@ -59,6 +59,45 @@ impl From<crate::domain::AggressorSide> for AggressorSideInput {
     }
 }
 
+/// Tipo de barra tal como llega en JSON, espejo serializable de
+/// [`crate::domain::BarType`] (ADR-0155: `Bars.bar_type`, `CHECK IN ('TIME',
+/// 'TICK_COUNT', 'VOLUME', 'DOLLAR', 'RENKO')`). `SCREAMING_SNAKE_CASE`
+/// produce EXACTAMENTE esos cinco valores de texto (`TickCount` ->
+/// `"TICK_COUNT"`), sin tabla de mapeo manual.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum BarTypeInput {
+    Time,
+    TickCount,
+    Volume,
+    Dollar,
+    Renko,
+}
+
+impl From<BarTypeInput> for crate::domain::BarType {
+    fn from(value: BarTypeInput) -> Self {
+        match value {
+            BarTypeInput::Time => crate::domain::BarType::Time,
+            BarTypeInput::TickCount => crate::domain::BarType::TickCount,
+            BarTypeInput::Volume => crate::domain::BarType::Volume,
+            BarTypeInput::Dollar => crate::domain::BarType::Dollar,
+            BarTypeInput::Renko => crate::domain::BarType::Renko,
+        }
+    }
+}
+
+impl From<crate::domain::BarType> for BarTypeInput {
+    fn from(value: crate::domain::BarType) -> Self {
+        match value {
+            crate::domain::BarType::Time => BarTypeInput::Time,
+            crate::domain::BarType::TickCount => BarTypeInput::TickCount,
+            crate::domain::BarType::Volume => BarTypeInput::Volume,
+            crate::domain::BarType::Dollar => BarTypeInput::Dollar,
+            crate::domain::BarType::Renko => BarTypeInput::Renko,
+        }
+    }
+}
+
 /// Una ejecución cruda (`TradeTick`) tal como la recibe esta feature desde el
 /// exterior (JSON del harness de verificación, o desde
 /// `sovereign-data-fetcher`/`data-normalization-layer` en producción). El
@@ -110,9 +149,18 @@ impl From<TradeTickInput> for crate::domain::RawTrade {
 
 /// Una barra OHLCV de salida en forma serializable (JSON/output del harness).
 /// Espejo 1:1 de [`crate::domain::Bar`] (ADR-0155): volumen en cuatro
-/// magnitudes independientes + campos de Futuros/Opciones esquema-listo.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+/// magnitudes independientes + campos de Futuros/Opciones esquema-listo +
+/// seis campos de identidad de serie obligatorios por fila (STORY-057:
+/// `instrument_id`, `venue`, `source_provider`, `bar_type`,
+/// `timeframe_value`, `data_snapshot_id`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BarOutput {
+    pub instrument_id: String,
+    pub venue: String,
+    pub source_provider: String,
+    pub bar_type: BarTypeInput,
+    pub timeframe_value: String,
+    pub data_snapshot_id: String,
     pub bar_timestamp_ns: i64,
     pub bar_close_timestamp_ns: i64,
     pub open: i64,
@@ -139,6 +187,12 @@ pub struct BarOutput {
 impl From<crate::domain::Bar> for BarOutput {
     fn from(b: crate::domain::Bar) -> Self {
         Self {
+            instrument_id: b.instrument_id,
+            venue: b.venue,
+            source_provider: b.source_provider,
+            bar_type: b.bar_type.into(),
+            timeframe_value: b.timeframe_value,
+            data_snapshot_id: b.data_snapshot_id,
             bar_timestamp_ns: b.bar_timestamp_ns,
             bar_close_timestamp_ns: b.bar_close_timestamp_ns,
             open: b.open,
@@ -165,11 +219,44 @@ impl From<crate::domain::Bar> for BarOutput {
 }
 
 /// Solicitud de transformación que llega desde la interfaz pública.
+///
+/// ## Cambio incompatible (STORY-057, ADR-0155 Restricción 8 + enmienda de
+/// tripleta 2026-07-18)
+///
+/// Seis campos de identidad de serie ahora OBLIGATORIOS: `instrument_id`,
+/// `venue`, `source_provider`, `bar_type`, `timeframe_value` y
+/// `data_snapshot_id` (este último cambia de `Option<String>` a `String` --
+/// un `TransformRequest` sin bróker conocido no es un caso válido con
+/// `None`, es un caso inválido). Todo llamador que hoy construye este struct
+/// sin estos campos deja de compilar; es la consecuencia directa de que cada
+/// `Bar` de salida ahora exige estos mismos seis campos no nulos.
 #[derive(Debug, Clone)]
 pub struct TransformRequest {
+    /// Símbolo/instrumento (ej. "EURUSD", "BTC-USD"). Se copia tal cual a
+    /// cada `Bar` de salida.
+    pub instrument_id: String,
+    /// Bróker/venue donde se opera el instrumento (ej. "PEPPERSTONE") --
+    /// determina precio, spread, sesión y convención de cierre; NO es
+    /// necesariamente quien entregó el dato (ver `source_provider`).
+    pub venue: String,
+    /// Quién entregó el dato (puede diferir de `venue`: un vendor de datos
+    /// consolidados sobre un venue). Cuando coinciden (caso típico retail),
+    /// el llamador repite el mismo valor en ambos campos.
+    pub source_provider: String,
+    /// Tipo de barra destino. En esta feature (agregación por intervalo de
+    /// tiempo fijo) casi siempre `BarTypeInput::Time` -- las otras cuatro
+    /// variantes quedan esquema-listo para `algorithmic-bars` (aún no
+    /// construida).
+    pub bar_type: BarTypeInput,
+    /// Forma de texto legible del intervalo de agregación (ej. "1H") --
+    /// representación distinta de `target_interval_ns` (la forma numérica
+    /// que el Núcleo usa para agregar); el llamador suministra ambos,
+    /// coherentes entre sí. NO se deriva aquí una tabla
+    /// `nanosegundos -> texto` (fuera de alcance de esta Story).
+    pub timeframe_value: String,
     /// Referencia al dataset crudo de entrada (formato canónico ADR-0141:
     /// `<exchange>_<symbol>_<timeframe>_<year><month>`).
-    pub data_snapshot_id: Option<String>,
+    pub data_snapshot_id: String,
     /// Ejecuciones (`TradeTick`) a transformar -- única fuente válida de
     /// agregación a `Bars` (ADR-0155). En esta Story llegan ya en memoria
     /// (desde el JSON del harness o desde el fetcher); la lectura directa

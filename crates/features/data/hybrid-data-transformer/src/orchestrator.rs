@@ -19,7 +19,7 @@ use shared::public_interface::Clock;
 
 use crate::domain::{
     self, aggregate_trades_to_bars, compute_bars_audit_hash, compute_logic_hash, decide_matrix_conversion,
-    verify_exact_f64_representable, AggressorSide, RawTrade, TransformationPlan,
+    verify_exact_f64_representable, AggressorSide, BarIdentity, RawTrade, TransformationPlan,
 };
 use crate::persistence::TransformationRepository;
 use crate::public_interface::TransformError;
@@ -45,7 +45,18 @@ use crate::schemas::{BarOutput, NewTransformationRecord, TradeTickInput, Transfo
 /// representación entera del volumen; esta vez solo se retira una columna
 /// derivada) -- el criterio de versión mayor/menor de este campo queda para
 /// cuando exista un consumidor real de `schema_version` que lo necesite.
-pub const SCHEMA_VERSION: &str = "2.1";
+///
+/// STORY-057 (2026-07-18): se sube de "2.1" a "3.0" -- SÍ es una
+/// reestructuración de la misma magnitud que "1.0"->"2.0" (ese precedente es
+/// el criterio de versión mayor ya escrito arriba, aplicado aquí): seis
+/// columnas OBLIGATORIAS nuevas se añaden a la fila física
+/// (`instrument_id`, `venue`, `source_provider`, `bar_type`,
+/// `timeframe_value`, `data_snapshot_id`, ADR-0155 Restricción 8) Y el
+/// contrato de entrada `TransformRequest` rompe de forma incompatible
+/// (`data_snapshot_id` deja de ser opcional). Un consumidor que asuma "2.1"
+/// no debe leer una partición "3.0" sin verificar la versión primero
+/// (ADR-0141 F3).
+pub const SCHEMA_VERSION: &str = "3.0";
 
 /// Identificador del paso de transformación dentro del pipeline (Grupo III,
 /// ADR-0020) — fijo en esta Story: un único paso de agregación OHLCV.
@@ -79,7 +90,17 @@ pub(crate) async fn transform(
     // de forma segura (sin acumulador i128 ni redondeo half-to-even nativo),
     // así que la frontera Cáscara/Núcleo cae exactamente aquí: Polars
     // ordena, Rust puro agrega.
-    let bars = aggregate_trades_to_bars(&sorted_trades, request.target_interval_ns)
+    // Identidad de la serie (STORY-057): se copia tal cual del
+    // `TransformRequest` -- el Núcleo la materializa por fila en cada `Bar`
+    // (ver el doc-comment de `BarIdentity`), nunca la deriva al vuelo.
+    let identity = BarIdentity {
+        instrument_id: request.instrument_id.clone(),
+        venue: request.venue.clone(),
+        source_provider: request.source_provider.clone(),
+        timeframe_value: request.timeframe_value.clone(),
+        data_snapshot_id: request.data_snapshot_id.clone(),
+    };
+    let bars = aggregate_trades_to_bars(&sorted_trades, request.target_interval_ns, &identity)
         .map_err(|e| TransformError::Domain(e.to_string()))?;
 
     let rows_out = bars.len() as i64;
@@ -102,7 +123,12 @@ pub(crate) async fn transform(
     let repo = TransformationRepository::new(pool, clock);
     let record = repo
         .record(NewTransformationRecord {
-            data_snapshot_id: request.data_snapshot_id.clone(),
+            // El ledger `transformation_records` NO cambia de esquema
+            // (STORY-057 §3.6): `data_snapshot_id` sigue siendo `Option<String>`
+            // ahí -- son metadatos de la CORRIDA, no de la fila de mercado.
+            // `TransformRequest.data_snapshot_id` sí es obligatorio ahora
+            // (String), así que aquí se envuelve en `Some`.
+            data_snapshot_id: Some(request.data_snapshot_id.clone()),
             transformation_id: TRANSFORMATION_ID.to_string(),
             logic_hash: logic_hash.clone(),
             parent_id: request.parent_id.clone(),
@@ -319,4 +345,42 @@ fn try_build_matrix(bars: &[domain::Bar], interop_threshold: usize) -> Option<nd
     // contiguos directamente al layout denso de `ndarray`, sin pasar por una
     // serialización intermedia fila-por-fila.
     matrix_df.to_ndarray::<Float64Type>(IndexOrder::C).ok()
+}
+
+// ── Pruebas unitarias de la Cáscara ─────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `column_value_to_aggressor_side` es privada -- solo se puede probar
+    /// desde dentro de este módulo. El lado agresor alimenta `volume_buy`
+    /// (ADR-0155), una de las cuatro magnitudes independientes que no se
+    /// pueden colapsar: cada brazo del vocabulario se ejercita con su valor
+    /// de texto real, incluido `Some("UNKNOWN")` -- si ese brazo se borrara,
+    /// una fuente que SÍ distingue el lado pero no pudo clasificar esta
+    /// ejecución en particular pasaría a leerse como "la fuente no distingue
+    /// el concepto en absoluto" (`None`), colapsando dos significados
+    /// distintos en uno solo, sin que nada lo señale.
+    #[test]
+    fn column_value_to_aggressor_side_maps_each_vocabulary_value() {
+        assert_eq!(column_value_to_aggressor_side(Some("BUY")), Some(AggressorSide::Buy));
+        assert_eq!(column_value_to_aggressor_side(Some("SELL")), Some(AggressorSide::Sell));
+        assert_eq!(column_value_to_aggressor_side(Some("UNKNOWN")), Some(AggressorSide::Unknown), "'UNKNOWN' es un valor CONOCIDO, distinto de 'la fuente no distingue nada'");
+        assert_eq!(column_value_to_aggressor_side(None), None, "columna nula -- la fuente no tiene el concepto");
+        assert_eq!(column_value_to_aggressor_side(Some("basura")), None, "un valor fuera del vocabulario CHECK se trata como no distinguido, sin pánico");
+    }
+
+    /// Ida y vuelta: `aggressor_side_to_column_value` seguido de
+    /// `column_value_to_aggressor_side` debe reproducir el valor original
+    /// para los tres lados conocidos y para `None` -- ninguna de las dos
+    /// funciones puede fundir un lado con otro al codificar/decodificar.
+    #[test]
+    fn aggressor_side_round_trips_through_column_encoding_for_every_value() {
+        for side in [None, Some(AggressorSide::Buy), Some(AggressorSide::Sell), Some(AggressorSide::Unknown)] {
+            let encoded = aggressor_side_to_column_value(side);
+            let decoded = column_value_to_aggressor_side(encoded.as_deref());
+            assert_eq!(decoded, side, "codificar y decodificar {side:?} debe devolver el mismo valor");
+        }
+    }
 }

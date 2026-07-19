@@ -91,11 +91,100 @@ pub struct RawTrade {
     pub origin_seq: u64,
 }
 
+/// Tipo de barra -- vocabulario fijo de ADR-0155 (`CHECK IN ('TIME',
+/// 'TICK_COUNT', 'VOLUME', 'DOLLAR', 'RENKO')`). Esta feature
+/// (`aggregate_trades_to_bars`, agregación de `TradeTick` por intervalo de
+/// tiempo fijo) SIEMPRE produce `BarType::Time` -- las otras cuatro
+/// variantes se canonizan ahora (Inundación de Fundaciones, ADR-0020 §7.3)
+/// para cuando `algorithmic-bars` (aún no construida) las necesite; nadie
+/// fabrica lógica para producirlas en esta feature.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BarType {
+    Time,
+    TickCount,
+    Volume,
+    Dollar,
+    Renko,
+}
+
+impl BarType {
+    /// Representación de texto canónica -- EXACTAMENTE los valores del
+    /// `CHECK` de ADR-0155. Se usa tanto en el hash de auditoría (para que
+    /// dos `bar_type` distintos produzcan sellos distintos) como en la
+    /// tripleta de presentación de identidad ([`build_series_identity_triplet`]).
+    pub fn as_sql_text(&self) -> &'static str {
+        match self {
+            BarType::Time => "TIME",
+            BarType::TickCount => "TICK_COUNT",
+            BarType::Volume => "VOLUME",
+            BarType::Dollar => "DOLLAR",
+            BarType::Renko => "RENKO",
+        }
+    }
+}
+
+/// Identidad de la serie que produce una corrida de agregación: símbolo,
+/// bróker, proveedor de datos, y temporalidad/snapshot de origen (ADR-0155
+/// Restricción 8 + enmienda de tripleta 2026-07-18). Se copia por fila a
+/// cada [`Bar`] resultante -- nunca se deriva al vuelo (§3.2 de la Orden:
+/// Parquet no conserva el contexto del `TransformRequest` que produjo una
+/// partición, así que cada fila debe ser auto-descriptiva). `bar_type` no
+/// vive aquí: esta feature siempre produce `BarType::Time`, así que se fija
+/// dentro de `aggregate_trades_to_bars` sin que el llamador lo declare.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BarIdentity {
+    pub instrument_id: String,
+    pub venue: String,
+    pub source_provider: String,
+    pub timeframe_value: String,
+    pub data_snapshot_id: String,
+}
+
 /// Una barra OHLCV ya agregada, esquema canónico ADR-0155 + ADR-0141: todo
 /// entero escalado ×10⁸, sin `f64`, volumen en cuatro magnitudes
 /// independientes, campos de Futuros/Opciones esquema-listo.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// ## Campos de identidad (STORY-057, ADR-0155 Restricción 8 + enmienda de
+/// tripleta 2026-07-18)
+///
+/// `instrument_id`, `venue`, `source_provider`, `bar_type`,
+/// `timeframe_value` y `data_snapshot_id` son OBLIGATORIOS por fila -- nunca
+/// `Option`. Dicen sin ambigüedad de qué símbolo, qué bróker, qué proveedor
+/// y qué temporalidad es esta barra concreta: el mismo símbolo en dos
+/// brókers no es la misma serie (difieren en precio, spread, sesión y
+/// convención de cierre) -- sin estos campos, dos series distintas con el
+/// mismo OHLCV podían confundirse aguas abajo. Se materializan por fila
+/// (nunca solo a nivel de `TransformRequest`) porque una partición Parquet,
+/// por diseño, no conserva el contexto de la corrida que la produjo -- cada
+/// fila debe ser auto-descriptiva. El costo de almacenamiento es
+/// despreciable: Parquet columnar con *dictionary encoding*/*run-length
+/// encoding* comprime una columna de valor único repetido en toda la
+/// partición a un puñado de bytes, no a `8 bytes × N filas`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bar {
+    // ── Identidad de la serie (obligatoria, por fila) ────────────────────
+    /// Símbolo/instrumento (ej. "EURUSD", "BTC-USD"). Copiado de
+    /// `TransformRequest.instrument_id`.
+    pub instrument_id: String,
+    /// Bróker/venue donde se opera el instrumento (ej. "PEPPERSTONE") --
+    /// determina precio, spread, sesión y convención de cierre. Copiado de
+    /// `TransformRequest.venue`.
+    pub venue: String,
+    /// Quién entregó el dato (puede diferir de `venue`: un vendor de datos
+    /// consolidados sobre un venue). Copiado de `TransformRequest.source_provider`.
+    pub source_provider: String,
+    /// Tipo de barra -- SIEMPRE `Time` en la salida de esta feature (ver
+    /// [`BarType`]).
+    pub bar_type: BarType,
+    /// Forma de texto legible del intervalo (ej. "1H"). Copiado de
+    /// `TransformRequest.timeframe_value` -- NO se deriva de
+    /// `bar_close_timestamp_ns - bar_timestamp_ns`: esa aritmética no sabe
+    /// distinguir "1H" de "60M" aunque sean el mismo número de nanosegundos.
+    pub timeframe_value: String,
+    /// Referencia de linaje al dataset crudo de entrada. Copiado de
+    /// `TransformRequest.data_snapshot_id`.
+    pub data_snapshot_id: String,
+
     /// Inicio del intervalo semiabierto `[bar_timestamp_ns, bar_close_timestamp_ns)`.
     pub bar_timestamp_ns: i64,
     /// Fin del intervalo (exclusivo). `bar_timestamp_ns + interval_ns`.
@@ -161,6 +250,50 @@ pub struct Bar {
     pub vega_reported: Option<i64>,
     pub rho_reported: Option<i64>,
     pub theoretical_price_reported: Option<i64>,
+}
+
+// ── Tripleta canónica de presentación de identidad (ADR-0155, enmienda ─────
+// 2026-07-18) ────────────────────────────────────────────────────────────
+
+/// Construye la tripleta canónica de presentación `SIMBOLO-TEMPORALIDAD-BROKER`
+/// (ej. `EURUSD-1M-PEPPERSTONE`) a partir de sus tres componentes YA
+/// RESUELTOS. Es una CLAVE DERIVADA, no una columna: nunca se persiste, y
+/// nunca se re-parte para recuperar sus componentes -- símbolo, temporalidad
+/// y bróker viven cada uno en su propia columna; esta función solo los
+/// normaliza a mayúsculas y los concatena para que un humano los lea de
+/// izquierda a derecha.
+///
+/// Esta función NO decide si `temporality_or_reserved_token` es un timeframe
+/// real (`"1M"`, `"1H"`) o un token reservado para datasets sin temporalidad
+/// de barra (`"TICK"` para `QuoteTick`/`TradeTick` crudo, `"L2"`/`"L3"` para
+/// profundidad de libro) -- esa decisión la toma el llamador según el tipo
+/// de dataset que está presentando; aquí solo se ensambla el texto.
+///
+/// Si `symbol` ya trae un guion propio (`"BTC-USD"`, un futuro continuo
+/// `"ES-PER"`, un OSI de 21 caracteres), el guion se conserva literal -- no
+/// se escapa ni se sustituye. Es seguro porque la tripleta nunca se re-parte
+/// (regla de arriba); solo se lee de izquierda a derecha para el ojo humano.
+pub fn build_series_identity_triplet(symbol: &str, temporality_or_reserved_token: &str, broker: &str) -> String {
+    format!(
+        "{}-{}-{}",
+        symbol.to_uppercase(),
+        temporality_or_reserved_token.to_uppercase(),
+        broker.to_uppercase()
+    )
+}
+
+impl Bar {
+    /// Tripleta de presentación de ESTA barra concreta, usando su propio
+    /// `timeframe_value` como componente de temporalidad -- válido porque
+    /// esta feature siempre produce `BarType::Time` con un `timeframe_value`
+    /// real (nunca el token reservado `"TICK"`, que es de datasets Nivel 1
+    /// crudo sin agregar, fuera del alcance de este crate). Para datasets
+    /// que no sean barras de tiempo real, el llamador debe usar
+    /// [`build_series_identity_triplet`] directamente con el token
+    /// reservado que corresponda.
+    pub fn identity_triplet(&self) -> String {
+        build_series_identity_triplet(&self.instrument_id, &self.timeframe_value, &self.venue)
+    }
 }
 
 /// Errores del núcleo de transformación. Ninguno de estos representa un
@@ -269,6 +402,23 @@ pub fn round_half_to_even_div_i128(numerator: i128, denominator: i128) -> Option
     // Aritmética con signo: normaliza a positivo y recuerda el signo final,
     // para que el redondeo half-to-even opere siempre sobre magnitudes
     // positivas (la mitad exacta se detecta comparando restos, no signos).
+    //
+    // MUTANTES EQUIVALENTES DOCUMENTADOS (ADR-0133, gate de mutación capa 8):
+    // los dos `<` de esta línea, mutados a `<=`, sobreviven a propósito -- no
+    // por hueco de cobertura, sino porque son matemáticamente indistinguibles
+    // de la versión correcta para CUALQUIER entrada posible:
+    // 1. `denominator < 0` -> `denominator <= 0`: ambas difieren únicamente
+    //    cuando `denominator == 0`, pero esa rama ya retornó `None` dos
+    //    líneas arriba -- `denominator` nunca es 0 en este punto, así que
+    //    `< 0` y `<= 0` son la MISMA proposición para todo valor alcanzable.
+    // 2. `numerator < 0` -> `numerator <= 0`: ambas difieren únicamente
+    //    cuando `numerator == 0`. En ese caso `num_abs` es 0, por lo que
+    //    `quotient` y `remainder` son 0 y `rounded_abs` es 0 -- `sign * 0` es
+    //    0 sin importar el signo. El bit que la mutación invierte nunca
+    //    llega a afectar el valor de retorno.
+    // Ningún test, por diseñado que esté, puede matar estos dos mutantes:
+    // exigirlo violaría la regla de la Orden de "no debilitar ninguna
+    // aserción existente" escribiendo una prueba que no puede fallar nunca.
     let sign = if (numerator < 0) != (denominator < 0) { -1i128 } else { 1i128 };
     let num_abs = numerator.unsigned_abs() as i128;
     let den_abs = denominator.unsigned_abs() as i128;
@@ -363,7 +513,17 @@ fn sum_if_all_known<I: IntoIterator<Item = Option<i64>>>(values: I) -> Result<Op
 /// `&[RawTrade]`, y `RawTrade` no tiene forma de representar una cotización
 /// (sin campos `bid`/`ask`) — la separación de tipos, no un chequeo en
 /// tiempo de ejecución, es lo que garantiza ADR-0155 restricción 2.
-pub fn aggregate_trades_to_bars(trades: &[RawTrade], interval_ns: i64) -> Result<Vec<Bar>, TransformError> {
+///
+/// `identity` (STORY-057) se copia TAL CUAL a cada [`Bar`] de la salida --
+/// símbolo, bróker, proveedor, temporalidad y snapshot de origen. `bar_type`
+/// se fija internamente en `BarType::Time`: esta función solo agrega
+/// ejecuciones por intervalo de tiempo fijo, nunca produce barras
+/// algorítmicas.
+pub fn aggregate_trades_to_bars(
+    trades: &[RawTrade],
+    interval_ns: i64,
+    identity: &BarIdentity,
+) -> Result<Vec<Bar>, TransformError> {
     if interval_ns <= 0 {
         return Err(TransformError::NonPositiveInterval);
     }
@@ -409,6 +569,14 @@ pub fn aggregate_trades_to_bars(trades: &[RawTrade], interval_ns: i64) -> Result
         let volume_buy = sum_if_all_known(buy_contributions)?;
 
         bars.push(Bar {
+            // Identidad de la serie (STORY-057): copiada tal cual del
+            // llamador, clonada por fila -- ver el doc-comment de [`BarIdentity`].
+            instrument_id: identity.instrument_id.clone(),
+            venue: identity.venue.clone(),
+            source_provider: identity.source_provider.clone(),
+            bar_type: BarType::Time,
+            timeframe_value: identity.timeframe_value.clone(),
+            data_snapshot_id: identity.data_snapshot_id.clone(),
             bar_timestamp_ns,
             bar_close_timestamp_ns: bar_timestamp_ns + interval_ns,
             open,
@@ -461,9 +629,11 @@ pub fn reaggregate_bars(bars: &[Bar], new_interval_ns: i64) -> Result<Vec<Bar>, 
     let mut groups: BTreeMap<i64, Vec<Bar>> = BTreeMap::new();
     for bar in bars {
         // Deriva el timestamp del calendario -- nunca copia el de la
-        // sub-barra directamente, aunque coincida en el caso común.
+        // sub-barra directamente, aunque coincida en el caso común. `Bar` ya
+        // no es `Copy` (lleva `String` de identidad, STORY-057) -- se clona
+        // explícitamente.
         let bucket = floor_bar_timestamp(bar.bar_timestamp_ns, new_interval_ns)?;
-        groups.entry(bucket).or_default().push(*bar);
+        groups.entry(bucket).or_default().push(bar.clone());
     }
 
     let mut result = Vec::with_capacity(groups.len());
@@ -478,6 +648,23 @@ pub fn reaggregate_bars(bars: &[Bar], new_interval_ns: i64) -> Result<Vec<Bar>, 
         let high = sub_bars.iter().map(|b| b.high).max().expect("grupo no vacío");
         let low = sub_bars.iter().map(|b| b.low).min().expect("grupo no vacío");
 
+        // Identidad de la serie (STORY-057): se conserva la de la primera
+        // sub-barra cronológica del grupo -- el patrón de llamada actual de
+        // esta feature nunca mezcla identidades dentro de un mismo `Vec<Bar>`
+        // (una corrida = un `TransformRequest` = una identidad), así que
+        // tomar la primera es equivalente a "la" identidad del grupo. Esta
+        // función no valida que las demás sub-barras coincidan -- esa
+        // comprobación no forma parte de esta Story (§3.6, fuera de
+        // alcance); `reaggregate_bars` no tiene hoy un llamador real en el
+        // pipeline (queda cableado para TTR-002).
+        let representative = sub_bars.first().expect("grupo no vacío");
+        let instrument_id = representative.instrument_id.clone();
+        let venue = representative.venue.clone();
+        let source_provider = representative.source_provider.clone();
+        let bar_type = representative.bar_type;
+        let timeframe_value = representative.timeframe_value.clone();
+        let data_snapshot_id = representative.data_snapshot_id.clone();
+
         let mut volume_traded: i64 = 0;
         let mut trade_count: i64 = 0;
         for b in &sub_bars {
@@ -489,6 +676,12 @@ pub fn reaggregate_bars(bars: &[Bar], new_interval_ns: i64) -> Result<Vec<Bar>, 
         let quote_asset_volume = sum_if_all_known(sub_bars.iter().map(|b| b.quote_asset_volume))?;
 
         result.push(Bar {
+            instrument_id,
+            venue,
+            source_provider,
+            bar_type,
+            timeframe_value,
+            data_snapshot_id,
             bar_timestamp_ns,
             bar_close_timestamp_ns: bar_timestamp_ns + new_interval_ns,
             open,
@@ -545,11 +738,21 @@ pub fn compute_logic_hash(plan: &TransformationPlan) -> String {
 /// reproducible entre corridas, independiente del número de hilos que
 /// paralelizaron la lectura/columnarización previa).
 ///
-/// Incluye TODOS los campos de [`Bar`] en la representación canónica: las dos
-/// marcas de tiempo del intervalo, OHLC, las cuatro magnitudes de volumen (y
-/// su presencia/ausencia `Option`), `spread_reported` y los nueve campos de
-/// Futuros/Opciones esquema-listo. Dos barras que difirieran en cualquiera de
-/// estos campos deben producir un `audit_hash` distinto, nunca el mismo.
+/// Incluye TODOS los campos de [`Bar`] en la representación canónica: los seis
+/// campos de identidad de serie (STORY-057), las dos marcas de tiempo del
+/// intervalo, OHLC, las cuatro magnitudes de volumen (y su presencia/ausencia
+/// `Option`), `spread_reported` y los nueve campos de Futuros/Opciones
+/// esquema-listo. Dos barras que difirieran en cualquiera de estos campos
+/// deben producir un `audit_hash` distinto, nunca el mismo.
+///
+/// **Por qué la identidad entra en el hash (STORY-057, ADR-0155 enmienda de
+/// tripleta):** hoy dos series distintas (mismo símbolo, distinto bróker, o
+/// viceversa) con movimiento de precios idéntico producían el mismo sello --
+/// el defecto concreto que este ADR describe ("el mismo símbolo en dos
+/// brókers no es la misma serie"). Con los seis campos de identidad en la
+/// lista `fields`, dos barras con OHLCV byte a byte idéntico pero de
+/// brókers distintos (o símbolos, proveedores, temporalidades o snapshots
+/// distintos) producen `audit_hash` distintos.
 ///
 /// **Corrección de la auditoría del Tech-Lead (2026-07-18):** la versión
 /// anterior de esta función omitía `bar_close_timestamp_ns`, `spread_reported`
@@ -573,9 +776,19 @@ pub fn compute_bars_audit_hash(bars: &[Bar]) -> String {
     for b in bars {
         // Construye la lista de campos como `Vec<String>` y la une con el
         // separador de campo -- evita contar a mano cuántos `{}` van en un
-        // `format!` con 21 argumentos, fuente típica de errores silenciosos
+        // `format!` con 27 argumentos, fuente típica de errores silenciosos
         // (un campo que se queda fuera del hash sin que nada lo señale).
         let fields = [
+            // Identidad de la serie (STORY-057) -- PRIMERO en la lista para
+            // que un cambio de identidad, sola, sea tan visible en el hash
+            // como un cambio de precio: el hash protege "de qué serie es
+            // esta barra" con la misma fuerza que protege "qué precio tiene".
+            b.instrument_id.clone(),
+            b.venue.clone(),
+            b.source_provider.clone(),
+            b.bar_type.as_sql_text().to_string(),
+            b.timeframe_value.clone(),
+            b.data_snapshot_id.clone(),
             b.bar_timestamp_ns.to_string(),
             b.bar_close_timestamp_ns.to_string(),
             b.open.to_string(),
@@ -618,6 +831,55 @@ mod tests {
         RawTrade { event_timestamp_ns, price_scaled, trade_volume_scaled, aggressor_side: None, origin_seq }
     }
 
+    /// Identidad de serie de prueba (STORY-057) -- valores fijos que la
+    /// mayoría de las pruebas heredadas usan sin versar sobre identidad.
+    fn sample_identity() -> BarIdentity {
+        BarIdentity {
+            instrument_id: "EURUSD".to_string(),
+            venue: "PEPPERSTONE".to_string(),
+            source_provider: "PEPPERSTONE".to_string(),
+            timeframe_value: "1H".to_string(),
+            data_snapshot_id: "pepperstone_EURUSD_1h_202607".to_string(),
+        }
+    }
+
+    /// Construye una `Bar` mínima de prueba con la identidad de
+    /// [`sample_identity`] y todos los campos opcionales en `None` --
+    /// factoriza los 27 campos literales que, de otro modo, cada test de
+    /// hash/reagregación tendría que repetir a mano.
+    fn sample_bar(bar_timestamp_ns: i64, bar_close_timestamp_ns: i64, open: i64, high: i64, low: i64, close: i64) -> Bar {
+        let identity = sample_identity();
+        Bar {
+            instrument_id: identity.instrument_id,
+            venue: identity.venue,
+            source_provider: identity.source_provider,
+            bar_type: BarType::Time,
+            timeframe_value: identity.timeframe_value,
+            data_snapshot_id: identity.data_snapshot_id,
+            bar_timestamp_ns,
+            bar_close_timestamp_ns,
+            open,
+            high,
+            low,
+            close,
+            volume_traded: 1,
+            trade_count: 1,
+            volume_buy: None,
+            volume_ticks: None,
+            quote_asset_volume: None,
+            spread_reported: None,
+            open_interest: None,
+            settlement_price: None,
+            implied_volatility_reported: None,
+            delta_reported: None,
+            gamma_reported: None,
+            theta_reported: None,
+            vega_reported: None,
+            rho_reported: None,
+            theoretical_price_reported: None,
+        }
+    }
+
     // ── Criterio 1: agregación exacta, sin f64 ──────────────────────────
 
     /// Agregación OHLCV sobre precios/volúmenes escalados: los resultados
@@ -635,7 +897,7 @@ mod tests {
             trade(20, 90_00000000, 3_00000000, 2),
         ];
         let interval_ns = 1_000; // barra amplia: las 3 ejecuciones caen en la misma barra
-        let bars = aggregate_trades_to_bars(&trades, interval_ns).expect("agregación debe tener éxito");
+        let bars = aggregate_trades_to_bars(&trades, interval_ns, &sample_identity()).expect("agregación debe tener éxito");
 
         assert_eq!(bars.len(), 1, "las 3 ejecuciones deben caer en una sola barra");
         let bar = &bars[0];
@@ -645,6 +907,42 @@ mod tests {
         assert_eq!(bar.low, 90_00000000, "low = mínimo");
         assert_eq!(bar.volume_traded, 6_00000000, "volume_traded = suma exacta (2+1+3=6)");
         assert_eq!(bar.trade_count, 3, "trade_count = número de ejecuciones agregadas");
+
+        // CRITERIO 6 DE LA ORDEN (STORY-057): `bar_type` es SIEMPRE `Time`
+        // en la salida de `aggregate_trades_to_bars` -- esta feature agrega
+        // por intervalo de tiempo fijo, nunca produce barras algorítmicas.
+        assert_eq!(bar.bar_type, BarType::Time, "aggregate_trades_to_bars solo produce barras de tiempo fijo");
+
+        // Los seis campos de identidad se materializan por fila, copiados
+        // tal cual del `BarIdentity` de entrada -- nunca derivados al vuelo.
+        let identity = sample_identity();
+        assert_eq!(bar.instrument_id, identity.instrument_id);
+        assert_eq!(bar.venue, identity.venue);
+        assert_eq!(bar.source_provider, identity.source_provider);
+        assert_eq!(bar.timeframe_value, identity.timeframe_value);
+        assert_eq!(bar.data_snapshot_id, identity.data_snapshot_id);
+    }
+
+    /// CRITERIO 3 DE LA ORDEN (STORY-057): dos agregaciones idénticas salvo
+    /// por `venue` en el `BarIdentity` de entrada deben producir `Bar`s con
+    /// `venue` distinto en la salida -- nunca fundidos ni promediados
+    /// (ADR-0155 enmienda de tripleta, "regla de no-fusión").
+    #[test]
+    fn bars_carry_distinct_venue_when_requests_differ_only_in_venue() {
+        let trades = vec![trade(0, 100_00000000, 1_00000000, 0)];
+
+        let identity_a = sample_identity();
+        let identity_b = BarIdentity { venue: "ICMARKETS".to_string(), ..sample_identity() };
+
+        let bars_a = aggregate_trades_to_bars(&trades, 1_000, &identity_a).unwrap();
+        let bars_b = aggregate_trades_to_bars(&trades, 1_000, &identity_b).unwrap();
+
+        assert_eq!(bars_a[0].venue, "PEPPERSTONE");
+        assert_eq!(bars_b[0].venue, "ICMARKETS");
+        assert_ne!(bars_a[0].venue, bars_b[0].venue, "el venue nunca debe fundirse entre dos identidades distintas");
+        // Mismo instrumento, mismo OHLCV -- solo el venue difiere.
+        assert_eq!(bars_a[0].instrument_id, bars_b[0].instrument_id);
+        assert_eq!(bars_a[0].open, bars_b[0].open);
     }
 
     // ── Criterio 2: sin desbordamiento silencioso ───────────────────────
@@ -715,6 +1013,42 @@ mod tests {
         assert_eq!(round_half_to_even_div_i128(4, 2), Some(2));
     }
 
+    // ── Hallazgo de mutación: ningún test previo usaba denominador
+    // negativo -- la detección de signo (`(numerator < 0) != (denominator <
+    // 0)`) solo se ejercitaba con `denominator > 0`. Los cuatro casos de
+    // abajo cubren las cuatro combinaciones de signo de numerador/denominador.
+
+    /// Numerador positivo, denominador negativo, división EXACTA (sin
+    /// remanente): el resultado depende SOLO de la detección de signo, no
+    /// del redondeo -- si la detección de `denominator < 0` se rompiera
+    /// (p. ej. mutada a una comparación que nunca es verdadera), este test
+    /// obtendría signo positivo en vez de negativo.
+    #[test]
+    fn half_to_even_negative_denominator_positive_numerator_exact_division() {
+        assert_eq!(round_half_to_even_div_i128(4, -2), Some(-2), "4 / -2 = -2 exacto");
+    }
+
+    /// Numerador negativo, denominador negativo, división EXACTA: dos
+    /// signos negativos se cancelan -- resultado positivo.
+    #[test]
+    fn half_to_even_both_negative_exact_division() {
+        assert_eq!(round_half_to_even_div_i128(-4, -2), Some(2), "-4 / -2 = 2 exacto");
+    }
+
+    /// Numerador positivo, denominador negativo, con empate exacto de
+    /// redondeo: 7 / -2 = -3.5, el par más cercano es -4.
+    #[test]
+    fn half_to_even_negative_denominator_positive_numerator_exact_tie() {
+        assert_eq!(round_half_to_even_div_i128(7, -2), Some(-4), "7 / -2 = -3.5 -> par más cercano -4");
+    }
+
+    /// Numerador negativo, denominador negativo, con empate exacto de
+    /// redondeo: -7 / -2 = 3.5, el par más cercano es 4.
+    #[test]
+    fn half_to_even_both_negative_exact_tie() {
+        assert_eq!(round_half_to_even_div_i128(-7, -2), Some(4), "-7 / -2 = 3.5 -> par más cercano 4");
+    }
+
     // ── Criterio 4: determinismo bajo paralelismo (orden canónico) ─────
 
     #[test]
@@ -736,11 +1070,11 @@ mod tests {
 
         let mut run_a = base_trades.clone();
         sort_trades_canonical(&mut run_a);
-        let bars_a = aggregate_trades_to_bars(&run_a, 1_000).unwrap();
+        let bars_a = aggregate_trades_to_bars(&run_a, 1_000, &sample_identity()).unwrap();
 
         let mut run_b: Vec<RawTrade> = base_trades.iter().rev().copied().collect();
         sort_trades_canonical(&mut run_b);
-        let bars_b = aggregate_trades_to_bars(&run_b, 1_000).unwrap();
+        let bars_b = aggregate_trades_to_bars(&run_b, 1_000, &sample_identity()).unwrap();
 
         assert_eq!(bars_a, bars_b, "el resultado no debe depender del orden de llegada de las ejecuciones");
         assert_eq!(bars_a[0].open, 100);
@@ -755,21 +1089,50 @@ mod tests {
 
         let mut run_a = trades.clone();
         sort_trades_canonical(&mut run_a);
-        let bars_a = aggregate_trades_to_bars(&run_a, 1_000).unwrap();
+        let bars_a = aggregate_trades_to_bars(&run_a, 1_000, &sample_identity()).unwrap();
         let hash_a = compute_bars_audit_hash(&bars_a);
 
         let mut run_b = trades;
         sort_trades_canonical(&mut run_b);
-        let bars_b = aggregate_trades_to_bars(&run_b, 1_000).unwrap();
+        let bars_b = aggregate_trades_to_bars(&run_b, 1_000, &sample_identity()).unwrap();
         let hash_b = compute_bars_audit_hash(&bars_b);
 
         assert_eq!(hash_a, hash_b, "el audit_hash debe ser idéntico entre corridas del mismo dataset");
+    }
 
-        let plan = TransformationPlan { target_interval_ns: 1_000, interop_threshold: 100_000 };
+    /// PRUEBA DISCRIMINANTE de `compute_logic_hash` (hallazgo de mutación):
+    /// la prueba anterior comparaba `compute_logic_hash(&plan)` contra sí
+    /// misma -- una tautología que pasa con CUALQUIER implementación,
+    /// incluida una que siempre devuelva `""`. El sello solo demuestra algo
+    /// si (1) dos planes DISTINTOS producen hashes DISTINTOS y (2) el MISMO
+    /// plan, construido de forma independiente en dos structs literales
+    /// separados (sin compartir referencia), produce el MISMO hash.
+    #[test]
+    fn logic_hash_is_a_real_function_of_the_plan_not_a_constant() {
+        let plan_a = TransformationPlan { target_interval_ns: 1_000, interop_threshold: 100_000 };
+        // Construcción independiente del MISMO plan -- ningún dato compartido
+        // con `plan_a` salvo los valores literales.
+        let plan_a_again = TransformationPlan { target_interval_ns: 1_000, interop_threshold: 100_000 };
+        let plan_different_interval = TransformationPlan { target_interval_ns: 2_000, interop_threshold: 100_000 };
+        let plan_different_threshold = TransformationPlan { target_interval_ns: 1_000, interop_threshold: 50_000 };
+
+        let hash_a = compute_logic_hash(&plan_a);
+        assert!(!hash_a.is_empty(), "el logic_hash nunca debe ser la cadena vacía");
+
         assert_eq!(
-            compute_logic_hash(&plan),
-            compute_logic_hash(&plan),
-            "el logic_hash depende solo del plan, no del dataset"
+            hash_a,
+            compute_logic_hash(&plan_a_again),
+            "el mismo plan, construido de forma independiente, debe producir el mismo hash"
+        );
+        assert_ne!(
+            hash_a,
+            compute_logic_hash(&plan_different_interval),
+            "un target_interval_ns distinto debe producir un hash distinto"
+        );
+        assert_ne!(
+            hash_a,
+            compute_logic_hash(&plan_different_threshold),
+            "un interop_threshold distinto debe producir un hash distinto"
         );
     }
 
@@ -778,8 +1141,8 @@ mod tests {
         let trades_a = vec![trade(0, 100, 1, 0)];
         let trades_b = vec![trade(0, 999, 1, 0)];
 
-        let bars_a = aggregate_trades_to_bars(&trades_a, 1_000).unwrap();
-        let bars_b = aggregate_trades_to_bars(&trades_b, 1_000).unwrap();
+        let bars_a = aggregate_trades_to_bars(&trades_a, 1_000, &sample_identity()).unwrap();
+        let bars_b = aggregate_trades_to_bars(&trades_b, 1_000, &sample_identity()).unwrap();
 
         assert_ne!(compute_bars_audit_hash(&bars_a), compute_bars_audit_hash(&bars_b));
     }
@@ -793,15 +1156,11 @@ mod tests {
     /// contenido completo de la barra.
     #[test]
     fn audit_hash_differs_when_only_a_futures_options_field_differs() {
-        let base = Bar {
-            bar_timestamp_ns: 0, bar_close_timestamp_ns: 1_000, open: 1, high: 1, low: 1, close: 1,
-            volume_traded: 1, trade_count: 1, volume_buy: None, volume_ticks: None,
-            quote_asset_volume: None, spread_reported: None,
-            open_interest: None, settlement_price: None, implied_volatility_reported: None,
-            delta_reported: None, gamma_reported: None, theta_reported: None, vega_reported: None,
-            rho_reported: None, theoretical_price_reported: None,
-        };
-        let with_open_interest = Bar { open_interest: Some(500), ..base };
+        // `Bar` ya no es `Copy` (lleva `String` de identidad, STORY-057) --
+        // `..base` mueve los campos no sobreescritos, así que se clona
+        // explícitamente para poder seguir usando `base` después.
+        let base = sample_bar(0, 1_000, 1, 1, 1, 1);
+        let with_open_interest = Bar { open_interest: Some(500), ..base.clone() };
 
         assert_ne!(
             compute_bars_audit_hash(&[base]),
@@ -810,13 +1169,65 @@ mod tests {
         );
     }
 
+    // ── STORY-057: identidad de serie entra en compute_bars_audit_hash ─────
+
+    /// PRUEBA CENTRAL DEL ENCARGO (discriminante): dos barras con OHLCV byte
+    /// a byte idéntico pero de brókers (`venue`) distintos deben producir
+    /// `audit_hash` distintos -- sin el retrofit de identidad, este test
+    /// falla porque el hash viejo solo veía el contenido de mercado, nunca
+    /// de qué serie era. Es la corrección directa del defecto que describe
+    /// ADR-0155: "el mismo símbolo en dos brókers no es la misma serie".
+    #[test]
+    fn audit_hash_differs_when_only_venue_differs_despite_identical_ohlcv() {
+        let pepperstone_bar = sample_bar(0, 1_000, 100, 110, 90, 105);
+        let icmarkets_bar = Bar { venue: "ICMARKETS".to_string(), ..pepperstone_bar.clone() };
+
+        assert_eq!(pepperstone_bar.open, icmarkets_bar.open, "precondición: OHLCV idéntico");
+        assert_eq!(pepperstone_bar.high, icmarkets_bar.high, "precondición: OHLCV idéntico");
+        assert_eq!(pepperstone_bar.low, icmarkets_bar.low, "precondición: OHLCV idéntico");
+        assert_eq!(pepperstone_bar.close, icmarkets_bar.close, "precondición: OHLCV idéntico");
+        assert_eq!(pepperstone_bar.volume_traded, icmarkets_bar.volume_traded, "precondición: volumen idéntico");
+
+        assert_ne!(
+            compute_bars_audit_hash(&[pepperstone_bar]),
+            compute_bars_audit_hash(&[icmarkets_bar]),
+            "dos series con OHLCV idéntico pero distinto bróker deben producir sellos de auditoría distintos"
+        );
+    }
+
+    /// Complementa la prueba central: variar CUALQUIER otro campo de
+    /// identidad (`instrument_id`, `source_provider`, `timeframe_value`,
+    /// `data_snapshot_id`) por separado, con el resto idéntico, también debe
+    /// cambiar el hash -- ninguno de los seis campos es redundante con otro.
+    #[test]
+    fn audit_hash_differs_when_any_single_identity_field_differs() {
+        let base = sample_bar(0, 1_000, 100, 110, 90, 105);
+
+        let variants = vec![
+            Bar { instrument_id: "GBPUSD".to_string(), ..base.clone() },
+            Bar { source_provider: "OTRO_PROVEEDOR".to_string(), ..base.clone() },
+            Bar { timeframe_value: "5M".to_string(), ..base.clone() },
+            Bar { data_snapshot_id: "pepperstone_EURUSD_1h_202608".to_string(), ..base.clone() },
+        ];
+
+        let base_hash = compute_bars_audit_hash(&[base]);
+        for variant in variants {
+            assert_ne!(
+                compute_bars_audit_hash(std::slice::from_ref(&variant)),
+                base_hash,
+                "cambiar {:?} en solitario debe cambiar el audit_hash",
+                variant
+            );
+        }
+    }
+
     // ── Criterio 6: anti look-ahead ──────────────────────────────────────
 
     #[test]
     fn event_at_exact_boundary_belongs_to_next_bar_not_current() {
         let interval_ns = 100;
         let trades = vec![trade(99, 10, 1, 0), trade(100, 20, 1, 1)];
-        let bars = aggregate_trades_to_bars(&trades, interval_ns).unwrap();
+        let bars = aggregate_trades_to_bars(&trades, interval_ns, &sample_identity()).unwrap();
 
         assert_eq!(bars.len(), 2, "deben resultar 2 barras distintas");
         assert_eq!(bars[0].bar_timestamp_ns, 0);
@@ -829,22 +1240,8 @@ mod tests {
     #[test]
     fn reaggregation_derives_timestamp_from_calendar_not_first_subbar() {
         let sub_bars = vec![
-            Bar {
-                bar_timestamp_ns: 30, bar_close_timestamp_ns: 40, open: 1, high: 1, low: 1, close: 1,
-                volume_traded: 1, trade_count: 1, volume_buy: Some(1), volume_ticks: None,
-                quote_asset_volume: None, spread_reported: None,
-                open_interest: None, settlement_price: None, implied_volatility_reported: None,
-                delta_reported: None, gamma_reported: None, theta_reported: None, vega_reported: None,
-                rho_reported: None, theoretical_price_reported: None,
-            },
-            Bar {
-                bar_timestamp_ns: 50, bar_close_timestamp_ns: 60, open: 2, high: 2, low: 2, close: 2,
-                volume_traded: 1, trade_count: 1, volume_buy: Some(1), volume_ticks: None,
-                quote_asset_volume: None, spread_reported: None,
-                open_interest: None, settlement_price: None, implied_volatility_reported: None,
-                delta_reported: None, gamma_reported: None, theta_reported: None, vega_reported: None,
-                rho_reported: None, theoretical_price_reported: None,
-            },
+            Bar { volume_buy: Some(1), ..sample_bar(30, 40, 1, 1, 1, 1) },
+            Bar { volume_buy: Some(1), ..sample_bar(50, 60, 2, 2, 2, 2) },
         ];
         let result = reaggregate_bars(&sub_bars, 100).unwrap();
 
@@ -852,6 +1249,14 @@ mod tests {
         assert_eq!(
             result[0].bar_timestamp_ns, 0,
             "el timestamp debe derivarse del calendario (floor sobre 100), no copiar el de la sub-barra en t=30"
+        );
+        // Hallazgo de mutación: `bar_close_timestamp_ns` se calculaba pero
+        // ningún test lo afirmaba en el resultado de la reagregación.
+        // `bar_timestamp_ns + new_interval_ns` = 0 + 100 = 100 -- distingue
+        // `+` de `-` (daría -100) y de `*` (daría 0).
+        assert_eq!(
+            result[0].bar_close_timestamp_ns, 100,
+            "bar_close_timestamp_ns debe ser bar_timestamp_ns + new_interval_ns (0 + 100)"
         );
     }
 
@@ -895,7 +1300,7 @@ mod tests {
     #[test]
     fn duplicate_timestamp_distinct_content_both_contribute_to_the_bar() {
         let trades = vec![trade(50, 100, 1, 0), trade(50, 200, 1, 1)];
-        let bars = aggregate_trades_to_bars(&trades, 1_000).unwrap();
+        let bars = aggregate_trades_to_bars(&trades, 1_000, &sample_identity()).unwrap();
 
         assert_eq!(bars.len(), 1);
         assert_eq!(bars[0].volume_traded, 2, "ambas ejecuciones del mismo timestamp deben contribuir, ninguna se descarta");
@@ -905,10 +1310,10 @@ mod tests {
     #[test]
     fn output_row_count_changes_only_by_declared_aggregation() {
         let trades = vec![trade(0, 1, 1, 0), trade(100, 2, 1, 1), trade(200, 3, 1, 2)];
-        let bars_one = aggregate_trades_to_bars(&trades, 1_000_000).unwrap();
+        let bars_one = aggregate_trades_to_bars(&trades, 1_000_000, &sample_identity()).unwrap();
         assert_eq!(bars_one.len(), 1);
 
-        let bars_three = aggregate_trades_to_bars(&trades, 100).unwrap();
+        let bars_three = aggregate_trades_to_bars(&trades, 100, &sample_identity()).unwrap();
         assert_eq!(bars_three.len(), 3, "3 ejecuciones en intervalos distintos deben producir 3 barras, ninguna se pierde");
     }
 
@@ -922,7 +1327,7 @@ mod tests {
     #[test]
     fn volume_buy_stays_none_when_source_never_distinguishes_aggressor_side() {
         let trades = vec![trade(0, 100, 5, 0), trade(0, 100, 7, 1)];
-        let bars = aggregate_trades_to_bars(&trades, 1_000).unwrap();
+        let bars = aggregate_trades_to_bars(&trades, 1_000, &sample_identity()).unwrap();
 
         assert_eq!(bars.len(), 1);
         assert_eq!(bars[0].volume_traded, 12, "volume_traded SÍ es siempre calculable (trade_volume es obligatorio)");
@@ -943,7 +1348,7 @@ mod tests {
             RawTrade { event_timestamp_ns: 0, price_scaled: 100, trade_volume_scaled: 3, aggressor_side: Some(AggressorSide::Sell), origin_seq: 1 },
             RawTrade { event_timestamp_ns: 0, price_scaled: 100, trade_volume_scaled: 2, aggressor_side: Some(AggressorSide::Unknown), origin_seq: 2 },
         ];
-        let bars = aggregate_trades_to_bars(&trades, 1_000).unwrap();
+        let bars = aggregate_trades_to_bars(&trades, 1_000, &sample_identity()).unwrap();
 
         assert_eq!(bars.len(), 1);
         assert_eq!(bars[0].volume_traded, 10, "volume_traded suma TODAS las ejecuciones (5+3+2)");
@@ -965,7 +1370,7 @@ mod tests {
             RawTrade { event_timestamp_ns: 0, price_scaled: 100, trade_volume_scaled: 5, aggressor_side: Some(AggressorSide::Buy), origin_seq: 0 },
             RawTrade { event_timestamp_ns: 0, price_scaled: 100, trade_volume_scaled: 3, aggressor_side: None, origin_seq: 1 },
         ];
-        let bars = aggregate_trades_to_bars(&trades, 1_000).unwrap();
+        let bars = aggregate_trades_to_bars(&trades, 1_000, &sample_identity()).unwrap();
 
         assert_eq!(bars[0].volume_buy, None, "una sola ejecución sin lado conocido invalida volume_buy de toda la barra");
         assert_eq!(bars[0].volume_traded, 8, "volume_traded no se ve afectado -- sigue siendo siempre calculable");
@@ -976,15 +1381,11 @@ mod tests {
     /// resultado combinado tampoco.
     #[test]
     fn reaggregation_propagates_volume_buy_none_when_any_subbar_lacks_it() {
-        let known = Bar {
-            bar_timestamp_ns: 0, bar_close_timestamp_ns: 10, open: 1, high: 1, low: 1, close: 1,
-            volume_traded: 5, trade_count: 1, volume_buy: Some(5), volume_ticks: None,
-            quote_asset_volume: None, spread_reported: None,
-            open_interest: None, settlement_price: None, implied_volatility_reported: None,
-            delta_reported: None, gamma_reported: None, theta_reported: None, vega_reported: None,
-            rho_reported: None, theoretical_price_reported: None,
-        };
-        let unknown = Bar { volume_buy: None, bar_timestamp_ns: 10, bar_close_timestamp_ns: 20, ..known };
+        let known = Bar { volume_traded: 5, volume_buy: Some(5), ..sample_bar(0, 10, 1, 1, 1, 1) };
+        // `Bar` ya no es `Copy` (STORY-057) -- `..known` movería sus campos
+        // no sobreescritos, así que se clona explícitamente para poder
+        // seguir usando `known` en el `Vec` de abajo.
+        let unknown = Bar { volume_buy: None, bar_timestamp_ns: 10, bar_close_timestamp_ns: 20, ..known.clone() };
 
         let result = reaggregate_bars(&[known, unknown], 100).unwrap();
         assert_eq!(result.len(), 1);
@@ -1010,6 +1411,98 @@ mod tests {
         // QuoteTick (bid/ask).
         assert_eq!(t.price_scaled, 100);
         assert_eq!(t.trade_volume_scaled, 1);
+    }
+
+    // ── STORY-057: tripleta canónica de identidad (ADR-0155, enmienda 2026-07-18) ──
+
+    /// Caso base: forma canónica exacta del ejemplo del ADR.
+    #[test]
+    fn triplet_matches_canonical_example_from_adr() {
+        assert_eq!(build_series_identity_triplet("EURUSD", "1M", "PEPPERSTONE"), "EURUSD-1M-PEPPERSTONE");
+    }
+
+    /// CASO BORDE FIJADO POR EL ARCHITECT: un símbolo que ya lleva guion
+    /// propio (`BTC-USD`) conserva el guion LITERAL -- nunca se escapa ni se
+    /// sustituye. Es seguro porque la tripleta nunca se re-parte para
+    /// recuperar sus componentes (símbolo, temporalidad y bróker viven cada
+    /// uno en su propia columna); esta prueba deja constancia de que el
+    /// guion propio del símbolo no rompe ni se confunde con el separador de
+    /// la tripleta.
+    #[test]
+    fn triplet_preserves_symbols_own_hyphen_literally() {
+        let triplet = build_series_identity_triplet("BTC-USD", "1M", "BINANCE");
+        assert_eq!(triplet, "BTC-USD-1M-BINANCE", "el guion propio del símbolo se conserva literal, sin escapar");
+        // Cuatro segmentos separados por '-', no tres -- prueba explícita de
+        // que NO se intenta re-partir la tripleta contando guiones (eso
+        // fallaría con un símbolo que trae guion propio).
+        assert_eq!(triplet.split('-').count(), 4, "BTC-USD aporta un guion extra; la tripleta NUNCA se re-parte por esto");
+    }
+
+    /// CASO BORDE FIJADO POR EL ARCHITECT: una serie de ticks crudos
+    /// (`QuoteTick`/`TradeTick`, sin temporalidad de minutos) usa el token
+    /// reservado `TICK` en el componente de temporalidad -- "1M" sería una
+    /// mentira de precisión sobre un evento sin agregar. Esta feature nunca
+    /// produce este caso en sus propios `Bar` (siempre `BarType::Time`), pero
+    /// la función que construye la tripleta es de propósito general (ADR-0155):
+    /// el llamador decide el token, esta función solo lo normaliza y concatena.
+    #[test]
+    fn triplet_uses_reserved_tick_token_for_raw_tick_series() {
+        assert_eq!(build_series_identity_triplet("BTCUSDT", "TICK", "BINANCE"), "BTCUSDT-TICK-BINANCE");
+        // Minúsculas de entrada también se normalizan a mayúsculas -- la
+        // tripleta es forma de PRESENTACIÓN, no de comparación binaria.
+        assert_eq!(build_series_identity_triplet("btcusdt", "tick", "binance"), "BTCUSDT-TICK-BINANCE");
+    }
+
+    /// `Bar::identity_triplet` (método de conveniencia) usa el propio
+    /// `timeframe_value` de la barra -- válido porque esta feature siempre
+    /// produce `BarType::Time` con un timeframe real, nunca el token `TICK`.
+    #[test]
+    fn bar_identity_triplet_uses_own_timeframe_value() {
+        let bar = sample_bar(0, 1_000, 1, 1, 1, 1); // identidad: EURUSD, 1H, PEPPERSTONE
+        assert_eq!(bar.identity_triplet(), "EURUSD-1H-PEPPERSTONE");
+    }
+
+    // ── Hallazgo de mutación: BarType::as_sql_text ──────────────────────
+
+    /// Los cinco valores de texto de `as_sql_text` deben coincidir EXACTAMENTE
+    /// con el `CHECK` de ADR-0155 (`'TIME'`, `'TICK_COUNT'`, `'VOLUME'`,
+    /// `'DOLLAR'`, `'RENKO'`) -- ningún test previo verificaba el contenido
+    /// real, solo que la función existiera. Un mutante que devolviera `""` o
+    /// `"xyzzy"` para cualquier variante pasaba sin que nada lo detectara.
+    #[test]
+    fn bar_type_as_sql_text_matches_adr_0155_check_vocabulary() {
+        assert_eq!(BarType::Time.as_sql_text(), "TIME");
+        assert_eq!(BarType::TickCount.as_sql_text(), "TICK_COUNT");
+        assert_eq!(BarType::Volume.as_sql_text(), "VOLUME");
+        assert_eq!(BarType::Dollar.as_sql_text(), "DOLLAR");
+        assert_eq!(BarType::Renko.as_sql_text(), "RENKO");
+    }
+
+    // ── Hallazgo de mutación: Display de TransformError ─────────────────
+
+    /// El mensaje de cada variante de `TransformError` debe contener
+    /// contenido específico y no vacío -- ningún test previo verificaba el
+    /// texto real, solo el tipo del error. Un mutante que devolviera `""`
+    /// para `Display` pasaba sin que nada lo detectara.
+    #[test]
+    fn transform_error_display_messages_are_specific_and_non_empty() {
+        assert_eq!(
+            TransformError::Overflow.to_string(),
+            "desbordamiento aritmético en la agregación escalada"
+        );
+        assert_eq!(
+            TransformError::NonPositiveInterval.to_string(),
+            "el intervalo de agregación debe ser positivo"
+        );
+        let exceeds_float = TransformError::ExceedsFloatExactRange { value: 999 };
+        let msg = exceeds_float.to_string();
+        assert!(msg.contains("999"), "el mensaje debe incluir el valor que excedió el rango: {msg}");
+        assert!(msg.contains("2^53") || msg.contains("53"), "el mensaje debe mencionar el límite de 2^53: {msg}");
+
+        let exceeds_threshold = TransformError::ExceedsInteropThreshold { rows: 42, threshold: 10 };
+        let msg = exceeds_threshold.to_string();
+        assert!(msg.contains("42"), "el mensaje debe incluir el número de filas: {msg}");
+        assert!(msg.contains("10"), "el mensaje debe incluir el umbral: {msg}");
     }
 
     // ── Pruebas auxiliares ────────────────────────────────────────────────

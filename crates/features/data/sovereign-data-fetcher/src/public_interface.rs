@@ -1,9 +1,10 @@
 //! Superficie pública del Sovereign Data Fetcher — el ÚNICO módulo `pub`.
 //!
 //! Expone:
-//! - Los puertos de salida (`OutputPorts`) con los marcadores de tipo `Tick` y `Bars`
-//!   del catálogo ADR-0137. Son stubs en esta Story: el contrato físico
-//!   (Polars/Arrow) lo define el transformador aguas abajo.
+//! - Los puertos de salida (`OutputPorts`) con los marcadores de tipo
+//!   `QuoteTick`, `TradeTick` y `Bars` del catálogo ADR-0137. Son stubs en
+//!   esta Story: el contrato físico (Polars/Arrow) lo define el
+//!   transformador aguas abajo.
 //! - Los traits de puerto de entrada de infraestructura (`BulkSource`, `DeltaSource`):
 //!   la frontera que permite probar el fetcher sin red real.
 //! - La función principal `fetch()` y la función de recuperación `recover_interrupted_downloads()`.
@@ -20,7 +21,7 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use shared::public_interface::{Clock, SystemClock, create_pool, run_migrations};
-use shared::types::{Bars, Tick};
+use shared::types::{Bars, QuoteTick, TradeTick};
 
 use crate::orchestrator;
 
@@ -102,12 +103,23 @@ pub trait DeltaSource: Send + Sync {
 
 /// Puertos de salida del Sovereign Data Fetcher hacia el Canvas.
 ///
+/// La feature descarga el mismo flujo (Bulk + Delta) pero produce dos
+/// primitivos físicos distintos y mutuamente excluyentes por solicitud
+/// (ADR-0155): una cotización (`QuoteTick`, Bid/Ask) nunca es lo mismo que
+/// una ejecución (`TradeTick`, precio/volumen realmente negociado) — mezclar
+/// ambas en un solo puerto produce backtests que asumen precios a los que
+/// nadie operó. El demultiplexado de fuentes que mezclan los dos eventos en
+/// un mismo archivo (MT5) es responsabilidad de `data-normalization-layer`,
+/// no de este crate.
+///
 /// En esta Story los tipos son stubs (marcadores): indican QUÉ clase de dato
 /// produce la feature, pero su representación física Polars/Arrow la define
 /// el transformador aguas abajo (TTR-007, Story diferida).
 pub struct OutputPorts {
-    /// Transacciones crudas Bid/Ask/Last (volcados de trades + Delta REST).
-    pub ticks_out: Tick,
+    /// Cotizaciones crudas Bid/Ask descargadas (volcados de quotes + Delta REST).
+    pub quote_ticks_out: QuoteTick,
+    /// Ejecuciones crudas Last/Volumen descargadas (volcados de trades + Delta REST).
+    pub trade_ticks_out: TradeTick,
     /// Barras OHLCV crudas cuando la fuente entrega volcados de klines.
     pub bars_out: Bars,
 }
@@ -442,4 +454,45 @@ pub async fn verify(input: VerifyInput) -> VerifyOutput {
         };
 
     verify_with_sources(&input, &temp_dir, bulk_source, &delta_source, &pool, &clock).await
+}
+
+// ── Pruebas de contrato de puerto (STORY-058) ────────────────────────────────
+
+#[cfg(test)]
+mod port_contract_tests {
+    use super::*;
+    use shared::types::TypedPort;
+
+    // Prueba discriminante: antes de STORY-058, `OutputPorts` solo tenía el
+    // campo `ticks_out: Tick` — este test no compilaba (ni existían
+    // `quote_ticks_out`/`trade_ticks_out`). Si alguien revierte la migración
+    // y vuelve a colapsar los dos puertos en uno, este archivo deja de
+    // compilar y el test falla, no solo una aserción en tiempo de ejecución.
+    #[test]
+    fn output_ports_expone_quote_y_trade_ticks_por_separado() {
+        let ports = OutputPorts {
+            quote_ticks_out: QuoteTick,
+            trade_ticks_out: TradeTick,
+            bars_out: Bars,
+        };
+
+        // Cada campo debe corresponder al tipo de puerto canónico de ADR-0155:
+        // cotización y ejecución nunca comparten un solo marcador de tipo.
+        assert_eq!(
+            <QuoteTick as TypedPort>::type_id(),
+            "QuoteTick",
+            "quote_ticks_out debe tipar contra el marcador QuoteTick del catálogo"
+        );
+        assert_eq!(
+            <TradeTick as TypedPort>::type_id(),
+            "TradeTick",
+            "trade_ticks_out debe tipar contra el marcador TradeTick del catálogo"
+        );
+        // El campo existe y es del tipo correcto: si esto compila, el struct
+        // literal de arriba ya lo demostró. Se referencia aquí para dejar
+        // explícito en el test que no es un campo muerto.
+        let _ = ports.quote_ticks_out;
+        let _ = ports.trade_ticks_out;
+        let _ = ports.bars_out;
+    }
 }
