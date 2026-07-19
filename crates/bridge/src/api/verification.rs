@@ -51,6 +51,9 @@ use shared::public_interface::{
     verify_operator_roles, verify_plan_tier_quota, verify_third_party_api_gateway,
     verify_usage_metering, verify_verified_account_registry,
 };
+use hybrid_data_transformer::public_interface::{
+    VerifyInput as HybridDataTransformerVerifyInput, verify as verify_hybrid_data_transformer,
+};
 use sovereign_data_fetcher::public_interface::{
     VerifyInput as SovereignDataFetcherVerifyInput, verify as verify_sovereign_data_fetcher,
 };
@@ -316,6 +319,13 @@ pub async fn verify_feature(feature_id: String, input_json: String) -> Verificat
             dispatch::<OperatorRolesVerifyInput, _, _, _>(&input_json, verify_operator_roles)
                 .await
         }
+        "hybrid-data-transformer" => {
+            dispatch::<HybridDataTransformerVerifyInput, _, _, _>(
+                &input_json,
+                verify_hybrid_data_transformer,
+            )
+            .await
+        }
         unknown => VerificationOutcome::invalid(format!(
             "feature_id no reconocido: '{unknown}'. Usa list_verifiable_features() para ver el catálogo vigente."
         )),
@@ -412,6 +422,11 @@ pub fn list_verifiable_features() -> Vec<FeatureDescriptor> {
             display_name: "Roles de Operador".to_string(),
             example_input_json: r#"{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}"#.to_string(),
         },
+        FeatureDescriptor {
+            id: "hybrid-data-transformer".to_string(),
+            display_name: "Transformador de Datos de Mercado".to_string(),
+            example_input_json: r#"{"instrument_id":"BTCUSDT","venue":"BINANCE","source_provider":"BINANCE","bar_type":"TIME","timeframe_value":"1H","data_snapshot_id":"binance_btcusdt_1h_202607","target_aggregation":"1h","interop_threshold":100000,"polars_threads":null}"#.to_string(),
+        },
     ]
 }
 
@@ -421,11 +436,11 @@ pub fn list_verifiable_features() -> Vec<FeatureDescriptor> {
 mod tests {
     use super::*;
 
-    /// Los 15 ids del catálogo, en el mismo orden que los brazos de
+    /// Los 16 ids del catálogo, en el mismo orden que los brazos de
     /// `verify_feature`. Fuente única para las pruebas de este módulo --
     /// si alguien añade una feature al catálogo sin añadir el brazo (o
     /// viceversa), esta prueba lo detecta.
-    const EXPECTED_FEATURE_IDS: [&str; 15] = [
+    const EXPECTED_FEATURE_IDS: [&str; 16] = [
         "sovereign-data-fetcher",
         "central-identity",
         "licensing-system",
@@ -441,14 +456,15 @@ mod tests {
         "master-account-hierarchy",
         "data-portability",
         "operator-roles",
+        "hybrid-data-transformer",
     ];
 
-    /// El catálogo debe traer exactamente los 15 ids esperados, en el mismo
+    /// El catálogo debe traer exactamente los 16 ids esperados, en el mismo
     /// orden en que aparecen en `verify_feature`. Prueba discriminante: si
     /// se borra o se duplica un `FeatureDescriptor`, o se cambia un `id` sin
     /// avisar, esta prueba falla.
     #[test]
-    fn catalog_has_exactly_the_fifteen_expected_feature_ids() {
+    fn catalog_has_exactly_the_sixteen_expected_feature_ids() {
         let ids: Vec<String> = list_verifiable_features()
             .into_iter()
             .map(|f| f.id)
@@ -553,6 +569,39 @@ mod tests {
         assert!(outcome.ok, "licensing-system con defaults debe verificar en verde");
         assert!(!outcome.output_json.is_empty());
         assert!(outcome.output_json.contains("\"ok\":true"));
+        assert!(outcome.error.is_none());
+    }
+
+    /// Mismo round-trip real que la prueba anterior, pero para
+    /// `hybrid-data-transformer` (STORY-051 Etapa 3): el ejemplo del
+    /// catálogo debe ejecutar el backend real (BD efímera + migración 0021
+    /// + motor Polars real) y devolver el esquema canónico completo -- las
+    /// seis columnas de identidad de serie más las cuatro magnitudes de
+    /// volumen, sin colapsar.
+    // `hybrid-data-transformer` corre Polars internamente -- requiere el
+    // runtime multi-hilo (mismo requisito que las pruebas de integración de
+    // la propia feature, `polars-async` hace panic sobre runtime de un solo
+    // hilo con "can call blocking only when running on the multi-threaded
+    // runtime").
+    #[tokio::test(flavor = "multi_thread")]
+    async fn hybrid_data_transformer_example_executes_backend_and_returns_its_real_schema() {
+        let example = list_verifiable_features()
+            .into_iter()
+            .find(|f| f.id == "hybrid-data-transformer")
+            .expect("el catálogo debe traer 'hybrid-data-transformer'");
+
+        let outcome = verify_feature("hybrid-data-transformer".to_string(), example.example_input_json).await;
+
+        match outcome.input_status {
+            InputStatus::Valid => {}
+            InputStatus::Invalid { reason } => {
+                panic!("el ejemplo del catálogo debe ser válido, llegó: {reason}")
+            }
+        }
+        assert!(outcome.ok, "el ejemplo del catálogo debe verificar en verde: {:?}", outcome.error);
+        assert!(outcome.output_json.contains("\"volume_traded:Int64\""));
+        assert!(outcome.output_json.contains("\"volume_buy:Int64\""));
+        assert!(outcome.output_json.contains("\"instrument_id:Utf8\""));
         assert!(outcome.error.is_none());
     }
 }

@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 71897077;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1617610923;
 
 // Section: executor
 
@@ -230,6 +230,86 @@ fn wire__crate__api__data_fetcher__list_download_records_impl(
         },
     )
 }
+fn wire__crate__api__hybrid_data_transformer__list_source_datasets_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "list_source_datasets",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_db_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::hybrid_data_transformer::list_source_datasets(api_db_path)
+                                .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__hybrid_data_transformer__list_transformation_records_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "list_transformation_records",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_db_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::hybrid_data_transformer::list_transformation_records(
+                                api_db_path,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__verification__list_verifiable_features_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -315,6 +395,79 @@ fn wire__crate__api__data_fetcher__submit_download_job_impl(
         },
     )
 }
+fn wire__crate__api__hybrid_data_transformer__submit_hybrid_data_transformation_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "submit_hybrid_data_transformation",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_db_path = <String>::sse_decode(&mut deserializer);
+            let api_instrument_id = <String>::sse_decode(&mut deserializer);
+            let api_venue = <String>::sse_decode(&mut deserializer);
+            let api_source_provider = <String>::sse_decode(&mut deserializer);
+            let api_bar_type = <String>::sse_decode(&mut deserializer);
+            let api_timeframe_value = <String>::sse_decode(&mut deserializer);
+            let api_data_snapshot_id = <String>::sse_decode(&mut deserializer);
+            let api_target_aggregation = <String>::sse_decode(&mut deserializer);
+            let api_interop_threshold = <u64>::sse_decode(&mut deserializer);
+            let api_polars_threads = <Option<u32>>::sse_decode(&mut deserializer);
+            let api_ticks = <Vec<crate::api::hybrid_data_transformer::TradeTickDto>>::sse_decode(
+                &mut deserializer,
+            );
+            let api_source_parquet_path = <Option<String>>::sse_decode(&mut deserializer);
+            let api_parent_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_node_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_process_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_session_id = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::hybrid_data_transformer::submit_hybrid_data_transformation(
+                                api_db_path,
+                                api_instrument_id,
+                                api_venue,
+                                api_source_provider,
+                                api_bar_type,
+                                api_timeframe_value,
+                                api_data_snapshot_id,
+                                api_target_aggregation,
+                                api_interop_threshold,
+                                api_polars_threads,
+                                api_ticks,
+                                api_source_parquet_path,
+                                api_parent_id,
+                                api_node_id,
+                                api_process_id,
+                                api_session_id,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__verification__verify_feature_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -383,6 +536,68 @@ impl SseDecode for crate::api::audit::AuditEventSummary {
             entity_type: var_entityType,
             created_at: var_createdAt,
             audit_chain_hash: var_auditChainHash,
+        };
+    }
+}
+
+impl SseDecode for crate::api::hybrid_data_transformer::BarDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_instrumentId = <String>::sse_decode(deserializer);
+        let mut var_venue = <String>::sse_decode(deserializer);
+        let mut var_sourceProvider = <String>::sse_decode(deserializer);
+        let mut var_barType = <String>::sse_decode(deserializer);
+        let mut var_timeframeValue = <String>::sse_decode(deserializer);
+        let mut var_dataSnapshotId = <String>::sse_decode(deserializer);
+        let mut var_barTimestampNs = <i64>::sse_decode(deserializer);
+        let mut var_barCloseTimestampNs = <i64>::sse_decode(deserializer);
+        let mut var_open = <i64>::sse_decode(deserializer);
+        let mut var_high = <i64>::sse_decode(deserializer);
+        let mut var_low = <i64>::sse_decode(deserializer);
+        let mut var_close = <i64>::sse_decode(deserializer);
+        let mut var_volumeTraded = <i64>::sse_decode(deserializer);
+        let mut var_tradeCount = <i64>::sse_decode(deserializer);
+        let mut var_volumeBuy = <Option<i64>>::sse_decode(deserializer);
+        let mut var_volumeTicks = <Option<i64>>::sse_decode(deserializer);
+        let mut var_quoteAssetVolume = <Option<i64>>::sse_decode(deserializer);
+        let mut var_spreadReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_openInterest = <Option<i64>>::sse_decode(deserializer);
+        let mut var_settlementPrice = <Option<i64>>::sse_decode(deserializer);
+        let mut var_impliedVolatilityReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_deltaReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_gammaReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_thetaReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_vegaReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_rhoReported = <Option<i64>>::sse_decode(deserializer);
+        let mut var_theoreticalPriceReported = <Option<i64>>::sse_decode(deserializer);
+        return crate::api::hybrid_data_transformer::BarDto {
+            instrument_id: var_instrumentId,
+            venue: var_venue,
+            source_provider: var_sourceProvider,
+            bar_type: var_barType,
+            timeframe_value: var_timeframeValue,
+            data_snapshot_id: var_dataSnapshotId,
+            bar_timestamp_ns: var_barTimestampNs,
+            bar_close_timestamp_ns: var_barCloseTimestampNs,
+            open: var_open,
+            high: var_high,
+            low: var_low,
+            close: var_close,
+            volume_traded: var_volumeTraded,
+            trade_count: var_tradeCount,
+            volume_buy: var_volumeBuy,
+            volume_ticks: var_volumeTicks,
+            quote_asset_volume: var_quoteAssetVolume,
+            spread_reported: var_spreadReported,
+            open_interest: var_openInterest,
+            settlement_price: var_settlementPrice,
+            implied_volatility_reported: var_impliedVolatilityReported,
+            delta_reported: var_deltaReported,
+            gamma_reported: var_gammaReported,
+            theta_reported: var_thetaReported,
+            vega_reported: var_vegaReported,
+            rho_reported: var_rhoReported,
+            theoretical_price_reported: var_theoreticalPriceReported,
         };
     }
 }
@@ -516,6 +731,20 @@ impl SseDecode for Vec<crate::api::audit::AuditEventSummary> {
     }
 }
 
+impl SseDecode for Vec<crate::api::hybrid_data_transformer::BarDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::hybrid_data_transformer::BarDto>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::api::data_fetcher::DownloadRecordDto> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -568,11 +797,66 @@ impl SseDecode for Vec<u8> {
     }
 }
 
+impl SseDecode for Vec<crate::api::hybrid_data_transformer::SourceDatasetDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::api::hybrid_data_transformer::SourceDatasetDto>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::hybrid_data_transformer::TradeTickDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::api::hybrid_data_transformer::TradeTickDto>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::hybrid_data_transformer::TransformationRecordDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::api::hybrid_data_transformer::TransformationRecordDto>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<i64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -589,6 +873,109 @@ impl SseDecode for Option<crate::api::data_fetcher::JobStatusDto> {
         } else {
             return None;
         }
+    }
+}
+
+impl SseDecode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for crate::api::hybrid_data_transformer::SourceDatasetDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_dataSnapshotId = <String>::sse_decode(deserializer);
+        let mut var_sourceEndpoint = <String>::sse_decode(deserializer);
+        let mut var_createdAt = <i64>::sse_decode(deserializer);
+        return crate::api::hybrid_data_transformer::SourceDatasetDto {
+            id: var_id,
+            data_snapshot_id: var_dataSnapshotId,
+            source_endpoint: var_sourceEndpoint,
+            created_at: var_createdAt,
+        };
+    }
+}
+
+impl SseDecode for crate::api::hybrid_data_transformer::TradeTickDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_eventTimestampNs = <i64>::sse_decode(deserializer);
+        let mut var_priceScaled = <i64>::sse_decode(deserializer);
+        let mut var_tradeVolumeScaled = <i64>::sse_decode(deserializer);
+        let mut var_aggressorSide = <Option<String>>::sse_decode(deserializer);
+        let mut var_originSeq = <u64>::sse_decode(deserializer);
+        return crate::api::hybrid_data_transformer::TradeTickDto {
+            event_timestamp_ns: var_eventTimestampNs,
+            price_scaled: var_priceScaled,
+            trade_volume_scaled: var_tradeVolumeScaled,
+            aggressor_side: var_aggressorSide,
+            origin_seq: var_originSeq,
+        };
+    }
+}
+
+impl SseDecode for crate::api::hybrid_data_transformer::TransformOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_recordId = <String>::sse_decode(deserializer);
+        let mut var_rowsIn = <i64>::sse_decode(deserializer);
+        let mut var_rowsOut = <i64>::sse_decode(deserializer);
+        let mut var_logicHash = <String>::sse_decode(deserializer);
+        let mut var_auditHash = <String>::sse_decode(deserializer);
+        let mut var_transformDurationNs = <i64>::sse_decode(deserializer);
+        let mut var_bars =
+            <Vec<crate::api::hybrid_data_transformer::BarDto>>::sse_decode(deserializer);
+        let mut var_matrixOutPresent = <bool>::sse_decode(deserializer);
+        let mut var_error = <Option<String>>::sse_decode(deserializer);
+        return crate::api::hybrid_data_transformer::TransformOutcomeDto {
+            record_id: var_recordId,
+            rows_in: var_rowsIn,
+            rows_out: var_rowsOut,
+            logic_hash: var_logicHash,
+            audit_hash: var_auditHash,
+            transform_duration_ns: var_transformDurationNs,
+            bars: var_bars,
+            matrix_out_present: var_matrixOutPresent,
+            error: var_error,
+        };
+    }
+}
+
+impl SseDecode for crate::api::hybrid_data_transformer::TransformationRecordDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_createdAt = <i64>::sse_decode(deserializer);
+        let mut var_dataSnapshotId = <Option<String>>::sse_decode(deserializer);
+        let mut var_logicHash = <String>::sse_decode(deserializer);
+        let mut var_rowsIn = <i64>::sse_decode(deserializer);
+        let mut var_rowsOut = <i64>::sse_decode(deserializer);
+        let mut var_transformDurationNs = <i64>::sse_decode(deserializer);
+        let mut var_schemaVersion = <String>::sse_decode(deserializer);
+        return crate::api::hybrid_data_transformer::TransformationRecordDto {
+            id: var_id,
+            created_at: var_createdAt,
+            data_snapshot_id: var_dataSnapshotId,
+            logic_hash: var_logicHash,
+            rows_in: var_rowsIn,
+            rows_out: var_rowsOut,
+            transform_duration_ns: var_transformDurationNs,
+            schema_version: var_schemaVersion,
+        };
+    }
+}
+
+impl SseDecode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u32::<NativeEndian>().unwrap()
     }
 }
 
@@ -654,13 +1041,33 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__data_fetcher__submit_download_job_impl(
+        6 => wire__crate__api__hybrid_data_transformer__list_source_datasets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__verification__verify_feature_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__hybrid_data_transformer__list_transformation_records_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        9 => wire__crate__api__data_fetcher__submit_download_job_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        10 => wire__crate__api__hybrid_data_transformer__submit_hybrid_data_transformation_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        11 => {
+            wire__crate__api__verification__verify_feature_impl(port, ptr, rust_vec_len, data_len)
+        }
         _ => unreachable!(),
     }
 }
@@ -674,7 +1081,7 @@ fn pde_ffi_dispatcher_sync_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         1 => wire__crate__api__clock__get_clock_timestamp_ns_impl(ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__verification__list_verifiable_features_impl(
+        8 => wire__crate__api__verification__list_verifiable_features_impl(
             ptr,
             rust_vec_len,
             data_len,
@@ -706,6 +1113,54 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::audit::AuditEventSummary>
     for crate::api::audit::AuditEventSummary
 {
     fn into_into_dart(self) -> crate::api::audit::AuditEventSummary {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::hybrid_data_transformer::BarDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.instrument_id.into_into_dart().into_dart(),
+            self.venue.into_into_dart().into_dart(),
+            self.source_provider.into_into_dart().into_dart(),
+            self.bar_type.into_into_dart().into_dart(),
+            self.timeframe_value.into_into_dart().into_dart(),
+            self.data_snapshot_id.into_into_dart().into_dart(),
+            self.bar_timestamp_ns.into_into_dart().into_dart(),
+            self.bar_close_timestamp_ns.into_into_dart().into_dart(),
+            self.open.into_into_dart().into_dart(),
+            self.high.into_into_dart().into_dart(),
+            self.low.into_into_dart().into_dart(),
+            self.close.into_into_dart().into_dart(),
+            self.volume_traded.into_into_dart().into_dart(),
+            self.trade_count.into_into_dart().into_dart(),
+            self.volume_buy.into_into_dart().into_dart(),
+            self.volume_ticks.into_into_dart().into_dart(),
+            self.quote_asset_volume.into_into_dart().into_dart(),
+            self.spread_reported.into_into_dart().into_dart(),
+            self.open_interest.into_into_dart().into_dart(),
+            self.settlement_price.into_into_dart().into_dart(),
+            self.implied_volatility_reported
+                .into_into_dart()
+                .into_dart(),
+            self.delta_reported.into_into_dart().into_dart(),
+            self.gamma_reported.into_into_dart().into_dart(),
+            self.theta_reported.into_into_dart().into_dart(),
+            self.vega_reported.into_into_dart().into_dart(),
+            self.rho_reported.into_into_dart().into_dart(),
+            self.theoretical_price_reported.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::hybrid_data_transformer::BarDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::hybrid_data_transformer::BarDto>
+    for crate::api::hybrid_data_transformer::BarDto
+{
+    fn into_into_dart(self) -> crate::api::hybrid_data_transformer::BarDto {
         self
     }
 }
@@ -848,6 +1303,110 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::jobs::JobSummary>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::hybrid_data_transformer::SourceDatasetDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.data_snapshot_id.into_into_dart().into_dart(),
+            self.source_endpoint.into_into_dart().into_dart(),
+            self.created_at.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::hybrid_data_transformer::SourceDatasetDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::hybrid_data_transformer::SourceDatasetDto>
+    for crate::api::hybrid_data_transformer::SourceDatasetDto
+{
+    fn into_into_dart(self) -> crate::api::hybrid_data_transformer::SourceDatasetDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::hybrid_data_transformer::TradeTickDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.event_timestamp_ns.into_into_dart().into_dart(),
+            self.price_scaled.into_into_dart().into_dart(),
+            self.trade_volume_scaled.into_into_dart().into_dart(),
+            self.aggressor_side.into_into_dart().into_dart(),
+            self.origin_seq.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::hybrid_data_transformer::TradeTickDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::hybrid_data_transformer::TradeTickDto>
+    for crate::api::hybrid_data_transformer::TradeTickDto
+{
+    fn into_into_dart(self) -> crate::api::hybrid_data_transformer::TradeTickDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::hybrid_data_transformer::TransformOutcomeDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.record_id.into_into_dart().into_dart(),
+            self.rows_in.into_into_dart().into_dart(),
+            self.rows_out.into_into_dart().into_dart(),
+            self.logic_hash.into_into_dart().into_dart(),
+            self.audit_hash.into_into_dart().into_dart(),
+            self.transform_duration_ns.into_into_dart().into_dart(),
+            self.bars.into_into_dart().into_dart(),
+            self.matrix_out_present.into_into_dart().into_dart(),
+            self.error.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::hybrid_data_transformer::TransformOutcomeDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::hybrid_data_transformer::TransformOutcomeDto>
+    for crate::api::hybrid_data_transformer::TransformOutcomeDto
+{
+    fn into_into_dart(self) -> crate::api::hybrid_data_transformer::TransformOutcomeDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::hybrid_data_transformer::TransformationRecordDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.created_at.into_into_dart().into_dart(),
+            self.data_snapshot_id.into_into_dart().into_dart(),
+            self.logic_hash.into_into_dart().into_dart(),
+            self.rows_in.into_into_dart().into_dart(),
+            self.rows_out.into_into_dart().into_dart(),
+            self.transform_duration_ns.into_into_dart().into_dart(),
+            self.schema_version.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::hybrid_data_transformer::TransformationRecordDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::hybrid_data_transformer::TransformationRecordDto>
+    for crate::api::hybrid_data_transformer::TransformationRecordDto
+{
+    fn into_into_dart(self) -> crate::api::hybrid_data_transformer::TransformationRecordDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::verification::VerificationOutcome {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -886,6 +1445,39 @@ impl SseEncode for crate::api::audit::AuditEventSummary {
         <String>::sse_encode(self.entity_type, serializer);
         <i64>::sse_encode(self.created_at, serializer);
         <String>::sse_encode(self.audit_chain_hash, serializer);
+    }
+}
+
+impl SseEncode for crate::api::hybrid_data_transformer::BarDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.instrument_id, serializer);
+        <String>::sse_encode(self.venue, serializer);
+        <String>::sse_encode(self.source_provider, serializer);
+        <String>::sse_encode(self.bar_type, serializer);
+        <String>::sse_encode(self.timeframe_value, serializer);
+        <String>::sse_encode(self.data_snapshot_id, serializer);
+        <i64>::sse_encode(self.bar_timestamp_ns, serializer);
+        <i64>::sse_encode(self.bar_close_timestamp_ns, serializer);
+        <i64>::sse_encode(self.open, serializer);
+        <i64>::sse_encode(self.high, serializer);
+        <i64>::sse_encode(self.low, serializer);
+        <i64>::sse_encode(self.close, serializer);
+        <i64>::sse_encode(self.volume_traded, serializer);
+        <i64>::sse_encode(self.trade_count, serializer);
+        <Option<i64>>::sse_encode(self.volume_buy, serializer);
+        <Option<i64>>::sse_encode(self.volume_ticks, serializer);
+        <Option<i64>>::sse_encode(self.quote_asset_volume, serializer);
+        <Option<i64>>::sse_encode(self.spread_reported, serializer);
+        <Option<i64>>::sse_encode(self.open_interest, serializer);
+        <Option<i64>>::sse_encode(self.settlement_price, serializer);
+        <Option<i64>>::sse_encode(self.implied_volatility_reported, serializer);
+        <Option<i64>>::sse_encode(self.delta_reported, serializer);
+        <Option<i64>>::sse_encode(self.gamma_reported, serializer);
+        <Option<i64>>::sse_encode(self.theta_reported, serializer);
+        <Option<i64>>::sse_encode(self.vega_reported, serializer);
+        <Option<i64>>::sse_encode(self.rho_reported, serializer);
+        <Option<i64>>::sse_encode(self.theoretical_price_reported, serializer);
     }
 }
 
@@ -982,6 +1574,16 @@ impl SseEncode for Vec<crate::api::audit::AuditEventSummary> {
     }
 }
 
+impl SseEncode for Vec<crate::api::hybrid_data_transformer::BarDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::hybrid_data_transformer::BarDto>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::api::data_fetcher::DownloadRecordDto> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1022,12 +1624,54 @@ impl SseEncode for Vec<u8> {
     }
 }
 
+impl SseEncode for Vec<crate::api::hybrid_data_transformer::SourceDatasetDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::hybrid_data_transformer::SourceDatasetDto>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::hybrid_data_transformer::TradeTickDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::hybrid_data_transformer::TradeTickDto>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::hybrid_data_transformer::TransformationRecordDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::hybrid_data_transformer::TransformationRecordDto>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <i64>::sse_encode(value, serializer);
         }
     }
 }
@@ -1039,6 +1683,73 @@ impl SseEncode for Option<crate::api::data_fetcher::JobStatusDto> {
         if let Some(value) = self {
             <crate::api::data_fetcher::JobStatusDto>::sse_encode(value, serializer);
         }
+    }
+}
+
+impl SseEncode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for crate::api::hybrid_data_transformer::SourceDatasetDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.data_snapshot_id, serializer);
+        <String>::sse_encode(self.source_endpoint, serializer);
+        <i64>::sse_encode(self.created_at, serializer);
+    }
+}
+
+impl SseEncode for crate::api::hybrid_data_transformer::TradeTickDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.event_timestamp_ns, serializer);
+        <i64>::sse_encode(self.price_scaled, serializer);
+        <i64>::sse_encode(self.trade_volume_scaled, serializer);
+        <Option<String>>::sse_encode(self.aggressor_side, serializer);
+        <u64>::sse_encode(self.origin_seq, serializer);
+    }
+}
+
+impl SseEncode for crate::api::hybrid_data_transformer::TransformOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.record_id, serializer);
+        <i64>::sse_encode(self.rows_in, serializer);
+        <i64>::sse_encode(self.rows_out, serializer);
+        <String>::sse_encode(self.logic_hash, serializer);
+        <String>::sse_encode(self.audit_hash, serializer);
+        <i64>::sse_encode(self.transform_duration_ns, serializer);
+        <Vec<crate::api::hybrid_data_transformer::BarDto>>::sse_encode(self.bars, serializer);
+        <bool>::sse_encode(self.matrix_out_present, serializer);
+        <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
+impl SseEncode for crate::api::hybrid_data_transformer::TransformationRecordDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <i64>::sse_encode(self.created_at, serializer);
+        <Option<String>>::sse_encode(self.data_snapshot_id, serializer);
+        <String>::sse_encode(self.logic_hash, serializer);
+        <i64>::sse_encode(self.rows_in, serializer);
+        <i64>::sse_encode(self.rows_out, serializer);
+        <i64>::sse_encode(self.transform_duration_ns, serializer);
+        <String>::sse_encode(self.schema_version, serializer);
+    }
+}
+
+impl SseEncode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
     }
 }
 

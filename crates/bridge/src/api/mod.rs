@@ -7,11 +7,15 @@
 //! - `audit`        → bitácora de eventos de auditoría con hash de cadena.
 //! - `data_fetcher` → Sovereign Data Fetcher: envío y consulta de descargas
 //!   de históricos de mercado (STORY-024, EPIC-1).
+//! - `hybrid_data_transformer` → Hybrid Data Transformer: envío de
+//!   transformaciones (`TradeTick` → `Bars`) y consulta de datasets de
+//!   origen / registros de transformación (STORY-051, EPIC-1).
 //! - `verification` → Banco de Pruebas: despacho genérico hacia cualquier
 //!   `verify_<feature>` del backend (Canal #2, ADR-0142).
 
 pub mod audit;
 pub mod clock;
 pub mod data_fetcher;
+pub mod hybrid_data_transformer;
 pub mod jobs;
 pub mod verification;
