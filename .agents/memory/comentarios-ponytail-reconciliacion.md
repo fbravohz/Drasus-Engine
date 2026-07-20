@@ -1,15 +1,16 @@
 ---
 name: comentarios-ponytail-reconciliacion
-description: Reconciliación de las 4 capas de comentarios (base.md + Ponytail + DEBT.md) — cómo coexisten sin conflicto
+description: Reconciliación de las 4 capas de comentarios (commenting-policy.md + Ponytail + DEBT.md) — cómo coexisten sin conflicto
 metadata: 
   node_type: memory
   type: feedback
   originSessionId: 8320c909-d535-467d-b886-9c112ec0d98f
+  modified: 2026-07-20T06:12:16.975Z
 ---
 
 ## Decisión
 
-**Los comentarios operan en 4 capas jerárquicas que coexisten sin conflicto.** Ponytail NO invalida base.md; añade una capa de metaannotación sobre simplificaciones deliberadas.
+**Los comentarios operan en 4 capas jerárquicas que coexisten sin conflicto.** Ponytail NO invalida `commenting-policy.md`; añade una capa de metaannotación sobre simplificaciones deliberadas.
 
 ## Las 4 Capas
 
@@ -22,7 +23,7 @@ metadata:
 
 ## Jerarquía
 
-- **base.md §4.1 gana siempre** sobre Ponytail: Capas 1–2 (contrato + lógica no obvia) nunca se negocian.
+- **`commenting-policy.md` gana siempre** sobre Ponytail: Capas 1–2 (contrato + lógica no obvia) nunca se negocian.
 - **Ponytail añade Capa 3**, no reemplaza: metaannotación de decisiones deliberadas con techo medible.
 - **DEBT.md es Capa 4**: para aplazamientos con causa raíz externa o módulo futuro (NO acotados al módulo actual).
 
@@ -51,7 +52,7 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 
 ## Por Qué Esta Reconciliación Importa
 
-**Sin ella:** tensión entre "base.md dice comenta mucho" vs. "Ponytail dice simplifica" → confusión sobre qué es obligatorio.
+**Sin ella:** tensión entre "commenting-policy.md dice comenta mucho" vs. "Ponytail dice simplifica" → confusión sobre qué es obligatorio.
 
 **Con ella:** cada capa tiene función clara, regla precisa, precedencia definida → código legible, anticipado, rastreable.
 
@@ -59,8 +60,8 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 
 **Orden al escribir un función:**
 
-1. Contrato (base.md Capa 1): "qué, qué devuelve" → 1–2 líneas obligatorias.
-2. Lógica no obvia (base.md Capa 2): "por qué es seguro este punto" → 1 línea si aplica.
+1. Contrato (commenting-policy.md Capa 1): "qué, qué devuelve" → 1–2 líneas obligatorias.
+2. Lógica no obvia (commenting-policy.md Capa 2): "por qué es seguro este punto" → 1 línea si aplica.
 3. Simplificación (Ponytail Capa 3): "qué se simplificó, cuándo cambiar" → 1 línea si hay techo.
 4. Deuda (DEBT.md Capa 4): si aplazamiento externo, regístralo allá, NO en código.
 
@@ -68,9 +69,9 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 
 ## Archivos Que Lo Formalizan
 
-- **`.agents/knowledge/COMMENTING-POLICY.md`** — Política de Comentarios completa (4 capas, reglas, ejemplos, prohibiciones).
+- **`.agents/knowledge/commenting-policy.md`** — Política de Comentarios completa (4 capas, reglas, ejemplos, prohibiciones).
 - **`.agents/knowledge/debt-management.md`** — Gestión de Deuda Técnica (cuándo `ponytail:` vs. DEBT-XXX, severidad, ejemplos).
-- **`.agents/knowledge/base.md`** — Resumen + referencias a los archivos anteriores (§4.1 y §4.2).
+- **`.agents/knowledge/governance.md`** — Núcleo siempre activo; el detalle de comentarios/deuda vive en los archivos de arriba, no aquí.
 - **`.agents/knowledge/ponytail.md`** — Sección "Relación con Políticas de Comentarios" (reconciliación explícita).
 - **`CLAUDE.md`** — Mapa de orientación (referencia a base de conocimiento).
 - **Esta memoria** — Para que skills y sesiones futuras lo encuentren.
@@ -78,8 +79,7 @@ DEBT-015: espera tipo BacktestResult de EPIC-3 (`institutional-report-engine` #7
 ## Precedencia
 
 Si hay conflicto de interpretación:
-1. `.agents/knowledge/base.md` (mapa de referencias, ley suprema).
-2. `.agents/knowledge/COMMENTING-POLICY.md` (capas 1–2 obligatorias, Capa 3 si aplica).
+1. `.agents/knowledge/commenting-policy.md` (capas 1–2 obligatorias, Capa 3 si aplica).
 3. `.agents/knowledge/debt-management.md` (cuándo DEBT-XXX vs. ponytail:).
 4. `.agents/knowledge/ponytail.md` (Capa 3: simplificación deliberada).
 5. `docs/DEBT.md` (registro canónico de deuda, ortogonal).

@@ -151,10 +151,21 @@ En corto: `memory/` responde "¿qué sabe el proyecto, para siempre?"; `state/<a
 
 ---
 
+## 6. Auto-Edición de Skill ante Corrección (recuperado de `old_base.md`, 2026-07-20)
+
+Distinto de guardar una memoria: cuando el usuario corrige tu enfoque de una forma que revela una regla de **comportamiento de tu propio skill** — no un hecho puntual del proyecto — propón un `Edit` quirúrgico a tu propio `SKILL.md` incorporando la corrección. Nunca lo apliques sin que el usuario lo apruebe primero en el turno actual.
+
+La memoria (§2-§3 de este archivo) registra hechos y decisiones del proyecto; esto edita la regla de comportamiento que regirá la próxima vez que el skill se invoque. Son complementarios, no sustitutos.
+
+* ❌ *Incorrecto:* guardar la corrección solo como memoria externa cuando en realidad describe una regla de comportamiento del rol.
+* ✅ *Correcto:* proponer el `Edit` al `SKILL.md` con el texto exacto del cambio, y esperar aprobación antes de aplicarlo.
+
+---
+
 ## Relación con Otros Archivos
 
 - **`CLAUDE.md` §4** — puntero de una línea a este archivo; ya no repite el contenido.
-- **`.agents/knowledge/base.md`** — Gobernanza meta; referencia a este archivo en su tabla de Referencia Rápida.
+- **`.agents/knowledge/governance.md`** — Gobernanza meta, núcleo siempre activo.
 - **`.agents/skills/tech-lead/SKILL.md`** — mantiene los triggers operativos (cuándo leer/escribir), apunta aquí para el detalle y el "por qué".
 - **`.agents/memory/MEMORY.md`** — el índice real de memorias curadas (la Capa Drasus en acción).
 - **`.agents/state/tech-lead/PROGRESS.md`** — la bitácora operativa que este archivo distingue de la memoria propiamente dicha.

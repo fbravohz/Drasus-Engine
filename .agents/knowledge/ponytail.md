@@ -110,10 +110,10 @@ El camino más corto a terminado es el camino correcto.
 
 ## Relación con Políticas de Comentarios y Deuda — Reconciliación de Capas
 
-⚠️ **SUPREMACÍA:** Capas 1–2 de [`./COMMENTING-POLICY.md`](./COMMENTING-POLICY.md) tienen precedencia absoluta. Ponytail **NO invalida** esas reglas; coexisten en capas jerárquicas.
+⚠️ **SUPREMACÍA:** Capas 1–2 de [`./commenting-policy.md`](./commenting-policy.md) tienen precedencia absoluta. Ponytail **NO invalida** esas reglas; coexisten en capas jerárquicas.
 
 📖 **Documentos relacionados:**
-- **`./COMMENTING-POLICY.md`** — Las 4 capas completas (contrato, lógica no obvia, Ponytail, DEBT).
+- **`./commenting-policy.md`** — Las 4 capas completas (contrato, lógica no obvia, Ponytail, DEBT).
 - **`./debt-management.md`** — Cuándo abrir DEBT-XXX vs. usar `ponytail:`.
 
 **Lo que Ponytail NUNCA toca (Capas 1–2 ganan siempre):**

@@ -248,10 +248,21 @@ Cuando pagues una deuda:
 
 ---
 
+## Referencia por Documento Canónico, No por Ejemplo (DEBT-032, 2026-07-19)
+
+Cuando una Orden de Trabajo diga "sigue el patrón de X", se refiere **al documento de knowledge que define X**, nunca a "la feature que ya lo tiene implementado". Elegir referencia por antigüedad —"la primera que se construyó"— propagó dos defectos por copia durante meses a través de catorce implementaciones.
+
+Ningún archivo del repositorio es "el ejemplo a seguir" completo: el código es la foto de lo que alguien entendió un día concreto; el molde es el documento. Si un ejemplo de código se cita, se cita para un punto concreto y auditado, nunca como plantilla entera.
+
+* ❌ *Incorrecto:* "copia cómo lo hizo la feature Y" para implementar un ledger append-only.
+* ✅ *Correcto:* seguir `.agents/knowledge/ledger-pattern.md` como molde; citar la feature Y solo para un punto concreto ya auditado.
+
+---
+
 ## Relación con Otros Archivos
 
 - **`docs/DEBT.md`** — Registro canónico (si no está ahí, no existe).
-- **`.agents/knowledge/COMMENTING-POLICY.md`** — Capas 1–3 (en código).
+- **`.agents/knowledge/commenting-policy.md`** — Capas 1–3 (en código).
 - **`.agents/knowledge/ponytail.md`** — Capa 3 (`ponytail:`).
 - **`.agents/memory/comentarios-ponytail-reconciliacion.md`** — Reconciliación histórica.
 - **`.agents/state/tech-lead/PROGRESS.md`** — Bitácora de hallazgos (apunta a DEBT-XXX).

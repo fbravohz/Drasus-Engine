@@ -12,12 +12,12 @@ Los comentarios operan en **4 capas jerárquicas**, cada una con su lugar, regla
 
 | Capa | Qué | Obligatorio | Dónde | Ejemplo | Líneas | Referencia |
 |---|---|---|---|---|---|---|
-| **1. Contrato** | Qué hace la función, qué devuelve | ✅ Siempre | Antes de `fn`/`struct`/`impl` | `// Valida permisos; devuelve `Error` si denegado.` | 1–2 | base.md Capas 1–2 |
-| **2. Lógica No Obvia** | Por qué es seguro un `unwrap`, qué pasa en borde, por qué esa condición | ✅ Si aplica | Inline en la línea/bloque | `// Pool ya inicializó; imposible ser None.` | 1 | base.md Capas 1–2 |
+| **1. Contrato** | Qué hace la función, qué devuelve | ✅ Siempre | Antes de `fn`/`struct`/`impl` | `// Valida permisos; devuelve `Error` si denegado.` | 1–2 | este archivo |
+| **2. Lógica No Obvia** | Por qué es seguro un `unwrap`, qué pasa en borde, por qué esa condición | ✅ Si aplica | Inline en la línea/bloque | `// Pool ya inicializó; imposible ser None.` | 1 | este archivo |
 | **3. Simplificación Deliberada** | Qué se simplificó, cuándo cambiar | 🟡 Recomendado si hay techo | Comentario `ponytail:` | `// ponytail: sin caché. Escalar si >1000 req/s.` | 1 | ponytail.md |
 | **4. Deuda Técnica** | Aplazamiento con disparador externo | ✅ Si aplica | `docs/DEBT.md`, **NO en código** | `DEBT-003: falta paginación cuando >1000 registros` | En DEBT.md | debt-management.md |
 
-**Regla de Oro:** Capas 1–2 (base.md) **siempre ganan**. Ponytail (Capa 3) añade metaannotación, no reemplaza. Deuda (Capa 4) va en archivo canónico, no en código.
+**Regla de Oro:** Capas 1–2 (este archivo) **siempre ganan**. Ponytail (Capa 3) añade metaannotación, no reemplaza. Deuda (Capa 4) va en archivo canónico, no en código.
 
 ---
 
@@ -232,7 +232,7 @@ pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
 
 ## Relación con Otros Archivos
 
-- **`.agents/knowledge/base.md`** — Gobernanza meta. Referencia a este archivo.
+- **`.agents/knowledge/governance.md`** — Gobernanza meta, núcleo siempre activo.
 - **`.agents/knowledge/ponytail.md`** — Skill de simplificación (Capa 3).
 - **`.agents/knowledge/debt-management.md`** — Gestión de deuda (Capa 4).
 - **`docs/DEBT.md`** — Registro canónico de deuda técnica rastreada.

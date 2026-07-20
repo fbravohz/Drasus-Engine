@@ -2,7 +2,7 @@
 
 Todo documento consumido por agents o skills combina formatos de bloque — hoy Lecturas Obligatorias, Regla, Filtro de Verificación, Ejemplos — catalogados aquí para ser encontrables por ID y aplicables sin ambigüedad. Ninguno es la excepción del otro: cada uno resuelve un tipo de contenido distinto, y un documento normal usa varios. El catálogo es abierto — ver "Cómo Agregar un Formato Nuevo" para extenderlo.
 
-Todo formato con ID usa el mismo identificador legible y único en todo el proyecto: `<DOC>-N` o `<DOC>-N.N` (ej. `EJEMPLO-2.2`). `<DOC>` es un slug en mayúsculas **que es el nombre exacto del documento que lo contiene** (`BASE` para `base.md`, `MEMORY_POLICY` para `memory-policy.md`, etc.) y no cambia después.
+Todo formato con ID usa el mismo identificador legible y único en todo el proyecto: `<DOC>-N` o `<DOC>-N.N` (ej. `EJEMPLO-2.2`). `<DOC>` es un slug en mayúsculas **con guion medio, calcado del nombre de archivo** (nunca guion bajo — un archivo `memory-policy.md` usa slug `MEMORY-POLICY`, no `MEMORY_POLICY`, para que archivo y slug se lean igual) y no cambia después.
 
 ---
 
@@ -67,7 +67,7 @@ Reglas de formato exactas, no estéticas — un agente que las rompe genera un d
 
 ## Formato: Lecturas Obligatorias
 
-Tabla de qué otros documentos leer antes de operar bajo este, y cuándo — un índice de disparadores local al documento, no solo el índice central (`base.md`).
+Tabla de qué otros documentos leer antes de operar bajo este, y cuándo — un índice de disparadores local al documento, no solo el índice central (`governance.md`).
 
 * **ID y posición:** `## <DOC>-0 — Lecturas Obligatorias`, siempre antes del primer bloque numerado, justo después del Slug ID del documento.
 * **Campos que no lleva:** `Aplica a`, `Precedencia`, `Filtro de verificación` — es una tabla de datos, no una instrucción de comportamiento.
@@ -77,19 +77,19 @@ Tabla de qué otros documentos leer antes de operar bajo este, y cuándo — un 
   |---|---|---|---|
   | `<ruta/al/doc.md>` | <1 línea: qué resuelve> | `SIEMPRE` o el disparador puntual | <a quién aplica> |
   ```
-* **`SIEMPRE` es valor reservado:** solo para el propio documento madre (`base.md` u otro con supremacía declarada). Cualquier otra fila lleva un disparador concreto.
+* **`SIEMPRE` es valor reservado:** solo para el propio documento madre (`governance.md` u otro con supremacía declarada). Cualquier otra fila lleva un disparador concreto.
 * **No duplica `Documento extendido`:** ese campo de una Regla apunta al detalle de UNA regla puntual; esta tabla es el índice de lectura de TODO el documento.
 
 Ejemplo:
 
 ```
-## PROMPT_ENGINEER-0 — Lecturas Obligatorias
+## CONTEXT-ENGINEER-0 — Lecturas Obligatorias
 
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
-| `.agents/knowledge/base.md` | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
-| `.agents/knowledge/WRITING-EFFICIENCY.MD` | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Prompt Engineer |
-| `.agents/templates/INSTRUCTION-FORMATS.md` | Catálogo de formatos de bloque. | Al canonizar o reescribir un bloque de knowledge/skill. | Prompt Engineer |
+| `.agents/knowledge/governance.md` | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| `.agents/knowledge/writing-efficiency.md` | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Context Engineer |
+| `.agents/templates/instruction-formats.md` | Catálogo de formatos de bloque. | Al canonizar o reescribir un bloque de knowledge/skill. | Context Engineer |
 ```
 
 ---
@@ -243,4 +243,4 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 
 ## Documentos Relacionados
 
-* `.agents/templates/KNOWLEDGE.md` — cómo ensamblar varios bloques de este catálogo en un documento de knowledge completo (Lecturas Obligatorias al inicio, Reglas en el cuerpo, Filtro de Verificación y Ejemplos al cierre).
+* `.agents/templates/knowledge.md` — cómo ensamblar varios bloques de este catálogo en un documento de knowledge completo (Lecturas Obligatorias al inicio, Reglas en el cuerpo, Filtro de Verificación y Ejemplos al cierre).

@@ -1,6 +1,6 @@
 # Razonamiento Crítico de Dominio — asociar lo que una IA normal no asocia
 
-> **Qué es:** documento de knowledge **específico y de lectura bajo demanda** — NO forma parte de `base.md` (que es gobernanza general para todos). Lo leen los roles que **sellan decisiones** (Architect, Tech-Lead, ingenieros especialistas) **cuando el concepto en curso toca un dominio experto**. Al consultarlo, declara al invocador que lo hiciste (Gate de Reportaje de Conocimiento, `README.md`). No es una skill invocable.
+> **Qué es:** documento de knowledge **específico y de lectura bajo demanda** — NO forma parte de `governance.md` (que es gobernanza general para todos). Lo leen los roles que **sellan decisiones** (Architect, Tech-Lead, ingenieros especialistas) **cuando el concepto en curso toca un dominio experto**. Al consultarlo, declara al invocador que lo hiciste (Gate de Reportaje de Conocimiento, `README.md`). No es una skill invocable.
 >
 > **Por qué existe (caso raíz, 2026-07-11):** el modelo de aplicación del Deflated Sharpe Ratio (DSR) se estaba codificando como *"N = universo total de exploraciones de toda la historia"*. En el límite eso hace crecer el Sharpe umbral sin cota y **condena a toda estrategia futura al fracaso permanente** — destruye el propósito del producto (descubrimiento continuo de alfa). Ni el Tech-Lead ni el Architect lo detectaron; **lo atrapó el propietario**. El objetivo de este documento es que ese tipo de error lo atrape el experto, no el dueño.
 
