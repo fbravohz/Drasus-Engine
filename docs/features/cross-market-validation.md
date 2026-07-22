@@ -3,7 +3,7 @@
 **Carpeta:** `./features/cross-market-validation/`
 **Estado:** En Diseño
 **Última actualización:** 2026-06-11
-**Decisiones Arquitectónicas Asociadas:** ADR-0049, ADR-0108, ADR-0110
+**Decisiones Arquitectónicas Asociadas:** ADR-0049, ADR-0108, ADR-0110, ADR-0158 (topología sin "mercado principal")
 
 ## 1. ¿Qué es esta feature?
 Una prueba de robustez fundamental que somete la estrategia a la iteración en mercados hermanos (correlacionados) sin reoptimizar parámetros. 
@@ -12,7 +12,7 @@ Resuelve el problema del sobreajuste (Curve Fitting). Si una ineficiencia es rea
 **Validación Cruzada de la Máscara del Genoma de Régimen y Filtro de Entorno (ADR-0108/ADR-0110):** cuando ese genoma está activo, la máscara binaria Permitido/Prohibido resuelta sobre el mercado principal se aplica también a la(s) cesta(s) correlacionada(s) de `CORRELATION_BASKET`. Si la máscara produce una distribución de Permitido/Prohibido sustancialmente distinta entre el mercado principal y el correlacionado, se interpreta como evidencia de sobreajuste del genoma de régimen al mercado principal.
 
 ## 2. Comportamientos Observables
-- [ ] El motor ejecuta la estrategia en su mercado principal y en una o más cestas correlacionadas.
+- [ ] El motor ejecuta la estrategia en cada uno de sus Destinos de Ejecución (ADR-0158 — ya no existe un único "mercado principal") y en una o más cestas correlacionadas, como **simulaciones independientes** (correcto para una prueba de robustez: el edge debe sobrevivir por sí solo en el mercado hermano).
 - [ ] Si la curva de rendimiento colapsa (excede degradación máxima) en el mercado correlacionado, la estrategia se descarta antes de llegar a la incubación.
 - [ ] Cuando el Genoma de Régimen y Filtro de Entorno (ADR-0110) está activo, el motor compara la distribución temporal de la máscara Permitido/Prohibido entre el mercado principal y cada mercado de `CORRELATION_BASKET`.
 

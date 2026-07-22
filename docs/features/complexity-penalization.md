@@ -3,7 +3,7 @@
 **Carpeta:** `./features/complexity-penalization/`
 **Estado:** En Diseño
 **Última actualización:** 2026-06-11
-**Decisión Arquitectónica Asociada:** ADR-0020, ADR-0108, ADR-0111
+**Decisión Arquitectónica Asociada:** ADR-0020, ADR-0108, ADR-0111, ADR-0158 (eje fuente/destino), ADR-0159 (fórmula sintética)
 
 ---
 
@@ -25,6 +25,7 @@ La penalización por complejidad es la aplicación directa de la Navaja de Ockha
 - [ ] Estrategias con ratios paupérrimos (ej. 2 trades por parámetro) son penalizadas a muerte y rechazadas en el backtest.
 - [ ] Cuando el Manifest porta más de un genoma de dominio (ADR-0108), el conteo de parámetros agrega los de **todos** los genomas presentes —activos y congelados— contra el mismo total de trades, y reporta el desglose por dominio.
 - [ ] Cuando el Dominio de Portafolio y Correlación está activo (ADR-0111), el sistema calcula además un ratio independiente de "miembros de cartera por parámetro del genoma de portafolio".
+- [ ] El conteo de parámetros incluye los grados de libertad del **eje de topología** (fuentes de señal y destinos de ejecución, ADR-0158) y de la **estructura de una fórmula sintética** (constituyentes + operadores + coeficientes, ADR-0159) contra el mismo `MIN_TRADES_PER_PARAM`, para que la complejidad no migre a un eje sin penalizar.
 
 ---
 
@@ -34,6 +35,7 @@ La penalización por complejidad es la aplicación directa de la Navaja de Ockha
 - **FIJO (ADR-0108):** la penalización de un Manifest con múltiples genomas de dominio se calcula sobre la suma de parámetros de todos los genomas presentes, nunca sobre un solo genoma de forma aislada.
 - **FIJO (ADR-0111):** el Genoma de Portafolio y Correlación se penaliza con su propio ratio "miembros de cartera por parámetro" además de — y sin sustituir a — el ratio `Total_Trades / N_p` de cada Manifest miembro.
 - **FIJO (Reglas Genómicas Cruzadas, ADR-0108):** un parámetro perteneciente a una Regla Genómica que combina genes de más de un dominio activo cuenta una sola vez en `N_p` total, y se refleja en el desglose de **todos** los dominios cuyos genes participan en esa regla.
+- **FIJO (Eje de Topología y Fórmula, ADR-0158/ADR-0159):** los grados de libertad de la topología (número de fuentes y destinos elegidos) y la estructura interna de una fórmula sintética evolucionada (constituyentes, operadores y coeficientes) se suman a `N_p` contra el mismo denominador de operaciones — mismo principio anti-migración de complejidad que el multi-dominio, extendido a estos ejes.
 
 ---
 
