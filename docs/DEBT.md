@@ -38,7 +38,7 @@
 | DEBT-017 | 🔶 Media | #3 falta la cuota `MAX_CHILD_ACCOUNTS` | ✅ Pagada (STORY-042) | [detalle](./debt/DEBT-017.md) |
 | DEBT-018 | 🟠 Media | Cobertura de mutación del patrón append-only en #4–#12 | ✅ Pagada (STORY-047) | [detalle](./debt/DEBT-018.md) |
 | DEBT-019 | 🟡 Baja | Cobertura de mutación de la plomería EPIC-0 (`job`/`mcp_*`) | Abierta | [detalle](./debt/DEBT-019.md) |
-| DEBT-020 | 🟡 Baja | `N_eff` por clustering (ONC) — política diferida del DSR | Abierta | [detalle](./debt/DEBT-020.md) |
+| DEBT-020 | 🟠 Media | `N_eff` por clustering (ONC) — **prerrequisito** del modo evolucionado de síntesis de símbolos (ADR-0159) | Abierta | [detalle](./debt/DEBT-020.md) |
 | DEBT-021 | 🟡 Baja | Deflación de compuestas (PBO/CSCV) — política diferida | Abierta | [detalle](./debt/DEBT-021.md) |
 | DEBT-022 | 🟡 Baja | Banco de Pruebas — sin test de widget de la distinción rojo/ámbar | ✅ Pagada (2026-07-12) | [detalle](./debt/DEBT-022.md) |
 | DEBT-023 | 🟠 Media | `proptest` ausente en funciones numéricas de dominio no acotado (E4/TASK-049) | Abierta | [detalle](./debt/DEBT-023.md) |

@@ -20,6 +20,8 @@
 >
 > **Lección de método, más valiosa que la Task:** el Quant recomendó canonizar algo ya canonizado, y yo lo registré sin verificar. Es exactamente el fallo que la nueva **Etapa 0.4 (Barrido de Coherencia Pre-Orden)** existe para impedir — trabajo propuesto sobre decisiones ya tomadas, por no buscar antes de proponer.
 
+> 🔗 **Dependencia y alcance ampliado (2026-07-21).** ADR-0158 (Topología de Fuentes y Destinos) **depende** de cerrar esta Task y **amplía su alcance a toda fuente consultada** por una estrategia — cross-symbol, cross-timeframe y sintética —, no solo su símbolo propio. Cerrar la Task con alcance de una sola fuente y reabrirla luego sería el mismo defecto de proceso que su propia lección advierte. Ver ítem 4 abajo.
+
 ## El problema, en una frase
 
 Una barra lleva dos marcas de tiempo, y usar la equivocada produce un sesgo de anticipación tan sutil que casi nadie lo detecta revisando código.
@@ -44,6 +46,7 @@ Un consumidor que use la etiqueta de inicio como momento de disponibilidad está
 1. **Atar la regla de ADR-0114 al campo concreto**, mediante enmienda a ADR-0114 o a ADR-0155: "el cierre de la barra N" es exactamente `bar_close_timestamp_ns`, y "la apertura de N+1" es el `open` de la barra cuyo `bar_timestamp_ns` es igual a ese valor. Sin esa equivalencia escrita, un implementador puede cumplir el ADR al pie de la letra y aun así leer el campo equivocado.
 2. **Nombrar dónde se hace cumplir**: qué es responsabilidad del validador PIT, qué del motor de backtest, y qué de la capa de features.
 3. **Dejar planteado cómo se comprueba**, no solo cómo se declara. Un contrato de este tipo que solo vive en prosa se viola en la primera feature que tenga prisa.
+4. **Aplicar el contrato a TODA fuente (ADR-0158, 2026-07-21):** la conocibilidad por `bar_close_timestamp_ns` rige no solo el símbolo propio de la estrategia, sino cada fuente que consulte (cross-symbol, cross-timeframe, sintética). El validador PIT verifica el contrato sobre cada fuente de la topología; la conocibilidad de un símbolo sintético es el mínimo de los cierres de sus constituyentes (eslabón más débil, ADR-0159).
 
 ## Por qué sigue mereciendo una Task, aunque la regla exista
 
