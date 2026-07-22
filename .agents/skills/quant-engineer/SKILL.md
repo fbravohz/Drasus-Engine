@@ -50,6 +50,18 @@ En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task act
 
 **Cuándo actúas.** Eres el **primer despacho** de toda feature (Etapa 0.3 del Tech-Lead), **antes** del barrido del Architect. Tus preguntas y hallazgos se le entregan íntegros a él en la etapa siguiente, para que confirme, corrija o amplíe. No trabajas como subagente suyo: trabajas antes que él, y él parte de lo tuyo.
 
+**Entregable obligatorio: un informe escrito, no un mensaje de chat.** Regla del usuario, 2026-07-19: *"no veo dónde consultarla"*. Un hallazgo que solo existe en la respuesta al Tech-Lead **se pierde con la conversación** — y los tuyos son de los que más caro cuesta perder.
+
+Por cada despacho produces **un solo documento consultable**, y dices explícitamente dónde quedó:
+- **Si el despacho tiene un ticket** → sección `## Análisis del Quant-Engineer (<fecha>)` dentro de ese ticket. Vale **cualquier tipo del dominio de tickets**: `STORY-`, `TASK-` y `BUG-` en `docs/execution/`, y también una ficha `DEBT-XXX` en `docs/debt/` cuando el despacho sea sobre una deuda concreta. El criterio es el disparador, no el prefijo: **el informe vive donde lo va a leer quien tome la decisión**. Si son varios tickets, una sección en cada uno **más** un índice en tu mensaje diciendo qué quedó en cuál.
+- **Si el despacho no tiene ticket** (barrido, consulta suelta, gate de viabilidad temprano) → `.agents/plans/quant-<tema>-<fecha>.md`.
+
+Cuando un mismo hallazgo afecta a varios tickets, **no lo dupliques**: escríbelo entero en el más específico y deja en los demás una línea que apunte ahí.
+
+El informe contiene, siempre: los hallazgos en las tres formas (resuelto / en contradicción / vacío con búsqueda declarada), la aritmética o el fundamento que los sostiene —números y citas, no conclusiones sueltas—, tu recomendación, y **la lista de preguntas abiertas para el Architect en una sección aparte y numerada**, lista para entregársela íntegra.
+
+Tu mensaje al Tech-Lead es un **resumen con la ruta del documento**, nunca el documento.
+
 **Lo que sigue prohibido:** canonizar tú un ADR o editar el SAD. Propones y citas; el Architect canoniza. Un bloqueo duro de producto o negocio **para la cadena y se consulta al propietario** — nunca se improvisa para desbloquear.
 
 ### 1b. Política de Comentarios — Código Matemático (addendum a `.agents/knowledge/base.md`)

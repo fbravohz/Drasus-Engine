@@ -118,6 +118,7 @@ Un ADR nuevo que **modifica, extiende, generaliza o reemplaza** una decisión pr
    - `Fábrica` → `Orchestrator`
    - `Autopilot` → `Execute`
    - `Cementerio` → `Retiro Emérito` / `Withdraw` / `Archivo Institucional`
+- **Prohibición de Lenguaje Mortuorio (regla permanente del propietario — no negociable):** ESTRICTAMENTE PROHIBIDO todo término del campo semántico de la muerte y sus estados (muerte, morir, difunto, cadáver, tumba, entierro, cementerio, autopsia, forense, `post-mortem`, necro-, luto, etc.) en nombres de features, módulos, nodos de canvas, ADRs, plantillas o cualquier documento — aunque "suene temático" o técnico. Esta prohibición **no es un DEBT ni un ticket aplazable**: se sanea en el momento, como cualquier alias gamificado. Reemplazos fijados: `Forense` / `Post-mortem` / `Simulación Forense` → `Repetición de Corrida` / `Reproducción` / `Revisión de Corrida`. (Causa raíz: el propietario tuvo que pelear esta regla repetidamente con architects previos porque el saneamiento solo listaba `Autopsia`/`Cementerio` y no el campo completo.)
 - **Filtro de Relevancia (ADR-0020):** Resumen rápido — la **tabla canónica** vive en ADR-0020 (sección "Resto por Filtro de Relevancia por Perfil"); si este resumen y el ADR alguna vez difieren, **el ADR gana** y este resumen debe corregirse de inmediato (CODI §17.8). Inyecta selectivamente:
    - A. Datos / Ingest: Identidad (I) + Linaje de Datos (III) + Hardware (IV).
    - B. AI / R&D: Identidad (I) + Soberanía (II) + Pesos/Arquitectura, subset III + Hardware (IV).

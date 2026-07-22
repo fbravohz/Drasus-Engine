@@ -4,7 +4,7 @@
 
 Slug ID: `DOC-FIRST`.
 
-Tamaño: `2496 caracteres (~624 tokens aprox., ratio 4:1)`.
+Tamaño: `2502 caracteres (~626 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -30,7 +30,7 @@ Tamaño: `2496 caracteres (~624 tokens aprox., ratio 4:1)`.
 
 **Filtro de verificación:** `DOC-FIRST-2.1`.
 
-**Documento extendido:** `.agents/knowledge/critical-domain-reasoning.md` — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese gate adicional.
+**Lectura bajo demanda:** `.agents/knowledge/critical-domain-reasoning.md` — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese gate adicional.
 
 ---
 

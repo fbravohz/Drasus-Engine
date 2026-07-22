@@ -48,7 +48,9 @@ Las migraciones `0006` (`sovereign-data-fetcher`) y `0021` (`hybrid-data-transfo
 
 4. **Escritura envuelta en `BEGIN IMMEDIATE`** con reintento acotado y **error tipado de contención**. Nunca sentencias sueltas: la lectura de la secuencia y la escritura de la fila son una sola operación atómica o hay pérdida de eventos bajo concurrencia.
 
-5. **Candados anti UPDATE/DELETE en la migración**, con `RAISE(ABORT, ...)` y un mensaje que diga por qué. Referencia limpia: migración `0019` (`data_portability`).
+5. **Candados anti UPDATE/DELETE en la migración**, con `RAISE(ABORT, ...)` y un mensaje que diga por qué. Ejemplo correcto **de este punto concreto**: migración `0019` (`data_portability`) o `0006` (`sovereign_data_fetcher`, corregida 2026-07-19).
+
+   ⚠️ **Copia el punto, no el archivo.** La `0019` se citó aquí como "referencia limpia" el 2026-07-19 y el barrido de ese mismo día descubrió que **cumple los candados pero no cumple el punto 7 en sus tres casos**. Se eligió por verse limpia, sin auditarla entera — exactamente el error que este documento existe para impedir, un nivel más arriba. **Ningún archivo del repo es "el ejemplo a seguir" completo. El molde es este documento.**
 
 6. **Ficha en `docs/data-model/<tabla>.md`** creada en el mismo cambio, coincidiendo columna por columna con la migración, más su fila en el índice `docs/DATA-MODEL.md`.
 

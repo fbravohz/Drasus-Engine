@@ -40,6 +40,22 @@ El script aplica las tres medidas: temporales en disco real, paralelismo acotado
 
 ---
 
+## 2-bis. El veredicto se lee en el TEXTO, nunca en el código de salida
+
+**Fallo real del Tech-Lead, 2026-07-19.** Corrió el gate canalizando la salida a `tail` para ver el final:
+
+```bash
+./scripts/mutation-gate.sh sovereign-data-fetcher 2>&1 | tail -30   # ❌
+```
+
+El script devolvió `1` (**NO APTO**, 49 supervivientes) pero **la tubería devuelve el código del último comando**, que fue `tail` — o sea `0`. El sistema reportó "completado con éxito". Estuvo a un paso de reportarle al propietario "gate superado" sobre una crate con 49 huecos.
+
+**Reglas:**
+- El veredicto es la línea `GATE APTO` / `GATE NO APTO` **del texto**. Léela.
+- Si canalizas, el código de salida que vale es el de la tubería (`PIPESTATUS[0]` en bash), no el del filtro.
+- Mejor: **no canalices**. Deja que el script imprima su resumen, que para eso lo tiene.
+- Regla general, más allá de este gate: **un "completado con éxito" del sistema no es un veredicto de calidad.** Solo dice que un proceso terminó.
+
 ## 3. Por qué NO lo corren los subagentes
 
 No es preferencia de estilo, es economía medida. El 2026-07-18 **tres agentes consecutivos agotaron su presupuesto completo esperando** una corrida —consultando el archivo de salida, viendo que no terminaba, volviendo a consultar— y **ninguno entregó nada**. El trabajo estaba hecho; el presupuesto se fue en la sala de espera.

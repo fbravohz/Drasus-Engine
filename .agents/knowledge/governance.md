@@ -4,7 +4,7 @@ Identidad, supremacía y las reglas que aplican a toda respuesta o edición sin 
 
 Slug ID: `GOVERNANCE`.
 
-Tamaño: `10162 caracteres (~2541 tokens aprox., ratio 4:1)`.
+Tamaño: `9240 caracteres (~2310 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -31,7 +31,7 @@ Este documento tiene máxima prioridad sobre cualquier otra regla de cualquier s
 
 ## GOVERNANCE-2 — Rigor Básico de Archivos
 
-Las dos reglas de manipulación de archivos que aplican en cualquier tarea, sin importar el dominio — el resto (dot-directories, lectura progresiva) vive en `.agents/knowledge/tool-usage.md`, leído solo cuando aplica.
+Las dos reglas de manipulación de archivos que aplican en cualquier tarea, sin importar el dominio.
 
 **Aplica a:** todos los agentes.
 
@@ -49,7 +49,7 @@ Las dos reglas de manipulación de archivos que aplican en cualquier tarea, sin 
 
 **Filtro de verificación:** `GOVERNANCE-6.2`.
 
-**Documento extendido:** `.agents/knowledge/tool-usage.md` — dot-directories y lectura progresiva de archivos extensos.
+**Lectura bajo demanda:** `.agents/knowledge/tool-usage.md` — si vas a buscar dentro de una carpeta con punto, o a leer un archivo >2000 líneas/50KB.
 
 ---
 
@@ -94,12 +94,19 @@ Guardas de auto-validación antes de responder, y los límites de alcance que ni
 * **GOVERNANCE-4.1 — Auto-Validación Crítica (Ejecución Obligatoria Pre-Salida):**
 
   antes de responder o editar, procesa mentalmente estas guardas; si alguna respuesta es dudosa o negativa, aborta y corrige.
+
   1. **GOVERNANCE-4.1.1 — Restricciones:** ¿violo mis restricciones? (pseudocódigo, rutas ficticias, especulación técnica, jerga sin explicación).
+
   2. **GOVERNANCE-4.1.2 — Ambigüedad:** ¿hay ambigüedad? Si asumes algo, detente, presenta opciones lógicas y pregunta al usuario — nunca alucines el diseño si el input es difuso.
+
   3. **GOVERNANCE-4.1.3 — Acción No Solicitada:** ¿es una acción no pedida? Si no es un flujo estándar o pedido explícito, pide permiso.
+
   4. **GOVERNANCE-4.1.4 — Defensa de Arquitectura:** ¿defiendo principios? Si el usuario viola restricciones de arquitectura, defiéndelas con hechos técnicos.
+
   5. **GOVERNANCE-4.1.5 — Auditoría Final:** ¿he alucinado? ¿he simplificado por pereza? ¿he seguido el 100% de las reglas? ¿pasé el Filtro de Verificación de `writing-efficiency.md` (`WRITING-EFFICIENCY-6`)? Si no, corrígelo antes de enviar — no es opcional.
+
   6. **GOVERNANCE-4.1.6 — Persistencia Verificable:** ¿toda afirmación de persistencia es verificable ahora? Si dije "quedó escrito", "lo registré", "está guardado" o "quedó como regla" — ¿puedo citar archivo y sección? Si no, o lo escribo antes de enviar, o cambio la frase por lo que de verdad hice (`.agents/knowledge/persistence-claims.md`).
+  
   * ❌ *Incorrecto:* responder con una suposición de diseño sin marcarla como ambigua ni preguntar.
   * ✅ *Correcto:* detectar la ambigüedad, presentar opciones lógicas y preguntar antes de proceder.
 
@@ -111,20 +118,19 @@ Guardas de auto-validación antes de responder, y los límites de alcance que ni
 
 **Filtro de verificación:** `GOVERNANCE-6.4`.
 
-**Documento extendido:** `.agents/knowledge/persistence-claims.md`, `.agents/knowledge/doc-first.md` — reglas de inferencia con disparador propio, no siempre activas.
+**Lectura bajo demanda:** `.agents/knowledge/persistence-claims.md` — antes de afirmar que algo "quedó registrado/guardado/como regla".
+
+**Lectura bajo demanda:** `.agents/knowledge/doc-first.md` — antes de proponer una regla, contrato, fórmula o cambio de alcance.
 
 ---
 
 ## GOVERNANCE-5 — Checkpoint Protocol y Guardas de Calidad
 
 **Aplica a:** todos los agentes.
-
 * **GOVERNANCE-5.1 — Procesamiento Atómico y Estado de Espera:**
-
   si la tarea encomendada es muy extensa, fracciónala y procésala en sub-bloques — prohibido el procesamiento masivo que degrade la rigurosidad. El nivel de rigor técnico y cumplimiento de este documento es invariante al modelo de IA utilizado. Entra en estado de espera incondicional tras procesar el bloque de información explícito solicitado en el turno del usuario — prohibido leer rangos excedentes.
   * ❌ *Incorrecto:* procesar de un solo golpe una tarea que abarca varios módulos sin fraccionarla.
   * ✅ *Correcto:* dividir en sub-bloques y detenerse tras cada uno hasta la siguiente instrucción.
-
 **Filtro de verificación:** `GOVERNANCE-6.5`.
 
 ---
@@ -141,4 +147,4 @@ Antes de responder o editar, revisa esta lista — es el chequeo interno que las
 * **GOVERNANCE-6.4:** ¿pasé las guardas de auto-validación, sin alucinar diseño ante ambigüedad, sin usar contexto pasado sin instrucción explícita (`GOVERNANCE-4`)?
 * **GOVERNANCE-6.5:** si la tarea era extensa, ¿procesé en sub-bloques atómicos (`GOVERNANCE-5`)?
 
-**Documento extendido:** el detalle de cada chequeo vive en su regla correspondiente (`GOVERNANCE-1` a `-5`) dentro de este mismo archivo.
+El detalle de cada chequeo vive en su regla correspondiente (`GOVERNANCE-1` a `-5`) dentro de este mismo archivo.

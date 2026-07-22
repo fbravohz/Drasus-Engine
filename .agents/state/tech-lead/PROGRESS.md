@@ -355,3 +355,28 @@
 **Deuda abierta:** DEBT-025, 029, 030, 031, 032, 033. **Tasks abiertas:** 052, 053, 054, 055, 056, 059, **060 (bloqueada en el propietario)**, 061, 062.
 
 **Gate de aprendizajes: las nueve mejoras aplicadas**, incluidas la sincronía documental por etapa y correr mutación durante el trabajo del ingeniero (no solo en el gate final: en STORY-051 eso costó tres rondas donde bastaba una).
+
+---
+
+## 2026-07-19 (tarde) · Gate Doc-First, reorden Quant→Architect, y tres frentes despachados
+
+**Volcado de la sesión actualizado:** §7 de [`sesion-2026-07-19-cierre-story-051-y-gate-aprendizajes.md`](../../plans/sesion-2026-07-19-cierre-story-051-y-gate-aprendizajes.md).
+
+**Commiteado** (6 commits agrupados por tipo, `d2a78bc`..`9eb38d8`): backend de datos, puente FFI, panel Flutter, pruebas de UI, documentación de ejecución, y skills/knowledge. **Sin push.**
+
+**Cambio de orquestación (directiva del propietario).** El Quant deja de ser solo cazador de vacíos cuantitativos: **tiene acceso documental completo** (ADRs, SAD, features, módulos, moonshots, TTRs) y **obligación de citar** — cada hallazgo se entrega como "ya resuelto por X", "en contradicción entre X e Y", o "vacío real, busqué en Z". Y **va primero**: las etapas se reordenaron a **0.3 = Quant/Legal**, **0.4 = Architect**, con los hallazgos del Quant entregados íntegros al Architect como insumo. Razón: el Quant detecta el hueco de dominio mejor que nadie; que pregunte primero y el Architect confirme, corrija o amplíe.
+
+**Gate Doc-First (`base.md` §7.4), obligatorio para TODOS incluido el TL.** Buscar en la documentación con `grep` antes de proponer una regla, contrato, fórmula o cambio de alcance. **"No encontré nada" solo vale declarando dónde se buscó** — una afirmación de vacío sin búsqueda es tan cara como inventar una regla. NO prohíbe improvisar: prohíbe improvisar sobre preguntas ya respondidas por escrito.
+
+**Ponytail NO se reparte al equipo.** Gobierna *cuánto construir*, no *cuánto leer*; dos de sus reglas ("la escalera es un reflejo, no un proyecto de investigación", "si la explicación es más larga que el código, bórrala") empeorarían el fallo real. Se mantiene donde ya sirve: decisiones de alcance.
+
+**DEBT vs TASK — criterio escrito** (`debt-management.md`). Era deriva real: el criterio no existía en ningún documento. **Hueco en algo que ya corre → DEBT** (se gobierna por disparador). **Pregunta que alguien debe contestar → TASK** (se gobierna por bloqueante). No se fusionan: si nadie toca una deuda el sistema sigue andando; si nadie toca una tarea, el trabajo que depende de ella no empieza. Un hallazgo con las dos caras genera las dos y se enlazan (caso real: DEBT-033 + TASK-061). **Todo accionable que dependa del propietario se marca `🔴 BLOQUEADO POR EL USUARIO`** en ficha, bitácora y ROADMAP — nunca en prosa dentro de un chat.
+
+**TASK-063 (nueva) — formato estándar de ingesta y doctrina compra/venta.** Cuatro directivas del propietario: (D1) no se ingesta formato arbitrario, se prefiere que el usuario transforme afuera; (D2) plantillas por plataforma + mapeo declarado con vista previa, nunca adivinanza por nombre de columna; (D3) **la ejecución simulada solo lee compra o venta, jamás un campo genérico de precio** — matiz del TL: el hecho negociado se conserva como materia prima para barras Renko/Tick/Volumen/Rango, que se construyen contando operaciones reales; (D4) **la declaración del mapeo es evidencia inmutable** — ledger append-only siguiendo `ledger-pattern.md`, sellando archivo origen, mapeo mostrado, plantilla aplicada, instante y vista previa aceptada. D4 es lo que cierra la exposición legal de D1.
+
+**Tres frentes despachados en paralelo** (2026-07-19, autorización explícita del propietario):
+1. **General-Counsel** → veredicto sobre si transformar el archivo del usuario transfiere responsabilidad, con autorización para redactar clausulado en su dominio. Hipótesis a validar: transformar con mapeo declarado y aceptado NO transfiere; adivinar SÍ.
+2. **Quant** → TASK-061 (techo de escala) + TASK-062 (catálogo de tipos de barra), estrenando el mandato documental. Su salida alimenta al Architect.
+3. **Rust** → retrofit de DEBT-032 (prueba real del clasificador en `sovereign-data-fetcher` + candados en la migración 0006 + barrido de los seis ledgers restantes).
+
+**Siguiente paso:** recibir los tres informes, correr el gate de mutación sobre lo del Rust, y despachar al Architect con los hallazgos del Quant en la mano. **Sigue bloqueado en el propietario:** TASK-060 (muestras reales de Forex/CFD) — el propietario las está buscando.

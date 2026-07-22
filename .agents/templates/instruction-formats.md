@@ -115,9 +115,14 @@ Un documento puede mezclar ambos: ligero para lo simple, completo para lo que de
 | `PRECEDENCIA` | Solo si compite con otra regla | **Si no compite con ninguna, el campo entero se omite** — la ausencia en cualquier regla del proyecto significa "no compite" (convención declarada aquí, ver Regla de Oro). |
 | `FILTRO_DE_VERIFICACION` | Solo si hay un chequeo dedicado | Cita el **ID exacto del ítem** en la sección Filtro de Verificación del documento. Se omite si no hay uno dedicado. |
 | `DOCUMENTO_EXTENDIDO` | Solo si existe un archivo satélite real | Se omite si no existe — no se escribe `N/A`. |
+| `LECTURA_BAJO_DEMANDA` | Solo si esta regla remite a otra regla, en otro documento, que aplica solo si un caso puntual lo dispara | No es más detalle de esta misma regla (eso es `Documento extendido`) — es otro tema, aparte, condicional. Puede repetirse si hay más de un caso. Se omite si no aplica. |
 | `PLANTILLA_EJEMPLO_COMPLETA` | Solo si hay una plantilla de salida copiable | Se omite si la regla no define una salida estructurada. Etiqueta y bloque de código en líneas consecutivas. |
 
-Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento extendido`, `Plantilla de referencia`) aparece **solo si tiene contenido real** — se omite entero, no se escribe `N/A`.
+Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento extendido`, `Lectura bajo demanda`, `Plantilla de referencia`) aparece **solo si tiene contenido real** — se omite entero, no se escribe `N/A`.
+
+**`Documento extendido` vs. `Lectura bajo demanda` — no son lo mismo, y confundirlos es el error que origina esta distinción:** `Documento extendido` es la versión larga de ESTA MISMA regla — el archivo satélite elabora lo que aquí se resume, hablan del mismo tema. `Lectura bajo demanda` apunta a OTRA regla, que vive en otro documento, y que solo aplica si un caso concreto la dispara — típicamente el resultado de partir un documento grande en varios más chicos por economía de tokens. Ejemplo real: una regla de "rigor de archivos" que antes cubría también dot-directories y lectura progresiva, y ahora esos dos casos viven aparte en `tool-usage.md` — eso es `Lectura bajo demanda`, no `Documento extendido`, porque `tool-usage.md` no elabora la regla de rigor, cubre un caso distinto.
+
+**Toda referencia a otro archivo dentro de una Regla vive en un campo declarado — nunca suelta en la descripción o el cuerpo de una definición.** Los lugares válidos son: el ❌/✅ (si el archivo es parte del ejemplo de uso correcto/incorrecto), `Documento extendido`, `Lectura bajo demanda`, o `Plantilla de referencia`. Si necesitas mencionar un archivo fuera de esos campos, es señal de que falta declarar el campo correcto — no de que la prosa lo resuelve.
 
 `````
 ## <DOC>-N.N — <Título de la regla>
@@ -140,7 +145,9 @@ Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento exten
 
 **Filtro de verificación:** <solo si hay un chequeo dedicado — se omite si no lo hay>
 
-**Documento extendido:** <solo si existe un archivo satélite real — se omite si no existe>
+**Documento extendido:** <solo si existe un archivo satélite real que elabora ESTA MISMA regla — se omite si no existe>
+
+**Lectura bajo demanda:** `<ruta/al/archivo.md>` — <disparador: qué caso puntual hace que esa OTRA regla aplique en vez de, o además de, esta. Se omite si no aplica; se repite la línea si hay más de un caso>
 
 **Plantilla de referencia:**
 ```
@@ -154,6 +161,14 @@ Una línea basta — sin descripción rápida separada, sin `Aplica a` propio (h
 
 ```
 * **<DOC>-N — <Título>:** <cuerpo en una línea, sin campos de cierre>.
+```
+
+**Única excepción: `Lectura bajo demanda`.** Si la regla de una línea, en un caso puntual, remite a otra regla que vive en otro documento, se agrega como segunda línea — sigue siendo Ligero, no obliga a subir a Completo solo por esto.
+
+```
+* **<DOC>-N — <Título>:** <cuerpo en una línea, sin campos de cierre>.
+
+  **Lectura bajo demanda:** `<ruta/al/archivo.md>` — <disparador puntual>.
 ```
 
 ### Ejemplo Aplicado (Regla, Genérico)
@@ -233,7 +248,8 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 - [ ] En Regla — Completo: ¿la descripción rápida va ANTES de las definiciones, y `Aplica a` tiene valor explícito?
 - [ ] ¿Cada ❌/✅ que incluiste aporta claridad real, no relleno para llenar el campo?
 - [ ] ¿Omitiste los campos de cierre que no aplican, en vez de escribir `N/A`?
-- [ ] Si incluiste `Documento extendido`, ¿el archivo satélite existe de verdad?
+- [ ] Si incluiste `Documento extendido`, ¿el archivo satélite existe de verdad y elabora ESTA MISMA regla (si en realidad es un tema distinto y condicional, va en `Lectura bajo demanda`, no aquí)?
+- [ ] ¿Toda referencia a otro archivo vive en un campo declarado (❌/✅, `Documento extendido`, `Lectura bajo demanda`, `Plantilla de referencia`) y ninguna quedó suelta en la descripción o el cuerpo de una definición?
 - [ ] Si incluiste una plantilla de ejemplo, ¿es copiable tal cual, sin placeholders sueltos?
 - [ ] ¿Respeté el espaciado exacto (etiqueta y cuerpo en líneas separadas, línea en blanco entre ítems, `---` entre bloques)?
 - [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita?
