@@ -97,7 +97,7 @@ Toda validación pre-milio registra el set de relevancia técnica para AI/R&D:
 | | `manifest_id` | ID del contrato de diseño legal |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del validador |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de validación (< 1ms target) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia de validación (< 1ms target) |
 | | `latency_ns` | Latencia en nanosegundos para alta resolución |
 
 - **Decisión Arquitectónica Asociada:**

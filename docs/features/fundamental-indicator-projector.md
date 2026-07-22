@@ -110,7 +110,7 @@ Es la pieza que convierte eventos puntuados en una **serie numérica de indicado
 | | `institutional_tag` | Entorno (PROD/PAPER/CHALLENGE) |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de proyección |
-| **V. Forense/Ejecución** | `indicator_state_hash` | Snapshot técnico del indicador fundamental por activo |
+| **V. Auditoría/Ejecución** | `indicator_state_hash` | Snapshot técnico del indicador fundamental por activo |
 | | `source_signal_id` | Link a los eventos agregados en el valor |
 | | `execution_latency_ms` | Latencia de lectura del indicador (hot-path ≤1ms) |
 

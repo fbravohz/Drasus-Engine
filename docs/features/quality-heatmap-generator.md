@@ -43,7 +43,7 @@ Es el componente responsable de auditar la integridad de los datos históricos y
 ### Proceso
 - Ejecuta una agregación DuckDB para contar barras esperadas vs barras reales.
 - Calcula el ratio de integridad por celda del heatmap.
-- Identifica zonas con flags de auditoría forense (`is_synthetic`, `correction_applied`).
+- Identifica zonas con flags de auditoría (`is_synthetic`, `correction_applied`).
 
 ### Salida
 - Objeto JSON con la matriz de calidad para el frontend.
@@ -74,7 +74,7 @@ Cada escaneo de calidad genera un registro de persistencia filtrado para Datos:
 | **I. Identidad** | `id` | Identificador único del escaneo |
 | | `created_at` | Timestamp de generación |
 | | `updated_at` | Timestamp de última modificación del registro |
-| | `audit_hash` | Correlación forense con el CSV/Parquet origen |
+| | `audit_hash` | Correlación de auditoría con el CSV/Parquet origen |
 | | `audit_chain_hash` | Hash de integridad del bloque analizado |
 | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **III. Linaje** | `data_snapshot_id` | ID de la fuente (Sovereign Fetcher ID) |

@@ -185,5 +185,5 @@ Orquesta canales (NSGA-II, Simbólico, HMM) en estrategias híbridas mediante **
 | | `indicator_state_hash` | Snapshot de los pesos por régimen |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del orquestador de síntesis |
-| **V. Forense** | `source_signal_id` | Identificador del hemisferio que disparó la orden |
+| **V. Auditoría** | `source_signal_id` | Identificador del hemisferio que disparó la orden |
 

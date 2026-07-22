@@ -23,4 +23,4 @@
 
 ## Notas de diseño
 
-- Valor inicial sembrado por la migración: `('production_override_active', '0')` — el interruptor de producción del Gateway MCP arranca desactivado por defecto (ADR-0123). `permission_decisions` es el log forense de cada evaluación; esta tabla es el estado vigente.
+- Valor inicial sembrado por la migración: `('production_override_active', '0')` — el interruptor de producción del Gateway MCP arranca desactivado por defecto (ADR-0123). `permission_decisions` es el log de auditoría de cada evaluación; esta tabla es el estado vigente.

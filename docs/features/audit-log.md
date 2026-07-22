@@ -129,7 +129,7 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 ---
 
 ## Gobernanza y Estándares (Fijos)
-- **Inundación de Fundaciones (ADR-0020) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, forense de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020.
+- **Inundación de Fundaciones (ADR-0020) — Perfil D (Ops/Auditoría):** `audit_events` aplica el Grupo I (universal) + Soberanía (II) + Hardware (IV). Los Grupos III y V (linaje Alpha, auditoría de ejecución) NO aplican a este perfil y se omiten — ver `migrations/0002_audit_log.sql`, que cita expresamente "PROHIBIDO copy-paste masivo" de ADR-0020.
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |

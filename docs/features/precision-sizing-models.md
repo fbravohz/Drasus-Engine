@@ -116,7 +116,7 @@ Proporciona un framework unificado y determinista para el cálculo del tamaño d
 | | `audit_chain_hash` | Hash de enlace con el cálculo de sizing anterior |
 | | `event_sequence_id` | Secuencia ordinal del evento de cálculo |
 | **IV. Hardware** | `node_id` | ID del hardware de ejecución |
-| **V. Forense** | `process_id` | PID del servicio de riesgo |
+| **V. Auditoría** | `process_id` | PID del servicio de riesgo |
 | | `logic_hash` | Hash del modelo matemático activo |
 
 ## Preparación para Opciones (Post-MVP — ADR-0140)

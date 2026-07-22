@@ -75,7 +75,7 @@ Cada instancia y log de ejecución de la aplicación debe portar el set filtrado
 | `id` | UUID | Identidad | Identificador único de la instancia |
 | `created_at` | INT64 | Identidad | Timestamp de inicio del binario |
 | `updated_at` | INT64 | Identidad | Último registro de salud del proceso |
-| `audit_hash` | VARCHAR | Identidad | Verificación forense de la integridad del binario |
+| `audit_hash` | VARCHAR | Identidad | Verificación de integridad del binario |
 | `audit_chain_hash` | VARCHAR | Identidad | Hash encadenado de la sesión de ejecución |
 | `event_sequence_id` | INT64 | Identidad | Secuencia ordinal de eventos de salud del proceso |
 | `owner_id` | UUID | Soberanía | Usuario local de la aplicación |

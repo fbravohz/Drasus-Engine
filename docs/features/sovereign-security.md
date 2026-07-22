@@ -72,7 +72,7 @@ Sovereign Security establece el marco de ciberseguridad local e integridad de da
 - Proporciona desencriptación segura en memoria al vuelo durante llamadas API.
 
 **Contexto 2: Auditoría y Cumplimiento**
-- Proporciona un rastro forense inalterable útil para la reconciliación de NautilusTrader y verificación de operaciones.
+- Proporciona un rastro de auditoría inalterable útil para la reconciliación de NautilusTrader y verificación de operaciones.
 
 ---
 
@@ -124,4 +124,4 @@ Sovereign Security establece el marco de ciberseguridad local e integridad de da
 
 **Consumido por:**
 - [`execute`](../modules/execute.md) — para encriptar credenciales de broker y auditar ejecuciones.
-- [`feedback`](../modules/feedback.md) — para reconstruir auditorías forenses.
+- [`feedback`](../modules/feedback.md) — para reconstruir auditorías.

@@ -54,7 +54,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del worker |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot técnico |
@@ -87,6 +87,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-999 | **EPIC-1** | Protocolo Fail-Fast Safe (ADR-0066) |
 | TTR-003 | EPIC-3 | Contextualización (HMM Regime) |
 | TTR-020 | EPIC-3 | Selección de universo accionario |
+| TTR-024 | EPIC-3 | Lienzo de fórmulas / motor de expresiones (formula-canvas, ADR-0161) |
+| TTR-025 | EPIC-3 | Símbolos sintéticos — modo declarado (synthetic-symbols, ADR-0159) |
 | TTR-021 | EPIC-4 | Etiquetado manual de regímenes |
 | TTR-015 | EPIC-8 | Inicialización de entorno local (Flutter FFI) |
 | TTR-016 | EPIC-8 | Navegación infinita (ZUI Navigation) |
@@ -409,6 +411,26 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** `versioned_fundamental_event` (evento PIT, consultable as-of).
 *   **Precondición:** Fuente estructurada configurada y espacio en disco validado.
 *   **Postcondición:** Evento disponible para [`event-impact-scorer`](../features/event-impact-scorer.md) sin look-ahead.
+
+### **TTR-024: Orquestación del Lienzo de Fórmulas (Formula Canvas, ADR-0161)**
+*   **Descripción:** Invoca a [`formula-canvas`](../features/formula-canvas.md) para compilar y evaluar fórmulas matemáticas del usuario sobre series de mercado, produciendo símbolos sintéticos e indicadores custom; el mismo motor sirve luego a señales y riesgo en `generate`/`validate`.
+*   **Reglas de Orquestación:**
+    * Toda fórmula se compila una vez a AST tipado vía [`ast-compiler`](../features/ast-compiler.md); prohibida la evaluación de strings en el hot path (ADR-0113).
+    * El verificador de causalidad rechaza cualquier operación que mire el futuro dentro de su ventana (ADR-0161).
+*   **Entrada:** Fórmula del usuario (texto/nodos), series de entrada, clase de artefacto.
+*   **Salida:** Series de salida tipadas por clase (OHLC para símbolo; N series para indicador).
+*   **Precondición:** Series de mercado disponibles en el almacén.
+*   **Postcondición:** Artefacto por fórmula disponible, con causalidad verificada.
+
+### **TTR-025: Orquestación de Símbolos Sintéticos — Modo Declarado (ADR-0159)**
+*   **Descripción:** Invoca a [`synthetic-symbols`](../features/synthetic-symbols.md) en modo declarado para materializar el instrumento sintético que el usuario teclea, como una fuente OHLC consumible por la topología (ADR-0158).
+*   **Reglas de Orquestación:**
+    * Conocibilidad por eslabón más débil (mínimo de los cierres de los constituyentes); huecos marcados, nunca forward-fill (ADR-0154).
+    * Compatibilización de escala declarada por el usuario; linaje N-ario con todos los constituyentes.
+*   **Entrada:** Definición del sintético (constituyentes, fórmula, compatibilización).
+*   **Salida:** Símbolo sintético (OHLC) disponible como fuente.
+*   **Precondición:** [`formula-canvas`](../features/formula-canvas.md) disponible (TTR-024).
+*   **Postcondición:** Sintético declarado persistido con linaje N-ario.
 
 ### **TTR-999: Implementación del Protocolo Fail-Fast Safe (ADR-0066)**
 *   **Descripción:** Garantizar que cualquier invocación a componentes de validación o procesamiento intensivo esté gobernada por la cascada de intensidad.

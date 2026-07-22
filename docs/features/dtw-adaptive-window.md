@@ -117,7 +117,7 @@ Es un componente **reutilizable**: cualquier motor que necesite cortar historia 
 *   **¿Qué tiene que pasar?** El sistema entrega la lista de ventanas variables al consumidor y reporta, por tramo, cuánto se expandió o contrajo.
 *   **¿Cómo sé que está hecho?**
     - [ ] El Analizador Walk-Forward consume estas ventanas en lugar de las fijas.
-    - [ ] Veo un Índice de Respiración por tramo en el rastro forense.
+    - [ ] Veo un Índice de Respiración por tramo en el rastro de auditoría.
 
 ### TTR-004: Render observable de la cadencia (UI — Flutter/Impeller)
 *   **¿Cuál es el problema?** El usuario necesita "sentir" dónde el sistema validó denso vs espaciado sin leer una tabla.

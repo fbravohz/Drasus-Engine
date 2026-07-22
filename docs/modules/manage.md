@@ -57,7 +57,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del servicio de gestión |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot de correlaciones agregadas |
@@ -243,7 +243,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** El sistema conoce el límite de exposición exacto por estrategia.
 
 ### **TTR-011: Orquestación de Auditoría Narrativa (Self-Explanation)**
-*   **Descripción:** Invoca a [`strategy-self-explanation`](../features/strategy-self-explanation.md) para generar un reporte forense humano del AST.
+*   **Descripción:** Invoca a [`strategy-self-explanation`](../features/strategy-self-explanation.md) para generar un reporte de auditoría humano del AST.
 *   **Reglas de Orquestación:**
     *   Prohibido usar esta salida para alterar la ejecución técnica. Su fin es exclusivamente documental.
 *   **Entrada:** `validated_strategy_ast`.

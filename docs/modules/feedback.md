@@ -54,7 +54,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del servicio monitor |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico supervisor |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot de la anomalía detectada |
@@ -75,8 +75,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-007 | **EPIC-7** | Métricas institucionales |
 | TTR-008 | **EPIC-7** | Correlación (Signal Correlation Analyzer) |
 | TTR-009 | **EPIC-7** | Avisos (Notification) |
-| TTR-010 | **EPIC-7** | Forense temporal (Time Warp Debugger) |
-| TTR-011 | **EPIC-7** | Sellado forense (Audit Log) |
+| TTR-010 | **EPIC-7** | Repetición de Corrida (revisión de anomalías) |
+| TTR-011 | **EPIC-7** | Sellado de auditoría (Audit Log) |
 | TTR-012 | **EPIC-7** | Reporte robusto (Robust Reporting) |
 | TTR-013 | **EPIC-7** | Monitoreo cinético |
 | TTR-014 | **EPIC-7** | Métricas Autopilot |
@@ -126,7 +126,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`institutional-metrics`](../features/institutional-metrics.md)** — Cálculo de KPIs para análisis de supervivencia.
 - **[`signal-correlation-analyzer`](../features/signal-correlation-analyzer.md)** — Detección de ruptura de diversificación.
 - **[`notification`](../features/notification.md)** — Emisión de recomendaciones y reportes EOD.
-- **[`time-warp-debugger`](../features/time-warp-debugger.md)** — Reproducción forense de eventos pasados para análisis de fallos.
+- **[`run-replay`](../features/run-replay.md)** — Repetición de una corrida pasada para análisis de fallos.
 - **[`duckdb-sql-engine`](../features/duckdb-sql-engine.md)** — Reconciliación masiva Out-of-Core de historiales operativos.
 - **[`audit-log`](../features/audit-log.md)** — Registro inmutable de autopsias de sesión.
 - **[`robust-reporting`](../features/robust-reporting.md)** — Generación de reportes detallados JSON/HTML enriquecidos.
@@ -226,8 +226,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Todos los TTRs de feedback cerrados.
 *   **Postcondición:** Usuario informado.
 
-### **TTR-010: Orquestación Forense Temporal (Time Warp Debugger)**
-*   **Descripción:** Invoca a [`time-warp-debugger`](../features/time-warp-debugger.md) ante una anomalía grave.
+### **TTR-010: Orquestación de Repetición de Corrida**
+*   **Descripción:** Invoca a [`run-replay`](../features/run-replay.md) ante una anomalía grave.
 *   **Reglas de Orquestación:**
     *   Recrea el evento tick-a-tick aislando el `version_node_id`.
 *   **Entrada:** `audit_log_trace`, `anomaly_id`.
@@ -235,7 +235,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Anomalía crítica detectada.
 *   **Postcondición:** Diagnóstico de causa raíz.
 
-### **TTR-011: Orquestación de Sellado Forense (Audit Log)**
+### **TTR-011: Orquestación de Sellado de Auditoría (Audit Log)**
 *   **Descripción:** Invoca a [`audit-log`](../features/audit-log.md) para firmar el veredicto Pardo.
 *   **Reglas de Orquestación:**
     *   Inmutabilidad absoluta del veredicto de supervivencia.

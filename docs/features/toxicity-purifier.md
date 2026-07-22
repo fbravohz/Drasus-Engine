@@ -106,7 +106,7 @@ Provee un panel con un scatter plot PCA 3D nativo y una tabla analítica que det
 
 **Depende de:**
 - [`pca-toxicity-analyzer`](../features/pca-toxicity-analyzer.md) — para la detección inicial de clústeres.
-- [`audit-log`](../features/audit-log.md) — para el registro forense de la purga.
+- [`audit-log`](../features/audit-log.md) — para el registro de auditoría de la purga.
 
 **Bloquea:**
 - [`validate`](../modules/validate.md) — las herramientas de purga de clústeres de validación de base de datos dependen de esta feature.

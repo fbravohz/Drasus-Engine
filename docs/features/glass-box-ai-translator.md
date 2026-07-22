@@ -85,7 +85,7 @@ Es el sistema puente que elimina el "código espagueti" y las "cajas negras" pro
 - **Inundación de Fundaciones (ADR-0020):**
   - **Perfil IA / R&D:** Foco en Identidad + Soberanía IP.
   - Campos a inyectar: Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `version_node_id`, `logic_hash` (para anclar la ecuación simbólica nativa).
-  - **Hooks Forenses:** Registro de varianza entre modelo opaco y ecuación final extraída.
+  - **Hooks de Auditoría:** Registro de varianza entre modelo opaco y ecuación final extraída.
 - **Rastro de Evidencia:** El modelo de explicación textual se almacena en el `test_analysis` persistente para su trazabilidad en el tiempo.
 
 ## 9. Decisión Arquitectónica Asociada

@@ -150,7 +150,7 @@ Toda transacción y cambio de estado del portafolio federado registra los metada
 | | `access_token_id` | Firma de autorización del proceso local |
 | **IV. Hardware** | `node_id` | Identificador único de la máquina local |
 | | `process_id` | PID del hilo del ejecutor reservado (`Core Pinning`) |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia exacta de enrutamiento y validación (<1ms target) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia exacta de enrutamiento y validación (<1ms target) |
 | | `source_signal_id` | Señal de origen del evento federado |
 | | `portfolio_container_id` | Contenedor de portafolio federado (Gobernanza) |
 | | `compliance_status_id` | Veredicto de cumplimiento del ruleset del contenedor |

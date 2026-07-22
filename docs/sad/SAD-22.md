@@ -34,7 +34,7 @@ Principio: *"construye la fontanería una vez, vende el agua de mil formas"* —
 4. **Medición de Uso / Libro de Nocional** — contador de valor nocional USD por ciclo (el motor ya lo calcula); habilita cobro por volumen o flat-fee.
 5. **Consentimiento / ToS** — aceptación versionada y fechada, granular. Columna vertebral legal.
 6. **Eventos de Dominio Enriquecidos** — tipos ricos sobre el bus (ADR-0085/0027): orden con fricción, backtest completado, régimen, drawdown, liquidez, correlación, licencia, registro.
-7. **Motor de Reportes Institucionales** — puerto + plantilla base; habilita stress test, validación, forense, certificación.
+7. **Motor de Reportes Institucionales** — puerto + plantilla base; habilita stress test, validación, análisis de drawdown, certificación.
 8. **API Pública de Terceros** — gRPC público (extiende ADR-0142) con auth + rate limit.
 9. **Anonimización y Agregación** — puerto que anonimiza (ADR-0102) y agrega en índices vendibles.
 
@@ -44,7 +44,7 @@ El **Bus de Eventos Enriquecido** (#6) es la raíz: sin eventos estructurados no
 
 ### 22.5 Clasificación de modelos de monetización
 
-- **Cimiento ahora / adaptador después:** los nueve + reportes institucionales (stress test, validación-herramienta, certificación, forense) + feeds agregados (régimen, fricción de bróker, correlación, liquidez).
+- **Cimiento ahora / adaptador después:** los nueve + reportes institucionales (stress test, validación-herramienta, certificación, análisis de drawdown) + feeds agregados (régimen, fricción de bróker, correlación, liquidez).
 - **Moonshots (etiquetados "zizaña"):** PFOF/venta de flujo, Capital Allocation Platform, firma de validación regulatoria acreditada.
 - **Descartado (veneno reputacional):** venta de flujo retail identificable para front-running contra los propios usuarios.
 - **Ya diseñados (asegurar que emitan a estos puertos):** La Colmena, Marketplace de Cajas Negras, Copy-Trading, Collective Intelligence, Transpiler, Microestructura L3.

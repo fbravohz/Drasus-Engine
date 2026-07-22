@@ -56,7 +56,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del servicio de auditoría |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de supervivencia (ReasonCode) |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot técnico |

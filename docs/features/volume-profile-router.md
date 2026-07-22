@@ -84,7 +84,7 @@ Híbrido: Perfil C (veto de liquidez <0.5ms) + linaje III legítimo (reproducibi
 | | `version_node_id` | Versión de la política de riesgo |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del proceso de ejecución |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia del veto de liquidez (hot-path) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia del veto de liquidez (hot-path) |
 | | `source_signal_id` | Señal entrante que disparó el ruteo |
 | | `indicator_state_hash` | Snapshot del perfil de volumen T-0 (Grupo V) |
 

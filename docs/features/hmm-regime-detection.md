@@ -88,7 +88,7 @@ Híbrido: Perfil B (IA/R&D, lleva linaje III) + latencia V legítima (clasificac
 | | `parent_id` | ID del Alpha Blueprint orquestador (linaje jerárquico) |
 | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
 | | `process_id` | PID del proceso de clasificación |
-| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de decodificación L1 (Hot-path ≤20ms) |
+| **V. Auditoría & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de decodificación L1 (Hot-path ≤20ms) |
 | | `compliance_status_id` | Veredicto de Liquidez/Estancamiento (Veto ARIMA) |
 | | `indicator_state_hash` | Vector de estados (α, β) del filtro dinámico |
 

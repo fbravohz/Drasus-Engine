@@ -69,7 +69,7 @@ Es el guardian de la calidad de datos de Drasus Engine y el cerebro del Módulo 
 ### **TTR-002: Algoritmo de Gap Detection e Interpolación**
 - Desarrolla la detección de discontinuidades temporales (Gap Infusion) y el motor de relleno lineal (Forward Fill).
 
-### **TTR-003: Validador Forense de Sanidad (Sanity Audit)**
+### **TTR-003: Validador de Sanidad (Sanity Audit)**
 - **Descripción:** Genera estadísticas de salud del dataset (ej: "% de outliers eliminados", "% de gaps rellenados").
 - **Postcondición:** Persistencia de metadatos en `data_inventory` con hash de integridad.
 

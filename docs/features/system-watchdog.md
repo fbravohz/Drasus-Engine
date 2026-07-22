@@ -101,7 +101,7 @@ Toda alerta de riesgo y ejecución de Kill Switch registra el set de relevancia 
 | | `access_token_id` | Token de autorización de pánico |
 | **IV. Hardware** | `node_id` | ID del hardware físico supervisor |
 | | `process_id` | PID del watchdog independiente |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Reacción al pánico (milisegundos) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Reacción al pánico (milisegundos) |
 | | `heartbeat_latency_ms` | Variante específica: latencia del último latido detectado; medida derivada de `execution_latency_ms` aplicada al heartbeat |
 
 - **Decisión Arquitectónica Asociada:**

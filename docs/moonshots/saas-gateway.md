@@ -110,6 +110,6 @@ El Gateway central de acceso regula los flujos de comunicación externa en la nu
 * **Local-First (ADR-0016):** No aplica a esta feature de nube (exclusivo para modelo distribuido comercial SaaS).
 * **Inundación de Fundaciones (ADR-0020):**
   * **Perfil Ops / Auditoría:** Enfoque en la Soberanía de los Datos de Acceso, Identidad de Conexión y Hardware del Gateway.
-  * **Hooks Forenses:** Registro inmutable de eventos de acceso denegado por IP y usuario con marcas de tiempo.
+  * **Hooks de Auditoría:** Registro inmutable de eventos de acceso denegado por IP y usuario con marcas de tiempo.
 * **Contrato de Persistencia:**  
   La bitácora de accesos del Gateway se guarda en base de datos en la nube y se procesa para análisis de telemetría de seguridad.

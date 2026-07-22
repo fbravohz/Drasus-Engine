@@ -107,6 +107,6 @@ Híbrido: Perfil C (Ops/Hot-Path) + linaje III legítimo (snapshot DOM/tick repr
 | **III. Linaje (híbrido)** | `data_snapshot_id` | Snap del libro de órdenes (DOM) en el momento del trade |
 | **IV. Hardware** | `node_id` | ID del hardware físico (Network Interface Card) |
 | | `process_id` | PID del motor de ticks |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de actualización del DOM / Pipeline (hot-path) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia de actualización del DOM / Pipeline (hot-path) |
 | | `source_signal_id` | Señal/tick de origen del snapshot |
 | | `indicator_state_hash` | Estado del CVD y VWAP en la ejecución (Grupo V) |

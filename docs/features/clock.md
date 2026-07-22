@@ -130,7 +130,7 @@ El Clock es un puerto inyectado que proporciona el tiempo actual a cualquier mó
 ### Persistencia y Perfil de Auditoría
 El reloj NO tiene persistencia propia. Sus eventos auditables se emiten a través de la bitácora existente (`audit-log`, STORY-004) usando su interfaz `AuditEventContent` y su repositorio append-only — NO se crea una tabla nueva. Los timestamps que esos eventos llevan (`created_at`) los inyecta el propio reloj vía el puerto `Clock`, igual que para cualquier otro emisor.
 
-- **Perfil Técnico (ADR-0020): D — Ops/Auditoría.** Los eventos del reloj son registro forense de sincronía/reconciliación temporal; encajan en el mismo perfil que `audit-log` (Grupo I universal + Grupo II Soberanía + Grupo IV Infraestructura). Los Grupos III (Linaje Alpha) y V (Forense de Ejecución) NO aplican y se omiten. PROHIBIDO copy-paste de los 25 campos.
+- **Perfil Técnico (ADR-0020): D — Ops/Auditoría.** Los eventos del reloj son registro de auditoría de sincronía/reconciliación temporal; encajan en el mismo perfil que `audit-log` (Grupo I universal + Grupo II Soberanía + Grupo IV Infraestructura). Los Grupos III (Linaje Alpha) y V (Auditoría de Ejecución) NO aplican y se omiten. PROHIBIDO copy-paste de los 25 campos.
 - **Campos del catálogo que lleva cada evento del reloj** (los que `AuditEventContent` ya expone para el Perfil D):
     - Grupo I (lo asigna la bitácora al persistir): `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - Grupo II: `institutional_tag` (obligatorio), `owner_id`/`manifest_id`/`access_token_id` (opcionales).

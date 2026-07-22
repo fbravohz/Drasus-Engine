@@ -11,7 +11,7 @@
 
 ## ¿Qué es esta feature?
 
-El puerto que consume resultados del guantelete de validación/ejecución (ya existente) y produce **reportes institucionales** con firma de integridad, plantilla y trazabilidad al audit-log. Ahora se entrega el **puerto + una plantilla base**; el catálogo de reportes (stress test, validación, forense, certificación) son adaptadores posteriores (moonshot `institutional-report-products`).
+El puerto que consume resultados del guantelete de validación/ejecución (ya existente) y produce **reportes institucionales** con firma de integridad, plantilla y trazabilidad al audit-log. Ahora se entrega el **puerto + una plantilla base**; el catálogo de reportes (stress test, validación, análisis de drawdown, certificación) son adaptadores posteriores (moonshot `institutional-report-products`).
 
 - **Problema:** el día que un fondo pida un reporte de stress test, no se puede decir "dame tres meses para construir el generador". Si el motor ya produce los datos, el reporte es solo una plantilla.
 - **Comportamiento observable:** dado un resultado de validación/ejecución, produce un documento institucional (PDF/HTML/JSON) firmado y trazable.
@@ -72,7 +72,7 @@ Un documento institucional firmado y trazable, en el formato pedido.
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el reporte se genera donde están los datos (plano de ejecución); puede exponerse por la API de terceros.
-- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II) + subset V (`signature_hash`, `compliance_status_id`).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II) + subset V (`signature_hash`, `compliance_status_id`).
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
 

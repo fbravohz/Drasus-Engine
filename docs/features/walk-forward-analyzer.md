@@ -65,7 +65,7 @@ Su propósito principal es el **Out-of-Sample (OOS) Blind Validation**: Validaci
 ### TTR-003: Cálculo de Robustez Estadística (WFE, OSE y PBO)
 *   **Descripción:** Cálculo de eficiencia WFE ($WFE = OOS_{ret} / IS_{ret}$) y PBO (Probability of Overfitting).
 *   **Criterio de Éxito:** Una estrategia "aprueba" si PBO < 0.50 y WFE > WFE_Threshold (configurable, defecto 0.5).
-*   **Postcondición:** Registro del veredicto `PASS/FAIL` en el rastro forense.
+*   **Postcondición:** Registro del veredicto `PASS/FAIL` en el rastro de auditoría.
 
 ### TTR-004: Portfolio Walk-Forward Analysis
 *   **Descripción:** Extiende el motor de slicing para validar conjuntos de estrategias (Portfolios) iterando linealmente.
@@ -82,7 +82,7 @@ Su propósito principal es el **Out-of-Sample (OOS) Blind Validation**: Validaci
 ### TTR-007: Orquestación de Segmentación Adaptativa (Matriz Orgánica)
 *   **Descripción:** Sustituye el slicing por bloques de calendario fijo por la segmentación adaptativa de [`dtw-adaptive-window`](./dtw-adaptive-window.md) cuando el usuario activa el modo "Matriz Orgánica".
 *   **Entrada → Invocación:** El WFA entrega historial y la configuración de pivotes; invoca el puerto de la feature y recibe la lista de ventanas de tamaño variable por régimen.
-*   **Criterio de Éxito:** El WFA valida sobre ventanas que respiran (anchas en tendencia, densas en crisis) en lugar de bloques fijos, y registra el Índice de Respiración por tramo en el rastro forense.
+*   **Criterio de Éxito:** El WFA valida sobre ventanas que respiran (anchas en tendencia, densas en crisis) en lugar de bloques fijos, y registra el Índice de Respiración por tramo en el rastro de auditoría.
 *   **Regla:** La segmentación adaptativa NUNCA altera el historial pasado (misma invariante anti-curve-fitting del WFA).
 
 ### TTR-008: WFA Segmentado por Régimen — Compuerta de Robustez del Genoma de Régimen y Filtro de Entorno (ADR-0108/ADR-0110)

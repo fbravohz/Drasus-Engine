@@ -93,7 +93,7 @@ Toda restauración de sesión de emergencia registra el set de relevancia técni
 | | `compliance_status_id` | Código de veredicto del reconciliador |
 | **IV. Hardware** | `node_id` | Identificador del hardware físico local |
 | | `process_id` | PID del daemon LiveNode |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia de la operación de recuperación (subset Latencia) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia de la operación de recuperación (subset Latencia) |
 | | `recovery_latency_ms` | Variante específica: tiempo total de reconciliación (Target <= 10s); medida derivada de `execution_latency_ms` aplicada al flujo de recuperación |
 
 ---

@@ -56,7 +56,7 @@ Al crear o refactorizar cualquier entidad de persistencia (Tabla, Archivo Parque
 
     > **Ejemplo concreto (dos capas que NO deben confundirse):** la tabla `foundation_master_fields` (migración 0001) es el **catálogo de referencia** con las 25 columnas — existe UNA sola vez en todo el sistema, no se replica. Las tablas propias de cada módulo/feature (ADR-0003: cada módulo es dueño de sus tablas) NUNCA tienen esas 25 columnas; tienen sus columnas de dominio + el Grupo I completo (6 columnas, universal) + solo los campos concretos de su Perfil Técnico. Ej: la tabla de `adaptive-volume-indicators` (Perfil B / IA-R&D) lleva sus valores de indicador + Grupo I + (`owner_id`, `institutional_tag`, `manifest_id` de II) + (`logic_hash`, `data_snapshot_id`, `indicator_state_hash`, `version_node_id` de III) + (`node_id`, `process_id`, `execution_latency_ms` de IV) — nada de Grupo V, porque su perfil no lo cubre.
 
-2.  **Hooks Forenses:** Definir el rastro de evidencia específico (latencias, estados internos) para alimentar el módulo de `feedback`.
+2.  **Hooks de Auditoría:** Definir el rastro de evidencia específico (latencias, estados internos) para alimentar el módulo de `feedback`.
 3.  **Soberanía Multi-tenant:** Asegurar que `institutional_tag` y `owner_id` están correctamente mapeados en la capa de interacción (Shell).
 
 ### Resumen Visual

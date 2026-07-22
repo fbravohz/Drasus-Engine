@@ -58,7 +58,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del worker de validación |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico (CPU/GPU) |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo (APROBADA/RECHAZADA/REVISAR) |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot de métricas evaluadas |
@@ -77,7 +77,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-011 | **EPIC-2** | Validación de sizing (Backtest Calibration) |
 | TTR-019 | **EPIC-2** | KPIs (Institutional Metrics) |
 | TTR-020 | **EPIC-2** | Certificación (Strategy Versioning) |
-| TTR-021 | **EPIC-2** | Auditoría forense (Audit Log) |
+| TTR-021 | **EPIC-2** | Auditoría (Audit Log) |
 | TTR-024 | **EPIC-2** | Eficiencia del modelo (Perfect Profit Benchmark) |
 | TTR-062 | **EPIC-2** | Acceso agéntico MCP (Cabina Dual) |
 | TTR-063 | **EPIC-2** | Procedencia de la corrida + N del DSR (Expedition Ledger, ADR-0150) |
@@ -128,7 +128,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-049 | EPIC-8 | Visor de diferencias (Strategy Config Diff) |
 | TTR-050 | EPIC-8 | Suite BI de análisis (Trade Analysis BI Suite) |
 | TTR-051 | EPIC-8 | Generador de gráficos PDF (PDF Charts Rendering) |
-| TTR-052 | EPIC-8 | Navegación temporal (Time-Warp UI) |
+| TTR-052 | EPIC-8 | Navegación temporal (Repetición de Corrida) |
 | TTR-053 | EPIC-8 | Exploración multidimensional (UMAP Scatter Plot) |
 | TTR-054 | EPIC-8 | Purga de clústeres tóxicos (Toxicity Purifier) |
 | TTR-999 | **EPIC-4** | Protocolo Fail-Fast Safe (ADR-0066) |
@@ -211,7 +211,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`cross-filtering-visualizer`](../features/cross-filtering-visualizer.md)** — Histogramas interactivos coordinados de múltiples parámetros.
 - **[`autoencoder-outlier-detector`](../features/autoencoder-outlier-detector.md)** — Detección de trades anómalos mediante reconstrucción neuronal profunda (ADR-0074).
 - **[`design-manifest`](../features/design-manifest.md)** — Contratos de metas SMART y validación de calidad final (ADR-0053).
-- **[`time-warp-debugger`](../features/time-warp-debugger.md)** — Navegación temporal ultra-rápida y depuración forense mediante DuckDB Partition Pruning.
+- **[`run-replay`](../features/run-replay.md)** — Navegación temporal ultra-rápida y depuración mediante DuckDB Partition Pruning.
 - **[`umap-scatter-visualizer`](../features/umap-scatter-visualizer.md)** — Visualizador interactivo GPU de estabilidad en nubes de puntos UMAP.
 - **[`toxicity-purifier`](../features/toxicity-purifier.md)** — Panel de control y purga de clústeres tóxicos PCA con snapshots.
 - **[`interactive-stress-lab`](../features/interactive-stress-lab.md)** — Deformación táctil de la curva de capital en tiempo real (sliders de fricción y macro).
@@ -416,7 +416,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Veredicto definitivo.
 *   **Postcondición:** Estrategia sellada en el DAG.
 
-### **TTR-021: Orquestación Forense (Audit Log)**
+### **TTR-021: Orquestación de Auditoría (Audit Log)**
 *   **Descripción:** Invoca a [`audit-log`](../features/audit-log.md) para firmar los tests.
 *   **Reglas de Orquestación:**
     *   Genera el `audit_hash` del log completo de validación.
@@ -760,10 +760,10 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Veredicto final de robustez calculado.
 *   **Postcondición:** Archivo PDF guardado físicamente y disponible.
 
-### **TTR-052: Orquestación de Navegación Temporal (Time-Warp UI)**
+### **TTR-052: Orquestación de Navegación Temporal (Repetición de Corrida)**
 *   **Descripción:** Orquestar la consulta y carga ultra-rápida de transacciones históricas filtradas por fecha mediante partition pruning sobre el data lake Parquet particionado.
 *   **Reglas de Orquestación:**
-    *   Invoca a [`time-warp-debugger`](../features/time-warp-debugger.md) al cambiar el rango de fechas en la UI.
+    *   Invoca a [`run-replay`](../features/run-replay.md) al cambiar el rango de fechas en la UI.
     *   Gestiona la poda de directorios Hive-style de forma transparente delegando la consulta a DuckDB en Rust y retornando Arrow tables.
     *   Los metadatos se registran conforme al perfil Ops / Auditoría (ADR-0020).
 *   **Entrada:** `pipeline_id`, `generation`, `start_date`, `end_date`.
@@ -792,7 +792,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Entrada:** `databank_path`, `family_label_to_purge` (ex `cluster_label_to_purge`, ADR-0153), `rollback_snapshot_id` (opcional).
 *   **Salida:** `toxicity_clusters_list`, `purge_status` (SUCCESS | ROLLBACK_SUCCESS), `new_snapshot_id`.
 *   **Precondición:** Módulo `validate` con análisis PCA completado.
-*   **Postcondición:** Databank limpio de clústeres tóxicos y logs forenses registrados.
+*   **Postcondición:** Databank limpio de clústeres tóxicos y logs de auditoría registrados.
 
 ### **TTR-059: Orquestación de Compuertas de Robustez por Dominio Genómico (ADR-0108)**
 *   **Descripción:** Generaliza el Guantelete de Robustez (TTR-004) para incorporar las Compuertas de Robustez bloqueantes de cada dominio del Registro de Dominios Genómicos (ADR-0108) presente en `ACTIVE_GENOME_DOMAINS`. Cuando hay más de un dominio distinto de Señal activo, **todas** sus compuertas corren — sin exclusión mutua, todas son bloqueantes de forma independiente.

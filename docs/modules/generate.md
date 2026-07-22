@@ -58,7 +58,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del worker de generación |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico (CPU/GPU) |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot de fitness consolidado |
@@ -83,7 +83,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-026 | **EPIC-3** | Ajuste fino (Parameter Optimization) |
 | TTR-027 | **EPIC-3** | Desacople (Async Job Executor) |
 | TTR-028 | **EPIC-3** | Indicadores dinámicos (Adaptive Volume) |
-| TTR-030 | **EPIC-3** | Auditoría forense R&D (Audit Log) |
+| TTR-030 | **EPIC-3** | Auditoría R&D (Audit Log) |
 | TTR-035 | **EPIC-3** | Registro de intentos N para DSR |
 | TTR-040 | **EPIC-3** | Registro de dominios genómicos (ADR-0108) |
 | TTR-003 | **EPIC-3** | Detección de régimen awareness (HMM) |
@@ -98,6 +98,8 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-043 | **EPIC-3** | Mapa de exposición evento→activo (Asset Exposure Map) |
 | TTR-044 | **EPIC-3** | Proyección a indicador fundamental (Fundamental Indicator Projector) |
 | TTR-045 | **EPIC-3** | Objetivo de frecuencia/horizonte de operación (ADR-0130) |
+| TTR-046 | **EPIC-3** | Topología de fuentes y destinos (signal-topology, ADR-0158) |
+| TTR-047 | **EPIC-3** | Modo evolucionado de síntesis de símbolos (synthetic-symbols, ADR-0159) |
 | TTR-999 | **EPIC-3** | Protocolo Fail-Fast Safe (ADR-0066) |
 | TTR-004 | EPIC-4 | Test de canasta (Universal Basket) |
 | TTR-005 | EPIC-4 | Optimización bayesiana (Intelligent Fine-Tuning) |
@@ -307,7 +309,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`strategy-ensemble`](../features/strategy-ensemble.md) para desacoplar modelos direccionales.
 *   **Reglas de Orquestación:**
     * Permite que el motor evolutivo asigne parámetros diferentes para Largos y Cortos (ADR-0041).
-    * Inyecta el `source_signal_id` en el rastro forense de la candidata.
+    * Inyecta el `source_signal_id` en el rastro de auditoría de la candidata.
 *   **Entrada:** `causal_verified_strategies`, `asymmetry_config`.
 *   **Salida:** `asymmetric_ensemble_candidates`.
 *   **Precondición:** TTR-006 finalizado.
@@ -319,7 +321,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Configura el motor [`nsga2-optimizer`](../features/nsga2-optimizer.md) en modo `metamorphic` durante la evolución.
 *   **Reglas de Orquestación:**
     - Sincroniza los pesos de fitness con el `institutional_tag` del experimento (ADR-0042).
-    - Registra el `logic_hash` del modo activo en el rastro forense.
+    - Registra el `logic_hash` del modo activo en el rastro de auditoría.
 *   **Entrada:** `experiment_config`, `account_status_mock` (para simulación).
 *   **Salida:** `context_aware_candidates`.
 
@@ -450,7 +452,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** AST complejo o recursivo.
 *   **Postcondición:** Resiliencia de la granja de servidores.
 
-### **TTR-030: Orquestación Forense R&D (Audit Log)**
+### **TTR-030: Orquestación de Auditoría R&D (Audit Log)**
 *   **Descripción:** Invoca a [`audit-log`](../features/audit-log.md) para certificar el experimento.
 *   **Reglas de Orquestación:**
     *   Firma todo el bloque evolutivo (Semillas base y resultados de fitness).
@@ -625,6 +627,28 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Salida:** Frontera Pareto con estrategias del horizonte pedido y validez estadística (scalping ↔ swing ↔ posición ↔ ticks).
 *   **Precondición:** Datos multiactivo disponibles desde `ingest`.
 *   **Postcondición:** Candidatos coherentes con la frecuencia/horizonte declarados, listos para `validate`.
+
+### **TTR-046: Orquestación de Topología de Fuentes y Destinos (ADR-0158)**
+*   **Descripción:** Invoca a [`signal-topology`](../features/signal-topology.md) para que el motor evolutivo genere y evalúe estrategias que leen señales de N fuentes (símbolo × timeframe, propias/ajenas/sintéticas) y ejecutan en N destinos, sin "mercado principal".
+*   **Reglas de Orquestación:**
+    * La conocibilidad de cada fuente se resuelve por reloj (cierre `≤ t`); una fuente sin barra conocible se marca "sin dato", nunca se rellena (ADR-0154).
+    * Las elecciones de fuente y destino cuentan como grados de libertad en [`complexity-penalization`](../features/complexity-penalization.md) y en el N del sesgo de selección (ADR-0151); acotadas por `MAX_SIGNAL_SOURCES`/`MAX_EXECUTION_DESTINATIONS`.
+    * La ejecución en N destinos pasa por el riesgo agregado de cartera (ADR-0111).
+*   **Entrada:** Definición de estrategia con arrays de Fuentes y Destinos; series de las fuentes.
+*   **Salida:** Candidatas multi-fuente/multi-destino evaluadas, listas para `validate`.
+*   **Precondición:** TASK-059 cerrada con alcance de toda fuente; datos multi-fuente disponibles desde `ingest`.
+*   **Postcondición:** Población con topología declarada y sesgo de selección contabilizado.
+
+### **TTR-047: Orquestación del Modo Evolucionado de Síntesis de Símbolos (ADR-0159)**
+*   **Descripción:** Invoca a [`synthetic-symbols`](../features/synthetic-symbols.md) en modo evolucionado para que el motor genético descubra combinaciones de símbolos por sí mismo (programación genética sobre árboles de expresión, ADR-0113 promovido a motor activo), usando [`formula-canvas`](../features/formula-canvas.md) para compilar las fórmulas.
+*   **Reglas de Orquestación:**
+    * Control de *bloat* algebraico con `egg` y presión de parsimonia en la selección; tope `MAX_SYNTHETIC_COMPLEXITY`.
+    * Cada sintético evolucionado cuenta como ensayo; el N de la estrategia consumidora se reconstruye por linaje (ADR-0151, regla #2).
+    * **Precondición de lanzamiento:** DEBT-020 (`N_eff` por clustering) pagada — sin ella el conteo de casi-duplicados es incorrecto.
+*   **Entrada:** Universo de símbolos constituyentes; catálogo de operaciones del lienzo.
+*   **Salida:** Símbolos sintéticos descubiertos, disponibles como fuentes en la topología.
+*   **Precondición:** DEBT-020 pagada; `formula-canvas` disponible.
+*   **Postcondición:** Sintéticos evolucionados con linaje N-ario registrado.
 
 ---
 

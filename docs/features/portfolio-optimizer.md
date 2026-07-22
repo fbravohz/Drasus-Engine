@@ -255,7 +255,7 @@ Cada reporte de rebalanceo y sesión de optimización registra el set de relevan
 | | `version_node_id` | Identificador del portafolio en el DAG de versiones |
 | **IV. Hardware** | `node_id` | ID único del hardware físico ejecutor |
 | | `process_id` | PID del daemon de rebalanceo |
-| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo del rebalanceo / cointegración (<2ms) |
+| **V. Auditoría & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo del rebalanceo / cointegración (<2ms) |
 | | `indicator_state_hash` | Snapshot del vector de pesos resultantes (Grupo V) |
 | | `portfolio_container_id` | Agrupador del portafolio optimizado (Gobernanza) |
 

@@ -88,7 +88,7 @@ Un registro multi-cuenta y, por cuenta, un track record verificado con su ámbit
 ## Gobernanza y Estándares (Fijos)
 
 - **Local-First (ADR-0016 enmendado por ADR-0143):** el track record se calcula donde están los datos (Plano de Ejecución); solo el resultado publicado (opt-in) viaja al servidor central. La conexión read-only y sus credenciales nunca salen del Plano de Ejecución.
-- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría/Forense)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V (`signature_hash` del track atestado).
+- **Inundación de Fundaciones (ADR-0020):** Grupo I completo + **Perfil D (Ops/Auditoría)**: Identidad(I) + Soberanía(II: `owner_id`, `institutional_tag`) + Hardware(IV: `node_id`) + subset V (`signature_hash` del track atestado).
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
 

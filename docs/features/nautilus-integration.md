@@ -80,7 +80,7 @@ Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de
 | `signature_hash` | VARCHAR | Firma de integridad del mensaje de puente |
 | `execution_latency_ms` | DOUBLE | Latencia del puente (NT Event → QF Event) |
 | `source_signal_id` | UUID | ID de la señal original |
-| `audit_hash` | VARCHAR | Verificación forense final |
+| `audit_hash` | VARCHAR | Verificación de integridad final |
 | `version_node_id` | UUID | Versión de la rama Git-like activa |
 
 ## Gobernanza y Estándares (Fijos)

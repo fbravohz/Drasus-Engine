@@ -133,7 +133,7 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
   | **I. Identidad** | `id` | Identificador único de la decisión de permiso |
   | | `created_at` | Timestamp de la llamada |
   | | `updated_at` | Timestamp de última modificación del registro |
-  | | `audit_hash` | Hash forense de la llamada (pipeline + parámetros + resultado) |
+  | | `audit_hash` | Hash de auditoría de la llamada (pipeline + parámetros + resultado) |
   | | `audit_chain_hash` | Hash encadenado del historial de decisiones de permiso |
   | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
   | **II. Soberanía** | `owner_id` | Propietario que controla el interruptor de producción |
@@ -150,7 +150,7 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
 | **I. Identidad** | `id` | Identificador de la decisión de permiso |
 | | `created_at` | Timestamp de la llamada |
 | | `updated_at` | Timestamp de última modificación |
-| | `audit_hash` | Hash forense de la llamada |
+| | `audit_hash` | Hash de auditoría de la llamada |
 | | `audit_chain_hash` | Hash encadenado del historial |
 | | `event_sequence_id` | Secuencia de recuperación |
 | **II. Soberanía** | `owner_id` | Propietario del interruptor |

@@ -134,8 +134,8 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
   * **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, **`row_version`**. Tabla **mutable** (el heartbeat refresca la validez en sitio) → `row_version` para concurrencia optimista, NO `event_sequence_id UNIQUE` (ese patrón es solo para tablas append-only; ADR-0141). El historial de cambios de licencia va al `audit-log` existente, no a esta tabla.
   * **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `access_token_id`.
   * **IV. Infraestructura & Ops:** `node_id` (huella de hardware), `process_id`.
-  * **V. Forense (Gobernanza):** `signature_hash` (firma de hardware), `compliance_status_id` (estado de la licencia).
-  * **Hooks Forenses:** Registro de intentos fallidos de validación de firma de hardware en el log local protegido.
+  * **V. Auditoría (Gobernanza):** `signature_hash` (firma de hardware), `compliance_status_id` (estado de la licencia).
+  * **Hooks de Auditoría:** Registro de intentos fallidos de validación de firma de hardware en el log local protegido.
 * **Contrato de Persistencia:**  
   Los metadatos de la licencia se guardan cifrados en el almacén local del sistema utilizando claves derivadas de la huella digital.
 

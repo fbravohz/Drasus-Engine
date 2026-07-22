@@ -25,7 +25,7 @@ Drasus Engine es **infraestructura soberana** para el descubrimiento automático
 | **Throughput Backtest** | Medible y demostrablemente más rápido que MT5, SQX y QuantConnect en la misma máquina (ADR-0114; sin KPI absoluto) | Posibilita exploración masiva. |
 | **Live Order Latency** | ≤100ms (end-to-end) | Ejecución competitiva. |
 | **PBO (Backtest Overfitting)** | ≤0.10 (Configurable) | Garantiza que el Alpha no es suerte. |
-| **Reproducibilidad** | 100% bit-a-bit | Auditoría forense y científica. |
+| **Reproducibilidad** | 100% bit-a-bit | Auditoría y científica. |
 
 ---
 

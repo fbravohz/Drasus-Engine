@@ -88,7 +88,7 @@ Es el motor analítico central de Drasus Engine para **Procesamiento Analítico 
     - **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash` (del archivo consultado), `audit_chain_hash`, `event_sequence_id`.
     - **III. Linaje:** `data_snapshot_id` (del mercado, para asegurar que el análisis se hizo sobre datos inalterados).
     - **IV. Hardware:** `node_id`, `process_id`.
-    - **Hooks Forenses:** Registra el `data_snapshot_id` del mercado para asegurar que el análisis se hizo sobre datos inalterados.
+    - **Hooks de Auditoría:** Registra el `data_snapshot_id` del mercado para asegurar que el análisis se hizo sobre datos inalterados.
 - **Contrato de Persistencia:** Interactúa con archivos Parquet (Historical Bars / Fact Tables).
 
 ## Dependencias y Bloqueantes

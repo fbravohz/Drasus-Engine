@@ -96,7 +96,7 @@ Aplica el Grupo I (universal) + solo los campos de su Perfil Técnico (Filtro de
 | `signature_hash` | VARCHAR | Firma digital del paquete (si aplica) |
 | `execution_latency_ms` | DOUBLE | Latencia medida de serialización |
 | `source_signal_id` | UUID | ID de la señal que disparó la transmisión |
-| `audit_hash` | VARCHAR | Hash de verificación forense |
+| `audit_hash` | VARCHAR | Hash de verificación de integridad |
 | `version_node_id` | UUID | Hash del nodo en el DAG de versiones |
 
 ## Gobernanza y Estándares (Fijos)

@@ -8,7 +8,7 @@
 
 ## ¿Qué es?
 
-El Audit Event Store es el historial inmutable de vida de todas las decisiones, señales y órdenes del sistema. Implementa el patrón **Event Sourcing (SQX Mod 5.3.5)**: el estado actual del inventario no es una tabla estática, sino el resultado de reproducir todos los eventos previos. Su misión es la **Resiliencia Operativa** y la **Auditoría Forense**.
+El Audit Event Store es el historial inmutable de vida de todas las decisiones, señales y órdenes del sistema. Implementa el patrón **Event Sourcing (SQX Mod 5.3.5)**: el estado actual del inventario no es una tabla estática, sino el resultado de reproducir todos los eventos previos. Su misión es la **Resiliencia Operativa** y la **Auditoría**.
 
 ---
 
@@ -18,7 +18,7 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 - [ ] **Inventory Reconstruction:** Tras un crash, el sistema lee el Event Store para recuperar órdenes abiertas y posiciones de broker en < 10s.
 - [ ] **User Veto Power (REVERT):** El usuario puede revertir cualquier acción ejecutada automáticamente por el Autopilot desde el Dashboard.
 - [ ] **Auto-Auditoría (P1):** Compara spreads reales en el momento del evento contra spreads esperados históricos (Pardo Profile).
-- [ ] **Compliance Ready:** Exporta el historial forense en formatos legibles para reguladores (ADR-0020).
+- [ ] **Compliance Ready:** Exporta el historial de auditoría en formatos legibles para reguladores (ADR-0020).
 
 ---
 
@@ -50,7 +50,7 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020 · Perfil D Ops/Auditoría)
 
-Es el registro forense en sí. Perfil D (Auditoría = I + II + IV + V Gobernanza/Cumplimiento):
+Es el registro de auditoría en sí. Perfil D (Auditoría = I + II + IV + V Gobernanza/Cumplimiento):
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
@@ -65,7 +65,7 @@ Es el registro forense en sí. Perfil D (Auditoría = I + II + IV + V Gobernanza
 | **IV. Hardware** | `node_id` | ID del hardware físico de escritura |
 | | `process_id` | PID del escritor de eventos |
 | | `session_id` | Sesión operativa global |
-| **V. Forense (Gobernanza)** | `risk_audit_id` | Ticket de riesgo asociado al evento |
+| **V. Auditoría (Gobernanza)** | `risk_audit_id` | Ticket de riesgo asociado al evento |
 | | `signature_hash` | Firma HMAC del evento sellado |
 
 ---

@@ -37,4 +37,4 @@
 
 ## Notas de diseño
 
-- El estado *actual* del interruptor de producción vive aparte, en `mcp_gateway_config` — esta tabla es el log forense de decisiones, no el estado vigente.
+- El estado *actual* del interruptor de producción vive aparte, en `mcp_gateway_config` — esta tabla es el log de auditoría de decisiones, no el estado vigente.

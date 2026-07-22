@@ -49,5 +49,5 @@ Se inyecta mediante el objeto `PropFirmComplianceConfig`. Aquí algunos perfiles
     - **I. Identidad & Integridad (Grupo I completo):** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`.
     - **IV. Infraestructura & Ops:** `node_id`, `process_id`.
-    - **V. Forense (Gobernanza):** `compliance_status_id` (veredicto final), `risk_audit_id` (razón del rechazo si aplica), `portfolio_container_id` (cuenta de fondeo evaluada).
+    - **V. Auditoría (Gobernanza):** `compliance_status_id` (veredicto final), `risk_audit_id` (razón del rechazo si aplica), `portfolio_container_id` (cuenta de fondeo evaluada).
 - **Dependencias:** Utilizado primordialmente en `validate`, `execute` y `withdraw`.

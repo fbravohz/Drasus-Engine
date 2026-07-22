@@ -105,6 +105,6 @@ El sistema de monetización conecta el ecosistema de facturación externa (Strip
 * **Local-First (ADR-0016):** No aplica. Feature de control centralizado de facturación en la nube.
 * **Inundación de Fundaciones (ADR-0020):**
   * **Perfil Ops / Auditoría:** Foco en la Soberanía de los Datos Financieros y la Identidad de Facturación.
-  * **Hooks Forenses:** Registro de reintentos de webhooks y discrepancias de facturación en la base de datos analítica del backend de la nube.
+  * **Hooks de Auditoría:** Registro de reintentos de webhooks y discrepancias de facturación en la base de datos analítica del backend de la nube.
 * **Contrato de Persistencia:**  
   La base de datos relacional de la nube registra de forma permanente las marcas temporales de inicio de ciclo de facturación, cancelaciones y uso diario de cómputo.

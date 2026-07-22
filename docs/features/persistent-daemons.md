@@ -89,7 +89,7 @@ Daemon de ejecución real (core pinning, latencia crítica) → Perfil C (I + II
 | **IV. Hardware** | `node_id` | ID del hardware físico (núcleo fijado / core pinning) |
 | | `process_id` | PID del daemon persistente |
 | | `session_id` | Agrupación de runtime |
-| **V. Forense & Ejecución (latencia)** | `execution_latency_ms` | Latencia de ciclo del daemon en hot-path |
+| **V. Auditoría & Ejecución (latencia)** | `execution_latency_ms` | Latencia de ciclo del daemon en hot-path |
 | | `source_signal_id` | Señal/evento de mercado procesado |
 
 - **Rastro de Evidencia:** Emite heartbeats y latencias de ciclo al módulo `feedback`.

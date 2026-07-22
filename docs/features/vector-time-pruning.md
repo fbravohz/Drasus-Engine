@@ -53,7 +53,7 @@ Convierte datos estadísticos anómalos (positivos o negativos) en vetos físico
 
 ### TTR-004: Generalización del Veto Vectorial a Máscara Evolutiva de Régimen (ADR-0108/ADR-0110)
 - **Descripción:** Documentar y exponer la interfaz de "Veto Vectorial" (`is_vetoed(bar) -> bool`) como el contrato compartido que también implementa la máscara Permitido/Prohibido del Genoma de Régimen y Filtro de Entorno (ADR-0110), de forma que ambos mecanismos se apliquen en el mismo punto de la cadena de ejecución sin duplicar la lógica de bloqueo.
-- **Criterio de Éxito:** Una barra vetada por Vector-Time Pruning (FIJO) nunca llega a evaluarse contra la máscara evolutiva de Régimen y Filtro; ambos vetos se registran de forma distinguible en el rastro forense.
+- **Criterio de Éxito:** Una barra vetada por Vector-Time Pruning (FIJO) nunca llega a evaluarse contra la máscara evolutiva de Régimen y Filtro; ambos vetos se registran de forma distinguible en el rastro de auditoría.
 
 ---
 
@@ -64,7 +64,7 @@ Convierte datos estadísticos anómalos (positivos o negativos) en vetos físico
     - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`.
     - **II. Soberanía & Propiedad:** `owner_id`, `institutional_tag`, `manifest_id`.
     - **IV. Infraestructura & Ops:** `process_id`, `node_id`.
-    - **V. Forense & Ejecución:** `compliance_status_id`, `risk_audit_id`.
+    - **V. Auditoría & Ejecución:** `compliance_status_id`, `risk_audit_id`.
 
 - **Regla Inquebrantable:** La poda temporal NUNCA altera el historial pasado. Su único propósito es emitir "Leyes" para el comportamiento *futuro* (Paper Trading y Live). Si se altera el pasado, incurrimos en trampa de sobreajuste (Curve Fitting).
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0110):** Esta feature es el precedente FIJO de la máscara Permitido/Prohibido del Dominio de Régimen y Filtro de Entorno. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

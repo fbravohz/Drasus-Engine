@@ -15,7 +15,7 @@ Productos incluidos:
 - **Stress Testing as a Service** — un portafolio → guantelete completo (Monte Carlo masivo, crisis históricas, estrés de liquidez, correlación en pánico) → reporte institucional. Cliente: fondos, pensiones, aseguradoras. Ticket $10K–$50K.
 - **Model Validation (herramienta)** — validación independiente de una estrategia (PBO, CPCV, WFA, ablation, cross-market). Cliente: fondos regulados, bancos. Ticket $20K–$75K. **Caveat:** se vende la *herramienta y el reporte*, NO el sello acreditado (ver moonshot `regulatory-signoff-service`).
 - **Backtest Certification** — score de legitimidad estadística (PBO, robustez) con sello "Drasus Certified" para pitch decks. Cliente: traders/fondos levantando capital. Ticket $5K–$50K.
-- **Drawdown Forensics** — análisis forense de un evento de drawdown (descomposición de PnL, régimen, microestructura, slippage). Cliente: fondos en crisis. Ticket $25K–$100K.
+- **Análisis de Drawdown** — análisis de un evento de drawdown (descomposición de PnL, régimen, microestructura, slippage). Cliente: fondos en crisis. Ticket $25K–$100K.
 
 ## Comportamientos Observables
 

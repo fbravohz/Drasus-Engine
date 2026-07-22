@@ -70,4 +70,4 @@ Resuelve el problema de la "Caja Negra Evolutiva", permitiendo al gestor auditar
   - **II. Soberanía & Propiedad:** `owner_id`, `manifest_id`.
   - **III. Pesos/Arquitectura (subset):** `logic_hash`, `version_node_id`.
   - **Contrato de Persistencia:** Grupo I completo + Perfil B (II + III subset) arriba.
-  - **Hooks Forenses:** Hash criptográfico de la explicación ligada al `logic_hash` de la estrategia, evidenciando el contrato de auditoría.
+  - **Hooks de Auditoría:** Hash criptográfico de la explicación ligada al `logic_hash` de la estrategia, evidenciando el contrato de auditoría.

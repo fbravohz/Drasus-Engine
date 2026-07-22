@@ -86,7 +86,7 @@ Se gestiona a través del objeto `KineticMicroManagementConfig`:
   | | `manifest_id` | Estrategia de origen |
   | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
   | | `process_id` | PID del worker de ejecución |
-  | **V. Forense & Ejecución (latencia)** | `execution_latency_ms` | Latencia del ajuste intra-trade |
+  | **V. Auditoría & Ejecución (latencia)** | `execution_latency_ms` | Latencia del ajuste intra-trade |
   | | `source_signal_id` | Señal de origen del scale-out / trailing |
   | | `indicator_state_hash` | Z-Score calculado en el momento del ajuste (Grupo V) |
 - **Genomas Modulares por Dominio (ADR-0108/ADR-0109):** Esta feature es Primitiva de Acción del Dominio de Riesgo y Gestión de Posición. Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

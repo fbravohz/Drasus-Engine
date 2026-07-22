@@ -57,7 +57,7 @@ Resuelve la frustrante curva de aprendizaje de ensamblar bloques visuales manual
   | **I. Identidad** | `id` | Identificador único de la generación AST |
   | | `created_at` | Timestamp de la generación |
   | | `updated_at` | Timestamp de última modificación del registro |
-  | | `audit_hash` | Hash forense del prompt + AST resultante |
+  | | `audit_hash` | Hash de auditoría del prompt + AST resultante |
   | | `audit_chain_hash` | Hash encadenado del historial de iteraciones |
   | | `event_sequence_id` | Secuencia de recuperación |
   | **II. Soberanía** | `owner_id` | Autor del prompt |

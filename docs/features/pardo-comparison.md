@@ -59,7 +59,7 @@ Componente estadístico que valida la consistencia entre dos series de resultado
 *   **Entrada:** `baseline_trades`, `live_trades`, `confidence_level` (default 0.95).
 *   **Salida:** `drift_score` (float), `is_consistent` (bool), `p_value`.
 *   **Precondición:** Ambas series de trades reconciliadas y con `audit_hash` válido.
-*   **Postcondición:** Registro de la "Análisis Forense Pardo" en el rastro de evidencia causal (ADR-0015).
+*   **Postcondición:** Registro de la "Análisis de Auditoría Pardo" en el rastro de evidencia causal (ADR-0015).
 
 ### **TTR-002: Reporte de Veredicto de Consistencia (Rastro del Juez)**
 *   **Descripción:** Genera el veredicto inmutable para la promoción o retiro de la estrategia.

@@ -70,5 +70,5 @@ Para evitar la "sobreingeniería", organizamos las métricas en capas lógicas:
   | | `version_node_id` | Versión del muestrario de métricas |
   | **IV. Hardware** | `node_id` | ID del hardware físico |
   | | `process_id` | PID del proceso de cálculo |
-  | **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia del extractor de microestructura |
+  | **V. Auditoría & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia del extractor de microestructura |
 - **Dependencias:** Consumido masivamente por los módulos `validate`, `manage` y `feedback`.

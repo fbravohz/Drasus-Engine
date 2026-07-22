@@ -94,7 +94,7 @@ Es el sistema encargado de preparar las fundaciones matemáticas y de datos para
 - **Inundación de Fundaciones (ADR-0020):**
   - **Perfil Datos / IA:** Foco en Identidad + Linaje de pesos.
   - Campos a inyectar: Grupo I completo (`id`, `created_at`, `updated_at`, `audit_hash`, `audit_chain_hash`, `event_sequence_id`) + `version_node_id`, `data_snapshot_id`.
-  - **Hooks Forenses:** `indicator_state_hash` para almacenar la foto de la matriz de correlación calculada.
+  - **Hooks de Auditoría:** `indicator_state_hash` para almacenar la foto de la matriz de correlación calculada.
 - **Rastro de Evidencia:** Informa a `feedback` en caso de detectar rupturas dramáticas de correlación de un día para otro (colapso de matriz).
 
 ## 9. Decisión Arquitectónica Asociada

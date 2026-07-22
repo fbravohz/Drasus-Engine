@@ -143,7 +143,7 @@ Cada reporte de incubación y sesión activa registra el set de relevancia técn
 | | `version_node_id` | Identificador en el DAG de versiones de la estrategia |
 | **IV. Hardware** | `node_id` | ID único del hardware físico ejecutor |
 | | `process_id` | PID del worker que gestiona la sesión de sandbox |
-| **V. Forense & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo de la telemetría en tiempo real |
+| **V. Auditoría & Ejecución (latencia, híbrido)** | `execution_latency_ms` | Latencia de cálculo de la telemetría en tiempo real |
 | | `indicator_state_hash` | Snapshot del drift medido (Return / Drawdown Efficiency) (Grupo V) |
 
 ---

@@ -117,7 +117,7 @@ Híbrido: Perfil C (check de riesgo en hot-path) + linaje III legítimo (reprodu
 | **III. Linaje (híbrido)** | `logic_hash` | Hash del set de reglas activo |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del monitor de riesgo |
-| **V. Forense & Ejecución** | `execution_latency_ms` | Latencia del check (< 10ms target) |
+| **V. Auditoría & Ejecución** | `execution_latency_ms` | Latencia del check (< 10ms target) |
 | | `source_signal_id` | Evento de portafolio que disparó la evaluación |
 | | `indicator_state_hash` | Veredicto final del Juez de Invariantes (Grupo V) |
 | | `portfolio_container_id` | Agrupador del portafolio evaluado (Gobernanza) |

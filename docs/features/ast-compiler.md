@@ -58,7 +58,7 @@ A partir de ADR-0108, cada nodo `wildcard_group` queda etiquetado con su **domin
 4. **Bloque Factory (AOT):** El compilador identifica nodos estándar y los vincula a "Bloques Pre-Compilados" de NautilusTrader (AOT - Ahead-Of-Time).
 5. **Escape-Hatch (JIT):** Para lógica personalizada que no existe en los bloques base, el sistema genera un snippet Rust SIMD/Rayon que se inyecta dinámicamente en el flujo de ejecución procesando matrices de hardware.
 6. **Manifest Generation:** Se emite el contrato de ejecución final como una estructura Serde inmutable con su correspondiente `run_id`, segmentando los genomas resueltos por dominio genómico (ADR-0108) cuando el Manifest contiene nodos `wildcard_group` de más de un dominio.
-7. **Integrity Signature:** Registro del `manifest_id` coordinado con el `logic_hash` para auditoría forense.
+7. **Integrity Signature:** Registro del `manifest_id` coordinado con el `logic_hash` para auditoría.
 
 ### Salida
 - `StrategyExecutableObject` listo para backtest o live trading.
@@ -107,7 +107,7 @@ Cada genoma de estrategia compilado por este motor debe portar el set filtrado d
 | **I. Identidad** | `id` | Identificador único de la compilación |
 | | `created_at` | Timestamp de compilación |
 | | `updated_at` | Timestamp de última modificación del registro |
-| | `audit_hash` | Hash forense para inmutabilidad del genoma |
+| | `audit_hash` | Hash de auditoría para inmutabilidad del genoma |
 | | `audit_chain_hash` | Hash encadenado del historial de compilaciones |
 | | `event_sequence_id` | Secuencia de recuperación (event-sourcing) |
 | **II. Soberanía** | `owner_id` | Autor de la estrategia |

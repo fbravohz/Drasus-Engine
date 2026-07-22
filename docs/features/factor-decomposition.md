@@ -10,7 +10,7 @@
 
 ## ¿Qué es?
 
-Es el motor analítico encargado de realizar la **"Análisis Forense del Retorno"**. Descompone el rendimiento de cualquier estrategia en sus componentes elementales: Alpha (habilidad/edge real), Beta (exposición pasiva a factores de mercado) y Residuales (ruido). Su misión es evitar que el sistema sea engañado por estrategias que solo ganan por "suerte factor" (ej: estar posicionado en Momentum durante un rally de tech).
+Es el motor analítico encargado de realizar la **"Análisis de Atribución del Retorno"**. Descompone el rendimiento de cualquier estrategia en sus componentes elementales: Alpha (habilidad/edge real), Beta (exposición pasiva a factores de mercado) y Residuales (ruido). Su misión es evitar que el sistema sea engañado por estrategias que solo ganan por "suerte factor" (ej: estar posicionado en Momentum durante un rally de tech).
 
 ---
 

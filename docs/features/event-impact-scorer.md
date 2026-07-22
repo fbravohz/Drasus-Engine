@@ -113,7 +113,7 @@ Es el corazón determinista de la fusión fundamental: convierte un evento ya es
 | | `institutional_tag` | Entorno (PROD/PAPER/CHALLENGE) |
 | **IV. Hardware** | `node_id` | ID del hardware físico |
 | | `process_id` | PID del worker de scoring |
-| **V. Forense/Ejecución** | `indicator_state_hash` | Snapshot del coeficiente de impacto resultante |
+| **V. Auditoría/Ejecución** | `indicator_state_hash` | Snapshot del coeficiente de impacto resultante |
 | | `source_signal_id` | Link al evento origen que generó el coeficiente |
 | | `execution_latency_ms` | Latencia del cálculo (relevante en tiempo real) |
 

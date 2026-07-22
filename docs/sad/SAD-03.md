@@ -30,7 +30,7 @@
 2. **Clarificación Previa a Abstracción:** Antes de proponer una nueva interfaz (ABC/Protocol), se debe clarificar el problema de negocio. La mayoría de las "necesidades" de auditoría se resuelven con `test_results` (inmutable) + `live_results` (runtime), sin módulos extra.
 3. **Versión Inmutable + Rama:** Las estrategias/portafolios se tratan como repositorios Git. Todo cambio es una nueva versión; los resultados de pruebas son acumulativos y heredables.
 4. **Soberanía "Zero-Docker":** El sistema debe ser funcional localmente sin dependencias de red pesadas. SQLite WAL + Parquet es el estándar de oro para el Client Zero.
-5. **IDs Mandatorios para Trazabilidad:** Todo (Módulo, Tarea, Feature) tiene un ID único (MOD-X, TASK-X, FEAT-X) para evitar redundancia y asegurar coherencia en auditorías forenses.
+5. **IDs Mandatorios para Trazabilidad:** Todo (Módulo, Tarea, Feature) tiene un ID único (MOD-X, TASK-X, FEAT-X) para evitar redundancia y asegurar coherencia en auditorías.
 
 ---
 

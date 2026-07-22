@@ -58,7 +58,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del worker de incubación |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto de riesgo |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot del drift medido (Pardo Profile) |
@@ -85,7 +85,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-014 | **EPIC-5** | Monitoreo de cuarentena (Efficiency Dashboard) |
 | TTR-015 | **EPIC-5** | Acceso agéntico MCP (Cabina Dual) |
 | TTR-999 | **EPIC-5** | Protocolo Fail-Fast Safe (ADR-0066) |
-| TTR-006 | EPIC-8 | Retroactiva (Time Warp Debugger) |
+| TTR-006 | EPIC-8 | Repetición de Corrida (revisión de paper trades) |
 
 ---
 
@@ -122,7 +122,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`paper-trader`](../features/paper-trader.md)** — Simulación de trading sin capital real.
 - **[`executable-container`](../features/executable-container.md)** — Entorno aislado de ejecución para la estrategia (Runner).
 - **[`incubation-manager`](../features/incubation-manager.md)** — Gestión del ciclo de vida de la sesión (Start/Pause/Stop).
-- **[`time-warp-debugger`](../features/time-warp-debugger.md)** — Depuración "paso a paso" de eventos pasados en la sesión.
+- **[`run-replay`](../features/run-replay.md)** — Depuración "paso a paso" de eventos pasados en la sesión.
 - **[`pardo-comparison`](../features/pardo-comparison.md)** — Juez de consistencia estadística (Robert Pardo).
 - **[`order-fsm`](../features/order-fsm.md)** — Máquina de estados de órdenes virtuales.
 - **[`broker-connector`](../features/broker-connector.md)** — Conector para datos en vivo y ejecución simulada.
@@ -192,14 +192,14 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Sesión iniciada.
 *   **Postcondición:** Entorno seguro operativo.
 
-### **TTR-006: Orquestación Retroactiva (Time Warp Debugger)**
-*   **Descripción:** Invoca a [`time-warp-debugger`](../features/time-warp-debugger.md) para revisión de paper trades.
+### **TTR-006: Orquestación de Repetición de Corrida**
+*   **Descripción:** Invoca a [`run-replay`](../features/run-replay.md) para revisión de paper trades.
 *   **Reglas de Orquestación:**
     *   Permite al usuario pausar y retroceder el paper trading.
 *   **Entrada:** `session_id`, `target_timestamp`.
 *   **Salida:** `replayed_market_state`.
 *   **Precondición:** Incidencias de llenado.
-*   **Postcondición:** Inspección forense activa.
+*   **Postcondición:** Inspección de repetición activa.
 
 ### **TTR-007: Orquestación de Conexión Live (Broker Connector)**
 *   **Descripción:** Invoca a [`broker-connector`](../features/broker-connector.md) en modo solo lectura (WebSockets).

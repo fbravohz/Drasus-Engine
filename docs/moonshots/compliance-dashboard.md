@@ -47,7 +47,7 @@ El `Compliance Dashboard` es un panel de auditoría diseñado para cumplir de fo
 
 ## Tareas (TTRs)
 
-### **TTR-001: Auditor de Integridad Forense (Rust)**
+### **TTR-001: Auditor de Integridad (Rust)**
 *   **¿Cuál es el problema?** Validar que la bitácora de auditoría no ha sido manipulada localmente requiere encadenamiento criptográfico estricto.
 *   **¿Qué tiene que pasar?** Rust recorre los registros verificando el hash-chain (`audit_chain_hash`) de cada fila contra el anterior.
 *   **¿Cómo sé que está hecho?**

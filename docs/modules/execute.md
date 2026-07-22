@@ -56,7 +56,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | **IV. Infraestructura y Ops** | `process_id` | PID del motor de ejecución real |
 | | `session_id` | Agrupación de runtime |
 | | `node_id` | ID del hardware físico |
-| **V. Forense y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
+| **V. Auditoría y Ejecución** | `portfolio_container_id` | Contenedor de portafolio |
 | | `compliance_status_id` | Veredicto del Pre-Trade Validator |
 | | `risk_audit_id` | Ticket detallado de riesgo |
 | | `indicator_state_hash` | Snapshot técnico |
@@ -79,7 +79,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 | TTR-019 | **EPIC-5** | Alertas (Notification) |
 | TTR-020 | **EPIC-5** | Asíncrona (Async Job Executor) |
 | TTR-021 | **EPIC-5** | Afinidad (Production Optimization) |
-| TTR-022 | **EPIC-5** | Forense (Audit Log) |
+| TTR-022 | **EPIC-5** | Auditoría (Audit Log) |
 | TTR-023 | **EPIC-5** | Temporal (Clock) |
 | TTR-024 | **EPIC-5** | Vigilancia Pardo y SSL (Operational Safety) |
 | TTR-026 | **EPIC-5** | Bridge multiplataforma (Multiplatform Execution Bridge) |
@@ -222,7 +222,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * El "Kill-Switch" tiene soberanía absoluta para ejecutar `FlattenAll()` cerrando todas las posiciones e ignorando el FSM de estrategia.
     * Orquesta la ejecución paralela inerte (Shadow Mode) sin volumen expuesto para auditoría de drift.
     * Enlaza la señal de pánico externa recibida de la **Emergency PWA** para ejecutar un barrido manual remoto seguro.
-    * Toda acción de emergencia debe inyectar la huella digital del hardware (`node_id`) en el log forense (ADR-0020).
+    * Toda acción de emergencia debe inyectar la huella digital del hardware (`node_id`) en el log de auditoría (ADR-0020).
 *   **Entrada:** `system_health_metrics`, `pwa_panic_signal`.
 *   **Salida:** `kill_switch_signal` (opcional).
 *   **Precondición:** Sesión de trading en vivo o shadow mode iniciada.
@@ -355,7 +355,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Arranque del módulo.
 *   **Postcondición:** Cero context-switching en Hot-Path.
 
-### **TTR-022: Orquestación Forense (Audit Log)**
+### **TTR-022: Orquestación de Auditoría (Audit Log)**
 *   **Descripción:** Invoca a [`audit-log`](../features/audit-log.md) para firmar transacciones con SHA-256.
 *   **Reglas de Orquestación:**
     *   Cadena de bloques local para la secuencia de órdenes.

@@ -87,11 +87,11 @@ Es una exportación offline y soberana que no depende de interfaces web pesadas.
 
 - **Local-First (ADR-0016):** 100% Local. Los recursos web (JS/CSS) están incrustados inline.
 - **Inundación de Fundaciones (ADR-0020):**
-  - **Perfil D (Ops / Auditoría):** reportes/exportación forense (la etiqueta "C. Auditoría" era mixta e inválida).
+  - **Perfil D (Ops / Auditoría):** reportes/exportación de auditoría (la etiqueta "C. Auditoría" era mixta e inválida).
   - **I. Identidad & Integridad:** `id`, `created_at`, `updated_at`, `audit_hash` (del contenido estático), `audit_chain_hash`, `event_sequence_id`.
   - **II. Soberanía & Propiedad:** `owner_id` (visible en metadata), `institutional_tag`.
   - **IV. Infraestructura & Ops:** `node_id` (nodo que renderizó el archivo), `process_id`.
-  - **V. Forense (Gobernanza, cuando aplica):** `risk_audit_id`, `signature_hash` del reporte sellado.
+  - **V. Auditoría (Gobernanza, cuando aplica):** `risk_audit_id`, `signature_hash` del reporte sellado.
 
 ## 9. Decisión Arquitectónica Asociada
 - ADR-0020.

@@ -89,6 +89,6 @@ El motor de **Volatility Stabilization** garantiza que las estrategias operen ba
   | | `manifest_id` | Estrategia de origen |
   | **IV. Hardware** | `node_id` | ID del hardware físico ejecutor |
   | | `process_id` | PID del proceso de escalado |
-  | **V. Forense & Ejecución (latencia)** | `execution_latency_ms` | Latencia del cálculo de escala en hot-path |
+  | **V. Auditoría & Ejecución (latencia)** | `execution_latency_ms` | Latencia del cálculo de escala en hot-path |
   | | `source_signal_id` | Señal de volatilidad de origen |
 - **Rastro de Evidencia:** Emite `realized_vol` y `scaling_factor` al módulo de `feedback`.

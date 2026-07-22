@@ -112,7 +112,7 @@ Describe entrada → proceso → salida, **sin detalles de implementación**. Ve
     - **C. Ops / Hot-Path:** Identidad + Soberanía (II) + Hardware (IV) + Latencia, subset de V (≤1ms).
     - **D. Ops / Auditoría:** Identidad + Soberanía (II) + Hardware (IV).
   - **PROHIBIDO copy-paste masivo:** de cada grupo asignado, toma solo los campos concretos relevantes para esta tabla — no el grupo completo.
-  - **Hooks Forenses:** [Describir ganchos específicos: ej. latencia de DOM, linaje de genoma, firmas digitales].
+  - **Hooks de Auditoría:** [Describir ganchos específicos: ej. latencia de DOM, linaje de genoma, firmas digitales].
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
 
