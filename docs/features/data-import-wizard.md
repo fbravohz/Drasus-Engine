@@ -2,8 +2,8 @@
 
 **Carpeta:** `./features/data-import-wizard/`
 **Estado:** En Diseño
-**Última actualización:** 2026-07-19 (TASK-063 — contrato de rechazo/plantilla/mapeo declarado)
-**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia)
+**Última actualización:** 2026-07-23 (TASK-064 — declaración de zona horaria de origen)
+**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia) · ADR-0162 (patrón de selector de zona horaria con bandera DST)
 
 ## ¿Qué es?
 
@@ -23,6 +23,7 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 - [ ] Al confirmar, el sistema sella la declaración (archivo, mapeo, plantilla si hubo, vista previa, versión de esquema) en el ledger append-only de mapeo (ADR-0156 restricción 7) antes de persistir cualquier dato.
 - [ ] El sistema valida el tipo de datos y corre sus propios guardarraíles (`pit-data-validator`) antes de aceptar el mapeo declarado — la declaración del usuario no los sustituye (ADR-0156 restricción 6).
 - [ ] El sistema detecta automáticamente el delimitador (coma, punto y coma, tabulación) — esto es inferencia de formato de archivo, no de significado de columna; no está sujeto a la misma restricción que el mapeo semántico.
+- [ ] **Declaración de zona horaria de origen (ADR-0114/TASK-064 §3, corregido por el propietario 2026-07-23).** Si el archivo no trae metadato de zona horaria explícito, el usuario declara la zona horaria de los timestamps crudos mediante el mismo selector de zona mundial con bandera de horario de verano (DST) que usa `session-catalog` (ADR-0162) — **nunca** se infiere de un pico de volatilidad ni de una noticia programada. El desfase declarado queda sellado en el ledger de mapeo como evidencia (mismo tratamiento que el mapeo columna→columna). El hueco de fin de semana puede usarse como verificación estructural **opcional** de sanidad, nunca como mecanismo primario.
 
 ## Restricciones
 
@@ -74,7 +75,7 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
 
-**Ledger de declaración de mapeo (ADR-0156, nuevo — molde `.agents/knowledge/ledger-pattern.md`):** tabla append-only propia de esta feature, sellada ANTES de que cualquier dato del archivo se persista. Guarda identidad del archivo (nombre + hash), el mapeo completo tal como se mostró al usuario, la plantilla aplicada y su versión (si hubo), la bandera `mapeo_manual_usuario`/`plantilla_plataforma`, la versión del motor de transformación y del esquema canónico (ADR-0155) vigentes al declarar, el instante de aceptación, la vista previa de dato transformado que el usuario confirmó, y el encadenado de hash de todo ledger. El `data_snapshot_id` de la partición resultante y la fila de `transformation_records` de la corrida referencian esta fila por identificador — nunca la duplican (ver ADR-0156 restricción 8).
+**Ledger de declaración de mapeo (ADR-0156, nuevo — molde `.agents/knowledge/ledger-pattern.md`):** tabla append-only propia de esta feature, sellada ANTES de que cualquier dato del archivo se persista. Guarda identidad del archivo (nombre + hash), el mapeo completo tal como se mostró al usuario, la plantilla aplicada y su versión (si hubo), la bandera `mapeo_manual_usuario`/`plantilla_plataforma`, la versión del motor de transformación y del esquema canónico (ADR-0155) vigentes al declarar, el instante de aceptación, la vista previa de dato transformado que el usuario confirmó, la **zona horaria de origen declarada** (identificador IANA, mismo mecanismo de captura que `session-catalog`, ADR-0162 — sellada como evidencia inmutable, no como inferencia del sistema, TASK-064 §3.3), y el encadenado de hash de todo ledger. El `data_snapshot_id` de la partición resultante y la fila de `transformation_records` de la corrida referencian esta fila por identificador — nunca la duplican (ver ADR-0156 restricción 8).
 
 Cada importación manual registra además el set de relevancia técnica:
 
@@ -90,3 +91,12 @@ Cada importación manual registra además el set de relevancia técnica:
 | | `logic_hash` | Hash del parser utilizado |
 | **IV. Hardware** | `node_id` | ID del hardware físico de importación |
 | | `process_id` | PID del worker de parseo |
+
+## Dependencias
+
+**Depende de:**
+- [`pit-data-validator`](./pit-data-validator.md) — corre sus guardarraíles (incl. el Gate de Coherencia de Calendario, ADR-0162) antes de aceptar el mapeo declarado (ADR-0156 restricción 6).
+- [`session-catalog`](./session-catalog.md)/[`instrument-catalog`](./instrument-catalog.md) — para la asociación bróker↔instrumento↔plantilla de sesión durante la importación (ADR-0162).
+
+**Consumido por:**
+- [`ingest`](../modules/ingest.md).

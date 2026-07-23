@@ -57,6 +57,7 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 - **Frontera Sin-Estado / Con-Estado (ADR-0114, FIJO):** ningún cálculo dependiente del estado de cuenta/posición corre en la sub-fase vectorizada; la lógica con estado (sizing, stops, Dominio de Riesgo y Gestión ADR-0109) corre en el mini-loop secuencial.
 - **Agnosticismo de Temporalidad (ADR-0130, FIJO):** el motor simula scalping, intradía, swing, posición y **ticks** como ciudadanos de primera clase, sin sesgo estructural hacia ninguna temporalidad. Bajar la temporalidad debe aumentar el número de oportunidades evaluadas, nunca reducirlo artificialmente.
 - **Posiciones Concurrentes (ADR-0129, FIJO):** el motor modela N posiciones concurrentes por estrategia/activo (no una sola), con contabilidad de margen agregada y P&L por ticket, para que el conteo de trades refleje la semántica no bloqueante. `MAX_CONCURRENT_POSITIONS = 1` reproduce el comportamiento clásico.
+- **Selector de Fuente de Spread (ADR-0114 sub-cláusula, 2026-07-23, FIJO en su invariante — CONFIG en el modo elegido):** `SPREAD_SOURCE_MODE` decide de dónde sale el spread que el motor suma a `bid` para reconstruir `ask` (regla (c), Bid/Ask Exclusivo) — nunca decide **si** se suma. En modo `REPORTED_REAL`, el `spread_reported` leído debe haber pasado por la Política de Integridad de Spread de [`data-sanitizer-pipeline`](./data-sanitizer-pipeline.md) antes de llegar aquí. En `RANDOM_RANGE`/`FIXED`, el motor no lee el archivo — `SPREAD_FIXED_VALUE` puede reutilizar el `default_spread` resuelto de [`instrument-catalog`](./instrument-catalog.md) como valor por defecto en vez de que el usuario lo repita.
 
 ---
 
@@ -69,6 +70,10 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 | SLIPPAGE_PERCENT | 0.0001 | 0.0-0.01 | Costo de slippage en % del precio |
 | COMMISSION_PERCENT | 0.0005 | 0.0-0.01 | Comisión por trade en % |
 | INITIAL_CAPITAL | 100000 | > 0 | Capital inicial de simulación |
+| SPREAD_SOURCE_MODE | REPORTED_REAL | `REPORTED_REAL / RANDOM_RANGE / FIXED` | De dónde sale el spread sumado a `bid` para reconstruir `ask` (ADR-0114 regla c, sub-cláusula 2026-07-23). Default `REPORTED_REAL` por Foundation Inundation (ADR-0020) + el principio de ADR-0155 de preferir el dato observado sobre el inventado |
+| SPREAD_RANDOM_MIN / SPREAD_RANDOM_MAX | sin default — obligatorio si `RANDOM_RANGE` | > 0 (puntos) | Rango de muestreo uniforme por barra/operación, solo en modo `RANDOM_RANGE` |
+| SPREAD_RANDOM_SEED | sin default — obligatorio si `RANDOM_RANGE` | — | Semilla del generador — no opcional: sin ella, dos corridas del mismo backtest producen resultados distintos, violando el invariante de reproducibilidad de `clock.md` |
+| SPREAD_FIXED_VALUE | sin default — obligatorio si `FIXED` | > 0 (puntos) | Valor constante; puede reutilizar el `default_spread` resuelto de `instrument-catalog` (ADR-0162) como sugerencia inicial |
 
 ---
 
@@ -184,6 +189,7 @@ Toda ejecución de backtest y resultado registra el set de relevancia técnica p
     - ADR-0114: Motor dual, ruta Express híbrida, modo elegido por el usuario y contrato de consistencia conservadora.
     - ADR-0129: Entradas Concurrentes No Bloqueantes + De-duplicación de Señal (N posiciones simuladas).
     - ADR-0130: Frecuencia/Horizonte de Operación + Agnosticismo de Temporalidad.
+    - ADR-0114 (sub-cláusula 2026-07-23): selector `SPREAD_SOURCE_MODE`, consumidor de la Política de Integridad de Spread (`data-sanitizer-pipeline`) y del catálogo de instrumento (ADR-0162).
 
 ---
 
@@ -207,6 +213,8 @@ El motor dual (ADR-0114) está diseñado para instrumentos lineales. Las opcione
 **Depende de:**
 - [`clock`](../features/clock.md) — para timestamps deterministas.
 - [`slippage-models`](../features/slippage-models.md) — para realismo de ejecución.
+- [`data-sanitizer-pipeline`](../features/data-sanitizer-pipeline.md) — en modo `SPREAD_SOURCE_MODE=REPORTED_REAL`, el `spread_reported` leído ya pasó por la Política de Integridad de Spread.
+- [`instrument-catalog`](../features/instrument-catalog.md) — fuente opcional de `SPREAD_FIXED_VALUE` por defecto en modo `FIXED`.
 
 **Consumido por:**
 - [`validate`](../modules/validate.md) — para Validate.

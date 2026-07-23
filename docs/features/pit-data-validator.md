@@ -2,7 +2,8 @@
 
 **Carpeta:** `./features/pit-data-validator/`
 **Estado:** Crítico / Prioritario
-**Última actualización:** 2026-04-12
+**Última actualización:** 2026-07-23 (ADR-0162 — Gate de Coherencia de Calendario)
+**Decisión Arquitectónica Asociada (Gate de Coherencia):** ADR-0162
 
 ---
 
@@ -32,6 +33,12 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
   → IMPOSIBLE PIT-real (close NUNCA puede superar high)
   → RECHAZADA automáticamente
 
+- [ ] **Gate de Coherencia de Calendario (ADR-0162).** El usuario importa un archivo con una plantilla de sesión declarada (ej. `FOREX_245`) para el instrumento
+  → Sistema calcula la huella de huecos **observada** en el archivo (dónde faltan velas)
+  → La compara contra la huella **esperada** de la plantilla declarada (`session-catalog`)
+  → Si son estructuralmente incompatibles (ej. el archivo no tiene hueco de fin de semana pero la plantilla dice Forex 24/5, o el archivo tiene huecos diarios mientras la plantilla dice Cripto 24/7) → **RECHAZADA con motivo explícito**, en cualquier combinación de clase de activo (comparación simétrica huella-contra-huella, no una lista de pares)
+  → Si el archivo es demasiado corto para exhibir su huella (ej. cubre un solo lunes, no puede mostrar el hueco de fin de semana) → veredicto **`INDETERMINADO`**, nunca un `APTO` silencioso
+
 ---
 
 ## Restricciones
@@ -42,6 +49,9 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 - **NUNCA precio < 0.** Precios positivos (o cero en caso de suspensión, pero marcado especial).
 - **NUNCA timestamp fuera de orden.** Barras deben ser cronológicas.
 - **NUNCA información futura en barra presente.** No usar max/min de semana para decisión en lunes.
+- **(ADR-0162) NUNCA el Gate de Coherencia de Calendario es una lista de pares prohibidos.** Compara la huella de calendario declarada contra la observada — cualquier clase de activo cruzada con cualquier plantilla, sin caso privilegiado ni combinación no cubierta.
+- **(ADR-0162) NUNCA se aprueba en silencio por evidencia insuficiente.** Un archivo demasiado corto para exhibir su huella de calendario recibe `INDETERMINADO`, nunca `APTO`.
+- **(ADR-0162) NUNCA la tolerancia del gate es cero por defecto de forma rígida.** Instrumentos con calendarios atípicos (ej. futuros con pausa de mantenimiento corta) necesitan margen configurable — la tolerancia es `CONFIG`, no `FIJO`.
 
 ---
 
@@ -55,6 +65,8 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 | MAX_DAILY_MOVE | 0.20 | 0.05-0.50 | Máximo cambio diario permitido (20% = threshold para gap sospechoso) | CONFIG |
 | TIMESTAMP_VALIDATION | true | true/false | Verificar orden cronológico de barras | CONFIG |
 | FORWARD_BIAS_DETECTION | true | true/false | Detectar información futura inyectada | [FIJO] |
+| CALENDAR_COHERENCE_TOLERANCE | 0 huecos atípicos | 0 - N (por definir en Story de implementación) | Cuántos huecos que no encajan exactamente en la huella esperada se admiten antes de que el Gate de Coherencia rechace (ADR-0162) | CONFIG |
+| MIN_BARS_FOR_FINGERPRINT | por definir en Story de implementación | — | Cuántas barras mínimas debe cubrir un archivo para que el Gate de Coherencia emita `APTO`/`RECHAZADO` en vez de `INDETERMINADO` | CONFIG |
 
 ---
 
@@ -121,6 +133,27 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 *   **Precondición:** TTR-001 finalizado.
 *   **Postcondición:** Persistencia del `Future-Leakage Score` en los metadatos del dataset.
 
+### **TTR-003: Gate de Coherencia de Calendario (ADR-0162)**
+*   **Descripción:** Compara la huella de calendario esperada de la plantilla de sesión declarada (`session-catalog`) contra la huella observada en el archivo importado (dónde hay velas y dónde faltan), en toda combinación de clase de activo — nunca una lista de pares.
+*   **Reglas de Negocio:**
+    * El patrón declarado-vs-observado reutiliza la misma doctrina que ADR-0154 ya fija para la tabla de capacidades por bróker.
+    * Si el archivo es demasiado corto para exhibir su huella, el veredicto es `INDETERMINADO`, nunca `APTO` por omisión.
+    * La tolerancia a huecos atípicos es `CONFIG` (`CALENDAR_COHERENCE_TOLERANCE`), nunca cero rígido.
+*   **Entrada:** `CalendarFingerprint` esperada (de `session-catalog`), serie de timestamps del archivo importado.
+*   **Salida:** `CalendarCoherenceVerdict` (`APTO` / `RECHAZADO` con motivo / `INDETERMINADO`).
+*   **Precondición:** El instrumento tiene una plantilla de sesión declarada (`instrument-catalog`/`session-catalog`); si no la tiene, el gate no puede correr y la importación queda bloqueada por falta de declaración, no por un veredicto de coherencia.
+*   **Postcondición:** El veredicto queda visible junto al resultado de la importación; un `RECHAZADO` detiene la importación con el motivo estructural exacto (qué hueco sobra o falta).
+
+---
+
+## Puertos de Integración (ADR-0137)
+
+| Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
+|---|---|---|---|---|
+| `bars_in` | `Bars` | Input | 1 | Dataset OHLCV a validar estructuralmente (TTR-001/TTR-002) |
+| `expected_fingerprint_in` | `(interno)` | Input | 0..1 | Huella de calendario esperada, consumida de `session-catalog` cuando el instrumento tiene plantilla declarada — payload de comparación, no cableable de forma independiente |
+| `coherence_verdict_out` | `CalendarCoherenceVerdict` | Output | 0..1 | Veredicto del Gate de Coherencia (TTR-003); ausente si no hay plantilla de sesión declarada para el instrumento |
+
 ---
 
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
@@ -146,16 +179,19 @@ Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos
     - ADR-0013: Stack Tecnológico (Nautilus/Polars).
     - ADR-0017: Simulación de Alta Fidelidad (PIT-real).
     - ADR-0020: Inundación de Fundaciones.
+    - ADR-0162: Catálogo de Instrumento × Bróker × Sesión — Gate de Coherencia de Calendario (TTR-003).
 
 ---
 
 ## Dependencias
 **Depende de:**
-- Ninguna. Es el filtro de entrada primario.
+- Ninguna para la validación estructural (TTR-001/TTR-002) — es el filtro de entrada primario.
+- [`session-catalog`](../features/session-catalog.md) — para la huella de calendario esperada que consume el Gate de Coherencia (TTR-003); sin plantilla de sesión declarada, ese gate no corre.
 
 **Consumido por:**
 - [`ingest`](../modules/ingest.md) — para filtrado pre-almacenamiento.
 - [`backtest-engine`](../features/backtest-engine.md) — para asegurar realismo histórico.
+- [`data-import-wizard`](../features/data-import-wizard.md) — corre el Gate de Coherencia antes de sellar una importación con plantilla de sesión declarada.
 
 ---
 
