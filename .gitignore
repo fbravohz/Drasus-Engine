@@ -57,3 +57,6 @@
 /mutants.out.old/
 /mutants_gate*/
 mutants_gate*.log
+
+# --- datasets locales del usuario (datos crudos de mercado, jamás versionados) ---
+/datasets/
