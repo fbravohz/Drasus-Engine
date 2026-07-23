@@ -340,3 +340,100 @@ fn compute_audit_hash(
     let digest = Sha256::digest(buf.as_bytes());
     digest.iter().map(|b| format!("{b:02x}")).collect()
 }
+
+// ── Pruebas del clasificador de contención (DEBT-032) ────────────────────────
+//
+// La prueba original (en `tests/integration_tests.rs`, ya eliminada) NUNCA
+// llamaba a `is_transient_write_conflict`: verificaba el mensaje de un
+// INSERT crudo "por fuera", con un comentario que admitía que era una
+// comprobación indirecta. El gate de mutación demostró que el clasificador
+// podía mutarse a devolver siempre `true` sin que ninguna prueba fallara.
+//
+// Estas tres pruebas llaman a la función DIRECTAMENTE, por su nombre, con
+// sus tres casos (molde canónico `.agents/knowledge/ledger-pattern.md`
+// punto 7 -- "clasificador directo"). Viven aquí, dentro del propio módulo,
+// porque `is_transient_write_conflict` es privada al crate: solo un test
+// en el mismo archivo puede invocarla sin exponerla en la API pública.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared::public_interface::{create_pool, run_migrations};
+
+    /// Base de datos SQLite en memoria con la migración 0006 ya aplicada.
+    async fn migrated_pool() -> SqlitePool {
+        let pool = create_pool("sqlite::memory:")
+            .await
+            .expect("conectar la base de datos en memoria");
+        run_migrations(&pool).await.expect("aplicar migraciones");
+        pool
+    }
+
+    /// Inserta una fila cruda en `sovereign_download_records`, saltándose el
+    /// repositorio -- para provocar a propósito las violaciones UNIQUE que
+    /// el clasificador debe distinguir.
+    async fn insert_raw(
+        pool: &SqlitePool,
+        id: &str,
+        event_sequence_id: i64,
+    ) -> Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO sovereign_download_records \
+             (id, created_at, updated_at, audit_hash, event_sequence_id, source_endpoint) \
+             VALUES (?, 1, 1, 'h', ?, 'https://example.invalid')",
+        )
+        .bind(id)
+        .bind(event_sequence_id)
+        .execute(pool)
+        .await
+    }
+
+    /// CASO 1 (PERMANENTE): una violación de la PRIMARY KEY `id` -- mismo
+    /// `id`, distinto `event_sequence_id` -- reintentar NUNCA la resuelve
+    /// (el segundo intento produciría el mismo `id` de nuevo). El
+    /// clasificador debe devolver `false`.
+    #[tokio::test]
+    async fn is_transient_write_conflict_is_false_for_primary_key_violation() {
+        let pool = migrated_pool().await;
+        insert_raw(&pool, "dup-id", 1).await.expect("primera fila válida");
+        let err = insert_raw(&pool, "dup-id", 2)
+            .await
+            .expect_err("la segunda fila debe violar la PRIMARY KEY id");
+
+        let error = DownloadRepositoryError::Database(err);
+        assert!(
+            !is_transient_write_conflict(&error),
+            "una violación de PK (no de event_sequence_id) es PERMANENTE, no transitoria"
+        );
+    }
+
+    /// CASO 2 (TRANSITORIO): una colisión de secuencia -- dos filas con
+    /// `id` distinto pero el MISMO `event_sequence_id` -- SÍ se resuelve
+    /// reintentando (re-derivar la secuencia y reinsertar). El clasificador
+    /// debe devolver `true`.
+    #[tokio::test]
+    async fn is_transient_write_conflict_is_true_for_sequence_collision() {
+        let pool = migrated_pool().await;
+        insert_raw(&pool, "id-a", 1).await.expect("primera fila válida");
+        let err = insert_raw(&pool, "id-b", 1)
+            .await
+            .expect_err("la segunda fila debe violar UNIQUE(event_sequence_id)");
+
+        let error = DownloadRepositoryError::Database(err);
+        assert!(
+            is_transient_write_conflict(&error),
+            "una colisión de event_sequence_id (mismo valor, distinto id) es TRANSITORIA"
+        );
+    }
+
+    /// CASO 3 (control, no-BD): un error que ni siquiera envuelve un
+    /// `sqlx::Error::Database` -- fija la rama temprana `let ... else` del
+    /// clasificador. Nunca puede clasificarse como transitorio.
+    #[test]
+    fn is_transient_write_conflict_is_false_for_non_database_error() {
+        let error = DownloadRepositoryError::WriteContention { attempts: 5 };
+        assert!(
+            !is_transient_write_conflict(&error),
+            "un error que no envuelve sqlx::Error::Database jamás es contención transitoria"
+        );
+    }
+}

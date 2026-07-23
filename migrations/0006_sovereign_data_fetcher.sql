@@ -16,7 +16,16 @@
 -- async-job-executor, no este registro).
 --
 -- Idempotencia (ADR-0006): CREATE TABLE IF NOT EXISTS + índices IF NOT
--- EXISTS — volver a correr esta migración es un no-op.
+-- EXISTS + triggers IF NOT EXISTS — volver a correr esta migración es un
+-- no-op.
+--
+-- Candados append-only (DEBT-032, retrofit 2026-07-19, patrón canónico
+-- `.agents/knowledge/ledger-pattern.md` punto 5, referencia limpia
+-- `0019_data_portability.sql`): esta tabla nació sin los triggers que
+-- rechazan UPDATE/DELETE a nivel de base de datos -- su inmutabilidad
+-- dependía solo de que el repositorio nunca emitiera esas sentencias, un
+-- acuerdo de buena voluntad, no una garantía. Se añaden aquí in-situ
+-- (fase GREENFIELD, ADR-0006).
 --
 -- STRICT mode + UNIQUE + CHECK de formato (ADR-0141 M6/M9/M11/M12, in-situ
 -- edit del baseline GREENFIELD, auditoría retroactiva 2026-07):
@@ -60,3 +69,19 @@ CREATE INDEX IF NOT EXISTS idx_sovereign_download_records_event_sequence_id
 -- Acceso por node_id (para auditar qué nodo hizo qué descarga).
 CREATE INDEX IF NOT EXISTS idx_sovereign_download_records_node_id
     ON sovereign_download_records (node_id);
+
+-- Enforzamiento append-only: rechaza UPDATE (DEBT-032 -- cada registro de
+-- descarga es un hecho histórico permanente; si un registro está mal, se
+-- registra una descarga nueva, nunca se corrige in-place).
+CREATE TRIGGER IF NOT EXISTS trg_sovereign_download_records_no_update
+BEFORE UPDATE ON sovereign_download_records
+BEGIN
+    SELECT RAISE(ABORT, 'sovereign_download_records is append-only: UPDATE is forbidden');
+END;
+
+-- Enforzamiento append-only: rechaza DELETE.
+CREATE TRIGGER IF NOT EXISTS trg_sovereign_download_records_no_delete
+BEFORE DELETE ON sovereign_download_records
+BEGIN
+    SELECT RAISE(ABORT, 'sovereign_download_records is append-only: DELETE is forbidden');
+END;

@@ -792,41 +792,16 @@ async fn download_record_exhausts_exactly_max_attempts_when_write_lock_is_held()
     }
 }
 
-/// CRITERIO DE CIERRE (QA por mutación): una violación UNIQUE PERMANENTE
-/// (la PK `id`, que NO se debe reintentar) NO debe clasificarse como
-/// contención transitoria -- se verifica indirectamente: un `id` duplicado
-/// insertado por fuera del repositorio (violación de PK, no de
-/// `event_sequence_id`) hace fallar el INSERT directo con un error que NO
-/// es "database is locked" ni menciona `event_sequence_id`; el repositorio
-/// (que sí usa UUIDs v7 únicos) nunca produce esa colisión en circunstancias
-/// normales, así que esta prueba fija el comportamiento de la base de datos
-/// del que depende el clasificador `is_transient_write_conflict` interno de
-/// `persistence.rs`.
-#[tokio::test]
-async fn duplicate_primary_key_insert_is_a_permanent_error_not_a_sequence_collision() {
-    let (pool, _dir) = setup_db().await;
-
-    let insert_with_id_dup = |event_sequence_id: i64| {
-        sqlx::query(
-            "INSERT INTO sovereign_download_records \
-             (id, created_at, updated_at, audit_hash, event_sequence_id, source_endpoint) \
-             VALUES ('dup-download-id', 1, 1, 'h', ?, 'https://example.invalid')",
-        )
-        .bind(event_sequence_id)
-        .execute(&pool)
-    };
-
-    insert_with_id_dup(1).await.expect("primera fila válida");
-    let err = insert_with_id_dup(2)
-        .await
-        .expect_err("la segunda fila debe violar la PRIMARY KEY id");
-
-    let message = err.to_string().to_lowercase();
-    assert!(
-        !message.contains("database is locked") && !message.contains("event_sequence_id"),
-        "una violación de PK debe distinguirse textualmente de una colisión de secuencia o un lock transitorio; mensaje: {message}"
-    );
-}
+// NOTA (DEBT-032, retrofit 2026-07-19): la prueba que vivía aquí
+// (`duplicate_primary_key_insert_is_a_permanent_error_not_a_sequence_collision`)
+// nunca llamaba a `is_transient_write_conflict` -- verificaba el mensaje de
+// un INSERT crudo "por fuera" del clasificador, con un comentario que
+// admitía que la comprobación era indirecta. El gate de mutación demostró
+// que el clasificador podía mutarse a devolver siempre `true` sin que
+// ninguna prueba fallara. Se eliminó de aquí (no convive como ruido) y se
+// reemplazó por tres pruebas que SÍ llaman a la función directamente, por
+// su nombre, en `crates/features/data/sovereign-data-fetcher/src/persistence.rs`
+// (viven ahí porque la función es privada al crate).
 
 /// CRITERIO DE CIERRE (QA por mutación): la fila que DEVUELVE
 /// `DownloadRepository::record` refleja SIEMPRE valores frescos --
@@ -861,4 +836,63 @@ async fn download_record_returned_row_reflects_fresh_hash_chain_and_timestamp() 
         "el created_at devuelto debe ser el now del reloj tras el tick, no el viejo"
     );
     assert_eq!(second.event_sequence_id, 2);
+}
+
+// ── Candados append-only de la migración 0006 (DEBT-032) ─────────────────────
+//
+// Un ledger cuya inmutabilidad depende solo de que el repositorio nunca
+// emita un UPDATE/DELETE no es append-only: es un acuerdo de buena voluntad.
+// La migración 0006 nació sin los triggers que la 0019 (`data_portability`)
+// sí tiene. Estas dos pruebas demuestran que la base de datos -- no la
+// disciplina del programador -- rechaza ambas operaciones.
+
+/// La base de datos rechaza un UPDATE crudo sobre `sovereign_download_records`
+/// vía `trg_sovereign_download_records_no_update` -- la inmutabilidad del
+/// ledger no depende de que el repositorio nunca emita esa sentencia.
+#[tokio::test]
+async fn update_is_rejected_by_trigger_on_sovereign_download_records() {
+    let (pool, _dir) = setup_db().await;
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = DownloadRepository::new(&pool, &clock);
+
+    let record = repo
+        .record(sample_new_download_record())
+        .await
+        .expect("registrar descarga");
+
+    let result = sqlx::query(
+        "UPDATE sovereign_download_records SET source_endpoint = 'https://tampered.invalid' WHERE id = ?",
+    )
+    .bind(&record.id)
+    .execute(&pool)
+    .await;
+
+    assert!(
+        result.is_err(),
+        "UPDATE sobre sovereign_download_records debe ser rechazado por el trigger"
+    );
+}
+
+/// La base de datos rechaza un DELETE crudo sobre `sovereign_download_records`
+/// vía `trg_sovereign_download_records_no_delete`.
+#[tokio::test]
+async fn delete_is_rejected_by_trigger_on_sovereign_download_records() {
+    let (pool, _dir) = setup_db().await;
+    let clock = DeterministicClock::new(1_000, 100);
+    let repo = DownloadRepository::new(&pool, &clock);
+
+    let record = repo
+        .record(sample_new_download_record())
+        .await
+        .expect("registrar descarga");
+
+    let result = sqlx::query("DELETE FROM sovereign_download_records WHERE id = ?")
+        .bind(&record.id)
+        .execute(&pool)
+        .await;
+
+    assert!(
+        result.is_err(),
+        "DELETE sobre sovereign_download_records debe ser rechazado por el trigger"
+    );
 }
