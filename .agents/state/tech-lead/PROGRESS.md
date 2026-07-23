@@ -380,3 +380,46 @@
 3. **Rust** → retrofit de DEBT-032 (prueba real del clasificador en `sovereign-data-fetcher` + candados en la migración 0006 + barrido de los seis ledgers restantes).
 
 **Siguiente paso:** recibir los tres informes, correr el gate de mutación sobre lo del Rust, y despachar al Architect con los hallazgos del Quant en la mano. **Sigue bloqueado en el propietario:** TASK-060 (muestras reales de Forex/CFD) — el propietario las está buscando.
+
+---
+
+## 2026-07-22 / 07-23 · Frente de ingesta: datasets reales, spread/fill/DST, catálogo de entidades, y disciplina de despacho
+
+**Commiteado al arrancar la sesión** (3 commits, `18e4cf0`..`5814034`): `fix(data)` retrofit del ledger (DEBT-032/034), `docs(ingesta)` escala entera + barras + formato estándar, `chore(agents)` plan + `datasets/` en `.gitignore`. **Sin push.**
+
+**Datasets reales entregados por el propietario** (`datasets/`, ~900 MB, ignorados en git). Agente Explore los analizó: el CSV M1 de EURUSD 25 años (2000–2025, barras MT5 con columna SPREAD) es la fuente principal; el tick CSV (abril 2025, bid/ask real) el propietario lo **va a borrar**; los tres `.dat` son binario propietario de QuantDataManager, **no ingestibles sin re-exportar a CSV** (uno mal nombrado: es H1, no M1). Ningún archivo declara zona horaria ni bróker.
+
+**Reconciliación bid/ask (doctrina D3 / ADR-0114 regla c).** El propietario planteó "operamos en el open y aplicamos el spread". **NO revierte el invariante Bid/Ask Exclusivo — lo cumple por reconstrucción:** open MT5 = bid, ask = open + `spread_reported`, compra al ask, vende al bid, nunca punto medio. La columna SPREAD del CSV es lo que hace ingestible los 25 años para fills (antes se creyó que no servía).
+
+**TASK-064 (Quant) — política de spread + fill + DST.** Corregida por el propietario 2026-07-23: (1) el piso de spread NO se calibra contra abril 2025 (dataset fugaz); se calibra **por instrumento** desde el `default_spread` declarado del catálogo + la distribución de spreads no-cero del propio archivo. (2) DST: la zona horaria **se declara** (selector mundial con bandera DST, patrón SQX confirmado por el propietario), NO se infiere de la noticia de Nóminas ni de la volatilidad; hueco de fin de semana solo como verificación estructural opcional. (3) Spread nulo → forward-fill acotado; spread cero → sospechoso, piso por instrumento. Selector configurable: real/aleatorio/fijo con semilla obligatoria.
+
+**TASK-065 (Architect) — catálogo Bróker × Instrumento × Sesión.** Destapó hueco real: **no existe hoy tabla de bróker/instrumento/sesión**; `Instrument` (ADR-0140) nunca se activó; los costos (spread/comisión/swap) viven como CONFIG global (incorrecto: el día de triple swap varía por bróker). Corregido 2026-07-23: se productiza como **FEATURES hexagonales, no tablas** (`instrument-catalog`, `session-catalog`, capa nueva en `pit-data-validator`); esquema de 3 tablas = su persistencia. Gate de coherencia sesión/activo es **N×N por huella de calendario** (no lista de pares), simétrico y con veredicto INDETERMINADO si el archivo es muy corto.
+
+**Colisión de numeración corregida:** ambos agentes crearon `TASK-064` en paralelo; el del Architect se renumeró a **TASK-065**.
+
+**Disciplina de despacho — dos reglas canónicas nuevas (causa raíz: el TL precocinó los prompts).** Los dos subagentes ejecutaron premisas defectuosas que yo les puse en la mano (dataset fugaz + noticia; tablas en vez de features). No fue capacidad de Sonnet, ni contexto, ni la división de governance. Canonizado: (a) `tech-lead/SKILL.md` §"Antes de despachar" — **no precocines la solución en el prompt**, entrega problema + restricciones + doc + entregable y deja que el especialista derive el método; (b) **`GOVERNANCE-4.1.7 — Reta la Premisa Recibida`** (imperativa para TODO agente) — un senior empuja contra una premisa masticada antes de ejecutarla. Memoria: `despacho-no-precocinar-solucion.md`.
+
+**Estado de bloqueos (2026-07-23):** el enfoque está **aprobado por el propietario**; la zona horaria quedó resuelta (declarada); el dataset M1 está disponible → **TASK-060 efectivamente satisfecho para el primer build de Forex** (queda como follow-up re-exportar los `.dat`). **No hay bloqueo para el paso de diseño.**
+
+**Siguiente paso:** despachar al **Architect** para que selle los ADRs y redacte las features. → **HECHO (2026-07-23), ver abajo.**
+
+---
+
+## 2026-07-23 (tarde) · Architect completó el diseño de ingesta — HANDOFF para el próximo Tech-Lead
+
+> ⚠️ **El chat de origen se elimina.** Handoff completo en [`.agents/plans/sesion-2026-07-22-23-ingesta-datasets-diseno-catalogo.md`](../../plans/sesion-2026-07-22-23-ingesta-datasets-diseno-catalogo.md). Esto es el resumen de retoma.
+
+**Estado: frente de diseño de ingesta SELLADO, sin commitear, listo para revisión del propietario.** El Architect (despachado con prompt bien enmarcado, sin precocinar) entregó todo antes de que la API lo cortara por límite de sesión; verificado íntegro en disco.
+
+**Producido (SIN COMMITEAR):**
+- **`docs/adr/ADR-0162.md`** (nuevo) — Catálogo Instrumento × Bróker × Sesión; en índice `docs/ADR.md`. Activa ADR-0140, extiende 0154/0155/0137. Contiene 3 "Corrección del Architect" que retan la premisa (GOVERNANCE-4.1.7): UUIDv7 técnico vs. `instrument_id` de negocio; `row_version` (tablas mutables, no `event_sequence_id`); zona horaria **IANA** (`America/New_York`) en vez de la convención frágil `EST+07`.
+- **5 ADRs enmendados:** 0114 (reconstrucción ask=open+spread), 0140 (activado), 0154, 0155, 0137.
+- **2 features nuevas:** `instrument-catalog.md`, `session-catalog.md`.
+- **4 features extendidas:** `pit-data-validator` (gate coherencia N×N), `data-import-wizard` (selector zona + gate), `data-sanitizer-pipeline` (piso de spread), `backtest-engine` (`SPREAD_SOURCE_MODE`).
+- **`scripts/now.sh`** — reloj de pared determinista (correr antes de estimar cualquier reset de límite; la hora del sistema es la fuente de verdad).
+
+**Lote completo sin commitear** (para agrupar cuando el propietario autorice): TASK-064, TASK-065, ADR-0162 + 5 ADRs + `ADR.md`, 2 features nuevas + 4 extendidas → `docs`; `governance.md` (regla GOVERNANCE-4.1.7), `tech-lead/SKILL.md` (no precocinar despacho), memoria `despacho-no-precocinar-solucion.md` + `MEMORY.md`, `scripts/now.sh`, `PROGRESS.md`, el plan de sesión → `chore(agents)`. **NO push salvo orden explícita.**
+
+**Siguiente paso real (es CÓDIGO):** despachar ingenieros a construir el **adaptador de ingesta MetaTrader** (CSV M1 en `datasets/`, gitignored) → esquema canónico: parser TAB, escala ×10⁸, timestamps ns UTC con zona IANA declarada, `ask = open + spread_reported`, política de spread nulo/cero por instrumento, gate de coherencia de calendario. **En cada despacho aplicar GOVERNANCE-4.1.7:** entregar problema + restricciones + doc + entregable, nunca el método precocinado.
+
+**Bloqueos:** alcance de día 1 de plantillas de sesión (qué brókers) `🔴 pendiente del propietario`; TASK-060 satisfecho para el primer build de Forex (CSV M1 basta); los `.dat` necesitan re-export a CSV (follow-up). El tick de abril 2025 el propietario lo borra — nada depende de él.

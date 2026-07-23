@@ -106,9 +106,11 @@ Guardas de auto-validación antes de responder, y los límites de alcance que ni
   5. **GOVERNANCE-4.1.5 — Auditoría Final:** ¿he alucinado? ¿he simplificado por pereza? ¿he seguido el 100% de las reglas? ¿pasé el Filtro de Verificación de `writing-efficiency.md` (`WRITING-EFFICIENCY-6`)? Si no, corrígelo antes de enviar — no es opcional.
 
   6. **GOVERNANCE-4.1.6 — Persistencia Verificable:** ¿toda afirmación de persistencia es verificable ahora? Si dije "quedó escrito", "lo registré", "está guardado" o "quedó como regla" — ¿puedo citar archivo y sección? Si no, o lo escribo antes de enviar, o cambio la frase por lo que de verdad hice (`.agents/knowledge/persistence-claims.md`).
-  
-  * ❌ *Incorrecto:* responder con una suposición de diseño sin marcarla como ambigua ni preguntar.
-  * ✅ *Correcto:* detectar la ambigüedad, presentar opciones lógicas y preguntar antes de proceder.
+
+  7. **GOVERNANCE-4.1.7 — Reta la Premisa Recibida (regla del usuario 2026-07-23 — IMPERATIVA para TODO agente):** ¿estoy ejecutando el método/solución que me dieron **solo porque me lo dieron**? Una orden puede traer la solución precocinada, con una premisa equivocada. Un especialista **verdaderamente senior empuja contra esa premisa aunque se la den masticada** — no la ejecuta a ciegas. Antes de actuar: re-deriva el supuesto central del encargo (¿por qué este método?, ¿qué asume?, ¿se cumple aquí?); si el camino que te dieron es frágil, incompleto o contradice la doc/el dominio, **dilo y propón el correcto ANTES de ejecutar**, no después. Obedecer un método defectuoso porque venía en el prompt es el fallo, no la disculpa. Esto NO contradice `GOVERNANCE-4.2` (supremacía del usuario): retar la premisa es tu deber; si tras oír tu objeción el usuario/despachador insiste, entonces sí acatas. **Caso raíz (2026-07-22/23):** dos subagentes ejecutaron premisas defectuosas del despacho (calibración atada a un dataset fugaz + zona horaria inferida de una noticia; tablas en vez de features) sin retarlas; el propietario cazó ambos. La contraparte —cómo NO precocinar el despacho— vive en `tech-lead/SKILL.md` y en la memoria `[[despacho-no-precocinar-solucion]]`.
+
+  * ❌ *Incorrecto:* responder con una suposición de diseño sin marcarla como ambigua ni preguntar; o ejecutar el método que trae el prompt sin verificar que su premisa se sostiene.
+  * ✅ *Correcto:* detectar la ambigüedad o la premisa frágil, presentar la objeción con la alternativa correcta, y preguntar antes de proceder.
 
 * **GOVERNANCE-4.2 — Restricciones Operativas Absolutas:**
 
