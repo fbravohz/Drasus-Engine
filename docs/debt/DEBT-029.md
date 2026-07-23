@@ -35,3 +35,7 @@ Hay una tensión real que hay que resolver antes de aplicarlo a ciegas: rechazar
 ## Disparador de pago
 
 **Antes de que exista el segundo conector de ingesta.** Con una sola fuente el riesgo es teórico; en cuanto haya dos formatos de entrada distintos conviviendo, un payload híbrido deja de ser una hipótesis. Se compone con la Task de secuenciación de conectores.
+
+## Resolución parcial de arquitectura (Architect, TASK-063, 2026-07-19)
+
+**El punto 1 ("Decisión del Architect: política de campos desconocidos") queda resuelto por doctrina D3 del propietario, canonizada en `docs/adr/ADR-0156.md` restricción 5:** un payload que mezcla columnas de cotización y de ejecución sin que ningún mecanismo de plataforma conocido (ej. el bitmask de MT5, que sigue permitido vía plantilla) lo explique **se rechaza con error de formato explícito** — nunca se consume parcialmente en silencio. Esto cubre exactamente el caso que esta ficha describe (`TradeTickInput` deserializando un JSON con `bid`/`ask` de sobra). **Lo que sigue abierto en esta ficha, sin cambio:** el punto 2 (aplicar `#[serde(deny_unknown_fields)]` o equivalente a los structs afectados, con su prueba discriminante por struct) y el punto 3 (barrido del resto de contratos de deserialización del repositorio). Son trabajo de implementación, no de decisión — quedan para la Story que el Tech-Lead despache. Detalle: `.agents/plans/architect-2026-07-19-escala-barras-ingesta.md`.

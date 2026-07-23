@@ -52,6 +52,7 @@
 | DEBT-031 | 🟠 Media | La identidad de la serie se teclea a mano en la interfaz y queda sellada en el hash de auditoría | Abierta | [detalle](./debt/DEBT-031.md) |
 | DEBT-032 | 🟠 Media | El patrón de ledger de referencia tiene dos huecos (prueba del clasificador no discriminante + migración sin triggers) y se propagan por copia | Abierta | [detalle](./debt/DEBT-032.md) |
 | DEBT-033 | 🟠 Media | El techo de magnitud de la escala ×10⁸ excluye las cripto de oferta extrema (SHIB/PEPE): una barra horaria normal desborda `i64` — requiere decisión del Architect sobre ADR-0141 | Abierta | [detalle](./debt/DEBT-033.md) |
+| DEBT-034 | 🟠 Media | `sovereign-data-fetcher` nunca pasó el gate de mutación (se cerró antes de que fuera gate formal): 49 supervivientes, 21 de ellos en la lógica de concurrencia | Abierta | [detalle](./debt/DEBT-034.md) |
 
 ---
 

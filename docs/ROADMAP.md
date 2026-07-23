@@ -176,6 +176,8 @@ Cada ficha enlaza a la tabla de TTRs del módulo (fuente de verdad del alcance) 
 
 > **Nota:** EPIC-1 estrena el patrón hexagonal de dominio (ADR-0137): la primera feature (`sovereign-data-fetcher`) puebla `crates/features/data/`, hasta ahora vacío. Los tipos de puerto del catálogo (`Tick`, `Bars`) viven en `crates/shared/src/types/` (invariante: cada crate de feature depende solo de `shared`).
 
+> **Nota (TASK-062, 2026-07-19 — catálogo de `algorithmic-bars` cerrado):** `TICK_COUNT`/`VOLUME`/`RENKO`/`RANGE`/`DOLLAR` quedan especificados y pendientes de implementación en esta fase; `DOLLAR` depende además de que TASK-061 (ensanche `i128`) aterrice, por la asimetría precio×volumen que acumula toda la sesión. Kagi/Point & Figure/Line Break quedan **deliberadamente sin admitir** al catálogo — no encajan en el esquema OHLC y no hay caso de uso concreto que justifique diseñar un tipo de dato nuevo hoy; se reabren si el propietario declara necesidad concreta o si una Story de EPIC-8 los requiere. Barras de desequilibrio/run (López de Prado) quedan anotadas como candidatas de mayor rigor estadístico, sin EPIC asignado. Detalle: `docs/features/algorithmic-bars.md`.
+
 **Criterio de salida** (capacidad del sistema, **no** volumen de dato aportado por Drasus — ADR-0154):
 
 1. **Ingesta soberana por dos vías.** El usuario conecta una fuente propia por **al menos dos de las tres vías** de ADR-0154 (p. ej. credenciales de bróker + exportación desde su terminal) y obtiene, para **al menos dos símbolos y dos temporalidades que él elige**, un lago particionado, sanitizado y validado. Drasus no aporta ni un dato: la profundidad obtenida es la que su fuente le dé, y el sistema la declara en vez de prometerla.

@@ -84,6 +84,32 @@ Esto convierte el mapeo en un **registro append-only**, no en configuración. La
 
 ---
 
-## 4. Nota de método
+## 4. Veredicto legal (General Counsel, 2026-07-19)
+
+**Veredicto:** APTO-CON-CONDICIONES. Documento completo: [LDR-0008](../legal/LDR-0008.md).
+
+**Respuesta directa a la pregunta del propietario:** transformar el archivo del usuario **no** transfiere a Drasus el peso legal del resultado, siempre que el mapeo lo declare el propio usuario sobre una vista previa real de su dato ya transformado (no solo nombres de columna) y esa declaración quede registrada como evidencia inmutable (D4). Adivinar el mapeo sí lo transfiere — es exactamente lo que D2 ya prohíbe. La hipótesis del Tech-Lead **se confirma**, con una corrección de alcance: las **plantillas por plataforma** (D2, primera vía) no son el mismo caso que el mapeo manual declarado (D2, segunda vía). Una plantilla la afirma Drasus, no el usuario — si la plantilla de NinjaTrader/MetaTrader/IB está mal construida, ese es un defecto del propio producto (misma familia que un bug de software), no una responsabilidad que el usuario haya aceptado. Detalle de los tres casos, la comprobación de límite degenerado y las cuatro condiciones que sostienen la protección: [LDR-0008](../legal/LDR-0008.md).
+
+**Criterios de aceptación técnicos que este veredicto añade al ledger de D4** (los cinco campos que D4 ya lista son necesarios, no suficientes):
+
+1. **Bandera explícita del origen del mapeo** (`mapeo_manual_usuario` vs. `plantilla_plataforma`), campo propio y consultable — es el hecho que decide quién responde ante un resultado cuestionado.
+2. **Versión del motor de transformación y del esquema canónico** (ADR-0155) contra el que se declaró el mapeo — sin esto no se puede distinguir "el usuario declaró mal" de "el transformador tenía un defecto en esa versión".
+3. **La vista previa registrada debe ser de datos transformados reales, no de la tabla de correspondencias columna→columna** — un registro que solo guarda el esquema no sostiene la defensa de consentimiento informado que se le pide sostener.
+4. **Trazabilidad obligatoria hasta el dataset y el backtest que un mapeo produjo** — responde la pregunta abierta de D4 ("¿el mapeo declarado queda ligado al dataset resultante?"): sí, es requisito, no preferencia. La mecánica exacta (sello de linaje vs. referencia) queda a criterio del Architect.
+5. **La declaración del usuario no exime a Drasus de correr sus propios guardarraíles antes de aceptar el mapeo** — la regla D3 de rechazo de payload mixto y el validador de punto-en-el-tiempo (`pit-data-validator`) deben correr antes de sellar la fila del ledger. Si Drasus deja pasar algo que su propio validador está construido para detectar, eso es defecto de Drasus, no del mapeo declarado.
+
+**Jurisdicciones:** no se abre análisis jurisdiccional completo aquí — la exigibilidad real de la aceptación (clickwrap) queda anotada en `docs/legal/ROADMAP-TYC.md` Tabla 3 como pendiente de abogado colegiado, y la determinación de dónde se constituye Drasus y bajo qué régimen de consumo queda en TASK-053.
+
+**Bloqueo:** ninguno. No hay objeción legal a que el Architect avance con la mecánica de D1/D4 en Etapa 0.4, sujeta a las cinco condiciones de arriba.
+
+---
+
+## 5. Nota de método
 
 El propietario llegó a D3 por razonamiento propio y pidió confirmación o corrección: *"confírmalo o tal vez yo estoy diciendo la pendejada"*. **No lo estaba** — el invariante es correcto y no estaba escrito en ninguna parte. La corrección es de alcance, no de fondo: el hecho negociado se conserva como materia prima aunque nunca se use para simular una ejecución.
+
+---
+
+## 6. Resolución del Architect (2026-07-19)
+
+**Rechazo por defecto + transformación con vista previa como acción explícita** (no son alternativas excluyentes — D1 fija el default, D2 opera el mecanismo). Canonizado en **ADR-0156** (nuevo), que extiende ADR-0154/ADR-0155. **D3 (doctrina compra/venta)** canonizada como tercera regla FIJA del Contrato de Consistencia Conservadora, **ADR-0114** §Reglas (c) — no ADR nuevo, porque ese es exactamente el ADR que ya gobierna qué precio lee el motor de ejecución. **Trazabilidad de D4/LDR-0008:** por referencia estable (ledger de mapeo → `transformation_records` → `data_snapshot_id`), nunca duplicando la declaración dentro de cada fila de mercado — mismo principio que ADR-0155 ya aplica a Grupo I. **DEBT-029:** capas distintas — su punto 1 (decisión de política) queda resuelto por D3/ADR-0156 restricción 5; sus puntos 2–3 (implementación) siguen abiertos, ahora con doctrina que los gobierna. `docs/features/data-import-wizard.md` corregido: eliminaba el defecto legal de mayor exposición (mapeo automático presentado como aceptado) que contradecía D2 directamente. Detalle completo, las 7 comprobaciones de dominio y la mecánica de trazabilidad: `.agents/plans/architect-2026-07-19-escala-barras-ingesta.md`.

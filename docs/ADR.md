@@ -117,7 +117,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0111](./adr/ADR-0111.md) | Generador Genómico de Portafolio y Correlación (Fase C) — Co-evolución de Cartera y Monte Carlo de Desfase Temporal |
 | [ADR-0112](./adr/ADR-0112.md) | Veredicto SPIKE-002 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`) |
 | [ADR-0113](./adr/ADR-0113.md) | Veredicto SPIKE-003 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`) |
-| [ADR-0114](./adr/ADR-0114.md) | Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora |
+| [ADR-0114](./adr/ADR-0114.md) | Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora · enmendado 2026-07-19 (regla Bid/Ask Exclusivo) |
 | [ADR-0115](./adr/ADR-0115.md) | Veredicto SPIKE-005 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito |
 | [ADR-0116](./adr/ADR-0116.md) | Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas |
 | [ADR-0117](./adr/ADR-0117.md) | Entrega Progresiva de Cáscara Delgada por Feature — Techo Fijo, Ventana de Verificación y Redefinición de EPIC-8 como Unificación ZUI |
@@ -144,7 +144,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0138](./adr/ADR-0138.md) | Design System Centralization en UI (Flutter) — ThemeExtension + Widgets Primitivos |
 | [ADR-0139](./adr/ADR-0139.md) | Principio Rector General — Single Source of Truth para Contratos Reusables |
 | [ADR-0140](./adr/ADR-0140.md) | Opciones Financieras — Diferimiento al Post-MVP con Puerta Abierta |
-| [ADR-0141](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet, pool, retención y convenciones |
+| [ADR-0141](./adr/ADR-0141.md) | Modelado Relacional Soberano — Tipos canónicos, STRICT, UUIDv7, índices, integridad SQLite↔Parquet, pool, retención y convenciones · enmendado 2026-07-19 (ensanche `i128` para volumen acumulado) |
 | [ADR-0142](./adr/ADR-0142.md) | Harness de Verificación sin UI — Canal #2: CLI First (`drasus verify` subcomando Clap en `crates/app`), gRPC Planificado (Spike + tonic + protos por dominio) |
 | [ADR-0143](./adr/ADR-0143.md) | Modelo de Tres Planos + Soberanía Condicionada por Tier — Derogación de Zero-Telemetry, Cabina de Mando Central del Proveedor |
 | [ADR-0144](./adr/ADR-0144.md) | Substrato de Monetización — Nueve Cimientos como Puertos y Esquema (adaptadores después); clasifica modelos en cimiento/moonshot-zizaña/descartado |
@@ -158,7 +158,8 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0152](./adr/ADR-0152.md) | Banco de Pruebas como Gate Permanente de Definición de Terminado — Realización Canónica de la SVF Genérica · enmienda ADR-0117 |
 | [ADR-0153](./adr/ADR-0153.md) | Banco de Estrategias Unificado — Cluster Fusionado (enmienda ADR-0090/ADR-0072), Eje de Proceso Workspace→Pipeline (extiende ADR-0136) y Selección Efímera (extiende ADR-0137) |
 | [ADR-0154](./adr/ADR-0154.md) | Drasus Provee Conectores, No Datos de Mercado — Tres Vías de Ingesta, Tabla de Capacidades por Bróker y Frontera de Responsabilidad sobre el Dato · generaliza ADR-0034 |
-| [ADR-0155](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo, Principio "Guarda el Hecho, Calcula la Interpretación" · concreta ADR-0154, extiende ADR-0141/ADR-0140/ADR-0137 |
+| [ADR-0155](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo, Principio "Guarda el Hecho, Calcula la Interpretación" · concreta ADR-0154, extiende ADR-0141/ADR-0140/ADR-0137 · enmendado 2026-07-19 (`i128` en volumen acumulado, `RANGE` en `bar_type`) |
+| [ADR-0156](./adr/ADR-0156.md) | Formato Estándar de Ingesta por Archivo — Rechazo por Defecto, Plantillas de Plataforma como Responsabilidad de Drasus, Mapeo Declarado como Evidencia Inmutable · extiende ADR-0154/ADR-0155, relacionado con ADR-0114 |
 | [ADR-0157](./adr/ADR-0157.md) | Visualización de Estrategia — Un Motor de Render, Dos Entradas Separadas (Vista en Vivo / Repetición de Corrida), Invariante de No-Perturbación y Agnosticismo al Tipo de Barra · refresca la feature previa de reproducción, extiende ADR-0136/ADR-0137, hereda ADR-0114/ADR-0027 |
 | [ADR-0158](./adr/ADR-0158.md) | Topología de Fuentes de Señal y Destinos de Ejecución — Estrategias Cross-Market y Cross-Timeframe de Entrada, Alineación por Reloj para Toda Fuente, Riesgo Agregado en Destinos Múltiples · extiende ADR-0114/ADR-0111/ADR-0108/ADR-0151, depende de TASK-059 |
 | [ADR-0159](./adr/ADR-0159.md) | Símbolos Sintéticos por Fórmula — Instrumentos Derivados Deterministas como Fuente de Señal, AST Tipado, Modos Declarado y Evolucionado, Conocibilidad por Eslabón Más Débil · fuente de ADR-0158, extiende ADR-0113/ADR-0020/ADR-0161 |

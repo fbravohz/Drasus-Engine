@@ -41,6 +41,35 @@ Ninguno vivo. Ningún código escribe `UPDATE` sobre esos ledgers, y ningún cla
 
 Lo que queda abierto en esta deuda es **el retrofit del código existente**, no el molde.
 
+## ⚠️ El alcance real es mayor de lo que esta ficha decía (barrido 2026-07-19)
+
+El retrofit de `sovereign-data-fetcher` se ejecutó y **el barrido de confirmación destapó que el marco de "ocho ledgers, dos con hueco" era falso**. Cifras verificadas de forma independiente por el Tech-Lead, no tomadas del reporte:
+
+- **16 implementaciones** del clasificador en el repo, no 8.
+- **21 migraciones** mencionan `event_sequence_id`.
+
+### Hueco 1 (clasificador sin prueba directa) — tres niveles
+
+| Nivel | Dónde | Gravedad |
+|---|---|---|
+| **Cero llamadas directas** — el hueco original completo | `shared/src/persistence/audit_log.rs` (0002), `shared/src/persistence/third_party_api_gateway.rs` (0014) | El de `0014` repite literalmente el patrón tautológico: verifica el mensaje de un INSERT crudo, nunca el clasificador |
+| **1 de 3 casos canónicos** | `shared/src/persistence/mcp_gateway.rs` (0005) | Cubre "permanente"; falta el control no-BD y el transitorio |
+| **2 de 3 casos** — falta el caso positivo con llamada directa | `data_portability.rs` (0019), `usage_metering.rs` (0010), `data_aggregation.rs` (0015), `verified_account_registry.rs` (0016), `master_account_hierarchy.rs` (0018), `operator_roles.rs` (0020), `job.rs` (0003), `consent_registry.rs` (0011), `instance_continuity.rs` (0017), `institutional_report_engine.rs` (0013), `enriched_domain_events.rs` (0012) | El caso transitorio solo se ejerce indirectamente vía la prueba de contención con candado real |
+
+**Lo más incómodo:** `data_portability` (0019) es **la referencia limpia que `ledger-pattern.md` cita**, y tampoco cumple literalmente el punto 7 del molde en sus tres casos. El molde se escribió describiendo lo que la 0019 hacía bien (los candados), sin auditar lo que hacía a medias.
+
+### Hueco 2 (candados) — un ledger más, no mencionado antes
+
+`migrations/0004_telemetry.sql` — `telemetry_samples` tiene `event_sequence_id INTEGER NOT NULL UNIQUE` (es un ledger append-only) **sin candados anti UPDATE/DELETE**. Verificado por el Tech-Lead: es el único caso restante.
+
+Peor: su repositorio **no implementa el patrón en absoluto** — sin `BEGIN IMMEDIATE`, sin clasificador, sin reintento. Eso no es un hueco del molde: es un ledger que nunca lo siguió, y roza el terreno de DEBT-001 (atomicidad). **Requiere verificación aparte** antes de decidir si se arregla aquí o se escala.
+
+**Descartados tras verificación** (no son ledgers, y están correctamente documentados como mutables por ADR-0141): `0007_central_identity`, `0008_licensing_system`, `0009_plan_tier_quota` usan `row_version`, no `event_sequence_id UNIQUE`. `0001_foundation_master_fields` es la tabla ancla de referencia del contrato, mutable por diseño.
+
+### Lección de método
+
+**Se corrigió el molde apuntando a una referencia que tampoco se había auditado.** Es el mismo error de origen, un nivel más arriba: se eligió "la que se ve más limpia" en lugar de verificarla punto por punto. La regla de `ledger-pattern.md` —una referencia se declara Y se audita— aplicaba también al acto de escribir la propia regla.
+
 ## Qué hay que hacer
 
 1. **Prueba real del clasificador en `sovereign-data-fetcher`**: ejercitar la función directamente con los casos que debe distinguir, y verificar por mutación que sobrevive a la inversión de su lógica.

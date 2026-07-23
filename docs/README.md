@@ -423,6 +423,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0153**](./adr/ADR-0153.md) | Banco de Estrategias Unificado — Cluster Fusionado, Eje de Proceso Workspace→Pipeline y Selección Efímera |
 | [**ADR-0154**](./adr/ADR-0154.md) | Drasus Provee Conectores, No Datos de Mercado — Tres Vías de Ingesta, Tabla de Capacidades por Bróker y Frontera de Responsabilidad sobre el Dato |
 | [**ADR-0155**](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo |
+| [**ADR-0156**](./adr/ADR-0156.md) | Formato Estándar de Ingesta por Archivo — Rechazo por Defecto, Plantillas de Plataforma como Responsabilidad de Drasus, Mapeo Declarado como Evidencia Inmutable |
 
 ---
 

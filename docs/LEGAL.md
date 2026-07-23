@@ -24,6 +24,7 @@ Cada decisión legal vive en su propio archivo bajo [`legal/`](./legal/), con el
 | [LDR-0005](./legal/LDR-0005.md) | Grabación del Flujo de Datos en Vivo — Confirmación de la Postura del Propietario, con Alcances y Límites Reales | Postura confirmada, dos precisiones de alcance |
 | [LDR-0006](./legal/LDR-0006.md) | Frontera de Agregación por Licencia de Fuente — la Regla Vinculante, Extraída como Cláusula Independiente | Regla FIJA |
 | [LDR-0007](./legal/LDR-0007.md) | Substrato de Monetización ya Cubierto — Catálogo para Efectos de Términos y Condiciones | Catálogo |
+| [LDR-0008](./legal/LDR-0008.md) | Transformar el Archivo del Usuario con Mapeo Declarado no Transfiere Responsabilidad — Adivinarlo Sí; Plantillas de Plataforma son un Tercer Caso, Propio de Drasus | APTO-CON-CONDICIONES |
 
 **Cierre del corpus:** [`legal/ROADMAP-TYC.md`](./legal/ROADMAP-TYC.md) — qué cláusula ya está sostenida, qué falta, y qué exige abogado colegiado de una jurisdicción concreta antes de publicar. Incluye el límite explícito de alcance de este corpus (no sustituye asesoría legal colegiada).
 

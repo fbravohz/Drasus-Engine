@@ -29,6 +29,7 @@ Quien redacta este documento y los `LDR-XXXX` es un **agente de IA operando bajo
 | Veracidad de cuentas verificadas y su publicación | [LDR-0007](./LDR-0007.md) §4, ADR-0145 | Mecanismo cimentado (atestado vs. reportado, LIVE vs. virtual); falta el texto público que acompaña cada track record publicado |
 | Soberanía de datos condicionada por tier (qué es del usuario, qué es del proveedor) | [LDR-0007](./LDR-0007.md) §5, ADR-0143 | Mecanismo cimentado; falta el texto — es la cláusula de mayor visibilidad y mayor exposición de todo el corpus (ver Tabla 3) |
 | Descarga/migración de datos de bróker — postura general | [LDR-0002](./LDR-0002.md), [LDR-0003](./LDR-0003.md) | Postura y condiciones fijadas; **bloqueada para publicación** hasta cerrar verificaciones pendientes (ver Tabla 2) |
+| Transformación de archivos con mapeo declarado por el usuario — responsabilidad sobre el resultado | [LDR-0008](./LDR-0008.md) | Regla fijada (mapeo declarado protege bajo 4 condiciones; plantilla de plataforma no); falta el texto público que acompaña la pantalla de vista previa/aceptación |
 | Promesa "nunca vemos tus credenciales" | ADR-0093, [LDR-0003](./LDR-0003.md) §2 | Arquitectura correcta; texto solo publicable como garantía absoluta tras auditoría técnica (ver Tabla 2) |
 
 ---
@@ -58,6 +59,7 @@ Quien redacta este documento y los `LDR-XXXX` es un **agente de IA operando bajo
 | **Verificación final de la interpretación de la cláusula de Binance como "riesgo de aplicación bajo" y no "prohibición literal"** | La lectura favorable a Drasus (LDR-0002) es razonable pero es una opinión de riesgo, no un hecho contractual. Antes de escalar comercialmente el adaptador, conviene una opinión externa o consentimiento escrito de Binance. | Jurisdicción del contrato de Binance (revisar sus términos de elección de foro) |
 | **Sanciones/control de exportación (OFAC y equivalentes) para un producto cripto con alcance potencialmente global** | Mencionado en el mandato de este skill, no auditado en este corpus — ningún ADR revisado lo cubre todavía. | EE. UU. (OFAC), UE |
 | **Límites de responsabilidad (topes en USD) e indemnización** | Cláusulas estándar de SaaS que dependen de jurisprudencia local sobre qué tope es "razonable" y ejecutable — no auditadas aquí. | Todas las jurisdicciones de publicación |
+| **Exigibilidad de la aceptación "clickwrap" del mapeo de transformación** ([LDR-0008](./LDR-0008.md)) | Si un clic sobre la pantalla de vista previa/aceptación cuenta como consentimiento informado real depende de jurisprudencia local de exigibilidad de clickwrap y de términos abusivos de consumo — mismo tipo de riesgo que la fila de cesión de propiedad, caso propio. | UE (unfair contract terms directive), Reino Unido, California (CCPA/CPRA + Unfair Competition Law), EE. UU. (línea de casos clickwrap vs. browsewrap) |
 
 ---
 

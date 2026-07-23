@@ -61,3 +61,7 @@ El código implementa fielmente la decisión de ADR-0141 y la implementa de form
 ## Disparador de pago
 
 **Antes de habilitar ingesta real de cripto de oferta extrema.** EPIC-1 incluye cripto explícitamente y la muestra de prueba ya viene de una fuente donde estos activos se negocian a diario. No es urgente hoy porque nadie ingiere en producción todavía; sí es previo a cualquier promesa pública de cobertura de mercados.
+
+## Resolución de arquitectura (Architect, TASK-061, 2026-07-19)
+
+**Decisión sellada, implementación pendiente.** `Bars.volume_traded`/`volume_buy` ensanchan de `i64` a `i128` — la escala ×10⁸ no cambia (sigue única para todo el sistema); solo se ensancha el ancho del acumulador en los dos campos donde el riesgo es real. Detalle completo, costo de infraestructura verificado (SQLite/Polars/DuckDB/`flutter_rust_bridge`) y alcance de la corrección: `docs/adr/ADR-0141.md` §"Ensanche de ancho para volumen acumulado" y `.agents/plans/architect-2026-07-19-escala-barras-ingesta.md`. Esta ficha permanece **Abierta** hasta que la Story de implementación aterrice el cambio en código (`domain.rs`/`schemas.rs`/`persistence.rs`/`Cargo.toml` del crate `hybrid-data-transformer` + `BarDto` del Bridge) — el Tech-Lead cierra/promueve esta ficha en ese momento, no antes.
