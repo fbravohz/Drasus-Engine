@@ -27,6 +27,10 @@ use sovereign_data_fetcher::public_interface::{VerifyInput, verify};
 use hybrid_data_transformer::public_interface::{
     verify as verify_hybrid_data_transformer, VerifyInput as HybridDataTransformerVerifyInput,
 };
+use instrument_catalog::public_interface::{
+    verify as verify_instrument_catalog, VerifyInput as InstrumentCatalogVerifyInput,
+};
+use session_catalog::public_interface::{verify as verify_session_catalog, VerifyInput as SessionCatalogVerifyInput};
 
 // ────────────────────────────────────────────────────────────────────────────
 // CLI declarativa (Clap 4 con el macro `derive`)
@@ -80,11 +84,13 @@ enum Commands {
     ///   drasus verify master-account-hierarchy --input '{"parent_owner_id":"fund-X","child_owner_id":"trader-7","node_id":"node-A","consent":"COVERED","command_kind":"ARCHIVE","target_ref":"strategy-42","justification":"riesgo excedido"}'
     ///   drasus verify data-portability --input '{"owner_id":"user-42","institutional_tag":"LIVE","node_id":"node-A","request_type":"FORGET"}'
     ///   drasus verify operator-roles --input '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'
+    ///   drasus verify instrument-catalog --input '{"instrument_id":"EURUSD","venue":"PEPPERSTONE"}'
+    ///   drasus verify session-catalog --input '{"template_code":"FOREX_245"}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `hybrid-data-transformer`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `hybrid-data-transformer`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`, `instrument-catalog`, `session-catalog`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -688,10 +694,72 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Instrument Catalog (STORY-066, ADR-0162) ──────────────────────────
+        "instrument-catalog" => {
+            // `instrument_id`/`venue` tienen defaults de humo razonables
+            // (EURUSD/PEPPERSTONE) -- verify() da de alta el instrumento en
+            // la BD temporal si no existe, así que `drasus verify
+            // instrument-catalog` sin --input ya produce un resultado
+            // significativo.
+            let input: InstrumentCatalogVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => InstrumentCatalogVerifyInput::default(),
+            };
+
+            let output = verify_instrument_catalog(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("InstrumentCatalogVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
+        // ── Session Catalog (STORY-066, ADR-0162) ─────────────────────────────
+        "session-catalog" => {
+            // `template_code` tiene default de humo razonable ("FOREX_245")
+            // -- verify() siembra SESSION_TEMPLATE_SEED_SET en la BD
+            // temporal antes de resolver, así que `drasus verify
+            // session-catalog` sin --input ya produce un resultado
+            // significativo.
+            let input: SessionCatalogVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => SessionCatalogVerifyInput::default(),
+            };
+
+            let output = verify_session_catalog(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("SessionCatalogVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, hybrid-data-transformer, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, hybrid-data-transformer, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles, instrument-catalog, session-catalog"
             );
             std::process::exit(1);
         }

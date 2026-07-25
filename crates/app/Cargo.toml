@@ -31,6 +31,11 @@ sovereign-data-fetcher = { path = "../features/data/sovereign-data-fetcher" }
 # Se añade para soportar el subcomando `verify hybrid-data-transformer` (ADR-0142).
 hybrid-data-transformer = { path = "../features/data/hybrid-data-transformer" }
 
+# Catálogo de instrumento/bróker y catálogo de sesión (ADR-0162, STORY-066).
+# Se añaden para soportar `verify instrument-catalog` / `verify session-catalog`.
+instrument-catalog = { path = "../features/data/instrument-catalog" }
+session-catalog = { path = "../features/data/session-catalog" }
+
 # Serialización/deserialización JSON para el input/output del subcomando `verify`.
 # Reutiliza la misma versión que ya usa el workspace (ya presente en el feature crate).
 serde_json = "1"

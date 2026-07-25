@@ -1,0 +1,49 @@
+//! Feature: `session-catalog` — catálogo de plantillas de calendario de
+//! mercado compartidas (forma de mercado, no bróker ni símbolo).
+//!
+//! **Dominio:** data
+//! **Primer consumidor (ADR-0118):** EPIC-1 (Ingest), STORY-066
+//! **Perfil ADR-0020:** A (Datos/Ingest — Identidad + Linaje + Hardware)
+//!
+//! Crate hexagonal de dominio (ADR-0137): expone solo sus puertos tipados a
+//! través de `public_interface`. La lógica pura vive en `domain` (derivación
+//! de huella de calendario + cadena de resolución de sesión, sin ningún
+//! import de I/O); los adaptadores de infraestructura en
+//! `orchestrator`/`persistence`.
+//!
+//! ## Premisa retada al Tech-Lead (GOVERNANCE-4.7)
+//!
+//! El TTR-003 original describe `ResolveSession` como si siguiera "la
+//! cadena override de bróker -> default de instrumento" leyendo
+//! directamente `broker_instrument_terms`/`instrument_master` -- tablas
+//! que pertenecen al crate `instrument-catalog`. Eso viola el invariante
+//! duro de ADR-0137 ("cada feature-crate depende solo de `shared`;
+//! prohibido acoplar features entre sí"). Resolución aplicada aquí:
+//! `domain::resolve_session_template_id` recibe los DOS IDs YA resueltos
+//! como parámetros (el override, si existe, y el default del instrumento)
+//! -- la responsabilidad de leer esas dos tablas queda en
+//! `instrument-catalog` (que sí las posee); la capa de composición
+//! (Bridge/preset/`data-import-wizard`) es quien conecta ambos puertos.
+//! Este crate JAMÁS importa `instrument-catalog` ni toca su esquema.
+//!
+//! ## Reglas de frontera (ADR-0002 + ADR-0137)
+//!
+//! - `public_interface` es el ÚNICO módulo `pub` de este crate.
+//! - `domain` no importa nada que toque I/O (`sqlx`, `tokio`).
+//! - Prohibido depender de otros feature crates — solo `shared`.
+
+mod domain;
+mod orchestrator;
+mod persistence;
+mod schemas;
+
+pub mod public_interface;
+
+#[cfg(test)]
+mod tests {
+    /// Prueba de humo: el crate compila y enlaza correctamente.
+    #[test]
+    fn crate_compiles_and_links() {
+        assert_eq!(2 + 2, 4);
+    }
+}
