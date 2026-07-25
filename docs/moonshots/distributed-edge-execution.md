@@ -2,7 +2,7 @@
 
 ## 1. Visión del Moonshot
 
-Topología para operar **varios brókers en vivo simultáneamente** desde un único panel de control, colocando un **nodo satélite por bróker** (opcionalmente geo-localizado cerca del bróker) que ejecuta de forma autónoma, mientras el operador conserva su panel Local-First que ve la flota **como un portafolio**.
+Topología para operar **varios brókers en vivo simultáneamente** desde un único panel de control, colocando un **nodo satélite por bróker** (patrón recomendado, opcionalmente geo-localizado cerca del bróker) que ejecuta de forma autónoma, mientras el operador conserva su panel Local-First que ve la flota **como un portafolio**. La cardinalidad nodo↔bróker es configurable, a discreción del operador (ADR-0119).
 
 No es una arquitectura nueva inventada desde cero: **compone** decisiones que el sistema ya tiene, formalizadas en **ADR-0119** (separación Plano de Control / Plano de Ejecución). Su valor primario es **resiliencia, autonomía 24/7 y aislamiento de fallos** — la latencia es un beneficio secundario, no la bandera (ver §5).
 
@@ -20,7 +20,7 @@ No es una arquitectura nueva inventada desde cero: **compone** decisiones que el
 ```
 
 - **Plano de Control (operador):** orquesta, ve telemetría consolidada (PnL, estado, métricas) y emite comandos (`StopNode`, `SuspendStrategy`, `Rebalance`). Es Local-First; puede apagarse sin detener la operación.
-- **Plano de Ejecución (cada nodo):** instancia headless de Drasus (ADR-0033 modo SaaSCloudEngine) anclada a UN bróker. Ejecuta autónoma; si pierde el enlace, sigue gestionando posiciones bajo reglas de riesgo locales.
+- **Plano de Ejecución (cada nodo):** instancia headless de Drasus (ADR-0033 modo SaaSCloudEngine) anclada al bróker o brókers que el operador le asigne (default recomendado: uno por nodo, ver ADR-0119 "Cardinalidad nodo↔bróker"). Ejecuta autónoma; si pierde el enlace, sigue gestionando posiciones bajo reglas de riesgo locales.
 
 ## 3. Piezas que ya existen (esto es composición, no invención)
 
