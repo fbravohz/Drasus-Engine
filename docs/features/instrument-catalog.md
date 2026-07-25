@@ -1,8 +1,8 @@
 # Instrument Catalog
 
 **Carpeta:** `./features/instrument-catalog/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-23 (ADR-0162)
+**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`)
+**Última actualización:** 2026-07-25 (STORY-066)
 **Decisión Arquitectónica Asociada:** ADR-0140 (activa el registro `Instrument`) · ADR-0154 (distingue de la tabla de capacidades) · ADR-0155 (hogar de los atributos estáticos de instrumento) · ADR-0162 (esta feature)
 
 ## ¿Qué es?

@@ -1,8 +1,8 @@
 # Session Catalog
 
 **Carpeta:** `./features/session-catalog/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-23 (ADR-0162)
+**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`)
+**Última actualización:** 2026-07-25 (STORY-066)
 **Decisión Arquitectónica Asociada:** ADR-0141 (sesiones derivadas en runtime) · ADR-0162 (esta feature)
 
 ## ¿Qué es?
@@ -31,7 +31,7 @@ Es el catálogo de plantillas de calendario de mercado. Una plantilla de sesión
 
 | Parámetro | Default | Rango | Qué hace | FIJO/CONFIG |
 |---|---|---|---|---|
-| SESSION_TEMPLATE_SEED_SET | Forex 24/5, Cripto 24/7 | — | Plantillas preconfiguradas que el sistema ofrece al arrancar, para que el usuario no empiece de cero (alcance exacto de día 1 pendiente de confirmación del propietario, ver "Dependencias y Bloqueantes") | CONFIG |
+| SESSION_TEMPLATE_SEED_SET | Forex 24/5, Cripto 24/7, Futuros (CME Globex) | — | Plantillas preconfiguradas que el sistema ofrece al arrancar, para que el usuario no empiece de cero. **Confirmado por el propietario 2026-07-25:** Forex, Cripto y Futuros. La plantilla de Futuros es un default **representativo** estilo CME Globex (zona `America/Chicago`, hueco diario de mantenimiento + hueco semanal), **editable** por el usuario — los calendarios de futuros son específicos del mercado/producto y esta semilla es solo un punto de partida, no una verdad universal | CONFIG |
 
 ## Estructura Interna (FCIS — ADR-0002)
 
@@ -114,7 +114,7 @@ Tablas propias, esquema completo en ADR-0162.
 
 ## Dependencias y Bloqueantes
 
-- Bloqueado por: ninguno para el mecanismo (puede construirse en cuanto se apruebe ADR-0162). El **alcance exacto de día 1** (cuántas plantillas preconfiguradas salen al arrancar más allá de Forex 24/5 y Cripto 24/7) queda pendiente de confirmación del propietario — depende de qué brókers soporta el primer conector real (mismo bloqueo que TASK-060).
+- Bloqueado por: ninguno para el mecanismo (puede construirse en cuanto se apruebe ADR-0162). El **alcance de día 1 del `SESSION_TEMPLATE_SEED_SET`** quedó **resuelto por el propietario (2026-07-25): Forex 24/5, Cripto 24/7 y Futuros (CME Globex representativo, editable)**. Los calendarios de futuros específicos por producto/mercado se refinan por el usuario sobre la plantilla semilla.
 - **"Consumido por" = accede al puerto:** [`pit-data-validator`](./pit-data-validator.md) (huella esperada del Gate de Coherencia), [`instrument-catalog`](./instrument-catalog.md) (default de sesión por instrumento).
 - **Contrato de Integración UI:** **Ventana de Verificación** — consumidora principal: `pit-data-validator`, veredicto del Gate de Coherencia. El observable de esta feature es la huella de calendario esperada visible junto al resultado del gate tras una importación.
 

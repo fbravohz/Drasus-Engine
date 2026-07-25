@@ -1,7 +1,7 @@
 # DATA-MODEL.md — Índice del Modelo de Datos Real
 
 > **Propósito:** el mapa de las tablas SQLite que existen HOY (`migrations/*.sql`), quién es su dueña, y cómo se relacionan — sin tener que abrir el `.sql` ni el código. Igual que `docs/ADR.md`/`docs/SAD.md`, este archivo es el **índice**; la ficha completa de cada tabla vive en `docs/data-model/<tabla>.md` (plantilla: [`docs/templates/DATA-MODEL.md`](./templates/DATA-MODEL.md)).
-> **Cobertura:** 30 tablas reales en 21 migraciones (`migrations/0001` a `migrations/0021`), verificado 2026-07-12 leyendo el 100% de las migraciones línea por línea — cero tablas inventadas o supuestas (`transformation_records`/`0021` añadida 2026-07-18, STORY-051).
+> **Cobertura:** 34 tablas reales en 22 migraciones (`migrations/0001` a `migrations/0022`), verificado 2026-07-12 leyendo el 100% de las migraciones línea por línea — cero tablas inventadas o supuestas (`transformation_records`/`0021` añadida 2026-07-18, STORY-051; `instrument_master`/`broker_instrument_terms`/`session_template`/`session_template_window`/`0022` añadidas 2026-07-25, STORY-066).
 > **Protocolo de sincronización (OBLIGATORIO):** toda migración nueva/modificada actualiza su ficha correspondiente en el MISMO cambio. Si una migración no tiene ficha, o la ficha no coincide con la migración real, la migración es la fuente de verdad y la ficha está desactualizada — repórtalo.
 
 ---
@@ -51,6 +51,10 @@
 | [`operator_assignments`](./data-model/operator_assignments.md) | [`operator-roles`](./features/operator-roles.md) | `0020` | Mutable | `owner_id → accounts`, `role_id → operator_roles` |
 | [`operator_role_events`](./data-model/operator_role_events.md) | [`operator-roles`](./features/operator-roles.md) | `0020` | Append-only | `owner_id → accounts` |
 | [`transformation_records`](./data-model/transformation_records.md) | [`hybrid-data-transformer`](./features/hybrid-data-transformer.md) | `0021` | Append-only | — |
+| [`session_template`](./data-model/session_template.md) | [`session-catalog`](./features/session-catalog.md) | `0022` | Mutable | — |
+| [`session_template_window`](./data-model/session_template_window.md) | [`session-catalog`](./features/session-catalog.md) | `0022` | Mutable | `session_template_id → session_template` |
+| [`instrument_master`](./data-model/instrument_master.md) | [`instrument-catalog`](./features/instrument-catalog.md) | `0022` | Mutable | `default_session_template_id → session_template` (nullable) |
+| [`broker_instrument_terms`](./data-model/broker_instrument_terms.md) | [`instrument-catalog`](./features/instrument-catalog.md) | `0022` | Mutable | `instrument_id → instrument_master(instrument_id)`, `session_template_id_override → session_template` (nullable) |
 
 ---
 
