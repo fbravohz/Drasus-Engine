@@ -32,7 +32,7 @@ Es el componente responsable de auditar la integridad de los datos históricos y
 |---|---|---|---|---|
 | HEATMAP_RESOLUTION | Monthly | Daily/Monthly | Granularidad de la auditoría visual | CONFIG |
 | MIN_GREEN_SCORE | 99.9% | 90% - 100% | Umbral para marcar zona como íntegra | CONFIG |
-| ANALYZE_VOLATILITY | False | True/False | Detectar anomalías de precios (outliers) además de gaps | CONFIG |
+| ANALYZE_VOLATILITY | False | True/False | Colorea zonas con transiciones marcadas `INVÁLIDO` o etiquetadas "gap de sesión"/"volatilidad verificada" por la Detección de Gaps de Precio (`data-sanitizer-pipeline` Capa 3, ADR-0037 enmienda 2026-07-24) — este flag consume ese veredicto, no calcula outliers por su cuenta | CONFIG |
 
 ## Ciclo de Vida de la Feature — Quality Heatmap Generator
 

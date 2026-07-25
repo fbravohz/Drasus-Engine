@@ -5,7 +5,7 @@
 **Carpeta:** `./features/sovereign-data-fetcher/`
 **Estado:** En Diseño
 **Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0034 (Ingesta Híbrida Soberana) · ADR-0154 (doctrina de procedencia: Drasus provee conectores, no datos) · ADR-0155 (esquema canónico de `QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`)
+**Decisión Arquitectónica Asociada:** ADR-0034 (Ingesta Híbrida Soberana) · ADR-0154 (doctrina de procedencia: Drasus provee conectores, no datos) · ADR-0155 (esquema canónico de `QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`) · ADR-0163 (idempotencia de reimportación — vía automatizada, política configurable sin bloqueo)
 
 > ⚠️ **Corrección de doctrina (ADR-0154, 2026-07-18):** esta feature es un **conector**, no un proveedor. La fuente **nunca es un invariante**: `BULK_SOURCE` pasó de `[FIJO] Binance Vision` a **CONFIG sin valor por defecto** — la elige el usuario entre las fuentes que él tenga, declaradas en la tabla de capacidades por bróker × vía × clase de activo × granularidad. El literal `https://data.binance.vision` que hoy vive en el código (`schemas.rs`) es un **defecto pendiente de corrección**, no el diseño. Además: se persiste **todo** campo que la fuente entregue (ADR-0020); está prohibido recortar el esquema al mínimo común denominador entre fuentes.
 
@@ -30,6 +30,7 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 - NUNCA se usa la API REST para periodos que ya existen en volcados Bulk.
 - NUNCA se inicia la ingesta si el espacio en disco es insuficiente para el tamaño estimado del Bulk.
 - La descarga debe ser asíncrona y no bloquear el hilo principal de la aplicación.
+- **(ADR-0163) Reimportar un rango que se solapa con datos ya persistidos nunca es ambiguo ni silencioso.** Se verifica hash del tramo solapado (no-op si es idéntico); si diverge, se aplica `OVERLAP_RESOLUTION_POLICY` sin bloquear al usuario (esta vía opera desatendida — ej. reconexión tras caída), y la resolución queda siempre en `sovereign_download_records`. La reescritura de la partición Hive-Style la ejecuta `hybrid-data-transformer` (dueño mecánico); esta feature nunca hace `UPDATE` fila por fila.
 
 ## Parámetros Configurables
 
@@ -38,6 +39,7 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 | CONCURRENT_DOWNLOADS | 5 | 1 - 20 | Cuántos archivos descargar simultáneamente | CONFIG |
 | BULK_SOURCE | (ninguna por defecto) | fuentes declaradas en la tabla de capacidades | Qué fuente del usuario se consulta para el volcado masivo | **CONFIG** |
 | DELTA_SYNC_RETRY | 3 | 1 - 10 | Reintentos para la sincronización REST | CONFIG |
+| OVERLAP_RESOLUTION_POLICY | OVERWRITE | OVERWRITE / OMIT | Política aplicada cuando un rango reimportado se solapa con datos ya persistidos y el contenido diverge (ADR-0163) — no aplica si el hash del tramo solapado es idéntico (no-op) | CONFIG |
 
 ## Estructura Interna (FCIS — ADR-0002)
 
@@ -79,6 +81,12 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 
 ### **TTR-003: Alternative Data Webhook Listener**
 - **Qué tiene que pasar:** Implementar un receptor local de HTTP Webhooks en Rust que exponga un puerto seguro. Permite a plataformas como n8n y Zapier inyectar datos alternativos (ej: puntajes de sentimiento, feeds de noticias de impacto) como señales en tiempo real para el generador y motor de ejecución.
+
+### **TTR-005: Resolución de Solape de Reimportación (ADR-0163)**
+- **Qué tiene que pasar:** Antes de escribir un rango descargado, identificar las particiones Hive-Style ya existentes dentro de ese rango, calcular el hash del tramo solapado y decidir no-op / aplicar `OVERLAP_RESOLUTION_POLICY`, delegando la reescritura atómica de partición a `hybrid-data-transformer`.
+- **Cómo sé que está hecho:**
+  - [ ] Reimportar el mismo rango con la misma fuente produce "0 filas modificadas" sin tocar disco.
+  - [ ] Reimportar un rango parcialmente solapado con contenido divergente aplica la política configurada y lo refleja en `sovereign_download_records`.
 
 ### **TTR-004: Alternative Time-Series Converter (Backtestable Data)**
 - **¿Cuál es el problema?** Los datos alternativos asíncronos (sentimiento de mercado, noticias fundamentales, análisis macroeconómicos) no son útiles para investigar si no se estructuran históricamente, impidiendo su backtesting.

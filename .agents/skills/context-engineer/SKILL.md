@@ -130,4 +130,4 @@ Antes de entregar cualquier documento reescrito o diseñado, revisa esta lista.
 * **CONTEXT-ENGINEER-4.1:** ¿el entregable es solo el documento reescrito, la regla canonizada, o el proceso/documento nuevo pedido (`CONTEXT-ENGINEER-1.3`), sin contenido de dominio añadido?
 * **CONTEXT-ENGINEER-4.2:** ¿seguí los 5 pasos del protocolo, en orden, incluyendo señalar contenido fuera de dominio (`CONTEXT-ENGINEER-2`)?
 * **CONTEXT-ENGINEER-4.3:** ¿respeté las 3 restricciones — nada inventado, nada cortado, dueño ambiguo preguntado (`CONTEXT-ENGINEER-3`)?
-* **CONTEXT-ENGINEER-4.4:** ¿pasé la Auditoría Final de `governance.md` (`GOVERNANCE-4.1.5`) y, si canonicé o rediseñé un bloque o documento, el checklist correspondiente de `.agents/templates/instruction-formats.md` o `.agents/templates/knowledge.md` — incluido el campo `Tamaño` recalculado?
+* **CONTEXT-ENGINEER-4.4:** ¿pasé la Auditoría Final de `governance.md` y, si canonicé o rediseñé un bloque o documento, el checklist correspondiente de `.agents/templates/instruction-formats.md` o `.agents/templates/knowledge.md` — incluido el campo `Tamaño` recalculado?

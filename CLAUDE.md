@@ -58,7 +58,7 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 
 Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `governance.md` (el único documento `SIEMPRE`). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.
 
-**Gate de Reportaje de Conocimiento (OBLIGATORIO):** cuando detectes que el concepto en el que trabajas toca el área de un documento de knowledge (los del índice), léelo bajo demanda y **declara explícitamente al invocador** qué documento consultaste y por qué (`[knowledge consultado: <doc> — <motivo>]`). `governance.md` se declara siempre al arrancar; los demás, cuando se consultan. El invocador (usuario / Architect / Tech-Lead) debe saber qué conocimiento se usó para resolver cada conflicto real.
+**Gate de Reportaje de Conocimiento (OBLIGATORIO):** toda lectura bajo demanda y toda aplicación de sus reglas se declaran explícitamente al invocador — mecánica y formato exactos en `GOVERNANCE-1.5` (`.agents/knowledge/governance.md`). `governance.md` se declara siempre al arrancar; los demás documentos, cuando se consultan.
 
 ---
 

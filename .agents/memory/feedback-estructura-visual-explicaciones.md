@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 2efeeeb3-0a36-45a2-bb5d-56ac9007bf90
-  modified: 2026-07-20T06:12:21.255Z
+  modified: 2026-07-24T01:06:15.224Z
 ---
 
 Al aplicar la estructura Contexto-Antes-de-Detalle (`writing-efficiency.md` `WRITING-EFFICIENCY-4.1`: problema → solución → por qué → detalle) en una explicación al usuario:
@@ -14,7 +14,7 @@ Al aplicar la estructura Contexto-Antes-de-Detalle (`writing-efficiency.md` `WRI
 - Bullets para cualquier bloque que liste 2 o más ítems (varios riesgos, varias causas, varios pasos) — nunca enumerarlos en prosa corrida dentro de una oración.
 - En el bloque de Detalle Técnico sobre todo: cada función, comando, flag o herramienta que se nombre lleva entre paréntesis qué hace esa sintaxis concreta — nunca asumir que el nombre se explica solo.
 
-**Esta regla ya está codificada como obligatoria en `writing-efficiency.md` (`WRITING-EFFICIENCY-4.2`/`-4.3`, "Formato Visual de los Bloques") y en el gate de auto-validación de `governance.md` (`GOVERNANCE-4.1.5`)** — no depende de esta memoria para aplicarse, pero la memoria documenta el porqué.
+**Esta regla ya está codificada como obligatoria en `writing-efficiency.md` (`WRITING-EFFICIENCY-4.2`/`-4.3`, "Formato Visual de los Bloques") y en el gate de auto-validación de `governance.md` (`GOVERNANCE-4.5`)** — no depende de esta memoria para aplicarse, pero la memoria documenta el porqué.
 
 **Why:** el usuario reportó tener que leer dos veces una explicación que sí seguía el orden correcto (problema→solución→por qué→detalle), porque el bloque de "problema" mezclaba dos riesgos en una sola oración de prosa, y la etiqueta `[1. Problema]` estaba pegada al texto sin salto de línea. El orden lógico solo no bastó — la delimitación visual es lo que permite leerlo en una pasada.
 

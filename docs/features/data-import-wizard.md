@@ -3,7 +3,7 @@
 **Carpeta:** `./features/data-import-wizard/`
 **Estado:** En Diseño
 **Última actualización:** 2026-07-23 (TASK-064 — declaración de zona horaria de origen)
-**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia) · ADR-0162 (patrón de selector de zona horaria con bandera DST)
+**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia) · ADR-0162 (patrón de selector de zona horaria con bandera DST) · ADR-0163 (idempotencia de reimportación — esta feature es la vía manual, con confirmación explícita)
 
 ## ¿Qué es?
 
@@ -29,7 +29,7 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 
 - NUNCA se descarta un campo que el archivo de origen entregue. El esquema de importación es **abierto por arriba**: marca de tiempo y precio son el mínimo exigido, pero todo lo demás que traiga la fuente —compra, venta, volúmenes por lado, banderas de sesión, identificadores de orden— se conserva y se persiste (ADR-0154, ADR-0020). Reducir la importación a "OHLCV + Timestamp" está **prohibido**: es lo que convierte el spread simulado en un parámetro inventado en vez de un dato observado.
   > ✅ **Pendiente resuelto — ADR-0155 (2026-07-18):** el esquema canónico de campos de la operación y de la vela ya existe (`QuoteTick`/`TradeTick`/`Bars`/`DepthLevel`/`OrderEvent`). Un CSV de MT5 que mezcla cotización y ejecución en las mismas columnas (`Bid, Ask, Last, Volumen`) se importa crudo aquí tal cual llega; el demultiplexado a `QuoteTick`/`TradeTick` es responsabilidad de [`data-normalization-layer`](data-normalization-layer.md) aguas abajo, no de este wizard. El mapeo de columnas del asistente debe reconocer los nombres canónicos de ADR-0155 (`bid`/`ask`/`price`/`trade_volume`/`aggressor_side`/`spread_reported`/`volume_traded`/`volume_ticks`/`trade_count`/`volume_buy`) además de los ya cubiertos (OHLCV/Timestamp).
-- NUNCA se sobreescriben datos existentes sin una confirmación explícita del usuario.
+- **(ADR-0163) NUNCA se sobreescriben datos existentes sin una confirmación explícita del usuario.** A diferencia de la vía automatizada (`sovereign-data-fetcher`), aquí el usuario está presente en el momento de la importación: si el archivo se solapa con un rango ya persistido y el contenido diverge (hash distinto), el asistente muestra una vista previa de qué se sobrescribiría y cuál se conservaría — mismo patrón de confirmación sobre dato transformado real que ya usa para el mapeo de columnas (ADR-0156) — y no persiste nada hasta que el usuario confirme. Si el contenido solapado es idéntico (hash igual), es un no-op silencioso sin fricción.
 - El proceso de importación masiva debe ejecutarse en segundo plano (vía Download Manager) para no bloquear la UI.
 - **(ADR-0156) Rechazo por defecto, nunca adivinanza silenciosa.** Un archivo sin plantilla reconocida y sin mapeo confirmado por el usuario se rechaza — nunca se importa con una interpretación que Drasus inventó sin mostrarla.
 - **(ADR-0156) La confirmación del usuario exige vista previa de dato transformado real**, nunca solo la tabla de correspondencias columna→columna. Un mapeo aceptado sobre una lista abstracta de encabezados no protege a Drasus (LDR-0008 condición 1).
@@ -97,6 +97,7 @@ Cada importación manual registra además el set de relevancia técnica:
 **Depende de:**
 - [`pit-data-validator`](./pit-data-validator.md) — corre sus guardarraíles (incl. el Gate de Coherencia de Calendario, ADR-0162) antes de aceptar el mapeo declarado (ADR-0156 restricción 6).
 - [`session-catalog`](./session-catalog.md)/[`instrument-catalog`](./instrument-catalog.md) — para la asociación bróker↔instrumento↔plantilla de sesión durante la importación (ADR-0162).
+- [`hybrid-data-transformer`](./hybrid-data-transformer.md) — ejecuta la reescritura atómica de partición Hive-Style una vez que el usuario confirma el solape (ADR-0163); este wizard nunca escribe Parquet directamente.
 
 **Consumido por:**
 - [`ingest`](../modules/ingest.md).

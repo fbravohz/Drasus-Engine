@@ -13,9 +13,9 @@ Referencia rápida — elige por lo que el contenido necesita, no por costumbre.
 | Formato | Cuándo usarlo | Posición típica | Lleva | No lleva |
 |---|---|---|---|---|
 | Lecturas Obligatorias | El documento debe declarar qué otros documentos leer, y cuándo. | `<DOC>-0`, al inicio. | Tabla de 4 columnas. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
-| Regla — Completo | La instrucción compite con otra, tiene doc satélite, plantilla de salida, o 2+ definiciones citables por sub-ID. | `<DOC>-N` o `<DOC>-N.N`, en el cuerpo. | Descripción, `Aplica a`, definiciones con sub-ID; campos de cierre solo si aplican. | Campos de cierre sin contenido real (se omiten, nunca `N/A`). |
+| Regla — Completo | La instrucción compite con otra, tiene doc satélite, plantilla de salida, o 2+ definiciones citables por sub-ID. | `<DOC>-N`, en el cuerpo. | Descripción, `Aplica a`, definiciones con sub-ID; campos de cierre solo si aplican. | Campos de cierre sin contenido real (se omiten, nunca `N/A`). |
 | Regla — Ligero | Una sola idea, sin conflicto, sin doc satélite, sin plantilla. | `<DOC>-N`, en el cuerpo. | Una línea: etiqueta + cuerpo. | Descripción rápida, `Aplica a` propio, campos de cierre. |
-| Filtro de Verificación | El documento necesita un chequeo de pre-salida que consolide sus reglas. | `<DOC>-N`, penúltima sección (antes de Ejemplos si los hay). | Lista numerada de preguntas, cada una citando la regla que verifica. | `Precedencia`, `Documento extendido`, `Plantilla de referencia`. |
+| Filtro de Verificación | El documento necesita un chequeo de pre-salida que consolide sus reglas. | `<DOC>-FV-N`, namespace propio — segunda sección, justo después de Lecturas Obligatorias (o primera si no hay tabla). | Lista numerada de preguntas, cada una citando la regla que verifica. | `Precedencia`, `Documento extendido`, `Plantilla de referencia`. |
 | Ejemplos | Mostrar 2+ reglas del documento actuando juntas sobre un texto real. | `<DOC>-N`, cierre del documento. | Intro + casos con `### <DOC>-N.K`, antes/después, medición real si existe. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
 
 ### Cómo Agregar un Formato Nuevo
@@ -30,24 +30,38 @@ Esta tabla no es una lista cerrada — crece cuando aparece un tipo de contenido
 
 ## Niveles de ID
 
-Un ID con punto implica un padre — nunca lo escribas si ese padre no existe como encabezado real en el documento.
+**Tope duro: 2 segmentos, nunca 3.** `<DOC>-N` para un bloque de primer nivel (una Regla, un Filtro de Verificación, etc.), `<DOC>-N.M` para un ítem citable dentro de ese bloque (una definición, una pregunta). `<DOC>-N.M.K` está prohibido — si un ítem `.M` necesita a su vez su propia lista de sub-ítems citables, ese ítem se promueve a su propio bloque de primer nivel (`<DOC>-N` nuevo) y su lista pasa a ser `<DOC>-N.1`, `<DOC>-N.2`... Un ID con punto implica un padre — nunca lo escribas si ese padre no existe como bloque real en el documento.
 
-* **`<DOC>-N` (plano):** documento sin secciones H1 numeradas propias — la mayoría de los knowledge docs son pequeños. Cada bloque es de primer nivel.
-* **`<DOC>-N.N` (anidado):** solo si existe una sección H1 numerada real (`# <DOC> N. <Título de Sección>`) que agrupa varias reglas, como en documentos de skill mayores. `N` es esa sección, `.N` la posición del bloque dentro de ella.
-* **Posiciones fijas:** Lecturas Obligatorias siempre es `<DOC>-0`. El resto de los formatos toma el siguiente número disponible según su posición real en el documento.
+* **`<DOC>-N`:** la unidad de primer nivel — un bloque `## <DOC>-N — <Título>`. Todo formato del catálogo (Regla, Filtro de Verificación, Ejemplos) vive en este nivel.
+* **`<DOC>-N.M`:** un ítem citable dentro del bloque `<DOC>-N` — una definición de una Regla, una pregunta de un Filtro de Verificación. Nunca más profundo.
+* **Agrupación visual no es nivel de ID:** si un documento grande organiza varios bloques bajo un título mayor (ej. "Identidad y Rol" en un SKILL.md extenso), ese título es lectura, no numeración — los bloques debajo siguen siendo `<DOC>-N` planos, en la misma secuencia.
+* **Posiciones fijas:** Lecturas Obligatorias siempre es `<DOC>-0`. Filtro de Verificación usa namespace propio `<DOC>-FV-N` (ver su formato), no compite por número con las Reglas. El resto de las Reglas toma el siguiente número libre de su propia secuencia — ver "Estabilidad de IDs" abajo.
 
 ---
 
-## IDs para Sub-Ítems (Listas Dentro de un Bloque)
+## Estabilidad de IDs (Append-Only)
+
+**Un ID publicado es permanente — nunca se renumera, nunca se reutiliza**, igual que ya funcionan `ADR-XXXX` y `DEBT-XXX` en `docs/`. Insertar una regla nueva nunca desplaza a las que ya existen.
+
+* **Regla nueva = siguiente número libre de su propia secuencia**, sin importar dónde "lógicamente" iría en la lectura. Si un bloque se divide en dos, la mitad que conserva el tema original se queda con el número; la mitad nueva toma el siguiente número libre del documento — nunca uno ya usado por otro bloque.
+* **Retirar una regla no libera su número.** Si un bloque deja de aplicar, se borra y su número queda vacante para siempre — no se reasigna.
+* **Excepción única: reescritura completa de un documento, explícitamente autorizada por el usuario en el turno actual** (no una edición incremental). Ahí sí se renumera todo de una sola vez, porque las referencias externas se corrigen en el mismo movimiento.
+* **Nada de lenguaje de enmienda dentro de una regla.** Si una regla cambia, se edita directo — sin anotar "(antes decía X, ahora Y)" ni "enmienda del \<fecha\>" en su cuerpo. El historial vive en git, no en la prosa.
+
+---
+
+## IDs para Listas Dentro de un Bloque
 
 Cualquier campo cuyo nombre termine en `_1..N` (definiciones de una Regla, preguntas de un Filtro de Verificación, pasos de una plantilla enumerada) puede tener más de un ítem, y cada ítem individual lleva **su propio ID** — nunca una referencia por posición. "Ítem 3" o "pregunta 2" no son texto único: no aparecen búscables en el documento, y si alguien inserta un ítem nuevo en el medio, la referencia queda apuntando a otro sin que nadie lo note.
 
-**Formato:** `<DOC>-N.N.k — <Mnemónico corto>`, escrito literalmente en el propio ítem de la lista, para que `grep "<DOC>-N.N.k"` lo encuentre directo.
+**Formato:** `<DOC>-N.M — <Mnemónico corto>`, donde `N` es el bloque contenedor y `M` la posición del ítem — el mismo nivel `<DOC>-N.M` de "Niveles de ID", nunca un tercer segmento.
 
 ```
-1. **<DOC>-N.N.1 — <Mnemónico corto 1>:** <texto del ítem 1>.
-2. **<DOC>-N.N.2 — <Mnemónico corto 2>:** <texto del ítem 2>.
+1. **<DOC>-N.1 — <Mnemónico corto 1>:** <texto del ítem 1>.
+2. **<DOC>-N.2 — <Mnemónico corto 2>:** <texto del ítem 2>.
 ```
+
+**Si uno de estos ítems necesita, a su vez, su propia lista de sub-ítems citables, no anides un tercer segmento — promuévelo.** El ítem completo pasa a ser su propio bloque `<DOC>-N` (siguiente número libre) y esa lista se convierte en sus `<DOC>-N.1`, `<DOC>-N.2`... Caso real: `GOVERNANCE-4.1` ("Auto-Validación Crítica") tenía 7 hijos `GOVERNANCE-4.1.1`–`4.1.7`; se promovió a su propia sección `GOVERNANCE-4`, con hijos planos `GOVERNANCE-4.1`–`4.7`.
 
 Cualquier `Filtro de verificación` que apunte a uno de estos ítems cita el ID exacto, nunca la posición.
 
@@ -107,10 +121,10 @@ Un documento puede mezclar ambos: ligero para lo simple, completo para lo que de
 
 | Campo | Obligatorio | Qué va ahí |
 |---|---|---|
-| `ID` + `ENCABEZADO_REGLA` | Siempre | `## <DOC>-N.N — <Título>`. Sin paréntesis, sin dos puntos, sin subtítulo pegado. |
+| `ID` + `ENCABEZADO_REGLA` | Siempre | `## <DOC>-N — <Título>`. Sin paréntesis, sin dos puntos, sin subtítulo pegado. |
 | `DESCRIPCION_RAPIDA` | Siempre | 1-2 líneas de contexto — qué problema resuelve — **antes** de listar las definiciones. |
 | `APLICA_A` | Siempre | A qué rol, modo o agente aplica. Si no hay restricción, dice explícitamente "Todos los roles/skills". |
-| `DEFINICIONES_ESPECIFICAS_1..N` | Siempre | Las reglas concretas, con sub-ID propio (`<DOC>-N.N.1`, `<DOC>-N.N.2`...) — ver "IDs para Sub-Ítems". |
+| `DEFINICIONES_ESPECIFICAS_1..N` | Siempre | Las reglas concretas, con sub-ID propio (`<DOC>-N.1`, `<DOC>-N.2`...) — ver "IDs para Listas Dentro de un Bloque". Si una definición necesita su propia lista, se promueve a bloque nuevo — nunca un tercer segmento. |
 | `EJEMPLO_MAL_1..N` / `EJEMPLO_BIEN_1..N` | Solo si el error es real y no obvio | Se omite si la definición ya es autoexplicativa o el ejemplo saldría forzado — no es relleno obligatorio. |
 | `PRECEDENCIA` | Solo si compite con otra regla | **Si no compite con ninguna, el campo entero se omite** — la ausencia en cualquier regla del proyecto significa "no compite" (convención declarada aquí, ver Regla de Oro). |
 | `FILTRO_DE_VERIFICACION` | Solo si hay un chequeo dedicado | Cita el **ID exacto del ítem** en la sección Filtro de Verificación del documento. Se omite si no hay uno dedicado. |
@@ -124,26 +138,28 @@ Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento exten
 
 **Toda referencia a otro archivo dentro de una Regla vive en un campo declarado — nunca suelta en la descripción o el cuerpo de una definición.** Los lugares válidos son: el ❌/✅ (si el archivo es parte del ejemplo de uso correcto/incorrecto), `Documento extendido`, `Lectura bajo demanda`, o `Plantilla de referencia`. Si necesitas mencionar un archivo fuera de esos campos, es señal de que falta declarar el campo correcto — no de que la prosa lo resuelve.
 
+**Referencias entre documentos citan el archivo, nunca el ID de una regla ajena.** `Lectura bajo demanda` y `Documento extendido` apuntan siempre a una ruta (`<ruta/al/archivo.md>`) — nunca a un `<OTRO-DOC>-N` específico dentro de ese archivo. Citar el ID interno de otro documento amarra este documento a una numeración que no controla; el archivo completo es la única unidad estable para referenciar desde afuera. Citar tu propio `<DOC>-N`/`<DOC>-N.M` dentro del mismo documento (Precedencia, Filtro de verificación, IDs para listas) sigue siendo normal y obligatorio.
+
 `````
-## <DOC>-N.N — <Título de la regla>
+## <DOC>-N — <Título de la regla>
 
 <Descripción: 1-2 líneas de contexto/problema, en prosa directa>
 
 **Aplica a:** <rol/modo/agente, o "Todos los roles/skills">
 
-* **<DOC>-N.N.1 — <Nombre de la definición 1>:** 
+* **<DOC>-N.1 — <Nombre de la definición 1>:** 
 
   <texto de la regla, indentado 2 espacios bajo la etiqueta>
   * ❌ *Incorrecto:* "<ejemplo malo, solo si el error no es obvio>"
   * ✅ *Correcto:* "<ejemplo bueno>"
 
-* **<DOC>-N.N.2 — <Nombre de la definición 2>:** 
+* **<DOC>-N.2 — <Nombre de la definición 2>:** 
 
   <texto de la regla, indentado 2 espacios bajo la etiqueta>
 
 **Precedencia:** <solo si choca con otra regla — se omite el campo si no compite con ninguna>
 
-**Filtro de verificación:** <solo si hay un chequeo dedicado — se omite si no lo hay>
+**Filtro de verificación:** <solo si hay un chequeo dedicado — se omite si no lo hay; cita `<DOC>-FV-M`>
 
 **Documento extendido:** <solo si existe un archivo satélite real que elabora ESTA MISMA regla — se omite si no existe>
 
@@ -192,7 +208,7 @@ Toda regla nueva sigue este formato para ser encontrable por ID y aplicable sin 
 
   segunda definición — mismo patrón: etiqueta, línea en blanco, cuerpo indentado. Sin ❌/✅ porque el texto ya es autoexplicativo.
 
-**Filtro de verificación:** `EJEMPLO-6.1`.
+**Filtro de verificación:** `EJEMPLO-FV-1`.
 ```
 
 La misma idea en formato ligero, si ninguna de las dos definiciones necesitara sub-ID citable por otra regla:
@@ -208,16 +224,19 @@ La misma idea en formato ligero, si ninguna de las dos definiciones necesitara s
 
 ## Formato: Filtro de Verificación
 
-El chequeo de pre-salida que consolida las reglas de un documento en una sola lista — el punto que cada regla individual cita en su propio campo `Filtro de verificación`.
+El chequeo de pre-salida que consolida las reglas de un documento en una sola lista — el punto que cada regla individual cita en su propio campo `Filtro de verificación`. Usa un namespace propio, separado de la secuencia numérica de las Reglas, para no competir nunca por posición ni por número con ellas.
 
-* **ID y posición:** `## <DOC>-N — Filtro de Verificación`, casi siempre la penúltima sección del documento (antes de Ejemplos, si los hay).
+* **ID y posición:** `## <DOC>-FV — Filtro de Verificación`, segunda sección del documento — justo después de Lecturas Obligatorias (`<DOC>-0`), o primera si el documento no tiene tabla de lecturas. Se puebla incrementalmente: cada regla nueva que se agregue más abajo suma su propio ítem aquí, sin límite — la sección nunca queda "al fondo estorbando" ni obliga a reordenar nada cuando el documento crece.
+* **IDs internos:** `<DOC>-FV-1`, `<DOC>-FV-2`... — secuencia propia, también append-only (ver "Estabilidad de IDs").
 * **Campos que no lleva:** `Precedencia`, `Documento extendido`, `Plantilla de referencia` — no compite con nada y no tiene salida estructurada propia. Sí lleva `Aplica a` (normalmente "todo texto/respuesta que el agente produce, como último paso").
-* **Formato del cuerpo:** una pregunta por regla relevante, numerada con el ID del ítem, citando entre paréntesis qué regla verifica:
+* **Formato del cuerpo:** una pregunta por regla relevante, citando entre paréntesis qué regla verifica:
   ```
-  * **<DOC>-N.1:** ¿<pregunta de auto-chequeo>? (`<DOC>-M`)
-  * **<DOC>-N.2:** ¿<pregunta de auto-chequeo>? (`<DOC>-M`)
+  * **<DOC>-FV-1:** ¿<pregunta de auto-chequeo>? (`<DOC>-N`)
+  * **<DOC>-FV-2:** ¿<pregunta de auto-chequeo>? (`<DOC>-M`)
   ```
 * **Cobertura 1 a 1:** toda regla del documento cuyo campo `Filtro de verificación` cite un ítem de esta sección debe tener su pregunta correspondiente aquí — nunca al revés (una pregunta sin regla que la cite es ruido).
+
+* **Declaración explicita de verificación:** Se agrega esta linea siempre al final "De ser satisfactoria cada validacion de la lista, declara `<DOCUMENT-SLUG-ID> - FILTRO DE VERIFICACION APROBADO`"
 
 ---
 
@@ -250,6 +269,10 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 - [ ] ¿Omitiste los campos de cierre que no aplican, en vez de escribir `N/A`?
 - [ ] Si incluiste `Documento extendido`, ¿el archivo satélite existe de verdad y elabora ESTA MISMA regla (si en realidad es un tema distinto y condicional, va en `Lectura bajo demanda`, no aquí)?
 - [ ] ¿Toda referencia a otro archivo vive en un campo declarado (❌/✅, `Documento extendido`, `Lectura bajo demanda`, `Plantilla de referencia`) y ninguna quedó suelta en la descripción o el cuerpo de una definición?
+- [ ] ¿Ninguna referencia a otro documento cita el ID interno de una regla ajena — solo la ruta del archivo, vía `Lectura bajo demanda`/`Documento extendido`?
+- [ ] ¿El ID tiene máximo 2 segmentos (`<DOC>-N` o `<DOC>-N.M`) — ningún `<DOC>-N.M.K`?
+- [ ] Si editaste un documento existente, ¿respetaste que los IDs ya publicados son permanentes — la regla nueva toma el siguiente número libre, nunca uno ya usado, salvo reescritura completa autorizada en el turno actual?
+- [ ] Si el documento tiene Filtro de Verificación, ¿vive en `<DOC>-FV-N` (namespace propio), como segunda sección tras Lecturas Obligatorias?
 - [ ] Si incluiste una plantilla de ejemplo, ¿es copiable tal cual, sin placeholders sueltos?
 - [ ] ¿Respeté el espaciado exacto (etiqueta y cuerpo en líneas separadas, línea en blanco entre ítems, `---` entre bloques)?
 - [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita?
@@ -259,4 +282,4 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 
 ## Documentos Relacionados
 
-* `.agents/templates/knowledge.md` — cómo ensamblar varios bloques de este catálogo en un documento de knowledge completo (Lecturas Obligatorias al inicio, Reglas en el cuerpo, Filtro de Verificación y Ejemplos al cierre).
+* `.agents/templates/knowledge.md` — cómo ensamblar varios bloques de este catálogo en un documento de knowledge completo (Lecturas Obligatorias → Filtro de Verificación → Reglas sin límite, con Ejemplos al cierre si aplican).

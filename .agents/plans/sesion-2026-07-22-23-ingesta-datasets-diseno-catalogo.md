@@ -35,7 +35,7 @@ El **frente de diseño de ingesta está SELLADO** (ADR-0162 + 5 enmiendas + 2 fe
 - `docs/execution/TASK-065-catalogo-broker-instrumento-sesion.md` (Architect) — catálogo + descomposición en features (§2-bis) + gate N×N (§3-bis).
 
 **ADR nuevo + índice:**
-- `docs/adr/ADR-0162.md` — Catálogo Instrumento × Bróker × Sesión. Activa ADR-0140, extiende 0154/0155/0137. Contiene 3 secciones "Corrección del Architect" (retó la premisa, GOVERNANCE-4.1.7): clave técnica UUIDv7 vs. `instrument_id` de negocio; `row_version` (no `event_sequence_id`, son tablas mutables); zona horaria IANA (no `EST+07`).
+- `docs/adr/ADR-0162.md` — Catálogo Instrumento × Bróker × Sesión. Activa ADR-0140, extiende 0154/0155/0137. Contiene 3 secciones "Corrección del Architect" (retó la premisa, GOVERNANCE-4.7): clave técnica UUIDv7 vs. `instrument_id` de negocio; `row_version` (no `event_sequence_id`, son tablas mutables); zona horaria IANA (no `EST+07`).
 - `docs/ADR.md` — índice actualizado con 0162.
 
 **ADRs enmendados:** `ADR-0114` (reconstrucción de ask desde spread), `ADR-0140` (activado), `ADR-0154`, `ADR-0155`, `ADR-0137`.
@@ -47,7 +47,7 @@ El **frente de diseño de ingesta está SELLADO** (ADR-0162 + 5 enmiendas + 2 fe
 **Retrofit de ledger commiteado al inicio de sesión** (`18e4cf0`..`5814034`): persistence.rs + integration_tests.rs + migración 0006 (DEBT-032/034), docs de escala/barras/ingesta, `.gitignore` de `datasets/`.
 
 **Instrucciones y memoria (sin commitear):**
-- `.agents/knowledge/governance.md` — regla nueva **GOVERNANCE-4.1.7 "Reta la Premisa Recibida"** (imperativa, todo agente).
+- `.agents/knowledge/governance.md` — regla nueva **GOVERNANCE-4.7 "Reta la Premisa Recibida"** (imperativa, todo agente).
 - `.agents/skills/tech-lead/SKILL.md` — regla "no precocines la solución en el prompt de despacho".
 - `.agents/memory/despacho-no-precocinar-solucion.md` (+ MEMORY.md).
 - `scripts/now.sh` — reloj de pared determinista.
@@ -56,7 +56,7 @@ El **frente de diseño de ingesta está SELLADO** (ADR-0162 + 5 enmiendas + 2 fe
 
 ## 4. Lección de proceso de esta sesión (crítica)
 
-Dos subagentes (Quant, Architect en su primera pasada) entregaron trabajo defectuoso porque **el Tech-Lead les precocinó la solución en el prompt** (dataset fugaz + noticia; tablas en vez de features). No fue capacidad del modelo, ni contexto, ni la división de governance. Se canonizó en dos planos: el que despacha no precocina (`tech-lead/SKILL.md`); el que recibe reta la premisa (`GOVERNANCE-4.1.7`). En la segunda pasada, el Architect **sí** retó la premisa (3 correcciones) — el encuadre correcto funcionó.
+Dos subagentes (Quant, Architect en su primera pasada) entregaron trabajo defectuoso porque **el Tech-Lead les precocinó la solución en el prompt** (dataset fugaz + noticia; tablas en vez de features). No fue capacidad del modelo, ni contexto, ni la división de governance. Se canonizó en dos planos: el que despacha no precocina (`tech-lead/SKILL.md`); el que recibe reta la premisa (`GOVERNANCE-4.7`). En la segunda pasada, el Architect **sí** retó la premisa (3 correcciones) — el encuadre correcto funcionó.
 
 ---
 
@@ -64,7 +64,7 @@ Dos subagentes (Quant, Architect en su primera pasada) entregaron trabajo defect
 
 1. **Revisión del propietario** de ADR-0162 y las features (pendiente — él lo pidió antes de sellar formalmente).
 2. **Commitear el lote** (requiere autorización explícita del propietario, regla "autorizar cada commit"): agrupar `docs` (tickets + ADRs + features), `chore(agents)` (governance + skill + memoria + `scripts/now.sh`). NO push salvo que lo pida.
-3. **Despachar ingenieros** a construir el adaptador de ingesta MT5 → esquema canónico contra el CSV M1: parser TAB, escala ×10⁸, timestamps ns UTC con zona IANA declarada, reconstrucción ask=open+spread, política de spread nulo/cero, gate de coherencia de calendario. Aplicar `GOVERNANCE-4.1.7` en cada despacho: problema + restricciones + doc + entregable, NO el método masticado.
+3. **Despachar ingenieros** a construir el adaptador de ingesta MT5 → esquema canónico contra el CSV M1: parser TAB, escala ×10⁸, timestamps ns UTC con zona IANA declarada, reconstrucción ask=open+spread, política de spread nulo/cero, gate de coherencia de calendario. Aplicar `GOVERNANCE-4.7` en cada despacho: problema + restricciones + doc + entregable, NO el método masticado.
 4. **Re-exportar los `.dat`** a CSV desde QuantDataManager (follow-up, no bloqueante).
 
 ---

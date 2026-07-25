@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 17a4ae3a-e845-4b19-aa68-2971382567d0
-  modified: 2026-07-23T07:44:52.392Z
+  modified: 2026-07-24T01:06:18.762Z
 ---
 
 Cuando el Tech-Lead despacha un especialista (Quant, Architect, ingeniero), **entrega el problema y las restricciones, nunca el método/solución ya masticado**. Un subagente Sonnet tiende a ejecutar la premisa que recibe, no a retarla — el criterio senior no se pierde en el agente, se pierde en cómo se enmarca el encargo.
@@ -20,4 +20,4 @@ Descartados como causa (con evidencia): no fue capacidad de Sonnet (ambos corrie
 
 **How to apply:** en cada despacho, da (1) el problema, (2) las restricciones/invariantes duros, (3) la doc a consultar, (4) el entregable y su forma — pero deja que el especialista **derive el método**. Si crees saber la solución, ponla como "una hipótesis a validar o refutar", no como el camino.
 
-Dos planos, dos reglas canónicas: la contraparte del que despacha vive en `tech-lead/SKILL.md` §"Antes de despachar" (no precocinar el prompt); la del que recibe se canonizó como **`GOVERNANCE-4.1.7 — Reta la Premisa Recibida`** (imperativa para TODO agente): un agente senior empuja contra una premisa masticada en vez de ejecutarla a ciegas. Relacionado: [[roles-explicitos-y-subagentes]], [[razonamiento-critico-dominio]].
+Dos planos, dos reglas canónicas: la contraparte del que despacha vive en `tech-lead/SKILL.md` §"Antes de despachar" (no precocinar el prompt); la del que recibe se canonizó como **`GOVERNANCE-4.7 — Reta la Premisa Recibida`** (imperativa para TODO agente): un agente senior empuja contra una premisa masticada en vez de ejecutarla a ciegas. Relacionado: [[roles-explicitos-y-subagentes]], [[razonamiento-critico-dominio]].

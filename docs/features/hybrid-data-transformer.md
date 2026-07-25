@@ -3,7 +3,7 @@
 **Carpeta:** `crates/features/data/hybrid-data-transformer/`
 **Estado:** En Diseño
 **Última actualización:** 2026-07-17
-**Decisión Arquitectónica Asociada:** ADR-0105 (Estrategia de Datos 100% Polars Nativo), ADR-0013 (Stack 100% Rust Nativo), ADR-0141 (Modelado Relacional Soberano — escala entera ×10⁸ y timestamps en nanosegundos), ADR-0112 (Escalera de Cómputo Numérico Soberano), ADR-0137 (Feature como Unidad Hexagonal con Puertos Tipados), ADR-0117/ADR-0152 (Cáscara Delgada + Banco de Pruebas), ADR-0012 (Multi-Pipeline Paralela), ADR-0155 (esquema canónico — agregación exclusivamente desde `TradeTick`, `Bars` con volumen en cuatro magnitudes)
+**Decisión Arquitectónica Asociada:** ADR-0105 (Estrategia de Datos 100% Polars Nativo), ADR-0013 (Stack 100% Rust Nativo), ADR-0141 (Modelado Relacional Soberano — escala entera ×10⁸ y timestamps en nanosegundos), ADR-0112 (Escalera de Cómputo Numérico Soberano), ADR-0137 (Feature como Unidad Hexagonal con Puertos Tipados), ADR-0117/ADR-0152 (Cáscara Delgada + Banco de Pruebas), ADR-0012 (Multi-Pipeline Paralela), ADR-0155 (esquema canónico — agregación exclusivamente desde `TradeTick`, `Bars` con volumen en cuatro magnitudes), ADR-0163 (idempotencia de reimportación — esta feature es la dueña mecánica de la reescritura de partición)
 
 ## ¿Qué es?
 
@@ -27,6 +27,7 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 - La escalera de cómputo numérico es `ndarray` + Rayon como primera línea (ADR-0112). NO se adopta `linfa`, `candle` ni `burn` sin un consumidor real y un benchmark que demuestre que el peldaño inferior no alcanza.
 - Toda transformación queda registrada bajo un `logic_hash` reproducible: el mismo plan sobre el mismo dataset produce el mismo hash (ADR-0020).
 - **Volumen en cuatro magnitudes, nunca colapsado (ADR-0155):** `volume_traded`, `volume_ticks`, `trade_count` y `volume_buy` son columnas independientes. Un campo se puebla solo si la fuente concreta lo distingue como tal; si el dataset de entrada no aclara cuál de las magnitudes trae, la agregación deja el resto en `NULL` — nunca asume `volume_traded` por defecto.
+- **(ADR-0163) La unidad de reescritura ante solape es la partición Hive-Style completa, nunca un `UPDATE` fila por fila.** Al recibir un rango que se solapa con una partición existente: hash-check del tramo solapado (no-op si es idéntico) → si diverge, aplica la política del llamador (`OVERWRITE`/`OMIT`) → escribe la partición nueva completa → reemplaza la vieja de forma atómica. Particiones fuera del rango solicitado nunca se tocan.
 
 ## Parámetros Configurables
 
@@ -83,6 +84,16 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 ### **TTR-002: Puente de Interoperabilidad Zero-Copy**
 - Implementa la conversión optimizada Polars → `ndarray` vía Apache Arrow asegurando que el tipado estricto se mantenga consistente.
 - **Postcondición verificable:** un bloque de N filas convertido a `ndarray::Array2<f64>` conserva los valores **exactos mientras el valor escalado se mantenga por debajo de 2⁵³** (límite de representación entera exacta en coma flotante de doble precisión) y no duplica el buffer en memoria. Un valor por encima de ese umbral —alcanzable en volumen agregado de pares líquidos— se rechaza explícitamente en lugar de cruzar en silencio como si fuera exacto. Por encima de `INTEROP_THRESHOLD` la conversión se rechaza en lugar de materializar la matriz.
+
+### **TTR-003: Reescritura Atómica de Partición ante Solape (ADR-0163)**
+- **Descripción:** Dado un rango entrante y la política del llamador (`OVERWRITE`/`OMIT`), identifica las particiones Hive-Style tocadas, calcula el hash del tramo solapado contra lo ya persistido, decide no-op o fusiona según la política, y escribe la partición nueva completa antes de reemplazar la anterior.
+- **Reglas de Negocio:**
+    * Hash idéntico → no-op, cero escritura.
+    * Hash divergente → fusiona según política, escribe archivo nuevo, reemplaza atómicamente.
+    * Nunca edita un Parquet existente in-place; nunca toca particiones fuera del rango.
+- **Entrada:** rango de fechas entrante, `DataFrame` nuevo, política de resolución del llamador.
+- **Salida:** partición(es) Hive-Style actualizadas, reporte de filas no-op/sobrescritas/omitidas por partición.
+- **Postcondición verificable:** reimportar el mismo rango con la misma fuente produce el mismo archivo de partición, byte a byte (idempotencia real).
 
 ## Núcleo Funcional / Cáscara Imperativa (FCIS)
 

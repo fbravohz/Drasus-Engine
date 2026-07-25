@@ -1,6 +1,6 @@
 # Plantilla de Documento — Formato Estándar para `.agents/knowledge/`
 
-Cómo estructurar un documento completo de `.agents/knowledge/` (no un bloque suelto — para eso, `.agents/templates/instruction-formats.md`). Un documento de knowledge es un contenedor de bloques: declara sus Lecturas Obligatorias, aloja N reglas, y cierra con Filtro de Verificación y Ejemplos.
+Cómo estructurar un documento completo de `.agents/knowledge/` (no un bloque suelto — para eso, `.agents/templates/instruction-formats.md`). Un documento de knowledge es un contenedor de bloques, en orden fijo: Lecturas Obligatorias → Filtro de Verificación → N reglas sin límite → Ejemplos al cierre si aplican. El Filtro de Verificación va segundo (no al final) para que agregar reglas nunca lo desplace ni obligue a reordenar nada.
 
 **Regla de oro:** todo documento de knowledge usa los formatos de `instruction-formats.md` para cada bloque que contiene. Esta plantilla no repite esos campos — dice cómo se ensamblan varios bloques en un documento coherente.
 
@@ -24,6 +24,11 @@ Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
 
 ---
 
+## <DOC>-FV — Filtro de Verificación
+<Debe existir siempre, segunda sección del documento (o primera si no hay Lecturas Obligatorias) — se puebla con un ítem `<DOC>-FV-N` por cada regla que se agregue más abajo. Ver instruction-formats.md, "Formato: Filtro de Verificación".>
+
+---
+
 ## <DOC>-1 — <Primera regla, formato Completo o Ligero según corresponda>
 
 ...
@@ -32,8 +37,7 @@ Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
 
 ...
 
-## <DOC>-N — Filtro de Verificación
-<Debe existir una seccion de chequeo interno siempre, redactalo en base a las reglas previas — ver instruction-formats.md, "Formato: Filtro de Verificación">
+## <DOC>-N — <Regla N-ésima — la secuencia no tiene límite, append-only>
 
 ---
 
@@ -95,8 +99,9 @@ Así se ve esta plantilla aplicada — `.agents/knowledge/writing-efficiency.md`
 - [ ] ¿El documento tiene un slug `<DOC>` único, declarado cerca del título?
 - [ ] ¿El campo `Tamaño` refleja el conteo real de caracteres del archivo final, con el estimado de tokens marcado `aprox.` (no como cifra exacta)?
 - [ ] Si el documento tiene lecturas propias distintas de `governance.md`, ¿lleva `<DOC>-0 — Lecturas Obligatorias` (`instruction-formats.md`, "Formato: Lecturas Obligatorias")?
+- [ ] ¿El Filtro de Verificación vive en `<DOC>-FV-N`, como segunda sección (o primera si no hay Lecturas Obligatorias) — nunca al final?
 - [ ] ¿Cada regla dentro eligió Completo o Ligero según lo que necesita, no por costumbre (`instruction-formats.md`, "Formato: Regla")?
-- [ ] ¿Los IDs son planos (`<DOC>-N`) o anidados (`<DOC>-N.N`) según si existe una sección H1 numerada real — ver `instruction-formats.md`, "Niveles de ID"?
+- [ ] ¿Los IDs de regla son `<DOC>-N` (máximo 2 segmentos con sus sub-ítems, `<DOC>-N.M`) y append-only — ver `instruction-formats.md`, "Niveles de ID" y "Estabilidad de IDs"?
 - [ ] ¿La sección `## Ejemplos` está al final, no repetida dentro de cada regla, y sin `Aplica a`/`Precedencia`/`Filtro de verificación` (`instruction-formats.md`, "Formato: Ejemplos")?
 - [ ] ¿Cada sub-ID `### <DOC>-N.K` de Ejemplos lleva su título pegado, con el párrafo de intro antes del primer Caso?
 - [ ] ¿Cada ejemplo compuesto cita los IDs de regla que demuestra?
