@@ -2,8 +2,8 @@
 
 **Carpeta:** `./features/data-normalization-layer/`
 **Estado:** En Diseño
-**Última actualización:** 2026-04-13
-**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0141 (tipos canónicos) · ADR-0154 (dueña de la tabla de capacidades por bróker) · ADR-0155 (dueña del demultiplexado `QuoteTick`/`TradeTick`)
+**Última actualización:** 2026-07-25 (barrido Etapa 0.4 — reconstrucción bid/ask unilateral)
+**Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0141 (tipos canónicos) · ADR-0154 (dueña de la tabla de capacidades por bróker) · ADR-0155 (dueña del demultiplexado `QuoteTick`/`TradeTick`, enmienda 2026-07-25: dueña de la reconstrucción bid/ask unilateral) · ADR-0162 (consumidora de `real_volume_unit_declared` para escalar `volume_traded`)
 
 > **Dueña de la Tabla de Capacidades (ADR-0154).** Esta feature es la propietaria del conocimiento declarado de "qué soporta cada fuente". La unidad es la combinación **bróker × vía de ingesta × clase de activo × granularidad** — nunca una fila por bróker, porque el mismo bróker ofrece cosas distintas por su interfaz de programación que por exportación de terminal. Cada fila declara: clases de activo, granularidades, si entrega compra y venta o solo último precio, profundidad de libro, método de autenticación, profundidad histórica estimada y si la licencia de esa fuente permite que el dato alimente la agregación anonimizada (cimiento #9).
 >
@@ -24,6 +24,7 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 - [ ] Si un activo tiene una escala de precios inusual (ej: centavos de Yen), la capa de normalización la escala a una representación interna consistente (Enteros int64 si se requiere ADR-0004).
 - [ ] Cualquier módulo (Backtest, Execute) pide datos usando la **tripleta de identidad** símbolo × temporalidad × bróker (`instrument_id`/`timeframe_value`/`venue`, forma canónica `EURUSD-1M-PEPPERSTONE`, ADR-0155) — nunca el símbolo solo. El "Símbolo Normalizado" (ej: `BTC/USDT`) resuelve la traducción de nombre entre fuentes, pero jamás sustituye al bróker como parte de la clave: el mismo símbolo en dos brokers es una serie distinta, nunca la misma tabla.
 - [ ] **Demultiplexado cotización/ejecución (ADR-0155).** Cuando la fuente entrega ambos eventos mezclados en el mismo archivo, distinguidos por una bandera propia del terminal (MT5: bitmask `TICK_FLAG_BID`/`ASK` frente a `TICK_FLAG_LAST`/`VOLUME`), esta capa enruta cada registro crudo a `QuoteTick` o `TradeTick` según esa bandera de origen, nunca a un tipo mixto con columnas opcionales. Un mismo evento de fuente puede, en casos raros, generar ambas filas (un trade que también actualiza el BBO).
+- [ ] **Reconstrucción de estado bid/ask (BBO) desde actualizaciones unilaterales (ADR-0155, enmienda 2026-07-25).** Cuando la fuente entrega cada tick con un solo lado poblado (MT5: `FLAGS=2` solo `bid`, `FLAGS=4` solo `ask`, verificado real en `datasets/EURUSD_TICK.csv` — 60.9% de los ticks), esta capa mantiene el último valor real de cada lado por `(instrument_id, venue)` y completa la fila por arrastre acotado (`carry-forward`), marcando cada lado como `OBSERVED` o `CARRIED_FORWARD` (columnas de auditoría de `QuoteTick`). Nunca arrastra más allá de `QUOTE_SIDE_CARRY_FORWARD_MAX_NS`, y nunca emite una fila antes de que ambos lados hayan sido observados al menos una vez desde que se abrió el archivo/sesión (sin excepción para el primer tick).
 
 ## Restricciones
 
@@ -31,6 +32,10 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 - NUNCA se funden dos series con el mismo símbolo y la misma temporalidad pero distinto bróker (`venue`) en una sola identidad — la clave de identidad es la tripleta símbolo × temporalidad × bróker, no el símbolo solo (ADR-0155, decisión del propietario 2026-07-18).
 - NUNCA se procesan barras que no hayan pasado por la normalización de tipado. **Corrección (ADR-0141):** los precios se normalizan a **`INTEGER` con escala fija ×10⁸**, NO a coma flotante — la referencia previa a `float64` contradecía la prohibición canónica de `REAL` para precios y queda derogada. El tiempo se normaliza a marca de tiempo UTC de resolución fija.
 - La normalización debe ser "Zero-Loss": los datos originales crudos deben poder reconstruirse o estar disponibles en una columna de auditoría. **Esto no es solo sobre el valor, es sobre el conjunto de campos (ADR-0154):** está prohibido normalizar recortando al mínimo común denominador entre fuentes. Los campos que una fuente concreta no entrega quedan nulos; nunca se eliminan del esquema.
+- **(ADR-0155, enmienda 2026-07-25) NUNCA se persiste un lado de `QuoteTick` arrastrado (`CARRIED_FORWARD`) sin distinguirlo del lado observado (`OBSERVED`) en `bid_source`/`ask_source`.** Un valor arrastrado indistinguible de uno real es la misma clase de optimismo silencioso que ADR-0114 regla (c) ya prohíbe para el punto medio.
+- **NUNCA se arrastra un lado más allá de `QUOTE_SIDE_CARRY_FORWARD_MAX_NS`.** Pasado el umbral sin refresco real, la fila no se emite — arrastrar sin límite permite que el lado congelado cruce físicamente al otro (`bid > ask`), imposible en un mercado real.
+- **NUNCA se emite un `QuoteTick` antes de que ambos lados hayan sido observados al menos una vez desde la apertura del archivo/sesión.** No existe semilla de la que arrastrar en el primer instante; los ticks de apertura unilaterales previos a la primera cotización completa se cuentan y reportan en `transformation_records`, nunca se descartan en silencio.
+- **(ADR-0162) NUNCA se asume la unidad de `<VOL>`/`volume_traded` cuando `real_volume_unit_declared` no está declarado en `broker_instrument_terms`.** El valor crudo se persiste igual (nunca se descarta), pero la corrida de transformación queda marcada `volume_unit_unverified` en vez de afirmar una unidad no confirmada.
 
 ## Parámetros Configurables
 
@@ -39,6 +44,7 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 | INTERNAL_TIMEZONE | UTC | - | Zona horaria para normalizar todos los timestamps | [FIJO] |
 | PRICE_PRECISION | 8 | 0 - 15 | Decimales máximos para normalización de precio | CONFIG |
 | SYMBOL_MAPPING | {} | - | Mapa de traducción BrokerSymbol -> InternalSymbol | CONFIG |
+| QUOTE_SIDE_CARRY_FORWARD_MAX_NS | por definir en Story de implementación (orden de magnitud: segundos, no minutos — la cadencia real de MT5 entre refrescos de un mismo lado es de milisegundos) | — | Máximo tiempo transcurrido desde el último valor real de un lado de `QuoteTick` antes de dejar de arrastrarlo (enmienda 2026-07-25, ADR-0155 Restricción 3) | CONFIG |
 
 ## Ciclo de Vida de la Feature — Data Normalization Layer
 
@@ -75,6 +81,11 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 ### **TTR-003: Demultiplexador Cotización/Ejecución (ADR-0155)**
 - **Qué tiene que pasar:** dado un archivo crudo que mezcla eventos de cotización y ejecución bajo una bandera propia de la fuente (MT5, bitmask interno del terminal), enrutar cada registro a `QuoteTick` (si trae `bid`/`ask`) o a `TradeTick` (si trae `price`/`trade_volume`) según esa bandera — nunca a un tipo intermedio con columnas opcionales de ambos.
 - **Postcondición verificable:** dado un archivo mixto, la salida son dos flujos separados (`QuoteTick`, `TradeTick`), cada uno con sus campos obligatorios (`bid`/`ask` en el primero, `price`/`trade_volume` en el segundo) siempre poblados; ningún registro de salida tiene ambos grupos de campos ni ninguno de los dos.
+
+### **TTR-004: Reconstrucción de Estado Bid/Ask (BBO) desde Actualizaciones Unilaterales (ADR-0155, enmienda 2026-07-25)**
+- **Qué tiene que pasar:** dado un flujo de `QuoteTick` crudo donde cada tick trae un solo lado poblado (MT5: bitmask `FLAGS=2`/`FLAGS=4`), mantener el último valor real de cada lado por `(instrument_id, venue)` y completar cada fila de salida con el lado ausente arrastrado del último valor observado, marcando `bid_source`/`ask_source` como `OBSERVED` o `CARRIED_FORWARD` según corresponda.
+- **Reglas de negocio:** el arrastre nunca excede `QUOTE_SIDE_CARRY_FORWARD_MAX_NS`; ninguna fila se emite antes de que ambos lados hayan sido observados al menos una vez desde la apertura del archivo/sesión (los ticks de apertura previos a esa primera cotización completa se cuentan y quedan reportados en `transformation_records`, nunca se descartan en silencio).
+- **Postcondición verificable:** dado un archivo real con ticks unilaterales, cada `QuoteTick` de salida tiene `bid`/`ask` poblados (NOT NULL) y su `bid_source`/`ask_source` refleja fielmente si ese valor concreto fue observado en ese tick o arrastrado del anterior; ningún `QuoteTick` de salida tiene `bid > ask`.
 
 ## Puertos de Integración
 

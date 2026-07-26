@@ -1,8 +1,8 @@
 # Data Import Wizard
 
-**Carpeta:** `./features/data-import-wizard/`
-**Estado:** En Diseño
-**Última actualización:** 2026-07-23 (TASK-064 — declaración de zona horaria de origen)
+**Carpeta:** `crates/features/data/data-import-wizard/`
+**Estado:** 🟡 **Parcial — vía de plantilla de plataforma implementada** (STORY-068, 2026-07-25 — QA APTO, gate de mutación 0 supervivientes). Backend completo para la vía en que Drasus afirma la plantilla: lector del archivo de barras de MetaTrader, ledger append-only de declaración de mapeo sellado antes de persistir dato, unidad de spread y de volumen declaradas o rechazo explícito. **Diferido:** la vía de mapeo manual del usuario y su pantalla (arrastrar archivo, vista previa de dato transformado, confirmación) — es la que LDR-0008 exige que pase por vista previa, y va en la Story del asistente visual (`DEBT-035`). También diferido el lector de ticks, que vive en `data-normalization-layer`.
+**Última actualización:** 2026-07-25 (STORY-068 — lector de barras MT5, ledger de mapeo, unidad de spread sellada)
 **Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia) · ADR-0162 (patrón de selector de zona horaria con bandera DST) · ADR-0163 (idempotencia de reimportación — esta feature es la vía manual, con confirmación explícita)
 
 ## ¿Qué es?
@@ -91,6 +91,18 @@ Cada importación manual registra además el set de relevancia técnica:
 | | `logic_hash` | Hash del parser utilizado |
 | **IV. Hardware** | `node_id` | ID del hardware físico de importación |
 | | `process_id` | PID del worker de parseo |
+
+## Puertos de Integración (ADR-0137)
+
+Completados por el Tech-Lead en el cierre de STORY-068 (la sección faltaba; el QA lo señaló en su gate final). Tipos del catálogo de ADR-0137.
+
+| Puerto | Tipo | Dirección | Cardinalidad | Qué transporta |
+|---|---|---|---|---|
+| `bars_out` | `Bars` | Salida | 0..N | Filas de barra ya canónicas (precio en entero ×10⁸, tiempo en ns UTC, identidad de serie completa, unidad de spread declarada), listas para que [`hybrid-data-transformer`](./hybrid-data-transformer.md) las escriba en Parquet. Esta feature **nunca** escribe Parquet directamente (ADR-0163). |
+| `mapping_declaration_out` | `AuditEvent` | Salida | 1 por importación | La fila del ledger append-only que sella qué declaró el usuario sobre el archivo, antes de que exista dato. Es la evidencia de LDR-0008, no configuración. |
+| `calendar_verdict_in` | `CalendarCoherenceVerdict` | Entrada | 0..1 | Veredicto del Gate de Coherencia de Calendario de [`pit-data-validator`](./pit-data-validator.md), que corre ANTES de aceptar el mapeo declarado (ADR-0156 restricción 6). |
+
+**Deuda de puerto conocida (registrada como `DEBT-036`):** `bars_out` no transporta hoy el identificador de la declaración sellada. Mientras el destino sea un consumidor en memoria, la trazabilidad de ADR-0156 restricción 8 se sostiene por convención de aplicación; en cuanto ese puerto se conecte con la persistencia real, su forma debe cargar la referencia o la cadena de trazabilidad se rompe físicamente.
 
 ## Dependencias
 

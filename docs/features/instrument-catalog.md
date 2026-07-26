@@ -1,9 +1,9 @@
 # Instrument Catalog
 
 **Carpeta:** `./features/instrument-catalog/`
-**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`)
-**Última actualización:** 2026-07-25 (STORY-066)
-**Decisión Arquitectónica Asociada:** ADR-0140 (activa el registro `Instrument`) · ADR-0154 (distingue de la tabla de capacidades) · ADR-0155 (hogar de los atributos estáticos de instrumento) · ADR-0162 (esta feature)
+**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`). **Pendiente de retrofit:** campo `real_volume_unit_declared` (enmienda 2026-07-25, barrido Etapa 0.4) canonizado en ADR-0162 pero aún no existe en `migrations/0022` — lo implementa la Story del lector MT5.
+**Última actualización:** 2026-07-25 (barrido Etapa 0.4 — `real_volume_unit_declared`)
+**Decisión Arquitectónica Asociada:** ADR-0140 (activa el registro `Instrument`) · ADR-0154 (distingue de la tabla de capacidades) · ADR-0155 (hogar de los atributos estáticos de instrumento) · ADR-0162 (esta feature, enmendada 2026-07-25)
 
 ## ¿Qué es?
 
@@ -27,6 +27,7 @@ Es el catálogo canónico de instrumentos y sus términos de trading. Activa el 
 - **NUNCA `NULL` en el override se trata como error de captura.** Es la herencia declarada, y debe distinguirse en la interfaz de un campo que el usuario sí completó con un valor real que resulta ser cero.
 - **NUNCA se fusiona este catálogo con la tabla de capacidades por bróker (ADR-0154).** Esa tabla declara qué puede traer un bróker; este catálogo declara en qué condiciones se simula una operación con él. Dominios de dato distintos.
 - **NUNCA se inventa un piso de spread global igual para todo instrumento.** El piso vive por instrumento (`default_spread`), consumido por la Política de Integridad de Spread de `data-sanitizer-pipeline` — nunca una constante cableada en código.
+- **(ADR-0162, enmienda 2026-07-25) NUNCA se asume la unidad del volumen real (`real_volume_unit_declared`) cuando el usuario no la declaró.** `NULL` significa "no declarado", nunca "unidades base por defecto" — `data-normalization-layer` marca la corrida como no verificada en vez de asumir.
 - **NUNCA se borra `instrument_master` si tiene overrides o datasets de mercado que lo referencian** (`ON DELETE RESTRICT`, ADR-0141).
 
 ## Parámetros Configurables

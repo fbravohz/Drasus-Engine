@@ -2,8 +2,8 @@
 
 **Carpeta:** `./features/pit-data-validator/`
 **Estado:** Crítico / Prioritario
-**Última actualización:** 2026-07-23 (ADR-0162 — Gate de Coherencia de Calendario)
-**Decisión Arquitectónica Asociada (Gate de Coherencia):** ADR-0162
+**Última actualización:** 2026-07-25 (barrido Etapa 0.4 — cotización cruzada, `volume_ticks=0` con rango real)
+**Decisión Arquitectónica Asociada (Gate de Coherencia):** ADR-0162 · ADR-0155 (enmienda 2026-07-25, TTR-004)
 
 ---
 
@@ -33,6 +33,15 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
   → IMPOSIBLE PIT-real (close NUNCA puede superar high)
   → RECHAZADA automáticamente
 
+- [ ] **(ADR-0155, enmienda 2026-07-25) Cotización cruzada en `QuoteTick`: `bid > ask`.**
+  → Físicamente imposible en un mercado real (el comprador nunca paga menos que lo que el vendedor pide)
+  → Puede surgir de un arrastre (`carry-forward`, `data-normalization-layer` TTR-004) que se dejó correr más allá de `QUOTE_SIDE_CARRY_FORWARD_MAX_NS`
+  → RECHAZADA automáticamente, con el `bid_source`/`ask_source` de la fila incluidos en el motivo
+
+- [ ] **(ADR-0156 Restricción 6) Rango de precio real con `volume_ticks=0` en `Bars`.** Verificado real: `datasets/EURUSD_M1_....csv`, 2 filas de 9.2 millones (`2019-11-01`, coincide con el cambio de horario DST de EE. UU.) con `open≠close` u `high≠low` pese a `volume_ticks=0`
+  → Matemáticamente imposible bajo la propia definición de `volume_ticks` (cuenta cambios de precio/cotización — si hubo movimiento, hubo al menos un cambio)
+  → Marcada explícitamente (no descartada en silencio ni persistida como vela ordinaria), motivo "actividad de precio sin contador de actividad"
+
 - [ ] **Gate de Coherencia de Calendario (ADR-0162).** El usuario importa un archivo con una plantilla de sesión declarada (ej. `FOREX_245`) para el instrumento
   → Sistema calcula la huella de huecos **observada** en el archivo (dónde faltan velas)
   → La compara contra la huella **esperada** de la plantilla declarada (`session-catalog`)
@@ -52,6 +61,8 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 - **(ADR-0162) NUNCA el Gate de Coherencia de Calendario es una lista de pares prohibidos.** Compara la huella de calendario declarada contra la observada — cualquier clase de activo cruzada con cualquier plantilla, sin caso privilegiado ni combinación no cubierta.
 - **(ADR-0162) NUNCA se aprueba en silencio por evidencia insuficiente.** Un archivo demasiado corto para exhibir su huella de calendario recibe `INDETERMINADO`, nunca `APTO`.
 - **(ADR-0162) NUNCA la tolerancia del gate es cero por defecto de forma rígida.** Instrumentos con calendarios atípicos (ej. futuros con pausa de mantenimiento corta) necesitan margen configurable — la tolerancia es `CONFIG`, no `FIJO`.
+- **(ADR-0155, enmienda 2026-07-25) NUNCA `bid > ask` en `QuoteTick`.** Cotización cruzada — imposible en un mercado real, señal de arrastre (`carry-forward`) mal acotado en `data-normalization-layer`.
+- **(ADR-0156 Restricción 6) NUNCA una `Bars` con rango de precio real (`open≠close` u `high≠low`) y `volume_ticks=0` se persiste como vela ordinaria sin marca.** Es matemáticamente imposible bajo la definición de `volume_ticks` — movimiento sin ningún cambio contado.
 
 ---
 
@@ -118,6 +129,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 *   **Reglas de Negocio:**
     * Los precios deben ser `int64` (centavos/ticks) para consistencia (ADR-0002).
     * Toda barra invalidada DEBE incluir el `audit_hash` del dataset original (ADR-0020).
+    * **(ADR-0156 Restricción 6, enmienda 2026-07-25)** Una barra con rango de precio real (`open≠close` u `high≠low`) y `volume_ticks=0` es una imposibilidad física de la propia definición de `volume_ticks` — se marca explícitamente, nunca se persiste como vela ordinaria ni se descarta en silencio.
 *   **Entrada:** `ohlcv_data` (Arrow/DataFrame).
 *   **Salida:** `is_structurally_sound` (bool), `violation_report`.
 *   **Precondición:** Stream de datos cargado en memoria.
@@ -144,6 +156,15 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 *   **Precondición:** El instrumento tiene una plantilla de sesión declarada (`instrument-catalog`/`session-catalog`); si no la tiene, el gate no puede correr y la importación queda bloqueada por falta de declaración, no por un veredicto de coherencia.
 *   **Postcondición:** El veredicto queda visible junto al resultado de la importación; un `RECHAZADO` detiene la importación con el motivo estructural exacto (qué hueco sobra o falta).
 
+### **TTR-004: Validación Estructural de `QuoteTick` — Cotización Cruzada (ADR-0155, enmienda 2026-07-25)**
+*   **Descripción:** Verifica que ningún `QuoteTick` (observado o completado por arrastre en `data-normalization-layer`) tenga `bid > ask` — físicamente imposible en un mercado real.
+*   **Reglas de Negocio:**
+    * Aplica a todo `QuoteTick`, sin importar si `bid_source`/`ask_source` son `OBSERVED` o `CARRIED_FORWARD` — el arrastre es la causa más probable de una cruce si `QUOTE_SIDE_CARRY_FORWARD_MAX_NS` se configuró demasiado laxo, pero el chequeo no distingue el origen al aplicar la regla.
+*   **Entrada:** `QuoteTick` (stream o batch).
+*   **Salida:** `is_crossed` (bool) por fila, `violation_report`.
+*   **Precondición:** Ninguna — corre siempre que hay `QuoteTick` que validar, independiente del Gate de Coherencia de Calendario (TTR-003).
+*   **Postcondición:** Fila rechazada con motivo explícito si `is_crossed`; registro en `pit_audits`.
+
 ---
 
 ## Puertos de Integración (ADR-0137)
@@ -153,6 +174,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 | `bars_in` | `Bars` | Input | 1 | Dataset OHLCV a validar estructuralmente (TTR-001/TTR-002) |
 | `expected_fingerprint_in` | `(interno)` | Input | 0..1 | Huella de calendario esperada, consumida de `session-catalog` cuando el instrumento tiene plantilla declarada — payload de comparación, no cableable de forma independiente |
 | `coherence_verdict_out` | `CalendarCoherenceVerdict` | Output | 0..1 | Veredicto del Gate de Coherencia (TTR-003); ausente si no hay plantilla de sesión declarada para el instrumento |
+| `quote_ticks_in` | `QuoteTick` | Input | 0..N | `QuoteTick` (observado o completado por arrastre) a validar por cotización cruzada (TTR-004, enmienda 2026-07-25) |
 
 ---
 
@@ -185,8 +207,9 @@ Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos
 
 ## Dependencias
 **Depende de:**
-- Ninguna para la validación estructural (TTR-001/TTR-002) — es el filtro de entrada primario.
+- Ninguna para la validación estructural de `Bars` (TTR-001/TTR-002) — es el filtro de entrada primario.
 - [`session-catalog`](../features/session-catalog.md) — para la huella de calendario esperada que consume el Gate de Coherencia (TTR-003); sin plantilla de sesión declarada, ese gate no corre.
+- [`data-normalization-layer`](../features/data-normalization-layer.md) — produce el `QuoteTick` (observado o completado por arrastre) que TTR-004 valida por cotización cruzada (enmienda 2026-07-25).
 
 **Consumido por:**
 - [`ingest`](../modules/ingest.md) — para filtrado pre-almacenamiento.
