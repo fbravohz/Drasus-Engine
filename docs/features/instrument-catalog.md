@@ -1,9 +1,9 @@
 # Instrument Catalog
 
 **Carpeta:** `./features/instrument-catalog/`
-**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`). **Pendiente de retrofit:** campo `real_volume_unit_declared` (enmienda 2026-07-25, barrido Etapa 0.4) canonizado en ADR-0162 pero aún no existe en `migrations/0022` — lo implementa la Story del lector MT5.
-**Última actualización:** 2026-07-25 (barrido Etapa 0.4 — `real_volume_unit_declared`)
-**Decisión Arquitectónica Asociada:** ADR-0140 (activa el registro `Instrument`) · ADR-0154 (distingue de la tabla de capacidades) · ADR-0155 (hogar de los atributos estáticos de instrumento) · ADR-0162 (esta feature, enmendada 2026-07-25)
+**Estado:** ✅ Implementado (STORY-066, 2026-07-25 — QA APTO; backend completo, UI de captura delegada a `data-import-wizard`). **Pendiente de retrofit:** campo `real_volume_unit_declared` (enmienda 2026-07-25, barrido Etapa 0.4) canonizado en ADR-0162 pero aún no existe en `migrations/0022` — lo implementa la Story del lector MT5. **Pendiente de retrofit (TASK-069, ADR-0162 enmienda 2026-07-26):** tabla nueva `broker_server_clock` (reloj de bróker por ancla+desplazamiento, una fila por `venue`), canonizada, aún no migrada.
+**Última actualización:** 2026-07-26 (TASK-069 — `broker_server_clock`)
+**Decisión Arquitectónica Asociada:** ADR-0140 (activa el registro `Instrument`) · ADR-0154 (distingue de la tabla de capacidades) · ADR-0155 (hogar de los atributos estáticos de instrumento) · ADR-0162 (esta feature, enmendada 2026-07-25 y 2026-07-26)
 
 ## ¿Qué es?
 
@@ -20,6 +20,7 @@ Es el catálogo canónico de instrumentos y sus términos de trading. Activa el 
 - [ ] Cualquier feature que pida los términos resueltos de `(instrument_id, venue)` recibe un único objeto ya combinado (`COALESCE` del override sobre el canónico) — nunca tiene que consultar dos tablas ni implementar la lógica de herencia por su cuenta.
 - [ ] Si dos brókers ofrecen el mismo instrumento con condiciones distintas (spread, comisión), cada uno tiene su propia fila de override — nunca se funden ni se promedian.
 - [ ] Si el usuario borra el override de un bróker, el instrumento vuelve a resolver 100% desde el canónico sin que nadie edite `instrument_master`.
+- [ ] **(ADR-0162 enmienda 2026-07-26) El usuario declara, por `venue`, el reloj de servidor de un bróker** — zona ancla del catálogo IANA y desplazamiento fijo en minutos (`0` = reloj plano, sin anomalía) — una sola vez en `broker_server_clock`, no por cada instrumento ni por cada importación. `data-import-wizard` lo usa como borrador que el usuario confirma o corrige por importación.
 
 ## Restricciones
 
@@ -29,6 +30,8 @@ Es el catálogo canónico de instrumentos y sus términos de trading. Activa el 
 - **NUNCA se inventa un piso de spread global igual para todo instrumento.** El piso vive por instrumento (`default_spread`), consumido por la Política de Integridad de Spread de `data-sanitizer-pipeline` — nunca una constante cableada en código.
 - **(ADR-0162, enmienda 2026-07-25) NUNCA se asume la unidad del volumen real (`real_volume_unit_declared`) cuando el usuario no la declaró.** `NULL` significa "no declarado", nunca "unidades base por defecto" — `data-normalization-layer` marca la corrida como no verificada en vez de asumir.
 - **NUNCA se borra `instrument_master` si tiene overrides o datasets de mercado que lo referencian** (`ON DELETE RESTRICT`, ADR-0141).
+- **(ADR-0162 enmienda 2026-07-26) `broker_server_clock` es una fila por `venue`, nunca por `(instrument_id, venue)`.** El reloj de servidor no varía entre símbolos del mismo bróker — forzarlo a la granularidad de `broker_instrument_terms` obligaría a redeclarar el mismo reloj por cada instrumento nuevo, exactamente el defecto de repetición que este catálogo existe para evitar.
+- **(ADR-0162 enmienda 2026-07-26) `venue_operational_since` nunca se asume.** `NULL` significa "no verificado" — el Gate de Homogeneidad de Procedencia (`pit-data-validator`) solo corre ese chequeo cuando el campo está declarado.
 
 ## Parámetros Configurables
 
@@ -75,12 +78,17 @@ Es el catálogo canónico de instrumentos y sus términos de trading. Activa el 
 ### TTR-003: Resolución de Términos (`COALESCE`)
 - Implementa la función pura de resolución campo-a-campo y el puerto de lectura `ResolveInstrumentTerms`.
 
+### TTR-004: Alta y Edición de Reloj de Servidor por Bróker (ADR-0162 enmienda 2026-07-26)
+- Implementa la persistencia de `broker_server_clock` (una fila por `venue`): zona ancla IANA, desplazamiento fijo en minutos, y `venue_operational_since` opcional. Expone el borrador que `data-import-wizard` pre-rellena por `venue` en su selector de reloj.
+
 ## Puertos de Integración (ADR-0137)
 
 | Puerto | ID de tipo | Dirección | Cardinalidad | Descripción |
 |---|---|---|---|---|
 | `resolve_terms_in` | `(interno)` | Input | 1 | Solicitud `(instrument_id, venue)` — payload específico de esta feature, no tipo de dominio |
 | `resolved_terms_out` | `ResolvedInstrumentTerms` | Output | 1 | Términos de trading ya resueltos (canónico + override combinados) |
+| `broker_clock_in` | `(interno)` | Input | 1 | Solicitud `venue` — para leer el borrador de reloj de servidor (ADR-0162 enmienda 2026-07-26) |
+| `broker_clock_out` | `(interno)` | Output | 1 | `venue`, zona ancla, desplazamiento fijo en minutos, `venue_operational_since` opcional — consumido como borrador por `data-import-wizard` y como hecho verificable por el Gate de Homogeneidad de `pit-data-validator` |
 
 ## Cáscara Visual (Thin Shell)
 
@@ -120,7 +128,7 @@ Tablas propias, esquema completo en ADR-0162. Resumen del set de relevancia téc
 
 - Bloqueado por: ninguno — puede construirse en cuanto se apruebe ADR-0162.
 - Bloquea: la migración de `slippage-models`/`backtest-engine` de sus `CONFIG` globales actuales a términos resueltos (diferida, no bloqueante para esta feature).
-- **"Consumido por" = accede al puerto, no al esquema:** [`data-sanitizer-pipeline`](./data-sanitizer-pipeline.md) (piso de spread), [`backtest-engine`](./backtest-engine.md) (`SPREAD_SOURCE_MODE=FIXED` fallback), [`data-import-wizard`](./data-import-wizard.md) (UI de asociación bróker↔instrumento).
+- **"Consumido por" = accede al puerto, no al esquema:** [`data-sanitizer-pipeline`](./data-sanitizer-pipeline.md) (piso de spread), [`backtest-engine`](./backtest-engine.md) (`SPREAD_SOURCE_MODE=FIXED` fallback), [`data-import-wizard`](./data-import-wizard.md) (UI de asociación bróker↔instrumento; borrador de reloj de servidor por `venue`), [`pit-data-validator`](./pit-data-validator.md) (`venue_operational_since` para el Gate de Homogeneidad de Procedencia, ADR-0162 enmienda 2026-07-26).
 - **Contrato de Integración UI:** **Ventana de Verificación** (Feature de plomería, sin superficie propia en el MVP) — consumidora principal: `data-import-wizard`, pestaña "Importar". El observable de esta feature son los campos de `ResolvedInstrumentTerms` visibles en el paso de asociación bróker↔instrumento del asistente.
 
 ## Dependencias
@@ -128,4 +136,4 @@ Tablas propias, esquema completo en ADR-0162. Resumen del set de relevancia téc
 - Ninguna.
 
 **Consumido por:**
-- [`data-sanitizer-pipeline`](./data-sanitizer-pipeline.md), [`backtest-engine`](./backtest-engine.md), [`data-import-wizard`](./data-import-wizard.md).
+- [`data-sanitizer-pipeline`](./data-sanitizer-pipeline.md), [`backtest-engine`](./backtest-engine.md), [`data-import-wizard`](./data-import-wizard.md), [`pit-data-validator`](./pit-data-validator.md).
