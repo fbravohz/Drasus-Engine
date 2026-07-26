@@ -9,7 +9,7 @@
 | **Tipo** | Task |
 | **Épica (Fase)** | EPIC-1 — Ingest |
 | **Sprint** | continuación de STORY-051/STORY-057 |
-| **Estado** | Pendiente |
+| **Estado** | ✅ **CERRADA** — entregada y auditada el 2026-07-18; sellada retroactivamente por el Tech-Lead el 2026-07-25 |
 | **Responsable** | Rust-Engineer (Modo Autónomo — mecánico, sin decisión de diseño) · audita Tech-Lead |
 | **Creada** | 2026-07-18 |
 | **Completada** | — |
@@ -91,4 +91,23 @@ grep -rn "shared::types::Tick\b" crates/ --include=*.rs
 
 ## 9. Cierre ejecutivo (para el usuario — CEO)
 
-<Lo llena el Tech-Lead al cerrar la Story.>
+```
+ESTADO: 🟢 COMPLETADO
+
+PROGRESO MACRO:
+- El descargador ya no puede confundir una cotización con una operación ejecutada.
+  Antes ambas salían por el mismo canal genérico; ahora son dos canales separados por
+  el tipo, y el compilador rechaza cualquier código que las mezcle. Es la diferencia
+  entre "a este precio alguien ofrecía" y "a este precio alguien operó de verdad" —
+  confundirlas produce backtests optimistas de forma sistemática.
+
+FRICCIONES Y DEUDA:
+- Ninguna nueva. Una nota de secuenciación: el conector de bróker arrastra el mismo
+  patrón pendiente, pero esa pieza todavía no existe en código, así que no hay nada
+  que migrar hasta construirla.
+
+INPUT REQUERIDO DEL CEO:
+- Ninguna.
+```
+
+**Nota de sellado (2026-07-25):** la entrega y la auditoría del Tech-Lead ocurrieron el 2026-07-18 (§7). Esta Orden quedó en `Pendiente` por desfase documental, sin que nada del producto estuviera incompleto.

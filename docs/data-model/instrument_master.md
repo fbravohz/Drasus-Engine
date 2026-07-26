@@ -43,6 +43,7 @@
 ## Quién la referencia (FK entrante)
 
 - `broker_instrument_terms.instrument_id` — referencia esta clave de NEGOCIO (`instrument_id`), no el UUID técnico `id`
+- `import_mapping_declarations.instrument_id` (migración `0023`, STORY-068) — misma clave de negocio, `ON DELETE RESTRICT`: no se borra un instrumento del que exista una declaración de importación sellada
 
 ## Notas de diseño
 

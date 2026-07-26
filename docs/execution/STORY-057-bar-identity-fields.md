@@ -9,7 +9,7 @@
 | **Tipo** | Story |
 | **Épica (Fase)** | EPIC-1 — Ingest |
 | **Sprint** | continuación de STORY-051 |
-| **Estado** | Pendiente |
+| **Estado** | ✅ **CERRADA** — implementada dentro del rehecho de STORY-051; sellada retroactivamente por el Tech-Lead el 2026-07-25 |
 | **Responsable** | Rust-Engineer (Modo Autónomo — retrofit acotado, sin decisión de diseño abierta) · audita Tech-Lead |
 | **Creada** | 2026-07-18 |
 | **Completada** | — |
@@ -132,6 +132,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ## 7. Registro de ejecución (bitácora cronológica)
 - 2026-07-18 · Architect (Sonnet) · Especificación cerrada, sin implementación de código (fuera de mandato del Architect).
+- 2026-07-18 · Rust-Engineer (Sonnet) · Implementada **dentro del rehecho de STORY-051**, no como despacho separado — por eso esta Orden quedó sin sellar en su momento. Commit `d2a78bc`.
+- 2026-07-25 · Tech-Lead · **Auditoría de sellado retroactivo reproducida** al detectar el desfase documental (la Orden decía `Pendiente` con el código ya entregado). Verificado: los seis campos de identidad viven en `schemas.rs:158-163` sin `Option`; `BarIdentity` se propaga desde `orchestrator.rs:96` a cada barra; las pruebas discriminantes de los criterios 3 y 4 existen con nombre propio (`bars_carry_distinct_venue_when_requests_differ_only_in_venue` en `domain.rs:931`, `audit_hash_differs_when_only_venue_differs_despite_identical_ohlcv` en `domain.rs:1181`, y la más fuerte `audit_hash_differs_when_any_single_identity_field_differs` en `domain.rs:1203`, que cubre campo por campo); criterio 5 verde (76 pruebas de la crate, 0 fallos). **Lección de proceso:** una Orden absorbida por otra se sella igual, en el mismo turno en que se absorbe — si no, el registro miente sobre lo ya construido.
 
 ## 8. Pendientes derivados / decisiones
 
@@ -142,4 +144,21 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ## 9. Cierre ejecutivo (para el usuario — CEO)
 
-<Lo llena el Tech-Lead al cerrar la Story, no el Architect — ver plantilla `_TEMPLATE.md` §9.>
+```
+ESTADO: 🟢 COMPLETADO
+
+PROGRESO MACRO:
+- Cada vela que produce el sistema lleva grabado a quién pertenece: qué instrumento,
+  de qué bróker, de qué proveedor y de qué temporalidad. Antes dos velas con los mismos
+  números eran indistinguibles aunque vinieran de brókers distintos; ahora no pueden
+  confundirse ni fundirse, y su sello de auditoría cambia si cualquiera de esos datos
+  cambia — aunque los precios sean idénticos.
+
+FRICCIONES Y DEUDA:
+- Ninguna nueva. El trabajo se entregó dentro del rehecho del agregador de barras y su
+  orden quedó sin sellar durante una semana: el registro decía "pendiente" mientras el
+  código ya estaba en el repositorio. Corregido, sin impacto sobre el producto.
+
+INPUT REQUERIDO DEL CEO:
+- Ninguna.
+```

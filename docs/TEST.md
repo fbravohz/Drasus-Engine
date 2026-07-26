@@ -296,6 +296,26 @@ cargo test -p sovereign-data-fetcher
 
 ---
 
+### `data-import-wizard`  🟡 backend (vía de plantilla) · ⏳ SVF
+
+**Puerto:** lectura de archivo exportado del terminal del usuario (vía 3 de ADR-0154) hacia el esquema canónico, con la declaración de mapeo sellada como evidencia inmutable antes de persistir dato.
+
+```bash
+# Camino de éxito: importa el fragmento real embebido y sella la declaración
+cargo run -p app -- verify data-import-wizard
+
+# Camino de rechazo: sin zona horaria declarada, la importación se rechaza (nunca asume UTC)
+cargo run -p app -- verify data-import-wizard --input '{"source_timezone_declared":null}'
+
+cargo test -p data-import-wizard
+```
+
+El camino de éxito devuelve el identificador y el número de secuencia de la declaración sellada, más `volume_unit_unverified` cuando la unidad del volumen real no está declarada — el valor crudo se persiste igual, nunca se asume la unidad.
+
+- **Canal #1 (SVF):** ⏳ pendiente — la pantalla del asistente (arrastrar archivo, vista previa de dato transformado, confirmación del mapeo) es la que habilita la vía de mapeo manual y va en su propia Story (`DEBT-035`).
+
+---
+
 ## Plomería EPIC-0 (crate `shared`)
 
 Estas features son infraestructura crosscutting; **no exponen subcomando `verify`** (se validan por tests). Filtro por módulo:

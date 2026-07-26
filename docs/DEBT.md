@@ -53,6 +53,8 @@
 | DEBT-032 | 🟠 Media | El patrón de ledger de referencia tiene dos huecos (prueba del clasificador no discriminante + migración sin triggers) y se propagan por copia | Abierta | [detalle](./debt/DEBT-032.md) |
 | DEBT-033 | 🟠 Media | El techo de magnitud de la escala ×10⁸ excluye las cripto de oferta extrema (SHIB/PEPE): una barra horaria normal desborda `i64` — requiere decisión del Architect sobre ADR-0141 | Abierta | [detalle](./debt/DEBT-033.md) |
 | DEBT-034 | 🟠 Media | `sovereign-data-fetcher` nunca pasó el gate de mutación (se cerró antes de que fuera gate formal): 49 supervivientes, 21 de ellos en la lógica de concurrencia | Abierta | [detalle](./debt/DEBT-034.md) |
+| DEBT-035 | 🟠 Media | La vía de mapeo manual del asistente de importación no tiene pantalla, y es la que LDR-0008 exige que pase por vista previa confirmada | Abierta | [detalle](./debt/DEBT-035.md) |
+| DEBT-036 | 🟠 Media | El puerto de salida de barras no puede cargar la referencia a la declaración sellada: la trazabilidad de ADR-0156 R8 es hoy convención, no física | Abierta | [detalle](./debt/DEBT-036.md) |
 
 ---
 

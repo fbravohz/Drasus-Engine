@@ -36,6 +36,7 @@
 | `triple_swap_day` | TEXT | SÍ | `CHECK (NULL OR IN ('MON'..'SUN'))` — mismo vocabulario de día que las ventanas de sesión |
 | `swap_rollout_hour` | INTEGER | SÍ | `CHECK (NULL OR BETWEEN 0 AND 23)` |
 | `session_template_id_override` | TEXT | SÍ | FK → `session_template(id)` — solo cuando el calendario de ESTE bróker difiere del default del instrumento |
+| `real_volume_unit_declared` | TEXT | SÍ | Retrofit STORY-068 (ADR-0162 enmienda 2026-07-25). `CHECK (NULL OR IN ('CONTRACTS','LOTS','BASE_ASSET_UNITS','QUOTE_ASSET_UNITS'))`. NULL = convención no declarada (nunca "unidades base por defecto") — gobierna cómo `data-normalization-layer` interpreta `<VOL>`/`volume_traded` de esta fuente; sin declarar, el valor crudo se persiste igual pero la corrida queda marcada como no verificada |
 
 ## Claves
 
