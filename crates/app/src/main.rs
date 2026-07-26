@@ -31,6 +31,7 @@ use instrument_catalog::public_interface::{
     verify as verify_instrument_catalog, VerifyInput as InstrumentCatalogVerifyInput,
 };
 use session_catalog::public_interface::{verify as verify_session_catalog, VerifyInput as SessionCatalogVerifyInput};
+use data_import_wizard::public_interface::{verify as verify_data_import_wizard, VerifyInput as DataImportWizardVerifyInput};
 
 // ────────────────────────────────────────────────────────────────────────────
 // CLI declarativa (Clap 4 con el macro `derive`)
@@ -86,11 +87,12 @@ enum Commands {
     ///   drasus verify operator-roles --input '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'
     ///   drasus verify instrument-catalog --input '{"instrument_id":"EURUSD","venue":"PEPPERSTONE"}'
     ///   drasus verify session-catalog --input '{"template_code":"FOREX_245"}'
+    ///   drasus verify data-import-wizard --input '{"source_timezone_declared":null}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {
         /// Identificador de la feature a verificar en kebab-case.
-        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `hybrid-data-transformer`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`, `instrument-catalog`, `session-catalog`.
+        /// Features soportadas en Fase 1: `sovereign-data-fetcher`, `hybrid-data-transformer`, `central-identity`, `licensing-system`, `plan-tier-quota`, `usage-metering`, `consent-registry`, `enriched-domain-events`, `institutional-report-engine`, `third-party-api-gateway`, `data-aggregation`, `verified-account-registry`, `instance-continuity`, `master-account-hierarchy`, `data-portability`, `operator-roles`, `instrument-catalog`, `session-catalog`, `data-import-wizard`.
         feature_id: String,
 
         /// Input JSON para la verificación.
@@ -756,10 +758,40 @@ async fn run_verify(feature_id: &str, input_json: Option<&str>) {
             }
         }
 
+        // ── Data Import Wizard (STORY-068, ADR-0155/0156/0162) ────────────────
+        "data-import-wizard" => {
+            // Todos los campos tienen default de humo razonable (EURUSD/
+            // PEPPERSTONE, fragmento real embebido, zona horaria declarada
+            // por defecto) -- `drasus verify data-import-wizard` sin
+            // --input ya produce un resultado significativo.
+            let input: DataImportWizardVerifyInput = match input_json {
+                Some(json) => match serde_json::from_str(json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error al parsear --input JSON: {e}");
+                        std::process::exit(1);
+                    }
+                },
+                None => DataImportWizardVerifyInput::default(),
+            };
+
+            let output = verify_data_import_wizard(input).await;
+
+            let json = serde_json::to_string_pretty(&output)
+                // serde_json::to_string_pretty solo falla si el tipo tiene claves Map no-string,
+                // lo cual no aplica aquí; el expect documenta que es imposible que falle.
+                .expect("DataImportWizardVerifyOutput siempre es serializable a JSON");
+            println!("{json}");
+
+            if !output.ok {
+                std::process::exit(1);
+            }
+        }
+
         // ── Feature no reconocida ─────────────────────────────────────────────
         unknown => {
             eprintln!(
-                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, hybrid-data-transformer, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles, instrument-catalog, session-catalog"
+                "feature-id no reconocido: '{unknown}'. Features soportadas en Fase 1: sovereign-data-fetcher, hybrid-data-transformer, central-identity, licensing-system, plan-tier-quota, usage-metering, consent-registry, enriched-domain-events, institutional-report-engine, third-party-api-gateway, data-aggregation, verified-account-registry, instance-continuity, master-account-hierarchy, data-portability, operator-roles, instrument-catalog, session-catalog, data-import-wizard"
             );
             std::process::exit(1);
         }

@@ -1,0 +1,43 @@
+[package]
+name = "data-import-wizard"
+description = "Lector del archivo de barras de MetaTrader (plantilla de plataforma) y ledger append-only de declaración de mapeo. Crate hexagonal de dominio (ADR-0137). EPIC-1 / Ingest, ADR-0155/0156/0162, STORY-068."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ÚNICA dependencia interna permitida para un feature crate (ADR-0137).
+# Prohibido depender de otros feature crates o presets.
+shared = { path = "../../../shared" }
+
+# Runtime asíncrono: la persistencia (SQLite) es async, igual que el resto
+# del substrato.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+# Generación de UUIDs. v7 (ordenable por tiempo, ADR-0141 "Claves primarias")
+# es el generador canónico del sistema.
+uuid = { version = "1", features = ["v4", "v7"] }
+# Hash SHA-256 para los campos de integridad (audit_hash, audit_chain_hash)
+# y para el hash de identidad del archivo origen (source_file_hash).
+sha2 = "0.10"
+# Serialización/deserialización para el input/output del harness de
+# verificación CLI (ADR-0142) y para el mapeo de columnas / vista previa
+# que el ledger sella como JSON.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Acceso a SQLite para la persistencia del ledger de mapeo. El feature crate
+# no crea su propio pool -- usa el de shared.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
+# Mensajes de error propios de la cáscara.
+thiserror = "1"
+# Parseo de fecha/hora del archivo (formato MT5 "YYYY.MM.DD"/"HH:MM:SS").
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+# Resolución de la zona horaria IANA declarada por el usuario (con sus
+# reglas de DST correctas y ya auditadas) -- ADR-0162 "Corrección del
+# Architect #3": nunca una convención de desplazamiento inventada.
+chrono-tz = "0.10"
+
+[dev-dependencies]
+# Directorios/archivos temporales con limpieza automática para tests de
+# integración (durabilidad -- SQLite en archivo real, nunca `:memory:`).
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }

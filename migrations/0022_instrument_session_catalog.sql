@@ -24,6 +24,12 @@
 --
 -- Idempotencia (ADR-0006): `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF
 -- NOT EXISTS` -- volver a correr esta migración es un no-op.
+--
+-- Retrofit STORY-068 (2026-07-25, edición in-situ -- fase GREENFIELD, ADR-0006
+-- enmienda 2026-06-28): `broker_instrument_terms` gana la columna
+-- `real_volume_unit_declared` (ADR-0162 enmienda 2026-07-25). No se apila una
+-- migración correctiva nueva porque este archivo aún no tenía consumidores
+-- distribuidos -- se corrige el baseline directamente.
 
 -- ════════════════════════════════════════════════════════════════════════
 -- session_template — Referencia, compartida, nunca copiada por bróker×símbolo.
@@ -211,6 +217,17 @@ CREATE TABLE IF NOT EXISTS broker_instrument_terms (
     -- difiere del calendario por defecto del instrumento.
     session_template_id_override                  TEXT
         REFERENCES session_template (id) ON DELETE RESTRICT,
+
+    -- Convención de unidad del volumen real (`<VOL>` de MT5 y equivalentes)
+    -- declarada por bróker/instrumento -- retrofit ADR-0162 enmienda
+    -- 2026-07-25 (STORY-068, barrido `architect-2026-07-25-barrido-lector-mt5.md`
+    -- pregunta 3). NULL significa "convención no declarada", NUNCA "unidades
+    -- base por defecto" -- si no está declarado, `data-normalization-layer`
+    -- persiste el valor crudo observado (nunca lo descarta) y marca la
+    -- corrida como no verificada en vez de asumir una unidad.
+    real_volume_unit_declared                     TEXT
+        CHECK (real_volume_unit_declared IS NULL OR real_volume_unit_declared IN
+            ('CONTRACTS','LOTS','BASE_ASSET_UNITS','QUOTE_ASSET_UNITS')),
 
     -- Un bróker concreto tiene UNA fila de override por instrumento.
     UNIQUE (instrument_id, venue)

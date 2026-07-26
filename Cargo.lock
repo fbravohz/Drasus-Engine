@@ -205,6 +205,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "data-import-wizard",
  "hybrid-data-transformer",
  "instrument-catalog",
  "nix",
@@ -1081,6 +1082,23 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
+]
+
+[[package]]
+name = "data-import-wizard"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "serde",
+ "serde_json",
+ "sha2",
+ "shared",
+ "sqlx",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

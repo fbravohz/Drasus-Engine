@@ -36,6 +36,10 @@ hybrid-data-transformer = { path = "../features/data/hybrid-data-transformer" }
 instrument-catalog = { path = "../features/data/instrument-catalog" }
 session-catalog = { path = "../features/data/session-catalog" }
 
+# Lector del archivo de barras de MetaTrader (ADR-0155/0156/0162, STORY-068).
+# Se añade para soportar el subcomando `verify data-import-wizard`.
+data-import-wizard = { path = "../features/data/data-import-wizard" }
+
 # Serialización/deserialización JSON para el input/output del subcomando `verify`.
 # Reutiliza la misma versión que ya usa el workspace (ya presente en el feature crate).
 serde_json = "1"
