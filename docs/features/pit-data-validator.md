@@ -52,7 +52,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 - [ ] **Gate de Homogeneidad de Procedencia Declarada (ADR-0162 enmienda 2026-07-26).** El usuario declara un tramo (rango de fechas) de un archivo bajo una convención estática (unidad de volumen, mapeo, reloj)
   → Sistema calcula el perfil de magnitud/disponibilidad de los campos con convención declarada por sub-ventana dentro del rango declarado
   → Si la razón entre la sub-ventana de mayor y menor magnitud supera `PROVENANCE_HOMOGENEITY_MAGNITUDE_RATIO_THRESHOLD`, o hay sub-ventanas vacías rodeadas de pobladas → el sistema **no sella en silencio**: exige que el usuario declare tramos separados o confirme explícitamente que declara homogeneidad pese a la fractura mostrada
-  → Si `broker_server_clock.venue_operational_since` está declarado (no `NULL`) para el `venue` del tramo y el rango incluye instantes anteriores → **RECHAZADO** con motivo explícito ("este tramo antecede la fecha de operación declarada de {venue}")
+  → Si `broker_server_clock.venue_operational_since_ns` está declarado (no `NULL`) para el `venue` del tramo y el rango incluye instantes anteriores → **RECHAZADO** con motivo explícito ("este tramo antecede la fecha de operación declarada de {venue}")
   → Verificado real: `datasets/EURUSD_M1_....csv`, `<VOL>` con fractura de seis órdenes de magnitud entre 2010-06 y 2017-11, y arranque en el año 2000 pese a que IC Markets se fundó en 2007
 
 ---
@@ -71,7 +71,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 - **(ADR-0155, enmienda 2026-07-25) NUNCA `bid > ask` en `QuoteTick`.** Cotización cruzada — imposible en un mercado real, señal de arrastre (`carry-forward`) mal acotado en `data-normalization-layer`.
 - **(ADR-0156 Restricción 6) NUNCA una `Bars` con rango de precio real (`open≠close` u `high≠low`) y `volume_ticks=0` se persiste como vela ordinaria sin marca.** Es matemáticamente imposible bajo la definición de `volume_ticks` — movimiento sin ningún cambio contado.
 - **(ADR-0162 Restricción 10, enmienda 2026-07-26) NUNCA se sella una convención estática para un tramo donde el propio campo declarado muestra una fractura medible, sin decisión explícita del usuario.** Detectar la fractura no es inferir su causa — es negarse a certificar una homogeneidad que la evidencia contradice.
-- **(ADR-0162 enmienda 2026-07-26) NUNCA se asume una fecha de operación de bróker.** El chequeo contra `venue_operational_since` solo corre cuando ese campo está declarado en `broker_server_clock`; `NULL` significa "no verificado", nunca "opera desde el origen de los tiempos".
+- **(ADR-0162 enmienda 2026-07-26; renombrado 2026-07-27, TASK-072) NUNCA se asume una fecha de operación de bróker.** El chequeo contra `venue_operational_since_ns` solo corre cuando ese campo está declarado en `broker_server_clock`; `NULL` significa "no verificado", nunca "opera desde el origen de los tiempos".
 
 ---
 
@@ -181,9 +181,9 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 *   **Reglas de Negocio:**
     * Corre **antes** de aceptar el mapeo declarado, mismo momento que TTR-003 (ADR-0156 Restricción 6).
     * Es **FIJO** que el gate corra; sus umbrales (`PROVENANCE_HOMOGENEITY_MAGNITUDE_RATIO_THRESHOLD`, `PROVENANCE_HOMOGENEITY_SUBWINDOW`) son `CONFIG`.
-    * El chequeo de `venue_operational_since` (`broker_server_clock`, `instrument-catalog`) solo corre si ese campo no es `NULL` — nunca se asume una fecha de operación.
+    * El chequeo de `venue_operational_since_ns` (`broker_server_clock`, `instrument-catalog`) solo corre si ese campo no es `NULL` — nunca se asume una fecha de operación.
     * Ninguno de los dos chequeos infiere un valor semántico (unidad, procedencia real) — solo certifican o rechazan la homogeneidad que la evidencia sostiene o contradice (frontera fijada en TASK-069).
-*   **Entrada:** rango declarado de una fila de `import_mapping_declarations`, serie de valores del campo bajo convención estática, `venue_operational_since` resuelto de `broker_server_clock`.
+*   **Entrada:** rango declarado de una fila de `import_mapping_declarations`, serie de valores del campo bajo convención estática, `venue_operational_since_ns` resuelto de `broker_server_clock`.
 *   **Salida:** `ProvenanceHomogeneityVerdict` (`PASSED` / `RECHAZADO` con motivo / requiere decisión del usuario — segmentar o atestar).
 *   **Precondición:** El tramo declara al menos un campo bajo convención estática (unidad de volumen, o el propio reloj de origen).
 *   **Postcondición:** El veredicto queda visible junto al resultado de la importación; un `RECHAZADO` detiene el sellado del tramo con el motivo estructural exacto (qué fractura o qué fecha).
@@ -199,7 +199,7 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 | `coherence_verdict_out` | `CalendarCoherenceVerdict` | Output | 0..1 | Veredicto del Gate de Coherencia (TTR-003); ausente si no hay plantilla de sesión declarada para el instrumento |
 | `quote_ticks_in` | `QuoteTick` | Input | 0..N | `QuoteTick` (observado o completado por arrastre) a validar por cotización cruzada (TTR-004, enmienda 2026-07-25) |
 | `declared_segment_in` | `(interno)` | Input | 1 | Rango declarado + campos de convención estática de una fila de `import_mapping_declarations` (TTR-005, enmienda 2026-07-26) |
-| `broker_clock_in` | `(interno)` | Input | 0..1 | `venue_operational_since` resuelto de `broker_server_clock` (`instrument-catalog`), cuando está declarado (TTR-005) |
+| `broker_clock_in` | `(interno)` | Input | 0..1 | `venue_operational_since_ns` resuelto de `broker_server_clock` (`instrument-catalog`), cuando está declarado (TTR-005) |
 | `provenance_homogeneity_verdict_out` | `(interno)` | Output | 0..1 | Veredicto del Gate de Homogeneidad (TTR-005); ausente si el tramo no declara ningún campo bajo convención estática |
 
 ---
@@ -236,7 +236,7 @@ Toda auditoría PIT y limpieza registra el set de relevancia técnica para Datos
 - Ninguna para la validación estructural de `Bars` (TTR-001/TTR-002) — es el filtro de entrada primario.
 - [`session-catalog`](../features/session-catalog.md) — para la huella de calendario esperada que consume el Gate de Coherencia (TTR-003); sin plantilla de sesión declarada, ese gate no corre.
 - [`data-normalization-layer`](../features/data-normalization-layer.md) — produce el `QuoteTick` (observado o completado por arrastre) que TTR-004 valida por cotización cruzada (enmienda 2026-07-25).
-- [`instrument-catalog`](../features/instrument-catalog.md) — para `broker_server_clock.venue_operational_since`, consumido por el Gate de Homogeneidad de Procedencia (TTR-005, ADR-0162 enmienda 2026-07-26); sin ese campo declarado, ese chequeo concreto no corre.
+- [`instrument-catalog`](../features/instrument-catalog.md) — para `broker_server_clock.venue_operational_since_ns`, consumido por el Gate de Homogeneidad de Procedencia (TTR-005, ADR-0162 enmienda 2026-07-26); sin ese campo declarado, ese chequeo concreto no corre.
 
 **Consumido por:**
 - [`ingest`](../modules/ingest.md) — para filtrado pre-almacenamiento.

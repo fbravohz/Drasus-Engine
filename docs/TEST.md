@@ -305,7 +305,7 @@ cargo test -p sovereign-data-fetcher
 cargo run -p app -- verify data-import-wizard
 
 # Camino de rechazo: sin zona horaria declarada, la importación se rechaza (nunca asume UTC)
-cargo run -p app -- verify data-import-wizard --input '{"source_timezone_declared":null}'
+cargo run -p app -- verify data-import-wizard --input '{"source_clock_anchor_timezone_ref":null}'
 
 cargo test -p data-import-wizard
 ```

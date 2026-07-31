@@ -536,9 +536,9 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 
 | Id | Widget Dart / Helper | Archivo |
 |---|---|---|
-| `frosted` | `frosted({child, radius, padding, solidColor?, glow?})` | `gallery/gallery_fx.dart` |
-| `panel-surface` | `panelSurface({child, radius, padding, glow?})` | `gallery/gallery_fx.dart` |
-| `card-surface` | `cardSurface({child, radius, padding, glow?})` | `gallery/gallery_fx.dart` |
+| `frosted` | `frosted({child, radius, padding, solidColor?, glow?})` | `ui/lib/theme/surfaces.dart` (movido desde `gallery/gallery_fx.dart` en STORY-026 — `components/` no depende de `gallery/`) |
+| `panel-surface` | `panelSurface({child, radius, padding, glow?})` | `ui/lib/theme/surfaces.dart` |
+| `card-surface` | `cardSurface({child, radius, padding, glow?})` | `ui/lib/theme/surfaces.dart` |
 | `panel-from-decoration` | `PanelFromDecoration({child, decoration, padding, solidColor?})` | `gallery/gallery_fx.dart` |
 | `glass-surface` | `GlassSurface({child, borderRadius, tint?, rimOpacity?})` | `widgets/glass_surface.dart` |
 | `surface-fill` | `Gx.surfaceFill` (getter dinámico → `DrasusThemeState.globalComponentBgColor`) | `gallery/gallery_tokens.dart` |
@@ -574,13 +574,11 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `panel-solid` | `_panelSolid({child, padding, glowColor})` (69 callsites) | `gallery/gallery_tab.dart` |
-| `panel-glass` | `frosted({child, radius: 14})` | `gallery/gallery_fx.dart` |
-| `card` | `cardSurface({child, radius})` o `HoverGlow(child: PanelFromDecoration(...))` | `gallery/gallery_fx.dart` |
+| `panel-solid` / `panel-glass` / `card` | `custom_ui.Surface({child, padding, radius, glow})` (`ui/lib/components/surface.dart`) — delega a `panelSurface()`; la receta glass/tint/solid la decide el modo global de tema, no el componente (STORY-025/026, corrige la fila anterior que apuntaba a `_panelSolid`/`frosted` de galería, ya movidos/renombrados) | `ui/lib/components/surface.dart` |
 | `divider / separator` | `Gx.vDivider({height})` | `gallery/gallery_tokens.dart` |
-| `tabs / tab-bar` | `_tabsMock()` (maqueta en galería) | `gallery/gallery_tab.dart` |
-| `segmented-control` | `GlowSegmented({options, selected, onChanged})` | `gallery/sections/section_buttons_extended.dart` |
-| `stepper / wizard` | `GlowStepper({steps, currentStep, onStepTapped})` | `gallery/sections/section_feedback_extended.dart` |
+| `tabs / tab-bar` | `custom_ui.Tabs` (`ui/lib/components/tabs.dart`) — corrige la fila anterior que apuntaba a `_tabsMock()`, mockup de galería sin estado real | `ui/lib/components/tabs.dart` |
+| `segmented-control` | `custom_ui.Segmented({options, selected, onChanged})` | `ui/lib/components/segmented.dart` |
+| `stepper / wizard` | `custom_ui.Stepper({steps, currentStep, onStepTapped})` — corrige la fila anterior (`GlowStepper`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/stepper.dart` |
 | `pipeline-8-steps` | `Pipeline8Steps()` | `gallery/sections/section_drasus_core_extended.dart` |
 | `accordion / collapse` | `GlowAccordion({title, content, isExpanded})` | `gallery/sections/section_feedback_extended.dart` |
 
@@ -600,40 +598,40 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `text-field / input` | `GlowInput({hint, initial, color?})` | `gallery/gallery_fx.dart` |
-| `search-input` | `GlowInput(hint: 'Buscar…', color: Gx.optimaCyan)` | `gallery/gallery_fx.dart` |
-| `textarea` | `GlowTextarea({hint, initial, maxLines})` | `gallery/sections/section_inputs_extended.dart` |
-| `number-input / stepper` | `GlowNumberInput({initial, min, max, onChanged})` | `gallery/sections/section_inputs_extended.dart` |
-| `select / dropdown` | `GlowDropdown({label, options, onSelected})` | `gallery/gallery_fx.dart` |
-| `combobox / autocomplete` | `GlowCombobox({hint, options, onSelected})` | `gallery/sections/section_inputs_extended.dart` |
-| `multiselect` | `GlowMultiSelect({label, options, selected})` | `gallery/sections/section_inputs_extended.dart` |
+| `text-field / input` | `custom_ui.Input({controller, hint, onChanged, errorText})` — corrige la fila anterior (`GlowInput`, clase inexistente tras ADR-0138 enmienda 2026-06-29) | `ui/lib/components/input.dart` |
+| `search-input` | `custom_ui.Input(hint: 'Buscar…')` | `ui/lib/components/input.dart` |
+| `textarea` | `custom_ui.Textarea` | `ui/lib/components/textarea.dart` |
+| `number-input / stepper` | `custom_ui.NumberInput({value, onChanged, min, max, step})` | `ui/lib/components/number_input.dart` |
+| `select / dropdown` | `custom_ui.Dropdown<T>({value, items, onChanged, hint})` — `DropdownItem<T>({value, label})`; `label` es `String` puro, sin slot de icono | `ui/lib/components/dropdown.dart` |
+| `combobox / autocomplete` | `custom_ui.Combobox<T>({value, items, onChanged, hint})` | `ui/lib/components/combobox.dart` |
+| `multiselect` | `custom_ui.MultiSelect<T>({value, items, onChanged})` | `ui/lib/components/multi_select.dart` |
+| `date-range` | `custom_ui.DateRangePicker({range, onChanged})` — `DateRange({start: DateTime, end: DateTime})` | `ui/lib/components/date_range_picker.dart` |
+| `file-upload / dropzone` | `custom_ui.Dropzone({onTap, label})` — `onTap` es `VoidCallback` sin payload de archivo; el drag real no está implementado, solo el estado visual de hover | `ui/lib/components/dropzone.dart` |
+| `form-field` | `custom_ui.FormField({label, child, errorText, helperText})` | `ui/lib/components/form_field.dart` |
 | `cascader` | `GlowCascader({options, onSelected})` | `gallery/sections/section_std_missing.dart` |
 | `transfer / dual-list` | `GlowTransferList({source, target})` | `gallery/sections/section_std_missing.dart` |
 | `switch / toggle` | `GlowSwitch({initial, color?})` | `gallery/gallery_fx.dart` |
 | `slider` | `GlowSlider({initial, min, max, color?})` | `gallery/gallery_fx.dart` |
 | `date-picker` | `GlowDatePicker({initial, onSelected})` | `gallery/gallery_fx.dart` |
-| `date-range` | `GlowDateRangePicker({initial, onRange})` | `gallery/sections/section_std_missing.dart` |
 | `time-picker` | `GlowTimePicker({initial})` | `gallery/sections/section_std_missing.dart` |
 | `color-picker` | `GlowColorPicker({initial})` | `gallery/sections/section_std_missing.dart` |
-| `file-upload / dropzone` | `GlowDropzone({onFile})` | `gallery/sections/section_std_missing.dart` |
 | `rating` | `GlowRating({initial, onChanged})` | `gallery/sections/section_inputs_extended.dart` |
 | `tags-input / chips-input` | `GlowTagsInput({initial, suggestions})` | `gallery/sections/section_inputs_extended.dart` |
 | `otp / pin-input` | `GlowOtpInput({length, onComplete})` | `gallery/sections/section_inputs_extended.dart` |
 | `mention-input` | `GlowMentionInput({hint, suggestions})` | `gallery/sections/section_std_missing.dart` |
-| `form-field` | `GlowFormField({label, hint, error?})` | `gallery/sections/section_inputs_extended.dart` |
 
 ### §7 — Botones y Acciones
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `button-primary` | `GlowButton({label, onTap, color?, gradient?})` | `gallery/gallery_fx.dart` |
-| `button-glass` | `GlowButton({label, variant: secondary})` | `gallery/gallery_fx.dart` |
-| `button-ghost` | `GlowButton({label, variant: ghost})` | `gallery/gallery_fx.dart` |
-| `button-danger` | `GlowButton({label, color: Gx.criticalCrimson})` | `gallery/gallery_fx.dart` |
+| `button-primary` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.primary, loading})` — corrige la fila anterior (`GlowButton`, clase inexistente tras ADR-0138 enmienda 2026-06-29) | `ui/lib/components/button.dart` |
+| `button-glass` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.secondary})` | `ui/lib/components/button.dart` |
+| `button-ghost` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.ghost})` | `ui/lib/components/button.dart` |
+| `button-danger` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.danger})` | `ui/lib/components/button.dart` |
 | `icon-button` | `_iconBtn(icon)` (maqueta) | `gallery/gallery_tab.dart` |
-| `button-group` | `GlowButtonGroup({buttons})` | `gallery/sections/section_buttons_extended.dart` |
-| `split-button` | `GlowSplitButton({label, items})` | `gallery/sections/section_std_missing.dart` |
-| `toggle-button` | `GlowToggleButton({label, isOn, onToggle})` | `gallery/sections/section_buttons_extended.dart` |
+| `button-group` | `custom_ui.ButtonGroup` | `ui/lib/components/button_group.dart` |
+| `split-button` | `custom_ui.SplitButton` | `ui/lib/components/split_button.dart` |
+| `toggle-button` | `custom_ui.ToggleButton({value, onChanged})` | `ui/lib/components/toggle_button.dart` |
 | `fab` | `GlowFab({icon, onTap})` | `gallery/sections/section_buttons_extended.dart` |
 | `loading-button` | `GlowLoadingButton({label, isLoading})` | `gallery/sections/section_buttons_extended.dart` |
 
@@ -641,13 +639,13 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `table / data-grid` | `GlowTable({columns, rows})` | `gallery/sections/section_data_display_extended.dart` |
-| `tree-table` | `GlowTreeTable({root})` | `gallery/sections/section_data_display_extended.dart` |
+| `table / data-grid` | `custom_ui.Table({columns: List<TableColumn>, rows: List<List<Widget>>, onRowTap})` — corrige la fila anterior (`GlowTable`, clase inexistente); cada celda es un `Widget` arbitrario | `ui/lib/components/table.dart` |
+| `tree-table` | `custom_ui.TreeTable` | `ui/lib/components/tree_table.dart` |
 | `list / list-item` | `GlowList({items, onTap})` | `gallery/sections/section_data_display_extended.dart` |
-| `key-value-row` | `_keyValue(key, value, color?)` (maqueta en galería) | `gallery/gallery_tab.dart` |
-| `badge / tag / chip / pill` | `_chip(text, fg, bg, border)` (maqueta en galería) | `gallery/gallery_tab.dart` |
+| `key-value-row` | `custom_ui.KeyValue({label, value})` — corrige la fila anterior (maqueta en galería, sin clase real) | `ui/lib/components/key_value.dart` |
+| `badge / tag / chip / pill` | `custom_ui.Chip({label, status: ChipStatus?, pill})` (estado semántico) · `custom_ui.Badge({count, label, child})` (indicador superpuesto) — corrige la fila anterior (`_chip()`, maqueta en galería) | `ui/lib/components/chip.dart` / `ui/lib/components/badge.dart` |
 | `regime-chip` | `_regimeChip(label, regime)` | `gallery/gallery_tab.dart` |
-| `tooltip` | `GlowTooltip({message, child})` o `Widget` con `GlassSurface` | `gallery/gallery_fx.dart` / `widgets/glass_surface.dart` |
+| `tooltip` | `custom_ui.Tooltip({message, child})` — corrige la fila anterior (`GlowTooltip`, clase inexistente) | `ui/lib/components/tooltip.dart` |
 | `popover` | `GlowPopover({content, child})` | `gallery/gallery_fx.dart` |
 | `timeline` | `GlowTimeline({events})` | `gallery/sections/section_data_display_extended.dart` |
 | `carousel` | `GlowCarousel({items})` | `gallery/sections/section_data_display_extended.dart` |
@@ -660,17 +658,17 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 | `progress-bar` | `GlowProgress({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
 | `progress-circular` | `GlowProgressCircular({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
 | `skeleton` | `GlowSkeleton({width, height})` | `gallery/sections/section_data_display_extended.dart` |
-| `empty-state` | `GlowEmpty({message, icon})` | `gallery/sections/section_data_display_extended.dart` |
+| `empty-state` | `custom_ui.Empty({message, icon, subtitle})` — corrige la fila anterior (`GlowEmpty`, clase inexistente) | `ui/lib/components/empty.dart` |
 
 ### §9 — Feedback y Overlays
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `alert / banner / callout` | `GlowBanner({message, type})` | `gallery/sections/section_feedback_extended.dart` |
+| `alert / banner / callout` | `custom_ui.Banner({message, type: BannerType.info/success/warning/error})` — corrige la fila anterior (`GlowBanner`, clase inexistente) | `ui/lib/components/banner.dart` |
 | `toast / snackbar` | `GlowToast({message, type})` | `gallery/sections/section_feedback_extended.dart` |
-| `notification-card` | `GlowNotificationCard({title, body, isRead})` | `gallery/sections/section_feedback_extended.dart` |
-| `modal / dialog` | `GlowModal({title, content, actions})` con `showDialog` | `gallery/gallery_fx.dart` |
-| `popconfirm` | `GlowPopconfirm({message, onConfirm})` | `gallery/sections/section_feedback_extended.dart` |
+| `notification-card` | `custom_ui.NotificationCard({title, message, type, read, onTap, onDismiss})` | `ui/lib/components/notification_card.dart` |
+| `modal / dialog` | `custom_ui.Dialog` | `ui/lib/components/dialog.dart` |
+| `popconfirm` | `custom_ui.Popconfirm({message, child, onConfirm, onCancel})` | `ui/lib/components/popconfirm.dart` |
 | `spinner / loader` | `_spinner()` / `_scanRing(color)` (maqueta) | `gallery/gallery_tab.dart` |
 
 ### §10 — Data-Viz (Dominio Drasus)

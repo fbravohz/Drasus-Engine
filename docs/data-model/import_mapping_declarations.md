@@ -23,23 +23,26 @@
 | `venue` | TEXT | NO | Bróker/venue donde se opera el instrumento |
 | `bar_type` | TEXT | NO | `CHECK IN ('TIME','TICK_COUNT','VOLUME','DOLLAR','RENKO','RANGE')` — catálogo ADR-0155, default `'TIME'` |
 | `timeframe_value` | TEXT | NO | Ej. `"1M"` — fijo para toda la corrida de este archivo |
+| `declared_range_start_ns` | INTEGER | NO | Retrofit STORY-070 (ADR-0162 "Enmienda 2026-07-26"). Nanosegundos UTC, inicio inclusive del TRAMO que esta fila declara — explícito, nunca implícito en las filas resultantes |
+| `declared_range_end_ns` | INTEGER | NO | Fin exclusivo del mismo tramo. `CHECK (declared_range_end_ns > declared_range_start_ns)` — un rango invertido o vacío se rechaza a nivel de base de datos |
 | `mapping_origin` | TEXT | NO | `CHECK IN ('PLATFORM_TEMPLATE','MANUAL_USER')` — decide quién responde por un mapeo erróneo (LDR-0008) |
 | `platform_template_code` | TEXT | SÍ | Ej. `"MT5_M1_BAR_V1"` — NULL si `mapping_origin = MANUAL_USER` |
 | `platform_template_version` | TEXT | SÍ | Versión de la plantilla aplicada — NULL si `MANUAL_USER` |
 | `column_mapping_json` | TEXT | NO | `CHECK (json_valid(...))` — mapeo completo columna origen → campo canónico, tal como se mostró al usuario |
 | `transform_engine_version` | TEXT | NO | Versión del binario/motor que ejecutó el mapeo |
 | `canonical_schema_version` | TEXT | NO | Versión del esquema canónico (ADR-0155) vigente al declarar |
-| `accepted_at` | INTEGER | NO | Nanosegundos UTC del instante de aceptación |
+| `accepted_at_ns` | INTEGER | NO | Nanosegundos UTC del instante de aceptación. Campo de **dominio**, no Grupo I — de ahí el sufijo de unidad que exige el check `M13` de ADR-0141 (renombrado 2026-07-27 en la misma tanda que TASK-072; antes `accepted_at`) |
 | `preview_transformed_rows_json` | TEXT | NO | `CHECK (json_valid(...))` — filas de DATO YA TRANSFORMADO que el usuario vio al aceptar (LDR-0008 condición técnica 3, nunca solo esquema) |
-| `source_timezone_declared` | TEXT | NO | Identificador IANA (ej. `"America/New_York"`) — NUNCA se infiere; una importación sin esta declaración se rechaza antes de llegar a este ledger |
+| `source_clock_anchor_timezone_ref` | TEXT | NO | Retrofit STORY-070 (ADR-0162 "Enmienda 2026-07-26"), sustituye a `source_timezone_declared`. Identificador IANA elegido por su calendario de cambios de DST — NUNCA se infiere; una importación sin esta declaración se rechaza antes de llegar a este ledger |
+| `source_clock_fixed_offset_minutes` | INTEGER | NO | Desplazamiento fijo en minutos frente al ancla, `DEFAULT 0`. `0` reproduce sin pérdida la antigua declaración plana de zona — no son dos mecanismos, uno es el caso particular del otro |
 | `real_volume_unit_declared` | TEXT | SÍ | `CHECK (NULL OR IN ('CONTRACTS','LOTS','BASE_ASSET_UNITS','QUOTE_ASSET_UNITS'))` — espejo de `broker_instrument_terms` para esta corrida concreta |
-| `spread_reported_unit_declared` | TEXT | NO | Unidad de `spread_reported_raw` (criterio de aceptación #13). Para la plantilla MT5 M1, siempre `"POINTS_MT5"` — un hecho FIJO de la plantilla (Drasus la afirma, LDR-0008), no una declaración variable por bróker como el volumen. NOT NULL: una importación sin esta declaración se rechaza antes de llegar aquí, mismo trato que `source_timezone_declared` |
+| `spread_reported_unit_declared` | TEXT | NO | Unidad de `spread_reported_raw` (criterio de aceptación #13). Para la plantilla MT5 M1, siempre `"POINTS_MT5"` — un hecho FIJO de la plantilla (Drasus la afirma, LDR-0008), no una declaración variable por bróker como el volumen. NOT NULL: una importación sin esta declaración se rechaza antes de llegar aquí, mismo trato que `source_clock_anchor_timezone_ref` |
 
 ## Claves
 
 - **PK:** `id`
 - **FK salientes:** `instrument_id` → `instrument_master(instrument_id)` `ON DELETE RESTRICT`
-- **Únicas:** `event_sequence_id`, `source_file_hash` (un mismo archivo por contenido no genera dos declaraciones — reimportar el mismo tramo idéntico es no-op, ADR-0163)
+- **Únicas:** `event_sequence_id`; `(source_file_hash, declared_range_start_ns, declared_range_end_ns)` — relajado en STORY-070 desde `UNIQUE(source_file_hash)` solo: reimportar el mismo TRAMO idéntico sigue siendo no-op (ADR-0163), pero dos tramos disjuntos del mismo archivo son declaraciones legítimas y distintas (ADR-0162 "Enmienda 2026-07-26")
 - **Índices:** `instrument_id` (FK hijo), `event_sequence_id`, `node_id`
 
 ## Quién la referencia (FK entrante)
@@ -53,3 +56,4 @@
 - `preview_transformed_rows_json` debe contener datos ya transformados (precio, volumen, fecha reales), nunca solo la tabla de correspondencias columna→columna — es la condición técnica 1 de LDR-0008, la que separa una aceptación informada de un clic vacío.
 - Sellada **antes** de que exista la primera fila de dato transformado (criterio de aceptación #5 de STORY-068): si la persistencia de datos aguas abajo falla, esta fila ya quedó comprometida y es recuperable.
 - Enforzamiento append-only a nivel de base de datos, mismo patrón que `0019_data_portability.sql`/`0021_hybrid_data_transformer.sql` — probado en las cuatro pruebas obligatorias de `.agents/knowledge/ledger-pattern.md`.
+- **Retrofit STORY-070 (grano de "archivo" a "tramo dentro de un archivo"):** un archivo de 25 años no es homogéneo — puede mezclar procedencias, convenciones de un campo o relojes de origen distintos a lo largo de su rango. Cada fila de este ledger ahora declara el TRAMO exacto que cubre (`declared_range_start_ns`/`declared_range_end_ns`), y el reloj de origen se declara como ancla IANA + desplazamiento fijo (nunca una zona plana que no puede expresar un bróker cuyo horario de verano ancla al calendario de otro país, ej. IC Markets GMT+2/+3 con fechas de cambio de EE. UU.). Detalle completo en `docs/adr/ADR-0162.md` sección "Enmienda 2026-07-26".

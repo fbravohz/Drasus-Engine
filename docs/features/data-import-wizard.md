@@ -1,8 +1,8 @@
 # Data Import Wizard
 
 **Carpeta:** `crates/features/data/data-import-wizard/`
-**Estado:** 🟡 **Parcial — vía de plantilla de plataforma implementada** (STORY-068, 2026-07-25 — QA APTO, gate de mutación 0 supervivientes). Backend completo para la vía en que Drasus afirma la plantilla: lector del archivo de barras de MetaTrader, ledger append-only de declaración de mapeo sellado antes de persistir dato, unidad de spread y de volumen declaradas o rechazo explícito. **Diferido:** la vía de mapeo manual del usuario y su pantalla (arrastrar archivo, vista previa de dato transformado, confirmación) — es la que LDR-0008 exige que pase por vista previa, y va en la Story del asistente visual (`DEBT-035`). También diferido el lector de ticks, que vive en `data-normalization-layer`. **Pendiente de retrofit (TASK-069, ADR-0162 enmienda 2026-07-26):** el ledger de mapeo cambia de grano "archivo" a grano "tramo declarado"; `source_timezone_declared` se sustituye por `source_clock_anchor_timezone_ref`/`source_clock_fixed_offset_minutes`; se añaden `declared_range_start_ns`/`declared_range_end_ns` y se relaja el `UNIQUE(source_file_hash)` — retrofit de implementación pendiente de despacho por el Tech-Lead, no ejecutado en esta sesión.
-**Última actualización:** 2026-07-26 (TASK-069 — reloj de bróker por ancla+desplazamiento, declaración de mapeo por tramo)
+**Estado:** 🟡 **Parcial — vía de plantilla de plataforma implementada, ya con declaración por tramo** (STORY-068, 2026-07-25, retrofit STORY-070, 2026-07-26 — QA pendiente de auditoría del Tech-Lead, gate de mutación pendiente sobre el código retrofit). Backend completo para la vía en que Drasus afirma la plantilla: lector del archivo de barras de MetaTrader, ledger append-only de declaración de mapeo por TRAMO (rango explícito, reloj de origen como ancla IANA + desplazamiento fijo en minutos) sellado antes de persistir dato, unidad de spread y de volumen declaradas o rechazo explícito, rechazo con motivo explícito de un tramo anterior a la fecha de operación declarada del bróker. **Diferido:** la vía de mapeo manual del usuario y su pantalla (arrastrar archivo, vista previa de dato transformado, confirmación) — es la que LDR-0008 exige que pase por vista previa, y va en la Story del asistente visual (`DEBT-035`). También diferido el lector de ticks, que vive en `data-normalization-layer`, y el resto del Gate de Homogeneidad de Procedencia (fractura de magnitud/disponibilidad), que queda como especificación de `pit-data-validator`, feature que no existe todavía en código.
+**Última actualización:** 2026-07-26 (STORY-070 — retrofit de esquema: reloj de bróker por ancla+desplazamiento y declaración de mapeo por tramo, ejecutados)
 **Decisión Arquitectónica Asociada:** ADR-0008 (Configurabilidad Universal) · ADR-0154 (vía 3 de ingesta: exportación manual desde el terminal del usuario) · ADR-0155 (esquema canónico de campos) · ADR-0156 (formato estándar de ingesta — rechazo por defecto, plantillas, mapeo declarado como evidencia) · ADR-0162 (patrón de selector de zona horaria con bandera DST; enmienda 2026-07-26: reloj por ancla+desplazamiento, declaración por tramo) · ADR-0163 (idempotencia de reimportación — esta feature es la vía manual, con confirmación explícita)
 
 ## ¿Qué es?
@@ -74,6 +74,84 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 ### **TTR-002: Ingestor Masivo Polars-CSV**
 - Desarrolla el puente que convierte el archivo plano a Parquet particionado usando el motor de Polars.
 
+## Cáscara Visual (Thin Shell)
+
+> Autoridad: ADR-0106 · ADR-0136 · ADR-0117 · ADR-0156 · ADR-0162 (enmienda 2026-07-26) · LDR-0008 · `docs/DESIGN.md` · `docs/DESIGN.md §"Catálogo de Componentes"`
+
+### Contexto de superficie (ADR-0136)
+**Inspector Panel** — `data-import-wizard` es un feature node (leaf, sin sub-nodos) del pipeline `ingest` en la Vista Relacional del Canvas; un clic sobre ese nodo abre el panel lateral derecho con el asistente completo. Regla FIJO de ADR-0136 ("un feature node siempre abre inspector panel lateral, nunca pantalla full separada") gana sobre la tentación de producto de darle pantalla completa por ser la primera superficie de uso real — el ancho se resuelve con `scroll-area` horizontal en la tabla de vista previa (ver Layout), no rompiendo el panel lateral.
+
+### Superficie y Densidad
+- **Superficie principal:** panel lateral en `panel-glass` (`glassFill` + `glassRim`, radio 14–16) como chrome del Inspector Panel; el contenido interior de cada paso usa `panel-solid` (`panelSolid #0E1426`, radio 11) para las zonas de dato denso (tabla de mapeo, tabla de vista previa).
+- **Densidad:** cómoda (Inspector Panel) — aire generoso entre pasos del stepper; la tabla de vista previa es la única zona de densidad alta dentro del panel.
+- **Lienzo de fondo:** el Canvas detrás del panel sigue en `deepSpace #080A18` + `starField` tenue; el panel lo cubre parcialmente sin oscurecer el resto (sin `backdrop`/`scrim` de modal — es panel lateral, no diálogo).
+
+### Componentes
+
+| ID de catálogo (DESIGN.md §4–§9) | Rol en esta feature | Tokens clave | Estados semánticos |
+|---|---|---|---|
+| `stepper / wizard` | Cabecera fija del panel: 6 pasos — Archivo · Mapeo · Reloj de Origen · Unidades · Rango Declarado · Vista Previa y Confirmación | `optimaCyan` completado, `transitionIndigo` activo, `textMuted` pendiente | completado / actual / pendiente |
+| `badge / tag / chip / pill` | Chip fijo bajo el stepper: declara la **vía activa** — nunca decorativo, es el requisito legal de LDR-0008 hecho visible | `optimaCyan` = Plantilla de Plataforma (Drasus afirma) · `transitionIndigo` = Mapeo Manual (el usuario declara) | óptimo / transición |
+| `file-upload / dropzone` | Paso 1: zona de carga del archivo plano | `transitionIndigo` hover, `optimaCyan` cargando | reposo / hover / cargando |
+| `table / data-grid` | Paso 1 (primeras filas crudas) y Paso 6 (`PreviewBarRow` ya transformado, condición técnica 1 de LDR-0008) | `panelSolid`, `dataMono` 13px, `surfaceRaised` en hover de fila | normal / fila con `is_activity_anomaly` |
+| `select / dropdown` | Paso 2 (mapeo manual: columna origen → campo canónico, uno por campo) · Paso 3 (zona ancla IANA) · Paso 4 (unidad de volumen real) | `glassFill`, `surfaceRaised` | cerrado / abierto / selecto |
+| `form-field` | Envoltura de cada control de Paso 2–5 (label + control + helper/error) | `textLabel`, `criticalCrimson` en error | normal / error |
+| `number-input / stepper` | Paso 3: desplazamiento fijo en minutos sobre la zona ancla (default `0`) | `dataMono`, `glassFill` | default / focus |
+| `date-range` | Paso 5: rango de fechas que este tramo declara (`declared_range_start_ns`/`end_ns`) | `glassFill` | default / seleccionando |
+| `key-value-row` | Paso 6: resumen de la fila sellada del ledger (`mapping_declaration_id`, `event_sequence_id`) tras confirmar | `textLabel` + `dataMono` | normal |
+| `button-primary` / `button-glass` / `button-danger` | Navegación del stepper (Atrás/Siguiente) y acción final (Confirmar e Importar / Rechazar) | `gradReactor`/`optimaCyan`, `glassFill`, `criticalCrimson` | default / hover / loading / disabled |
+| `alert / banner / callout` | Rechazo de archivo (ADR-0156 Restricción 1), advertencia del Gate de Homogeneidad de Procedencia, éxito de sellado, reimportación no-op | `criticalCrimson` rechazo, `alertAmber` fractura detectada, `optimaCyan` éxito, `transitionIndigo` no-op informativo | info / óptimo / alerta / crítico |
+| `empty-state` | Paso 1 antes de soltar archivo; Paso 2 si el mapeo manual no tiene ninguna columna asignada aún | `textMuted` | — |
+| `tooltip` | Aclaración inline sobre "zona ancla" vs. "desplazamiento" y sobre qué es un "tramo" | `glassFill` | — |
+
+**Deliberadamente NO se usa `heatmap`/`sparkline` (catálogo §10) para visualizar la fractura de homogeneidad** — ninguno de los dos existe como componente en `ui/lib/components/` ni siquiera como mockup de galería (verificado, cero resultados). La fractura se muestra con `table` (una fila por sub-ventana, columna de magnitud) + `chip` de color por sub-ventana (ver Paso 5 abajo) — mismo efecto de lectura visual, con componentes que ya existen y están wireados. Si el Tech-Lead prefiere el efecto de mapa de calor real, es una construcción nueva a escalar aparte, no un bloqueo de esta entrega.
+
+### Estados Semánticos (Espectro de Vitalidad)
+
+| Estado de negocio | Color token | Tratamiento visual completo |
+|---|---|---|
+| Plantilla de plataforma aplicada (Drasus afirma el mapeo) | `optimaCyan #54E8D0` | chip vía: texto `#54E8D0`, fondo `#08251F`, borde 1px `#1E5E4F`, radio 999px · `glow(optimaCyan)` fijo, sin parpadeo (es un hecho estable, no un proceso vivo) |
+| Mapeo manual en curso / borrador sin confirmar (el usuario declara, aún no sellado) | `transitionIndigo #9A8CFF` | chip vía: texto `#9A8CFF`, fondo `#130F2A`, borde 1px `#3A2E6E` · `glow(transitionIndigo)` |
+| Fractura de homogeneidad detectada / decisión pendiente del usuario | `alertAmber #FFC94D` | banner: borde izq. 3px `#FFC94D`, icono alerta, texto con la razón medida (ratio de magnitud u hueco de sub-ventana) en `dataMono` — nunca solo "archivo inconsistente" |
+| Rechazo de archivo / tramo imposible (`venue_operational_since_ns`) / error de importación | `criticalCrimson #F0413F` | banner: borde izq. 3px `#F0413F`, mensaje literal devuelto por `ImportBarFileError`, botón "Volver" — nunca una importación parcial visible |
+| Importación sellada con éxito | `optimaCyan #54E8D0` (banner) + `reactorGreen #7CF06A` (botón confirmar en su estado post-clic) | banner éxito + `key-value-row` con `mapping_declaration_id`/`event_sequence_id`/conteo de filas |
+| Reimportación no-op (`was_noop_reimport: true`) | `transitionIndigo #9A8CFF` | banner informativo: "este archivo ya está importado — no se duplicó nada", con la declaración existente referenciada |
+
+### Layout
+- Panel lateral derecho, ancho fijo cómodo (no redimensionable por el usuario — evita que el Inspector Panel invada el Canvas).
+- Estructura vertical fija: `stepper` (top, no scrollea) → chip de vía + banner contextual (top, no scrollea) → contenido del paso activo (`scroll-area` vertical) → barra de navegación Atrás/Siguiente/Confirmar (bottom, no scrollea).
+- Paso 2 (Mapeo manual): grid de `form-field` de una columna, uno por campo canónico (Timestamp, Open, High, Low, Close, Volumen…), cada uno con su `select / dropdown` de columna origen — sin límite de campos porque el esquema es abierto por arriba (Restricción de la feature).
+- Tablas de Paso 1/6: `scroll-area` horizontal propio dentro del panel — el panel no se ensancha, la tabla desplaza.
+- Paso 5 (fractura, si el gate la señala): tabla de sub-ventanas (columnas: rango de la sub-ventana, magnitud observada, `chip` de severidad) inmediatamente debajo del `date-range`, seguida de dos `button-glass`/`button-danger`: "Segmentar en tramos" (regresa al Paso 5 con el rango acotado) y "Confirmar homogeneidad pese a la fractura" (avanza, la vista previa ya revisada por el usuario es la evidencia de esa confirmación — no se inventa un campo de formulario nuevo).
+- Separación entre paneles: 24px (Inspector Panel es ceremonial/cómodo, no denso).
+
+### Animaciones Aplicables
+- [x] Dropdown: `AnimatedSize` + rotación del chevron 180° (zona ancla, unidad de volumen, columna origen)
+- [x] Clic de botón: hundimiento (escala 0.96) + propagación de luz (~460ms) — Confirmar e Importar
+- [x] Loader/progreso: el botón "Confirmar e Importar" pasa a estado `loading` (glow pulsante `optimaCyan`) mientras el `await` real corre — sin barra de progreso independiente, porque el backend no reporta progreso parcial (ver Notas de implementación)
+- [x] Chip parpadeante: NO aplica al chip de vía (es un hecho estable, `glow` fijo) — SÍ aplica al banner `criticalCrimson` de rechazo (parpadeante, alerta activa)
+- [x] Foco de input: borde 1.5px + glow limpio (~200ms) en cada `form-field`/`number-input`/`date-range`
+- [ ] Zoom canvas — no aplica, el panel no hace zoom, es un overlay lateral fijo
+- [ ] Switch — no hay switches en este diseño
+
+### Notas de implementación
+
+**Puente (Bridge).** El único punto de entrada real hoy es `crates/features/data/data-import-wizard/src/public_interface.rs::import_mt5_bar_file(pool, clock, ImportBarFileInput, bar_sink) -> Result<ImportBarFileOutcome, ImportBarFileError>` — una función `async` de una sola llamada que se espera (`await`) una vez y devuelve el resultado completo. **Nunca diseñar sondeo (`Timer.periodic`) ni streaming** para esta pantalla: no hay reporte de progreso parcial expuesto, ni lo va a haber salvo que una Story futura lo agregue — el botón "Confirmar e Importar" dispara una única llamada y espera su única respuesta. `bar_sink` es un closure interno que el Bridge compone al conectar con `hybrid-data-transformer`; Flutter nunca lo invoca por separado, es una sola operación de punta a punta desde su punto de vista.
+
+**Bloqueos de backend para este diseño (no son bloqueos de componente de UI — son ausencia de superficie Rust que conectar):**
+1. **Vía de mapeo manual: sin función pública.** `import_mt5_bar_file` solo sirve la vía de plantilla MT5 (detecta la cabecera, aplica `mt5_bar_column_mapping()` fijo). No existe ninguna función que reciba un mapeo columna→campo declarado por el usuario. El Paso 2 (rama manual) de este diseño no se puede cablear hasta que esa vía tenga su propia superficie pública — es la misma vía que la propia feature declara "Diferido" en su cabecera de estado.
+2. **Reloj ancla+desplazamiento y rango declarado por tramo: RESUELTO (STORY-070, 2026-07-26).** `ImportBarFileInput` ya trae `source_clock_anchor_timezone_ref: Option<String>` + `source_clock_fixed_offset_minutes: i64` (sustituyen al antiguo `source_timezone_declared: Option<String>`), `declared_range_start_ns`/`declared_range_end_ns: i64` (rango explícito del tramo), y `venue_operational_since_ns: Option<i64>` (fecha de operación del bróker, inyectada — alimenta el rechazo del Gate de Homogeneidad; sufijo de unidad aplicado en TASK-072, 2026-07-27, retrofit de código ya completado). Los controles de Paso 3 (desplazamiento en minutos) y Paso 5 (rango del tramo) de este diseño ya tienen superficie Rust real que cablear — pendiente solo el cableado del Bridge mismo, que no entró en el alcance de STORY-070 (esquema y camino de importación, no la pantalla).
+3. **Gate de Homogeneidad de Procedencia: sin veredicto que consumir.** El banner `alertAmber` de fractura y la tabla de sub-ventanas del Paso 5 están diseñados contra la forma que ADR-0162 (enmienda 2026-07-26) sella para esa extensión de `pit-data-validator`, que **tampoco está construida**. No hay hoy ningún `CalendarCoherenceVerdict`-equivalente para homogeneidad que el Bridge pueda transportar.
+4. **Errores hoy no son "lenguaje del usuario" completo.** `ImportBarFileError` (vía `thiserror`) produce mensajes técnicos correctos pero orientados a desarrollador (ej. "el archivo no es UTF-8 válido", "error al parsear la línea de dato número N"). El banner de rechazo de este diseño muestra ese texto literal; traducirlo a lenguaje de negocio (ADR-0156 Restricción 1) es trabajo del Rust-Engineer sobre el enum de error, no algo que el Flutter Engineer deba reescribir client-side (sería lógica de dominio en el frontend, prohibido por ADR-0106).
+
+**Flutter.**
+- Import de la librería real: `import 'package:drasus_ui/components/components.dart' as custom_ui;` — todo widget de la tabla "Componentes" arriba se invoca `custom_ui.Stepper`, `custom_ui.Dropzone`, etc. (convención ADR-0138 enmienda 2026-06-29, namespace obligatorio por colisión con widgets de Material).
+- `custom_ui.Dropzone.onTap` es `VoidCallback` sin payload — el componente **no recibe el archivo arrastrado como dato**, solo señala la intención (tap o soltar). El flujo real es: `onTap` dispara un selector de archivos nativo (`file_selector`/`file_picker`, fuera de esta librería de componentes) → se leen los bytes → esos bytes son los que se pasan al binding de `import_mt5_bar_file`. El texto "arrastra tu archivo" en el `label` es la instrucción visible; el mecanismo real detrás del tap es abrir el diálogo del sistema, no una recepción de payload por drag real (el componente no implementa `DropTarget`/`onDragDone`).
+- `custom_ui.Table.rows` es `List<List<Widget>>` — cada celda es un widget arbitrario. Úsalo para meter un `custom_ui.Chip` con `ChipStatus.critical` en la celda de una fila cuyo `PreviewBarRow.is_activity_anomaly` sea `true`, en vez de una columna de texto plano.
+- `custom_ui.Dropdown<T>.items` es `List<DropdownItem<T>>` con `label` de tipo `String` puro (sin slot para icono). La "bandera DST" del selector de zona ancla (mismo patrón que `session-catalog`) se compone como texto dentro del label (ej. `"America/New_York (UTC-5/-4, horario de verano)"`), no como un widget de bandera separado — el componente no lo admite hoy.
+- `custom_ui.DateRangePicker.range` es `DateRange({start: DateTime, end: DateTime})` — la conversión a nanosegundos UTC (`declared_range_start_ns`/`end_ns`) es serialización de frontera FFI, no cálculo de dominio; ocurre en el binding, igual que cualquier otro campo numérico que cruza la frontera.
+- Estado del wizard completo (paso actual, mapeo en construcción, selección de vía) vive en un único `StatefulWidget`/controller local al Inspector Panel — no hay necesidad de un state manager global, el ciclo de vida del wizard termina cuando el panel se cierra o la importación se confirma.
+
 ## Persistencia (Inundación de Fundamentos — ADR-0020)
 
 **Ledger de declaración de mapeo (ADR-0156, nuevo — molde `.agents/knowledge/ledger-pattern.md`):** tabla append-only propia de esta feature, sellada ANTES de que cualquier dato del archivo se persista. **Grano de la fila: un tramo declarado, no un archivo completo** (ADR-0162 enmienda 2026-07-26) — un mismo archivo físico produce tantas filas como tramos heterogéneos el usuario declare, cada una con su propio `declared_range_start_ns`/`declared_range_end_ns` explícito. Cada fila guarda identidad del archivo (nombre + hash — el `UNIQUE` de idempotencia es `(hash, rango)`, no solo el hash, para no rechazar por error un segundo tramo del mismo archivo), el mapeo completo tal como se mostró al usuario, la plantilla aplicada y su versión (si hubo), la bandera `mapeo_manual_usuario`/`plantilla_plataforma`, la versión del motor de transformación y del esquema canónico (ADR-0155) vigentes al declarar, el instante de aceptación, la vista previa de dato transformado que el usuario confirmó, el **reloj de origen declarado** (`source_clock_anchor_timezone_ref` + `source_clock_fixed_offset_minutes` — zona ancla IANA más desplazamiento fijo en minutos, `0` reproduce sin caso especial una zona plana; sellado como evidencia inmutable, no como inferencia del sistema, TASK-064 §3.3 / ADR-0162 enmienda 2026-07-26), y el encadenado de hash de todo ledger. El `data_snapshot_id` de la partición resultante y la fila de `transformation_records` de la corrida referencian esta fila por identificador — nunca la duplican (ver ADR-0156 restricción 8).
@@ -114,3 +192,5 @@ Completados por el Tech-Lead en el cierre de STORY-068 (la sección faltaba; el 
 
 **Consumido por:**
 - [`ingest`](../modules/ingest.md).
+
+- **Contrato de Integración UI (ADR-0117) — Superficie propia:** Inspector Panel del feature node en el Canvas (ver `## Cáscara Visual` arriba). SVF: soltar el archivo de muestra embebido dispara `import_mt5_bar_file` real vía `public_interface`; el panel muestra la vista previa de datos ya transformados, sella la fila del ledger de mapeo, y el `mapping_declaration_id`/conteo de filas quedan visibles y persisten tras recargar.

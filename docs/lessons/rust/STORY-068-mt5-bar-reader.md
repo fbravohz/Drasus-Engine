@@ -1,10 +1,16 @@
 # STORY-068 — Lector de barras de MetaTrader: lecciones de Rust
 
-Doce conceptos de Rust, explicados desde cero, usando el código real que se
-escribió para leer el archivo de 9.2 millones de barras del propietario.
-Cada sección cita la ruta y el fragmento exacto — nada de ejemplos de manual.
-Los Conceptos 11 y 12 se añadieron tras la auditoría de mutación del
-Tech-Lead y la observación del propietario sobre la unidad del spread.
+Diecisiete conceptos de Rust (y de ingeniería alrededor de Rust), explicados
+desde cero, usando el código real que se escribió para leer el archivo de
+9.2 millones de barras del propietario. Cada sección cita la ruta y el
+fragmento exacto — nada de ejemplos de manual. Los Conceptos 11 y 12 se
+añadieron tras la auditoría de mutación del Tech-Lead y la observación del
+propietario sobre la unidad del spread. Los Conceptos 13 a 17 se añadieron
+en STORY-070, cuando la doctrina de declaración cambió tras descubrirse,
+sobre el mismo archivo real, que un bróker puede anclar su horario de
+verano al calendario de OTRO país, que un archivo de 25 años no es una
+fuente homogénea de punta a punta, y — en el retrofit encadenado
+(TASK-071) — qué hacer cuando dos decisiones canónicas se contradicen.
 
 ---
 
@@ -514,6 +520,298 @@ la que está expresado no es información, es una adivinanza pendiente.**
 
 ---
 
+## Concepto 13: un `struct` en vez de dos parámetros sueltos — cuando la FORMA del dato es parte del significado
+
+Antes de STORY-070, `resolve_event_timestamp_ns` recibía la zona horaria como
+un simple `Option<&str>`. La doctrina cambió: ahora el reloj de un archivo no
+es una zona, es una zona ANCLA más un desplazamiento fijo en minutos — dos
+valores que solo tienen sentido JUNTOS. La tentación fácil habría sido
+agregar un segundo parámetro suelto (`fixed_offset_minutes: i64`) a la firma
+de la función. La decisión de esta Story fue otra: empaquetar los dos en un
+tipo con nombre.
+
+Código real, `crates/features/data/data-import-wizard/src/domain.rs`:
+
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceClockDeclaration<'a> {
+    pub anchor_timezone_ref: &'a str,
+    pub fixed_offset_minutes: i64,
+}
+
+pub fn resolve_event_timestamp_ns(
+    date: NaiveDate,
+    time: NaiveTime,
+    source_clock: Option<SourceClockDeclaration<'_>>,
+) -> Result<i64, TimestampResolutionError> {
+```
+
+**Por qué esto es mejor que dos parámetros sueltos:** con dos parámetros
+(`anchor: Option<&str>, offset: i64`), nada impide que alguien los declare
+por separado y se le olvide poner el offset cuando pasa el ancla, o que
+confunda el orden en una llamada con muchos argumentos del mismo tipo
+primitivo (`i64`, `i64`, `i64`...) — el compilador no puede avisar de esa
+clase de error porque, para él, dos `i64` son intercambiables. Con el
+`struct`, `anchor_timezone_ref` y `fixed_offset_minutes` viajan SIEMPRE
+juntos, con NOMBRE, y `Option<SourceClockDeclaration>` expresa exactamente
+una idea: "o hay un reloj declarado completo, o no hay nada" — nunca "hay
+ancla pero no offset" (un estado que no debería poder existir y que, con
+parámetros sueltos, sí podría).
+
+**La regla general:** cuando dos o más valores solo tienen sentido de
+negocio JUNTOS, un `struct` con nombre — no una tupla, no parámetros
+sueltos — hace que un estado inválido sea imposible de construir por
+accidente. Esto se llama a veces "parse, don't validate": en vez de validar
+"¿me llegaron ambos valores coherentes?" en tiempo de ejecución, se hace que
+el TIPO no permita nada más.
+
+---
+
+## Concepto 14: un oráculo independiente — por qué "la función coincide contra sí misma" no prueba una fórmula de tiempo
+
+El Concepto 10 de esta lección ya enseñó que una prueba "verde por la razón
+equivocada" es peor que no tener prueba. STORY-070 trae el mismo problema en
+su forma más peligrosa: una fórmula que involucra ARITMÉTICA DE FECHAS
+(sumar/restar horas, cruzar cambios de horario de verano) es fácil de probar
+mal SIN darse cuenta, porque es tentador construir el valor "esperado" usando
+la MISMA lógica que la función bajo prueba — con lo que la prueba termina
+comparando la función contra una copia de sí misma, no contra la realidad.
+
+Código real, `crates/features/data/data-import-wizard/src/domain.rs`
+(la prueba del caso "verano" del reloj de IC Markets):
+
+```rust
+#[test]
+fn ic_markets_summer_anchor_plus_offset_resolves_exact_gmt_plus_3_instant_distinct_from_winter() {
+    let date = NaiveDate::from_ymd_opt(2024, 7, 15).unwrap();
+    let time = NaiveTime::from_hms_opt(12, 0, 0).unwrap();
+    let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 420 };
+    let ns = resolve_event_timestamp_ns(date, time, Some(clock)).expect("debe resolver sin error");
+
+    use chrono::{TimeZone, Utc};
+    let expected = Utc.with_ymd_and_hms(2024, 7, 15, 9, 0, 0).unwrap();
+    assert_eq!(ns, expected.timestamp_nanos_opt().unwrap(), "...");
+}
+```
+
+El valor `expected` NO se calcula llamando a `resolve_event_timestamp_ns` con
+otros argumentos, ni reimplementando su fórmula en la prueba — se calcula a
+mano, de forma independiente: "si IC Markets declara GMT+3 en verano, y la
+hora local es 12:00, entonces la hora UTC tiene que ser 09:00, punto". Ese
+`09:00` es un ORÁCULO: un valor que alguien puede verificar sin mirar el
+código de la función, solo con el hecho del mundo real (el offset conocido
+del bróker) y una resta a mano. Si la función tuviera un error de signo, de
+unidad (minutos vs. horas) o de orden de operaciones, el oráculo seguiría
+siendo `09:00` — y la prueba SÍ se caería, porque no depende de la misma
+lógica que está verificando.
+
+**Por qué la Orden de esta Story insistió en esto:** las funciones que
+resuelven un instante o comparan dos fechas son, según el propio hallazgo de
+STORY-068 (Concepto 11), las que menos pruebas afirman su valor de retorno —
+es fácil probar "no truena" y sentir que ya se probó "resuelve correcto".
+Un oráculo calculado a mano, en DOS estaciones distintas con desfases
+DISTINTOS entre sí (Conceptos 1 y 2 de aceptación de esta Story), es lo que
+distingue "la función corre" de "la función acierta".
+
+**La advertencia se cumplió, en la práctica, sobre otra función del mismo
+archivo.** El gate de mutación del Tech-Lead encontró, tras esta entrega,
+que `default_declared_range_start_ns()` (el inicio del rango que `verify()`
+declara sin argumentos) podía mutarse a `0` sin que ninguna de las 60
+pruebas existentes fallara — el rango seguía siendo válido (fin > inicio) y
+las filas de la muestra caían igual dentro de un rango más ancho. La
+corrección repite exactamente este Concepto: en vez de comparar el default
+contra la MISMA constante copiada dentro de la prueba (lo que solo probaría
+que dos copias del mismo número coinciden), la prueba parsea el CSV real
+embebido, extrae sus fechas reales, y calcula a mano — con `chrono`, nunca
+con la función bajo prueba — la medianoche del día que ese archivo
+realmente cubre. Ese oráculo, derivado de datos reales, es lo que distingue
+"el rango por defecto es un número cualquiera que no truena" de "el rango
+por defecto es el día exacto que la muestra cubre".
+
+---
+
+## Concepto 15: el orden de las restricciones en una tabla SQL — una regla de SQLite que rompió la primera versión de esta migración
+
+Al escribir la columna nueva `declared_range_end_ns` con su comprobación de
+orden, la primera versión de la migración `0023` puso el `CHECK` justo
+después de las dos columnas del rango, en medio de la lista de columnas —
+donde visualmente tiene más sentido leerlo, junto al dato que restringe.
+SQLite rechazó la migración completa con un error que, a primera vista, no
+apunta al lugar correcto: `near "mapping_origin": syntax error` — un mensaje
+sobre una columna que en el archivo aparece varias líneas MÁS ABAJO del
+problema real.
+
+```sql
+-- Versión que SQLite rechaza (CHECK intercalado entre columnas):
+declared_range_start_ns INTEGER NOT NULL,
+declared_range_end_ns   INTEGER NOT NULL,
+CHECK (declared_range_end_ns > declared_range_start_ns),  -- restricción de TABLA
+
+mapping_origin TEXT NOT NULL  -- <- SQLite se queja AQUÍ, no arriba
+    CHECK (mapping_origin IN ('PLATFORM_TEMPLATE','MANUAL_USER')),
+```
+
+La regla real de la gramática de SQLite: una restricción de TABLA (una que
+no lleva el nombre de una columna delante, como este `CHECK` que compara DOS
+columnas) tiene que venir DESPUÉS de TODAS las definiciones de columna —
+nunca intercalada entre ellas. Un `CHECK` sobre una sola columna (como el de
+`mapping_origin`, que va pegado a su propia definición) es distinto: ese es
+una restricción de COLUMNA, y sí puede ir en su sitio natural. La corrección
+fue mover el `CHECK` del rango al final de la tabla, junto al `UNIQUE`:
+
+```sql
+UNIQUE (source_file_hash, declared_range_start_ns, declared_range_end_ns),
+CHECK (declared_range_end_ns > declared_range_start_ns)
+) STRICT;
+```
+
+**Cómo se verificó sin arrancar el binario completo:** en vez de compilar
+todo el crate para cada ajuste, se probó la migración aislada con el módulo
+`sqlite3` de Python (`python3 -c "import sqlite3; sqlite3.connect(':memory:').executescript(open('migración.sql').read())"`)
+— la misma base de datos, sin el peso de `cargo`, para iterar en segundos.
+
+**La lección general:** un mensaje de error de un parser (SQL, o de
+cualquier lenguaje) que "apunta" a una línea puede estar señalando DÓNDE el
+parser se dio cuenta de que algo estaba mal, no dónde está la causa real. Si
+el síntoma no tiene sentido en el lugar que señala, la primera sospecha
+correcta es mirar hacia ARRIBA, no asumir que el mensaje está equivocado.
+
+---
+
+## Concepto 16: cuando la doctrina cambia, no es que el código de ayer estuviera "mal"
+
+STORY-068 cerró en verde, con 46 pruebas, auditada por mutación, y describía
+correctamente la doctrina que existía en ese momento: "un archivo trae una
+sola zona horaria" y "una declaración de mapeo cubre un archivo entero".
+STORY-070 no corrigió un defecto de esa implementación — cambió la doctrina
+misma, después de que el propietario y el Quant-Engineer verificaran, sobre
+el MISMO archivo real, dos hechos que la doctrina anterior no contemplaba:
+un bróker (IC Markets) cuyo horario de verano sigue el calendario de otro
+país, y un archivo cuyo campo de volumen cambia de régimen sin aviso a mitad
+de su historia.
+
+En código, esto se ve como una función que antes aceptaba "una zona" y ahora
+acepta "una zona ancla más un desplazamiento" — y el requisito explícito de
+que el caso `desplazamiento = 0` reproduzca EXACTO lo que la función vieja
+devolvía (criterio de aceptación #3, Concepto 13 de esta lección: el
+`struct` nuevo generaliza al viejo, no lo reemplaza por algo incompatible).
+
+```rust
+// Antes (STORY-068): una zona, sin desplazamiento posible.
+resolve_event_timestamp_ns(date, time, Some("America/New_York"))
+
+// Después (STORY-070): el caso "desplazamiento 0" es EQUIVALENTE al de antes.
+resolve_event_timestamp_ns(date, time, Some(SourceClockDeclaration {
+    anchor_timezone_ref: "America/New_York",
+    fixed_offset_minutes: 0,
+}))
+```
+
+**Por qué esta distinción importa para quien lee el código meses después:**
+un "bug corregido" y una "doctrina que evolucionó al descubrir un caso real
+que las reglas anteriores no cubrían" dejan rastros distintos. Un bug se
+corrige y se olvida. Una doctrina que evoluciona debe conservar, en el
+código y en los documentos, el mecanismo VIEJO como caso particular del
+mecanismo NUEVO (aquí, desplazamiento cero) — así ningún dato ni ninguna
+prueba histórica queda huérfana cuando la comprensión del dominio avanza.
+
+---
+
+## Concepto 17: implementar la letra de la especificación, y escalar la duda — nunca "arreglarla" por cuenta propia
+
+La tabla `broker_server_clock` tuvo dos versiones el mismo día. La primera
+(STORY-070) llevaba exactamente los cinco campos que la enmienda de
+ADR-0162 listaba para ella — nada más. Sus tres tablas hermanas de la misma
+migración (`instrument_master`, `broker_instrument_terms`,
+`session_template`) llevan siete campos más cada una: el "Grupo I"
+(identidad y auditoría: `created_at`, `updated_at`, `audit_hash`,
+`audit_chain_hash`, `row_version`) y el "Grupo IV" (huella de quién
+escribió: `node_id`, `process_id`), que otro documento (ADR-0020) exige
+"sin excepción" para toda tabla del sistema.
+
+Dos documentos, los dos vigentes, diciendo cosas distintas sobre la misma
+tabla. Frente a eso hay tres reacciones posibles, y solo una es correcta:
+
+1. **Seguir la letra del documento más específico (la enmienda) e ignorar
+   el más general (ADR-0020)**, confiando en que "seguramente lo
+   consideraron". Es lo que se hizo primero — y es defendible, porque
+   contradecir un documento sellado por el Architect sin autorización es
+   exactamente el tipo de desviación silenciosa que este proyecto prohíbe
+   (`GOVERNANCE-4.7`).
+2. **"Arreglarlo" por cuenta propia, agregando los siete campos porque
+   "obviamente deberían estar"** — la opción que NO se tomó, y por una
+   razón concreta: quien implementa una Story no siempre tiene el contexto
+   completo de por qué un documento dice lo que dice. Quizás sí era una
+   excepción deliberada (existen tablas de configuración minimalistas en
+   otros sistemas). Adivinar la intención y corregir en silencio habría
+   sido tan arriesgado como seguir la letra a ciegas — con el agravante de
+   que nadie más se habría enterado de que hubo una decisión de diseño no
+   documentada.
+3. **Implementar la letra tal cual está escrita, Y REPORTAR la
+   contradicción explícitamente, por escrito, en el lugar donde alguien con
+   autoridad sobre esos documentos la vea.** Esto es lo que ocurrió: la
+   ficha `docs/data-model/broker_server_clock.md` documentó la exención
+   como "decisión deliberada no re-derivada" en vez de callarla o
+   corregirla en silencio.
+
+**Por qué la tercera opción es la única correcta.** Ni el Rust-Engineer ni
+el Tech-Lead tienen autoridad para decidir cuál de dos ADRs vigentes gana
+sobre el otro — esa es una pregunta de gobernanza documental, no de
+implementación. El Tech-Lead, al leer el reporte, tampoco intentó
+arbitrarlo: reconoció que el conflicto era "entre dos ADRs vigentes" (fuera
+de su propio mandato, que cubre corregir una FEATURE que contradice UN
+ADR, no fallar entre dos) y lo escaló como `TASK-071`. El Architect
+resolvió: fue una omisión de redacción al escribir la enmienda en una
+sección separada del recordatorio de Grupo I, nunca una excepción
+pensada — y corrigió el texto del ADR antes de que nadie tocara una línea
+de código de más.
+
+**El resultado si se hubiera tomado la opción 2 y el Architect hubiera
+querido de verdad una excepción:** el "arreglo" habría sido, en realidad,
+una reversión silenciosa de una decisión de diseño real, sin que quedara
+registro de que alguien la deshizo ni por qué. La tabla habría quedado
+"corregida" y el desacuerdo real, invisible.
+
+```sql
+-- Lo que existió el mismo día, en el mismo archivo:
+
+-- Versión 1 (letra literal de la enmienda, tal como estaba escrita):
+CREATE TABLE broker_server_clock (
+    id TEXT NOT NULL PRIMARY KEY,
+    venue TEXT NOT NULL UNIQUE,
+    clock_anchor_timezone_ref TEXT NOT NULL,
+    clock_fixed_offset_minutes INTEGER NOT NULL DEFAULT 0,
+    venue_operational_since INTEGER
+) STRICT;
+
+-- Versión 2 (tras TASK-071 -- el ADR corregido, el código sigue al ADR):
+CREATE TABLE broker_server_clock (
+    id TEXT NOT NULL PRIMARY KEY,
+    created_at INTEGER NOT NULL,       -- Grupo I
+    updated_at INTEGER NOT NULL,
+    audit_hash TEXT NOT NULL,
+    audit_chain_hash TEXT,
+    row_version INTEGER NOT NULL,
+    node_id TEXT,                      -- Grupo IV
+    process_id TEXT,
+    venue TEXT NOT NULL UNIQUE,        -- dominio, sin cambio
+    clock_anchor_timezone_ref TEXT NOT NULL,
+    clock_fixed_offset_minutes INTEGER NOT NULL DEFAULT 0,
+    venue_operational_since INTEGER
+) STRICT;
+```
+
+**La regla general, más allá de esta tabla:** cuando dos fuentes de verdad
+igualmente vigentes se contradicen, implementar cualquiera de las dos por
+tu cuenta es una apuesta — puede que aciertes, puede que reviertas en
+silencio una decisión real. Implementar la que tienes por escrito Y dejar
+constancia explícita de la tensión es la única acción que no apuesta nada:
+deja la decisión final en manos de quien sí tiene autoridad sobre ambos
+documentos, y dijo la verdad mientras tanto sobre lo que el sistema hace
+hoy.
+
+---
+
 ## Trucos de Senior
 
 - **Nunca confíes en que un helper "de cortesía" (`.trim()`, `.unwrap_or_default()`,
@@ -545,3 +843,27 @@ la que está expresado no es información, es una adivinanza pendiente.**
   el contexto (puntos vs. pips, lotes vs. unidades base), la unidad va
   sellada JUNTO al valor — nunca solo en un comentario o en el nombre de
   la variable, que no viajan con el dato cuando alguien más lo lee.
+- **Cuando dos valores solo tienen sentido de negocio JUNTOS, empaquétalos
+  en un `struct` con nombre, no en parámetros sueltos del mismo tipo
+  primitivo.** El compilador no puede avisarte de un argumento en el orden
+  equivocado si ambos son `i64`; sí puede impedir que construyas un estado
+  a medias (ancla sin desplazamiento) si el tipo los exige juntos.
+- **Para probar una fórmula de fechas/tiempo, calcula el valor esperado A
+  MANO, con la aritmética del mundo real — nunca reimplementando la misma
+  fórmula de la función bajo prueba dentro de la prueba.** Si el "oráculo"
+  de la prueba usa la misma lógica que el código, un error de signo o de
+  unidad sobrevive en ambos lados a la vez y la prueba nunca se entera.
+- **Un mensaje de error de un parser que señala una línea puede estar
+  señalando DÓNDE se dio cuenta del problema, no dónde está la causa.** Si
+  el síntoma no tiene sentido ahí, mira hacia arriba en el archivo antes de
+  asumir que el mensaje es incorrecto.
+- **Una doctrina que evoluciona (no un bug que se corrige) debe conservar
+  el mecanismo viejo como CASO PARTICULAR del nuevo** (aquí, desplazamiento
+  cero) — así ninguna prueba ni ningún dato histórico queda huérfano cuando
+  la comprensión del dominio avanza.
+- **Cuando dos documentos canónicos vigentes se contradicen, implementa la
+  letra del que tienes delante Y reporta la contradicción por escrito donde
+  alguien con autoridad sobre ambos la vea — nunca arbitres tú cuál gana, ni
+  la calles.** Adivinar cuál de los dos "seguramente tenía razón" es una
+  apuesta que puede revertir en silencio una decisión real; documentarla es
+  la única acción que no apuesta nada.
