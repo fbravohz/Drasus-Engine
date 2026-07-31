@@ -87,7 +87,7 @@ enum Commands {
     ///   drasus verify operator-roles --input '{"owner_id":"acc-1","institutional_tag":"LIVE","node_id":"node-A","access_token_id":"tok-owner","capability_key":"generate.run_search","pipeline":"GENERATE"}'
     ///   drasus verify instrument-catalog --input '{"instrument_id":"EURUSD","venue":"PEPPERSTONE"}'
     ///   drasus verify session-catalog --input '{"template_code":"FOREX_245"}'
-    ///   drasus verify data-import-wizard --input '{"source_timezone_declared":null}'
+    ///   drasus verify data-import-wizard --input '{"source_clock_anchor_timezone_ref":null}'
     ///
     /// La salida JSON va a stdout; los errores van a stderr con exit code != 0.
     Verify {

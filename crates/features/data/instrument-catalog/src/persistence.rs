@@ -21,11 +21,12 @@ use uuid::Uuid;
 use shared::public_interface::Clock;
 
 use crate::domain::{
-    compute_broker_terms_audit_hash, compute_instrument_master_audit_hash, AssetClass, CommissionModel,
+    compute_broker_server_clock_audit_hash, compute_broker_terms_audit_hash, compute_instrument_master_audit_hash,
+    AssetClass, CommissionModel,
 };
 use crate::schemas::{
-    BrokerInstrumentTermsRow, InstrumentMasterRevision, InstrumentMasterRow, NewBrokerInstrumentTerms,
-    NewInstrumentMaster,
+    BrokerInstrumentTermsRow, BrokerServerClockRevision, BrokerServerClockRow, InstrumentMasterRevision,
+    InstrumentMasterRow, NewBrokerInstrumentTerms, NewBrokerServerClock, NewInstrumentMaster,
 };
 
 /// Errores que devuelven las operaciones de [`InstrumentRepository`].
@@ -58,6 +59,11 @@ pub enum InstrumentRepositoryError {
     /// Igual que arriba, para `commission_model`.
     #[error("commission_model desconocido en broker_instrument_terms: '{0}'")]
     UnknownCommissionModel(String),
+    /// [`InstrumentRepository::create_broker_server_clock`] con un `venue`
+    /// que ya tiene un reloj de servidor declarado -- cada bróker tiene UN
+    /// solo reloj (retrofit STORY-070/TASK-071).
+    #[error("ya existe un reloj de servidor declarado para el venue '{0}'")]
+    DuplicateVenue(String),
 }
 
 /// Repositorio para `instrument_master` y `broker_instrument_terms`.
@@ -376,6 +382,165 @@ impl<'a> InstrumentRepository<'a> {
 
         Ok(result.rows_affected() > 0)
     }
+
+    // ── broker_server_clock (retrofit STORY-070/TASK-071) ────────────
+
+    /// Da de alta el reloj de servidor declarado de un bróker/venue, con
+    /// `row_version = 1`. Un `venue` duplicado se rechaza (cada bróker
+    /// tiene UN solo reloj declarado).
+    pub async fn create_broker_server_clock(
+        &self,
+        new: NewBrokerServerClock,
+    ) -> Result<BrokerServerClockRow, InstrumentRepositoryError> {
+        let id = Uuid::now_v7().to_string();
+        let now_ns = self.clock.timestamp_ns();
+        let row_version: i64 = 1;
+
+        let audit_hash = compute_broker_server_clock_audit_hash(
+            &id,
+            now_ns,
+            row_version,
+            None,
+            &new.venue,
+            &new.clock_anchor_timezone_ref,
+            new.clock_fixed_offset_minutes,
+            new.venue_operational_since_ns,
+        );
+
+        let result = sqlx::query(
+            "INSERT INTO broker_server_clock (\
+                id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
+                node_id, process_id, \
+                venue, clock_anchor_timezone_ref, clock_fixed_offset_minutes, venue_operational_since_ns\
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(&id)
+        .bind(now_ns)
+        .bind(now_ns)
+        .bind(&audit_hash)
+        .bind(Option::<String>::None)
+        .bind(row_version)
+        .bind(&new.node_id)
+        .bind(&new.process_id)
+        .bind(&new.venue)
+        .bind(&new.clock_anchor_timezone_ref)
+        .bind(new.clock_fixed_offset_minutes)
+        .bind(new.venue_operational_since_ns)
+        .execute(self.pool)
+        .await;
+
+        if let Err(sqlx::Error::Database(db_err)) = &result {
+            if is_duplicate_venue_violation(&**db_err) {
+                return Err(InstrumentRepositoryError::DuplicateVenue(new.venue));
+            }
+        }
+        result?;
+
+        Ok(BrokerServerClockRow {
+            id,
+            created_at: now_ns,
+            updated_at: now_ns,
+            audit_hash,
+            audit_chain_hash: None,
+            row_version,
+            node_id: new.node_id,
+            process_id: new.process_id,
+            venue: new.venue,
+            clock_anchor_timezone_ref: new.clock_anchor_timezone_ref,
+            clock_fixed_offset_minutes: new.clock_fixed_offset_minutes,
+            venue_operational_since_ns: new.venue_operational_since_ns,
+        })
+    }
+
+    /// Carga el reloj de servidor declarado de un bróker por su clave de
+    /// NEGOCIO (`venue`) -- la búsqueda que usa quien orquesta un import
+    /// para inyectar `venue_operational_since_ns` en `data-import-wizard`
+    /// (ADR-0137: esa feature nunca consulta esta tabla directamente).
+    pub async fn find_broker_server_clock_by_venue(
+        &self,
+        venue: &str,
+    ) -> Result<Option<BrokerServerClockRow>, InstrumentRepositoryError> {
+        let row = sqlx::query(
+            "SELECT id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, \
+                    node_id, process_id, \
+                    venue, clock_anchor_timezone_ref, clock_fixed_offset_minutes, venue_operational_since_ns \
+             FROM broker_server_clock WHERE venue = ?",
+        )
+        .bind(venue)
+        .fetch_optional(self.pool)
+        .await?;
+
+        Ok(row.map(row_to_broker_server_clock))
+    }
+
+    /// Revisa el reloj de servidor declarado de un bróker.
+    ///
+    /// ## Concurrencia optimista (ADR-0141)
+    ///
+    /// Mismo mecanismo que [`Self::update_master`]: el `UPDATE` filtra por
+    /// `id` **y** `row_version = <el de `current`>`. Esta fila guarda el
+    /// reloj del bróker -- el borrador desde el que se pre-rellena la
+    /// declaración que el usuario sella como evidencia (criterio de
+    /// aceptación #13 de STORY-070) -- así que dos ediciones concurrentes
+    /// que partan del mismo `row_version` NUNCA deben poder tener éxito
+    /// ambas: la segunda debe recibir [`InstrumentRepositoryError::VersionConflict`]
+    /// en vez de pisar en silencio el cambio de la primera.
+    pub async fn update_broker_server_clock(
+        &self,
+        current: &BrokerServerClockRow,
+        revision: BrokerServerClockRevision,
+    ) -> Result<BrokerServerClockRow, InstrumentRepositoryError> {
+        let now_ns = self.clock.timestamp_ns();
+        let row_version = current.row_version + 1;
+
+        let audit_hash = compute_broker_server_clock_audit_hash(
+            &current.id,
+            now_ns,
+            row_version,
+            Some(&current.audit_hash),
+            &current.venue,
+            &revision.clock_anchor_timezone_ref,
+            revision.clock_fixed_offset_minutes,
+            revision.venue_operational_since_ns,
+        );
+
+        // La guarda `row_version = ?` es la comparación optimista: solo
+        // actualiza si la fila en disco sigue en la versión que leímos.
+        let result = sqlx::query(
+            "UPDATE broker_server_clock SET \
+                updated_at = ?, audit_hash = ?, audit_chain_hash = ?, row_version = ?, \
+                clock_anchor_timezone_ref = ?, clock_fixed_offset_minutes = ?, venue_operational_since_ns = ? \
+             WHERE id = ? AND row_version = ?",
+        )
+        .bind(now_ns)
+        .bind(&audit_hash)
+        .bind(&current.audit_hash)
+        .bind(row_version)
+        .bind(&revision.clock_anchor_timezone_ref)
+        .bind(revision.clock_fixed_offset_minutes)
+        .bind(revision.venue_operational_since_ns)
+        .bind(&current.id)
+        .bind(current.row_version)
+        .execute(self.pool)
+        .await?;
+
+        // Cero filas afectadas => la fila ya no está en `current.row_version`
+        // (otra edición la adelantó). No pisamos: reportamos el conflicto.
+        if result.rows_affected() == 0 {
+            return Err(InstrumentRepositoryError::VersionConflict { id: current.id.clone(), expected: current.row_version });
+        }
+
+        Ok(BrokerServerClockRow {
+            updated_at: now_ns,
+            audit_hash,
+            audit_chain_hash: Some(current.audit_hash.clone()),
+            row_version,
+            clock_anchor_timezone_ref: revision.clock_anchor_timezone_ref,
+            clock_fixed_offset_minutes: revision.clock_fixed_offset_minutes,
+            venue_operational_since_ns: revision.venue_operational_since_ns,
+            ..current.clone()
+        })
+    }
 }
 
 /// Mapea una fila cruda de `instrument_master` al tipo [`InstrumentMasterRow`].
@@ -390,6 +555,14 @@ impl<'a> InstrumentRepository<'a> {
 /// mensaje de error que apunta a la columna equivocada).
 fn is_duplicate_instrument_id_violation(db_err: &(dyn sqlx::error::DatabaseError + 'static)) -> bool {
     db_err.is_unique_violation() && db_err.message().to_lowercase().contains("instrument_id")
+}
+
+/// Mismo criterio que [`is_duplicate_instrument_id_violation`], para la
+/// clave de negocio `venue` de `broker_server_clock` -- distingue una
+/// violación UNIQUE de esa columna (duplicado de negocio) de una violación
+/// UNIQUE de la PK técnica `id` (que NUNCA debe camuflarse como duplicado).
+fn is_duplicate_venue_violation(db_err: &(dyn sqlx::error::DatabaseError + 'static)) -> bool {
+    db_err.is_unique_violation() && db_err.message().to_lowercase().contains("venue")
 }
 
 fn row_to_master(row: sqlx::sqlite::SqliteRow) -> Result<InstrumentMasterRow, InstrumentRepositoryError> {
@@ -445,6 +618,27 @@ fn row_to_broker_terms(row: sqlx::sqlite::SqliteRow) -> Result<BrokerInstrumentT
         commission_value: row.get("commission_value"),
         session_template_id_override: row.get("session_template_id_override"),
     })
+}
+
+/// Mapea una fila cruda de `broker_server_clock` al tipo
+/// [`BrokerServerClockRow`]. Sin decodificación de enum -- a diferencia de
+/// `instrument_master`/`broker_instrument_terms`, ninguna columna de esta
+/// tabla tiene vocabulario fijo, así que no puede fallar.
+fn row_to_broker_server_clock(row: sqlx::sqlite::SqliteRow) -> BrokerServerClockRow {
+    BrokerServerClockRow {
+        id: row.get("id"),
+        created_at: row.get("created_at"),
+        updated_at: row.get("updated_at"),
+        audit_hash: row.get("audit_hash"),
+        audit_chain_hash: row.get("audit_chain_hash"),
+        row_version: row.get("row_version"),
+        node_id: row.get("node_id"),
+        process_id: row.get("process_id"),
+        venue: row.get("venue"),
+        clock_anchor_timezone_ref: row.get("clock_anchor_timezone_ref"),
+        clock_fixed_offset_minutes: row.get("clock_fixed_offset_minutes"),
+        venue_operational_since_ns: row.get("venue_operational_since_ns"),
+    }
 }
 
 // ── Pruebas de la capa de persistencia ───────────────────────────────────
@@ -829,5 +1023,223 @@ mod tests {
 
         assert_eq!(resolved.pip_size, canonical.canonical_pip_size, "pip_size_override NULL debe heredar el canónico persistido");
         assert_eq!(resolved.spread, Some(150_000_000), "default_spread no-NULL debe ganar");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // broker_server_clock (retrofit STORY-070/TASK-071, criterio de
+    // aceptación #13 de STORY-070) -- mismo Grupo I + concurrencia
+    // optimista que instrument_master, probado con el mismo molde.
+    // ═══════════════════════════════════════════════════════════════════
+
+    fn sample_new_broker_server_clock() -> NewBrokerServerClock {
+        NewBrokerServerClock {
+            venue: "IC_MARKETS".to_string(),
+            clock_anchor_timezone_ref: "America/New_York".to_string(),
+            clock_fixed_offset_minutes: 420,
+            venue_operational_since_ns: Some(1_167_609_600_000_000_000), // 2007-01-01T00:00:00Z, fundación declarada
+            node_id: Some("node-A".to_string()),
+            process_id: Some("pid-1".to_string()),
+        }
+    }
+
+    /// Alta del reloj de servidor: persiste con `row_version = 1`; un
+    /// `venue` duplicado se rechaza explícitamente -- NUNCA pisa la fila
+    /// existente en silencio (mismo criterio que
+    /// `instrument_master_rejects_duplicate_business_key`).
+    #[tokio::test]
+    async fn broker_server_clock_rejects_duplicate_venue() {
+        let (pool, _dir) = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = InstrumentRepository::new(&pool, &clock);
+
+        let created = repo.create_broker_server_clock(sample_new_broker_server_clock()).await.expect("primera alta debe tener éxito");
+        assert_eq!(created.row_version, 1);
+        assert_eq!(created.venue, "IC_MARKETS");
+        assert_eq!(created.clock_fixed_offset_minutes, 420);
+        assert_eq!(created.venue_operational_since_ns, Some(1_167_609_600_000_000_000));
+
+        let duplicate = repo.create_broker_server_clock(sample_new_broker_server_clock()).await;
+        assert!(
+            matches!(duplicate, Err(InstrumentRepositoryError::DuplicateVenue(ref v)) if v == "IC_MARKETS"),
+            "un venue duplicado debe rechazarse explícitamente, no pisar la fila existente; fue: {duplicate:?}"
+        );
+
+        let count: i64 =
+            sqlx::query("SELECT COUNT(*) FROM broker_server_clock").fetch_one(&pool).await.expect("contar filas").get(0);
+        assert_eq!(count, 1, "el intento fallido no debe dejar una segunda fila a medias");
+    }
+
+    /// El clasificador de duplicado distingue la clave de NEGOCIO (`venue`)
+    /// de la PK técnica (`id`) -- mismo hueco histórico que
+    /// `is_duplicate_instrument_id_violation_distinguishes_business_key_from_primary_key`
+    /// (hallazgo del Tech-Lead 2026-07-25 sobre `instrument_master`, mismo
+    /// patrón de mutación `&&`→`||` posible aquí): ejercita
+    /// `is_duplicate_venue_violation` DIRECTAMENTE con sus dos casos.
+    #[tokio::test]
+    async fn is_duplicate_venue_violation_distinguishes_business_key_from_primary_key() {
+        let (pool, _dir) = migrated_pool().await;
+
+        let insert = |id: &'static str, venue: &'static str| {
+            let pool = pool.clone();
+            async move {
+                sqlx::query(
+                    "INSERT INTO broker_server_clock (id, created_at, updated_at, audit_hash, audit_chain_hash, row_version, venue, clock_anchor_timezone_ref) \
+                     VALUES (?, 0, 0, 'h', NULL, 1, ?, 'UTC')",
+                )
+                .bind(id)
+                .bind(venue)
+                .execute(&pool)
+                .await
+            }
+        };
+
+        insert("id-a", "IC_MARKETS").await.expect("primera fila válida");
+
+        // Violación de la CLAVE DE NEGOCIO: mismo venue, id distinto -- el
+        // mensaje de SQLite SÍ menciona "venue".
+        let business_key_err = insert("id-b", "IC_MARKETS").await.expect_err("debe violar el UNIQUE de venue");
+        let sqlx::Error::Database(business_key_db_err) = business_key_err else { panic!("se esperaba un error de base de datos") };
+        assert!(
+            is_duplicate_venue_violation(&*business_key_db_err),
+            "una violación UNIQUE de venue SÍ es un duplicado de clave de negocio"
+        );
+
+        // Violación de la PK `id`: MISMO id, venue DISTINTO -- el mensaje de
+        // SQLite habla de "broker_server_clock.id", NUNCA de "venue".
+        let pk_err = insert("id-a", "PEPPERSTONE").await.expect_err("debe violar la PRIMARY KEY id");
+        let sqlx::Error::Database(pk_db_err) = pk_err else { panic!("se esperaba un error de base de datos") };
+        assert!(
+            !is_duplicate_venue_violation(&*pk_db_err),
+            "una violación UNIQUE de la PK id NUNCA debe clasificarse como duplicado de venue -- fue clasificada como duplicado"
+        );
+    }
+
+    /// Buscar por `venue`: `None` cuando no existe, `Some` tras sellar.
+    #[tokio::test]
+    async fn find_broker_server_clock_by_venue_returns_none_when_absent_and_some_when_sealed() {
+        let (pool, _dir) = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = InstrumentRepository::new(&pool, &clock);
+
+        assert!(repo.find_broker_server_clock_by_venue("IC_MARKETS").await.expect("buscar").is_none());
+
+        repo.create_broker_server_clock(sample_new_broker_server_clock()).await.expect("crear reloj");
+        let found = repo.find_broker_server_clock_by_venue("IC_MARKETS").await.expect("buscar").expect("debe existir");
+        assert_eq!(found.clock_anchor_timezone_ref, "America/New_York");
+    }
+
+    // ── CRITERIO #13 (STORY-070 §5): concurrencia optimista real ─────────
+
+    /// El núcleo del criterio 13: dos ediciones que parten del MISMO
+    /// `row_version` en memoria no pueden ambas tener éxito. La primera
+    /// pasa; la segunda, que sigue creyendo estar en la versión vieja,
+    /// devuelve `VersionConflict` (`rows_affected == 0`) en vez de pisar el
+    /// cambio de la primera en silencio -- mismo molde que
+    /// `stale_row_version_yields_version_conflict` sobre `instrument_master`.
+    ///
+    /// Por qué esta fila importa más que la mecánica de la columna: guarda
+    /// el reloj del bróker, el BORRADOR desde el que se pre-rellena la
+    /// declaración que el usuario sella como evidencia (LDR-0008) -- si dos
+    /// ediciones concurrentes se pisaran en silencio, el usuario podría
+    /// sellar una declaración basada en un borrador que ya no es el vigente,
+    /// sin que nada se lo advirtiera.
+    ///
+    /// Esta prueba FALLA si se quita la guarda `AND row_version = ?` del
+    /// `UPDATE`: sin ella, la segunda edición también afectaría 1 fila y
+    /// devolvería `Ok`, bifurcando la cadena `audit_hash` en silencio.
+    #[tokio::test]
+    async fn broker_server_clock_stale_row_version_yields_version_conflict() {
+        let (pool, _dir) = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = InstrumentRepository::new(&pool, &clock);
+
+        let created = repo.create_broker_server_clock(sample_new_broker_server_clock()).await.expect("crear reloj");
+        assert_eq!(created.row_version, 1);
+
+        // Dos "actores" leyeron el MISMO reloj de bróker en la versión 1 --
+        // ej. dos sesiones del asistente de importación abiertas a la vez,
+        // ambas pre-rellenando su borrador desde la misma lectura.
+        let first_editor_view = created.clone();
+        let second_editor_view = created;
+
+        clock.tick();
+        let updated = repo
+            .update_broker_server_clock(
+                &first_editor_view,
+                BrokerServerClockRevision {
+                    clock_anchor_timezone_ref: "America/New_York".to_string(),
+                    clock_fixed_offset_minutes: 480, // corrige el offset declarado
+                    venue_operational_since_ns: first_editor_view.venue_operational_since_ns,
+                },
+            )
+            .await
+            .expect("la primera edición debe tener éxito");
+        assert_eq!(updated.row_version, 2);
+        assert_eq!(updated.clock_fixed_offset_minutes, 480);
+        assert_ne!(updated.audit_hash, first_editor_view.audit_hash, "el audit_hash debe recalcularse en la edición");
+        assert_eq!(
+            updated.audit_chain_hash,
+            Some(first_editor_view.audit_hash.clone()),
+            "audit_chain_hash debe encadenar al audit_hash de la versión anterior"
+        );
+
+        clock.tick();
+        let conflict = repo
+            .update_broker_server_clock(
+                &second_editor_view,
+                BrokerServerClockRevision {
+                    clock_anchor_timezone_ref: "America/New_York".to_string(),
+                    clock_fixed_offset_minutes: 9_999, // valor claramente distinto -- si esto "ganara" en silencio, se notaría
+                    venue_operational_since_ns: second_editor_view.venue_operational_since_ns,
+                },
+            )
+            .await;
+        assert!(
+            matches!(conflict, Err(InstrumentRepositoryError::VersionConflict { expected: 1, .. })),
+            "la segunda edición desde la versión 1 debe dar VersionConflict, no éxito silencioso; fue: {conflict:?}"
+        );
+
+        // La fila en disco conserva el cambio de la PRIMERA edición -- la
+        // segunda NUNCA se aplicó, ni parcial ni completa.
+        let reloaded = repo.find_broker_server_clock_by_venue("IC_MARKETS").await.expect("releer").expect("debe existir");
+        assert_eq!(reloaded.row_version, 2);
+        assert_eq!(reloaded.clock_fixed_offset_minutes, 480, "el valor en disco debe ser el de la primera edición, no el de la segunda (9999)");
+    }
+
+    /// Fidelidad del struct DEVUELTO por `update_broker_server_clock` --
+    /// mismo criterio que `update_master_return_value_reflects_every_changed_field`
+    /// (hallazgo del gate de mutación sobre `..current.clone()`): cambia
+    /// TRES campos a la vez (`updated_at` vía el tick del reloj,
+    /// `clock_anchor_timezone_ref` y `venue_operational_since_ns` -- este
+    /// último de `Some` a `None`, para que un mutante que borre esa
+    /// sobreescritura sea detectable) y afirma sobre el valor DEVUELTO, no
+    /// sobre una relectura.
+    #[tokio::test]
+    async fn update_broker_server_clock_return_value_reflects_every_changed_field() {
+        let (pool, _dir) = migrated_pool().await;
+        let clock = DeterministicClock::new(1_000, 100);
+        let repo = InstrumentRepository::new(&pool, &clock);
+
+        let created = repo.create_broker_server_clock(sample_new_broker_server_clock()).await.expect("crear reloj");
+        assert_eq!(created.venue_operational_since_ns, Some(1_167_609_600_000_000_000));
+
+        clock.tick();
+        let updated = repo
+            .update_broker_server_clock(
+                &created,
+                BrokerServerClockRevision {
+                    clock_anchor_timezone_ref: "Europe/London".to_string(),
+                    clock_fixed_offset_minutes: created.clock_fixed_offset_minutes, // sin cambio -- aísla los campos bajo prueba
+                    venue_operational_since_ns: None, // de Some a None -- se retira la verificación declarada
+                },
+            )
+            .await
+            .expect("la edición debe tener éxito");
+
+        assert_ne!(updated.updated_at, created.updated_at, "updated_at DEVUELTO debe ser el nuevo timestamp, no el viejo");
+        assert_eq!(updated.clock_anchor_timezone_ref, "Europe/London", "clock_anchor_timezone_ref DEVUELTO debe ser el nuevo valor");
+        assert_ne!(updated.clock_anchor_timezone_ref, created.clock_anchor_timezone_ref, "el valor nuevo debe ser DISTINTO del viejo");
+        assert_eq!(updated.venue_operational_since_ns, None, "venue_operational_since_ns DEVUELTO debe reflejar el retiro (Some -> None), no quedarse en el valor viejo");
+        assert_eq!(updated.venue, "IC_MARKETS", "venue NUNCA cambia -- no es parte de la revisión");
     }
 }

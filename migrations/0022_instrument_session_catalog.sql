@@ -11,16 +11,17 @@
 -- Orden de creación: las tablas de `session-catalog` van primero porque
 -- `instrument_master.default_session_template_id` las referencia por FK.
 --
--- Perfil ADR-0020 para las CUATRO tablas (Perfil A, "Grupo I aplicado"
--- declarado en ADR-0162 antes de listar el esquema de cada tabla): son
--- Referencia/Mutable, NO event-stores append-only -- el campo de secuencia
--- del Grupo I es `row_version` (arranca en 1, +1 en cada UPDATE), NUNCA
--- `event_sequence_id` (ADR-0141 "Semántica de secuencias", corrección
+-- Perfil ADR-0020 para las CINCO tablas de esta migración (Perfil A, "Grupo I
+-- aplicado" declarado en ADR-0162 antes de listar el esquema de cada tabla,
+-- con corrección 2026-07-26bis para `broker_server_clock` -- ver su bloque
+-- abajo): son Referencia/Mutable, NO event-stores append-only -- el campo de
+-- secuencia del Grupo I es `row_version` (arranca en 1, +1 en cada UPDATE),
+-- NUNCA `event_sequence_id` (ADR-0141 "Semántica de secuencias", corrección
 -- explícita del Architect en ADR-0162). `audit_chain_hash` es NULL en la
--- fila génesis de las cuatro tablas -- sin sentinel "genesis" (ADR-0141 M10).
+-- fila génesis de las cinco tablas -- sin sentinel "genesis" (ADR-0141 M10).
 -- Grupo IV (`node_id`/`process_id`, huella de hardware/proceso que hizo el
--- alta/edición) también aplica a las cuatro -- declarado en la sección
--- "Persistencia" de ambos documentos de feature.
+-- alta/edición) también aplica a las cinco -- declarado en la sección
+-- "Persistencia" de los documentos de feature.
 --
 -- Idempotencia (ADR-0006): `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF
 -- NOT EXISTS` -- volver a correr esta migración es un no-op.
@@ -30,6 +31,19 @@
 -- `real_volume_unit_declared` (ADR-0162 enmienda 2026-07-25). No se apila una
 -- migración correctiva nueva porque este archivo aún no tenía consumidores
 -- distribuidos -- se corrige el baseline directamente.
+--
+-- Retrofit STORY-070 (2026-07-26, edición in-situ -- fase GREENFIELD): activa
+-- la tabla `broker_server_clock` (ADR-0162 "Enmienda 2026-07-26", TASK-069) --
+-- el reloj de servidor de un bróker como zona ancla IANA + desplazamiento
+-- fijo en minutos.
+--
+-- Retrofit STORY-070bis (2026-07-26, TASK-071, escalamiento del Tech-Lead):
+-- `broker_server_clock` gana el Grupo I completo (`created_at`/`updated_at`/
+-- `audit_hash`/`audit_chain_hash`/`row_version`) y el Grupo IV (`node_id`/
+-- `process_id`) -- la primera versión de la tabla llevaba SOLO sus cinco
+-- campos de dominio, una omisión de redacción de la enmienda del ADR (nunca
+-- una excepción deliberada al Grupo I universal de ADR-0020), corregida en
+-- el propio texto de ADR-0162 antes de aterrizar aquí.
 
 -- ════════════════════════════════════════════════════════════════════════
 -- session_template — Referencia, compartida, nunca copiada por bróker×símbolo.
@@ -240,3 +254,62 @@ CREATE INDEX IF NOT EXISTS idx_broker_instrument_terms_session_template_id_overr
     ON broker_instrument_terms (session_template_id_override);
 CREATE INDEX IF NOT EXISTS idx_broker_instrument_terms_node_id
     ON broker_instrument_terms (node_id);
+
+-- ════════════════════════════════════════════════════════════════════════
+-- broker_server_clock — Referencia/Mutable, una fila por bróker/venue (NO
+-- por instrumento -- el reloj de servidor no varía entre símbolos del mismo
+-- bróker). Propiedad de `instrument-catalog`, mismo Perfil ADR-0020 que sus
+-- tres hermanas de esta migración (Grupo I completo + Grupo IV, ver banner
+-- de arriba) -- `session_template` es su hermana más cercana en forma.
+--
+-- Retrofit STORY-070 (2026-07-26, edición in-situ -- fase GREENFIELD): activa
+-- esta tabla, nueva de ADR-0162 "Enmienda 2026-07-26" (TASK-069). El reloj de
+-- un bróker se declara como zona ancla IANA (elegida por su calendario de
+-- cambios de DST, no necesariamente por coincidir con el offset literal del
+-- bróker) + desplazamiento fijo en minutos -- desplazamiento 0 reproduce sin
+-- caso especial una zona IANA plana (el mecanismo de hoy es el caso
+-- particular de este, no un mecanismo aparte). Caso real: IC Markets opera
+-- GMT+2/+3 con las fechas de cambio de horario de Estados Unidos, no las
+-- europeas -- ninguna zona del catálogo IANA describe eso con un solo
+-- identificador.
+--
+-- Retrofit STORY-070bis (2026-07-26, TASK-071): el Grupo I/IV de abajo
+-- reemplaza la primera versión de esta tabla, que llevaba solo los cinco
+-- campos de dominio -- ver banner de arriba, "Corrección 2026-07-26bis" del
+-- ADR.
+-- ════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS broker_server_clock (
+    -- Grupo I: Identidad & Integridad (universal, ADR-0020; row_version
+    -- porque esta tabla es MUTABLE, no un event-store -- ADR-0141).
+    id                          TEXT    NOT NULL PRIMARY KEY, -- UUIDv7 (Uuid::now_v7())
+    created_at                  INTEGER NOT NULL,             -- Nanosegundos desde epoch (puerto Clock)
+    updated_at                  INTEGER NOT NULL,             -- Nanosegundos desde epoch; cambia con cada edición
+    audit_hash                  TEXT    NOT NULL,             -- SHA-256 de esta versión de la fila
+    audit_chain_hash            TEXT,                         -- audit_hash de la versión anterior; NULL en la fila génesis
+    row_version                 INTEGER NOT NULL,             -- Contador de versión; arranca en 1, +1 en cada UPDATE
+
+    -- Grupo IV: Infraestructura & Ops (huella de quién hizo el alta/edición).
+    node_id                     TEXT,                         -- Huella del hardware que registró la escritura
+    process_id                  TEXT,                         -- PID del proceso que ejecutó la escritura
+
+    -- Columnas propias de dominio.
+    venue                       TEXT    NOT NULL UNIQUE,      -- Clave de negocio -- cadena plana, sin FK (mismo trato que broker_instrument_terms.venue)
+    -- Identificador IANA elegido por su calendario de cambios de horario de
+    -- verano, NO necesariamente por coincidir con el offset literal del
+    -- bróker (ej. IC Markets: ancla "America/New_York" por sus fechas de
+    -- cambio de DST, pese a que su offset absoluto no es el de Nueva York).
+    clock_anchor_timezone_ref   TEXT    NOT NULL,
+    -- Constante con signo, sumada al offset propio del ancla en TODO
+    -- instante. 0 reproduce sin caso especial la declaración plana de zona
+    -- de hoy -- no son dos mecanismos, uno es el caso particular del otro.
+    clock_fixed_offset_minutes  INTEGER NOT NULL DEFAULT 0,
+    -- Nanosegundos UTC. NULL = no verificado, NUNCA "opera desde el origen
+    -- de los tiempos". Hecho externo que el usuario declara/verifica (ej.
+    -- fecha de fundación pública del bróker), nunca inferido del archivo --
+    -- gobierna el chequeo de fecha de operación del Gate de Homogeneidad
+    -- (ADR-0162 "Enmienda 2026-07-26").
+    venue_operational_since_ns  INTEGER
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_broker_server_clock_node_id
+    ON broker_server_clock (node_id);

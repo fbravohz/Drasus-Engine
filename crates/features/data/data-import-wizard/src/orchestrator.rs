@@ -15,8 +15,9 @@ use sqlx::SqlitePool;
 use shared::public_interface::Clock;
 
 use crate::domain::{
-    self, detect_mt5_bar_template, map_to_canonical_bar, parse_mt5_bar_line, CanonicalBarRow, CanonicalMappingError,
-    Mt5LineParseError, RunContext, TemplateDetectionError,
+    self, check_declared_range_against_venue_operational_date, detect_mt5_bar_template, map_to_canonical_bar,
+    parse_mt5_bar_line, CanonicalBarRow, CanonicalMappingError, Mt5LineParseError, ProvenanceHomogeneityError,
+    RunContext, TemplateDetectionError,
 };
 use crate::persistence::{MappingDeclarationRepository, MappingDeclarationRepositoryError};
 use crate::schemas::{NewMappingDeclaration, PreviewBarRow};
@@ -52,12 +53,30 @@ pub struct ImportBarFileInput {
     pub instrument_id: String,
     pub venue: String,
     pub source_provider: String,
-    /// Zona horaria IANA declarada por el usuario para TODO el archivo.
-    /// `None` hace fallar la importación (criterio de aceptación #3).
-    pub source_timezone_declared: Option<String>,
+    /// Rango declarado del TRAMO que esta importación cubre (ADR-0162
+    /// "Enmienda 2026-07-26") -- nanosegundos UTC, intervalo semiabierto
+    /// [inicio, fin). EXPLÍCITO: quien orquesta lo declara, nunca se deriva
+    /// escaneando el mínimo/máximo de las filas que este lector produce.
+    pub declared_range_start_ns: i64,
+    pub declared_range_end_ns: i64,
+    /// Zona ancla IANA del reloj de origen declarado por el usuario para
+    /// TODO el tramo. `None` hace fallar la importación (criterio de
+    /// aceptación #3 de STORY-068).
+    pub source_clock_anchor_timezone_ref: Option<String>,
+    /// Desplazamiento fijo en minutos frente al ancla (ADR-0162 "Enmienda
+    /// 2026-07-26"). `0` reproduce sin pérdida la declaración plana de zona
+    /// de hoy -- irrelevante cuando el ancla es `None`.
+    pub source_clock_fixed_offset_minutes: i64,
     /// Convención de unidad de `<VOL>` declarada para este bróker/
     /// instrumento. `None` = no declarada (criterio de aceptación #8).
     pub real_volume_unit_declared: Option<String>,
+    /// Fecha de operación declarada del bróker/venue
+    /// (`broker_server_clock.venue_operational_since_ns`, hecho externo
+    /// inyectado por quien orquesta -- esta feature nunca consulta esa
+    /// tabla directamente, ADR-0137). `None` = no verificada; el chequeo de
+    /// fecha de operación del Gate de Homogeneidad de Procedencia NO corre
+    /// y no se asume ninguna fecha (ADR-0162 "Enmienda 2026-07-26").
+    pub venue_operational_since_ns: Option<i64>,
     pub node_id: Option<String>,
     pub process_id: Option<String>,
 }
@@ -84,6 +103,12 @@ pub enum ImportBarFileError {
     InvalidUtf8,
     #[error(transparent)]
     Template(#[from] TemplateDetectionError),
+    /// Rechazo del Gate de Homogeneidad de Procedencia (ADR-0162 "Enmienda
+    /// 2026-07-26") -- el tramo declarado antecede la fecha de operación
+    /// declarada del bróker/venue. Se comprueba ANTES de parsear el archivo
+    /// (fail-fast): un tramo imposible no necesita gastar el parseo.
+    #[error(transparent)]
+    ProvenanceHomogeneity(#[from] ProvenanceHomogeneityError),
     #[error("error al parsear la línea de dato número {line_number}: {source}")]
     Line {
         line_number: usize,
@@ -131,14 +156,30 @@ where
 
     let source_file_hash = domain::compute_source_file_hash(&input.file_bytes);
 
-    // ── Idempotencia (ADR-0163, criterio de aceptación #10) ─────────────
-    // Si este archivo (por contenido) ya tiene una declaración sellada, la
+    // ── Idempotencia (ADR-0163, criterio de aceptación #10; ── grano
+    // relajado a TRAMO en ADR-0162 "Enmienda 2026-07-26", criterio de
+    // aceptación #5 de STORY-070). Si este TRAMO exacto (mismo contenido de
+    // archivo, mismo rango declarado) ya tiene una declaración sellada, la
     // importación es un no-op silencioso sin fricción -- ni un segundo
     // sello de ledger, ni una segunda invocación de `bar_sink`.
     let repository = MappingDeclarationRepository::new(pool, clock);
-    if let Some(existing) = repository.find_by_source_file_hash(&source_file_hash).await? {
+    if let Some(existing) = repository
+        .find_by_source_file_hash_and_range(&source_file_hash, input.declared_range_start_ns, input.declared_range_end_ns)
+        .await?
+    {
         return Ok(ImportBarFileOutcome { declaration: existing, bars: Vec::new(), was_noop_reimport: true });
     }
+
+    // ── Gate de Homogeneidad de Procedencia -- chequeo de fecha de ──────
+    // operación (ADR-0162 "Enmienda 2026-07-26", criterio de aceptación #7
+    // de STORY-070). Corre ANTES de parsear: un tramo imposible no necesita
+    // gastar el parseo del archivo completo. Detectar la fractura no es
+    // inferir su causa -- solo compara dos instantes (ver doc del dominio).
+    check_declared_range_against_venue_operational_date(
+        &input.venue,
+        input.declared_range_start_ns,
+        input.venue_operational_since_ns,
+    )?;
 
     // ── Parseo y mapeo (Núcleo puro) ─────────────────────────────────────
     // Nunca una importación parcial: el primer error de parseo o de mapeo
@@ -151,7 +192,8 @@ where
         instrument_id: &input.instrument_id,
         venue: &input.venue,
         source_provider: &input.source_provider,
-        source_timezone_declared: input.source_timezone_declared.as_deref(),
+        source_clock_anchor_timezone_ref: input.source_clock_anchor_timezone_ref.as_deref(),
+        source_clock_fixed_offset_minutes: input.source_clock_fixed_offset_minutes,
         real_volume_unit_declared: input.real_volume_unit_declared.as_deref(),
         spread_reported_unit_declared: Some(spread_reported_unit_declared),
     };
@@ -177,22 +219,25 @@ where
     let preview_rows: Vec<PreviewBarRow> = bars.iter().take(PREVIEW_ROW_LIMIT).map(PreviewBarRow::from).collect();
     let preview_transformed_rows_json =
         serde_json::to_string(&preview_rows).expect("un Vec<PreviewBarRow> siempre serializa a JSON");
-    let accepted_at = clock.timestamp_ns();
+    let accepted_at_ns = clock.timestamp_ns();
 
     let hash_input = domain::MappingDeclarationHashInput {
         source_file_name: &input.source_file_name,
         source_file_hash: &source_file_hash,
         instrument_id: &input.instrument_id,
         venue: &input.venue,
+        declared_range_start_ns: input.declared_range_start_ns,
+        declared_range_end_ns: input.declared_range_end_ns,
         mapping_origin: "PLATFORM_TEMPLATE",
         platform_template_code: Some(domain::MT5_BAR_TEMPLATE_CODE),
         platform_template_version: Some(domain::MT5_BAR_TEMPLATE_VERSION),
         column_mapping_json: &column_mapping_json,
         transform_engine_version: TRANSFORM_ENGINE_VERSION,
         canonical_schema_version: CANONICAL_SCHEMA_VERSION,
-        accepted_at,
+        accepted_at_ns,
         preview_transformed_rows_json: &preview_transformed_rows_json,
-        source_timezone_declared: input.source_timezone_declared.as_deref().unwrap_or_default(),
+        source_clock_anchor_timezone_ref: input.source_clock_anchor_timezone_ref.as_deref().unwrap_or_default(),
+        source_clock_fixed_offset_minutes: input.source_clock_fixed_offset_minutes,
         real_volume_unit_declared: input.real_volume_unit_declared.as_deref(),
         spread_reported_unit_declared,
     };
@@ -206,15 +251,18 @@ where
         venue: input.venue.clone(),
         bar_type: "TIME".to_string(),
         timeframe_value: "1M".to_string(),
+        declared_range_start_ns: input.declared_range_start_ns,
+        declared_range_end_ns: input.declared_range_end_ns,
         mapping_origin: "PLATFORM_TEMPLATE".to_string(),
         platform_template_code: Some(domain::MT5_BAR_TEMPLATE_CODE.to_string()),
         platform_template_version: Some(domain::MT5_BAR_TEMPLATE_VERSION.to_string()),
         column_mapping_json,
         transform_engine_version: TRANSFORM_ENGINE_VERSION.to_string(),
         canonical_schema_version: CANONICAL_SCHEMA_VERSION.to_string(),
-        accepted_at,
+        accepted_at_ns,
         preview_transformed_rows_json,
-        source_timezone_declared: input.source_timezone_declared.clone().unwrap_or_default(),
+        source_clock_anchor_timezone_ref: input.source_clock_anchor_timezone_ref.clone().unwrap_or_default(),
+        source_clock_fixed_offset_minutes: input.source_clock_fixed_offset_minutes,
         real_volume_unit_declared: input.real_volume_unit_declared.clone(),
         spread_reported_unit_declared: spread_reported_unit_declared.to_string(),
         node_id: input.node_id.clone(),
@@ -262,6 +310,15 @@ mod tests {
         (pool, dir)
     }
 
+    /// Rango declarado por defecto para las pruebas de este módulo -- amplio
+    /// a propósito (2000-01-01 a 2030-01-01) para cubrir sin fricción tanto
+    /// `REAL_SAMPLE_CSV` (2000-01-03) como `REAL_ANOMALY_CSV` (2019-11-01):
+    /// esta Story no filtra filas por rango (ver domain.rs, "Rango declarado
+    /// del tramo"), así que el valor exacto no afecta el parseo -- solo el
+    /// chequeo de fecha de operación y la clave de idempotencia.
+    const DEFAULT_DECLARED_RANGE_START_NS: i64 = 946_684_800_000_000_000; // 2000-01-01T00:00:00Z
+    const DEFAULT_DECLARED_RANGE_END_NS: i64 = 1_893_456_000_000_000_000; // 2030-01-01T00:00:00Z
+
     fn sample_input(file_bytes: Vec<u8>) -> ImportBarFileInput {
         ImportBarFileInput {
             source_file_name: "EURUSD_M1_sample.csv".to_string(),
@@ -269,8 +326,12 @@ mod tests {
             instrument_id: "EURUSD".to_string(),
             venue: "PEPPERSTONE".to_string(),
             source_provider: "MT5_TERMINAL_EXPORT".to_string(),
-            source_timezone_declared: Some("America/New_York".to_string()),
+            declared_range_start_ns: DEFAULT_DECLARED_RANGE_START_NS,
+            declared_range_end_ns: DEFAULT_DECLARED_RANGE_END_NS,
+            source_clock_anchor_timezone_ref: Some("America/New_York".to_string()),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
+            venue_operational_since_ns: None,
             node_id: Some("test-node".to_string()),
             process_id: Some("test-process".to_string()),
         }
@@ -377,13 +438,55 @@ mod tests {
         let (pool, _dir) = temp_pool_with_eurusd().await;
         let clock = DeterministicClock::new(0, 1);
         let mut input = sample_input(REAL_SAMPLE_CSV.to_vec());
-        input.source_timezone_declared = None;
+        input.source_clock_anchor_timezone_ref = None;
 
         let result = import_mt5_bar_file(&pool, &clock, input, |_rows| Ok(())).await;
         assert!(matches!(result, Err(ImportBarFileError::Mapping { .. })), "debe rechazar por falta de zona horaria declarada");
 
         let repository = MappingDeclarationRepository::new(&pool, &clock);
         assert!(repository.list_all().await.unwrap().is_empty(), "sin zona declarada, cero filas de ledger");
+    }
+
+    // ── Criterio de aceptación #7 (STORY-070): fecha de operación del bróker, de punta a punta ──
+
+    /// Con fecha de operación declarada, un tramo que la antecede se
+    /// rechaza de punta a punta -- cero filas, cero ledger, motivo
+    /// explícito (`ProvenanceHomogeneity`, nunca un error genérico).
+    #[tokio::test(flavor = "multi_thread")]
+    async fn import_rejected_end_to_end_when_declared_range_precedes_venue_operational_date() {
+        let (pool, _dir) = temp_pool_with_eurusd().await;
+        let clock = DeterministicClock::new(0, 1);
+        let mut input = sample_input(REAL_SAMPLE_CSV.to_vec());
+        // El tramo declara empezar en DEFAULT_DECLARED_RANGE_START_NS; el
+        // bróker declara operar desde un instante POSTERIOR -- el tramo es
+        // imposible bajo esa identidad de bróker.
+        input.venue_operational_since_ns = Some(DEFAULT_DECLARED_RANGE_START_NS + 1);
+
+        let result = import_mt5_bar_file(&pool, &clock, input, |_rows| Ok(())).await;
+        assert!(
+            matches!(result, Err(ImportBarFileError::ProvenanceHomogeneity(_))),
+            "debe rechazar por antecedente a la fecha de operación declarada del bróker: {result:?}"
+        );
+
+        let repository = MappingDeclarationRepository::new(&pool, &clock);
+        assert!(repository.list_all().await.unwrap().is_empty(), "cero filas de ledger tras el rechazo por fecha de operación");
+    }
+
+    /// Sin fecha de operación declarada, el MISMO tramo (arbitrariamente
+    /// antiguo) se acepta de punta a punta -- el chequeo NO corre, nunca se
+    /// asume una fecha que nadie declaró.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn import_accepted_end_to_end_when_venue_operational_date_is_not_declared() {
+        let (pool, _dir) = temp_pool_with_eurusd().await;
+        let clock = DeterministicClock::new(0, 1);
+        let mut input = sample_input(REAL_SAMPLE_CSV.to_vec());
+        input.venue_operational_since_ns = None;
+
+        let outcome = import_mt5_bar_file(&pool, &clock, input, |_rows| Ok(()))
+            .await
+            .expect("sin fecha de operación declarada, la importación debe aceptarse sin rechazo");
+        assert!(!outcome.was_noop_reimport);
+        assert_eq!(outcome.bars.len(), 6, "el fragmento real completo (6 filas) debe importarse sin rechazo");
     }
 
     // ── Gate de mutación, Grupo 1 (parte de integración): la plantilla ──

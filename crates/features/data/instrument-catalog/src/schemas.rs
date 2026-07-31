@@ -105,3 +105,50 @@ pub struct BrokerInstrumentTermsRow {
     pub commission_value: Option<i64>,
     pub session_template_id_override: Option<String>,
 }
+
+// ── broker_server_clock (retrofit STORY-070/TASK-071) ───────────────────
+
+/// Datos para dar de alta el reloj de servidor declarado de un bróker/venue
+/// (ADR-0162 "Enmienda 2026-07-26").
+#[derive(Debug, Clone)]
+pub struct NewBrokerServerClock {
+    pub venue: String,
+    pub clock_anchor_timezone_ref: String,
+    pub clock_fixed_offset_minutes: i64,
+    pub venue_operational_since_ns: Option<i64>,
+    pub node_id: Option<String>,
+    pub process_id: Option<String>,
+}
+
+/// Una fila de `broker_server_clock` ya persistida.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BrokerServerClockRow {
+    // ── Grupo I ──
+    pub id: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub audit_hash: String,
+    pub audit_chain_hash: Option<String>,
+    pub row_version: i64,
+
+    // ── Grupo IV ──
+    pub node_id: Option<String>,
+    pub process_id: Option<String>,
+
+    // ── Dominio ──
+    pub venue: String,
+    pub clock_anchor_timezone_ref: String,
+    pub clock_fixed_offset_minutes: i64,
+    pub venue_operational_since_ns: Option<i64>,
+}
+
+/// Revisión de los campos editables del reloj de un bróker. No permite
+/// editar `venue` (clave de negocio inmutable tras el alta -- cambiar el
+/// venue es declarar el reloj de OTRO bróker, no editar el existente, mismo
+/// criterio que `InstrumentMasterRevision` con `instrument_id`).
+#[derive(Debug, Clone)]
+pub struct BrokerServerClockRevision {
+    pub clock_anchor_timezone_ref: String,
+    pub clock_fixed_offset_minutes: i64,
+    pub venue_operational_since_ns: Option<i64>,
+}

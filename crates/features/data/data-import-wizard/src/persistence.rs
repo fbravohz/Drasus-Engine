@@ -103,16 +103,32 @@ impl<'a> MappingDeclarationRepository<'a> {
         Self { pool, clock }
     }
 
-    /// Busca una declaración ya sellada por el hash de contenido del
-    /// archivo origen -- soporte de la reimportación idempotente (ADR-0163,
-    /// criterio de aceptación #10 de STORY-068): si ya existe, el llamador
-    /// trata la importación como un no-op en vez de sellar una segunda fila.
-    pub async fn find_by_source_file_hash(
+    /// Busca una declaración ya sellada por el hash de contenido del archivo
+    /// origen Y el rango declarado del tramo -- soporte de la reimportación
+    /// idempotente (ADR-0163, criterio de aceptación #10 de STORY-068).
+    ///
+    /// Relajado en STORY-070 (ADR-0162 "Enmienda 2026-07-26"): la clave de
+    /// idempotencia pasó de "archivo" a "archivo + tramo declarado" -- dos
+    /// tramos disjuntos del mismo archivo son declaraciones legítimas y
+    /// DISTINTAS (criterio de aceptación #4), nunca la misma fila. Si ya
+    /// existe una fila para el MISMO tramo exacto, el llamador trata la
+    /// importación como un no-op en vez de sellar una segunda fila.
+    pub async fn find_by_source_file_hash_and_range(
         &self,
         source_file_hash: &str,
+        declared_range_start_ns: i64,
+        declared_range_end_ns: i64,
     ) -> Result<Option<MappingDeclarationRow>, MappingDeclarationRepositoryError> {
-        let sql = format!("SELECT {DECLARATION_COLUMNS} FROM import_mapping_declarations WHERE source_file_hash = ?");
-        let row = sqlx::query(&sql).bind(source_file_hash).fetch_optional(self.pool).await?;
+        let sql = format!(
+            "SELECT {DECLARATION_COLUMNS} FROM import_mapping_declarations \
+             WHERE source_file_hash = ? AND declared_range_start_ns = ? AND declared_range_end_ns = ?"
+        );
+        let row = sqlx::query(&sql)
+            .bind(source_file_hash)
+            .bind(declared_range_start_ns)
+            .bind(declared_range_end_ns)
+            .fetch_optional(self.pool)
+            .await?;
         Ok(row.as_ref().map(row_to_declaration))
     }
 
@@ -188,11 +204,13 @@ impl<'a> MappingDeclarationRepository<'a> {
                 id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
                 node_id, process_id, \
                 source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, \
+                declared_range_start_ns, declared_range_end_ns, \
                 mapping_origin, platform_template_code, platform_template_version, column_mapping_json, \
-                transform_engine_version, canonical_schema_version, accepted_at, \
-                preview_transformed_rows_json, source_timezone_declared, real_volume_unit_declared, \
+                transform_engine_version, canonical_schema_version, accepted_at_ns, \
+                preview_transformed_rows_json, source_clock_anchor_timezone_ref, \
+                source_clock_fixed_offset_minutes, real_volume_unit_declared, \
                 spread_reported_unit_declared \
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&id)
         .bind(now_ns)
@@ -208,15 +226,18 @@ impl<'a> MappingDeclarationRepository<'a> {
         .bind(&new.venue)
         .bind(&new.bar_type)
         .bind(&new.timeframe_value)
+        .bind(new.declared_range_start_ns)
+        .bind(new.declared_range_end_ns)
         .bind(&new.mapping_origin)
         .bind(&new.platform_template_code)
         .bind(&new.platform_template_version)
         .bind(&new.column_mapping_json)
         .bind(&new.transform_engine_version)
         .bind(&new.canonical_schema_version)
-        .bind(new.accepted_at)
+        .bind(new.accepted_at_ns)
         .bind(&new.preview_transformed_rows_json)
-        .bind(&new.source_timezone_declared)
+        .bind(&new.source_clock_anchor_timezone_ref)
+        .bind(new.source_clock_fixed_offset_minutes)
         .bind(&new.real_volume_unit_declared)
         .bind(&new.spread_reported_unit_declared)
         .execute(&mut *tx)
@@ -239,15 +260,18 @@ impl<'a> MappingDeclarationRepository<'a> {
             venue: new.venue.clone(),
             bar_type: new.bar_type.clone(),
             timeframe_value: new.timeframe_value.clone(),
+            declared_range_start_ns: new.declared_range_start_ns,
+            declared_range_end_ns: new.declared_range_end_ns,
             mapping_origin: new.mapping_origin.clone(),
             platform_template_code: new.platform_template_code.clone(),
             platform_template_version: new.platform_template_version.clone(),
             column_mapping_json: new.column_mapping_json.clone(),
             transform_engine_version: new.transform_engine_version.clone(),
             canonical_schema_version: new.canonical_schema_version.clone(),
-            accepted_at: new.accepted_at,
+            accepted_at_ns: new.accepted_at_ns,
             preview_transformed_rows_json: new.preview_transformed_rows_json.clone(),
-            source_timezone_declared: new.source_timezone_declared.clone(),
+            source_clock_anchor_timezone_ref: new.source_clock_anchor_timezone_ref.clone(),
+            source_clock_fixed_offset_minutes: new.source_clock_fixed_offset_minutes,
             real_volume_unit_declared: new.real_volume_unit_declared.clone(),
             spread_reported_unit_declared: new.spread_reported_unit_declared.clone(),
         })
@@ -269,9 +293,11 @@ impl<'a> MappingDeclarationRepository<'a> {
 const DECLARATION_COLUMNS: &str = "id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, \
      node_id, process_id, \
      source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, \
+     declared_range_start_ns, declared_range_end_ns, \
      mapping_origin, platform_template_code, platform_template_version, column_mapping_json, \
-     transform_engine_version, canonical_schema_version, accepted_at, \
-     preview_transformed_rows_json, source_timezone_declared, real_volume_unit_declared, \
+     transform_engine_version, canonical_schema_version, accepted_at_ns, \
+     preview_transformed_rows_json, source_clock_anchor_timezone_ref, \
+     source_clock_fixed_offset_minutes, real_volume_unit_declared, \
      spread_reported_unit_declared";
 
 fn row_to_declaration(row: &sqlx::sqlite::SqliteRow) -> MappingDeclarationRow {
@@ -290,15 +316,18 @@ fn row_to_declaration(row: &sqlx::sqlite::SqliteRow) -> MappingDeclarationRow {
         venue: row.get("venue"),
         bar_type: row.get("bar_type"),
         timeframe_value: row.get("timeframe_value"),
+        declared_range_start_ns: row.get("declared_range_start_ns"),
+        declared_range_end_ns: row.get("declared_range_end_ns"),
         mapping_origin: row.get("mapping_origin"),
         platform_template_code: row.get("platform_template_code"),
         platform_template_version: row.get("platform_template_version"),
         column_mapping_json: row.get("column_mapping_json"),
         transform_engine_version: row.get("transform_engine_version"),
         canonical_schema_version: row.get("canonical_schema_version"),
-        accepted_at: row.get("accepted_at"),
+        accepted_at_ns: row.get("accepted_at_ns"),
         preview_transformed_rows_json: row.get("preview_transformed_rows_json"),
-        source_timezone_declared: row.get("source_timezone_declared"),
+        source_clock_anchor_timezone_ref: row.get("source_clock_anchor_timezone_ref"),
+        source_clock_fixed_offset_minutes: row.get("source_clock_fixed_offset_minutes"),
         real_volume_unit_declared: row.get("real_volume_unit_declared"),
         spread_reported_unit_declared: row.get("spread_reported_unit_declared"),
     }
@@ -351,15 +380,18 @@ mod tests {
             venue: "PEPPERSTONE".to_string(),
             bar_type: "TIME".to_string(),
             timeframe_value: "1M".to_string(),
+            declared_range_start_ns: 946_857_600_000_000_000, // 2000-01-03T00:00:00Z
+            declared_range_end_ns: 946_944_000_000_000_000,   // 2000-01-04T00:00:00Z
             mapping_origin: "PLATFORM_TEMPLATE".to_string(),
             platform_template_code: Some("MT5_M1_BAR_V1".to_string()),
             platform_template_version: Some("1.0.0".to_string()),
             column_mapping_json: "{}".to_string(),
             transform_engine_version: "0.1.0".to_string(),
             canonical_schema_version: "ADR-0155-v1".to_string(),
-            accepted_at: 1_000,
+            accepted_at_ns: 1_000,
             preview_transformed_rows_json: "[]".to_string(),
-            source_timezone_declared: "America/New_York".to_string(),
+            source_clock_anchor_timezone_ref: "America/New_York".to_string(),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: "POINTS_MT5".to_string(),
             node_id: Some("test-node".to_string()),
@@ -412,7 +444,7 @@ mod tests {
         // `BEGIN IMMEDIATE` y NUNCA lo suelta durante la prueba -- simula
         // contención sostenida real, no una simulación de mensaje de error.
         let mut blocking_tx = pool.begin_with("BEGIN IMMEDIATE").await.expect("el segundo escritor debe poder tomar el lock");
-        sqlx::query("INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at, preview_transformed_rows_json, source_timezone_declared, spread_reported_unit_declared) VALUES ('blocker-id', 0, 0, 'blocker-hash', NULL, 1, 'f.csv', 'blocker-file-hash', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 'POINTS_MT5')")
+        sqlx::query("INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES ('blocker-id', 0, 0, 'blocker-hash', NULL, 1, 'f.csv', 'blocker-file-hash', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 946857600000000000, 946944000000000000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')")
             .execute(&mut *blocking_tx)
             .await
             .expect("el INSERT del bloqueador debe ejecutar dentro de su propia transacción");
@@ -444,7 +476,7 @@ mod tests {
             let pool = pool.clone();
             async move {
                 sqlx::query(
-                    "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at, preview_transformed_rows_json, source_timezone_declared, spread_reported_unit_declared) VALUES (?, 0, 0, 'h', NULL, ?, 'f.csv', ?, 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 'POINTS_MT5')",
+                    "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES (?, 0, 0, 'h', NULL, ?, 'f.csv', ?, 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 946857600000000000, 946944000000000000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')",
                 )
                 .bind(id)
                 .bind(event_sequence_id)
@@ -512,11 +544,76 @@ mod tests {
         let clock = DeterministicClock::new(0, 1);
         let repository = MappingDeclarationRepository::new(&pool, &clock);
 
-        assert!(repository.find_by_source_file_hash("nunca-sellado").await.unwrap().is_none());
+        assert!(repository
+            .find_by_source_file_hash_and_range("nunca-sellado", 946_857_600_000_000_000, 946_944_000_000_000_000)
+            .await
+            .unwrap()
+            .is_none());
 
         repository.record(sample_new_declaration("archivo-x")).await.unwrap();
-        let found = repository.find_by_source_file_hash("archivo-x").await.unwrap();
-        assert!(found.is_some(), "tras sellar, debe encontrarse por su source_file_hash");
+        let found = repository
+            .find_by_source_file_hash_and_range("archivo-x", 946_857_600_000_000_000, 946_944_000_000_000_000)
+            .await
+            .unwrap();
+        assert!(found.is_some(), "tras sellar, debe encontrarse por su source_file_hash + rango declarado");
+    }
+
+    /// Criterio de aceptación #4 (STORY-070): dos tramos DISJUNTOS del mismo
+    /// archivo (mismo `source_file_hash`, rangos distintos) producen dos
+    /// filas del ledger -- la unicidad relajada NO rechaza la segunda.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn two_disjoint_declared_ranges_of_the_same_file_produce_two_ledger_rows() {
+        let (pool, _dir) = temp_pool().await;
+        let clock = DeterministicClock::new(0, 1);
+        let repository = MappingDeclarationRepository::new(&pool, &clock);
+
+        let mut first_tramo = sample_new_declaration("archivo-heterogeneo");
+        first_tramo.content_audit_hash = "hash-tramo-uno".to_string();
+        first_tramo.declared_range_start_ns = 946_857_600_000_000_000; // 2000-01-03
+        first_tramo.declared_range_end_ns = 946_944_000_000_000_000; // 2000-01-04
+        let first = repository.record(first_tramo).await.expect("el primer tramo debe sellar");
+
+        let mut second_tramo = sample_new_declaration("archivo-heterogeneo");
+        second_tramo.content_audit_hash = "hash-tramo-dos".to_string();
+        second_tramo.declared_range_start_ns = 946_944_000_000_000_000; // 2000-01-04, disjunto del anterior
+        second_tramo.declared_range_end_ns = 947_030_400_000_000_000; // 2000-01-05
+        let second =
+            repository.record(second_tramo).await.expect("el segundo tramo disjunto del MISMO archivo debe sellar, no rechazarse");
+
+        assert_ne!(first.id, second.id, "deben ser DOS filas distintas del ledger, no la misma declaración");
+        assert_eq!(first.declared_range_end_ns, second.declared_range_start_ns, "los rangos deben ser disjuntos y contiguos, como se construyeron");
+
+        let all = repository.list_all().await.unwrap();
+        assert_eq!(all.len(), 2, "dos tramos disjuntos del mismo archivo deben producir EXACTAMENTE dos filas");
+    }
+
+    /// Criterio de aceptación #6 (STORY-070): un rango invertido o vacío se
+    /// rechaza a NIVEL DE BASE DE DATOS -- el `CHECK` de la migración es el
+    /// guardián, no una validación de la aplicación que se pueda saltar.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn inverted_or_empty_declared_range_is_rejected_at_database_level() {
+        let (pool, _dir) = temp_pool().await;
+
+        // Rango INVERTIDO: fin ANTES que inicio.
+        let inverted = sqlx::query(
+            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES ('r1', 0, 0, 'h', NULL, 1, 'f.csv', 'inverted-hash', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 2000, 1000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')",
+        )
+        .execute(&pool)
+        .await;
+        assert!(inverted.is_err(), "un rango con fin ANTERIOR al inicio debe rechazarse por el CHECK de la migración");
+
+        // Rango VACÍO: fin igual al inicio.
+        let empty = sqlx::query(
+            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES ('r2', 0, 0, 'h', NULL, 1, 'f.csv', 'empty-hash', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 1000, 1000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')",
+        )
+        .execute(&pool)
+        .await;
+        assert!(empty.is_err(), "un rango VACÍO (fin == inicio) debe rechazarse por el CHECK de la migración");
+
+        // Ningún INSERT rechazado dejó rastro.
+        let clock = DeterministicClock::new(0, 1);
+        let repository = MappingDeclarationRepository::new(&pool, &clock);
+        assert!(repository.list_all().await.unwrap().is_empty(), "ningún INSERT rechazado por el CHECK debe dejar fila alguna");
     }
 
     // ── Criterio de aceptación #6: inmutabilidad a nivel de base de datos ──
@@ -548,7 +645,10 @@ mod tests {
         assert!(delete_err.to_string().to_lowercase().contains("append-only"));
 
         // La fila sigue intacta después de ambos intentos rechazados.
-        let still_there = repository.find_by_source_file_hash("archivo-inmutable").await.unwrap();
+        let still_there = repository
+            .find_by_source_file_hash_and_range("archivo-inmutable", 946_857_600_000_000_000, 946_944_000_000_000_000)
+            .await
+            .unwrap();
         assert!(still_there.is_some(), "la fila debe seguir existiendo, intacta, tras los intentos rechazados");
     }
 
@@ -582,13 +682,13 @@ mod tests {
         // Provoca un error real de sqlx (violación UNIQUE de la PK) para
         // envolver un `sqlx::Error` genuino -- no se construye a mano.
         sqlx::query(
-            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at, preview_transformed_rows_json, source_timezone_declared, spread_reported_unit_declared) VALUES ('dup-pk', 0, 0, 'h', NULL, 1, 'f.csv', 'hash-1', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 'POINTS_MT5')",
+            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES ('dup-pk', 0, 0, 'h', NULL, 1, 'f.csv', 'hash-1', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 946857600000000000, 946944000000000000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')",
         )
         .execute(&pool)
         .await
         .unwrap();
         let dup_err = sqlx::query(
-            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at, preview_transformed_rows_json, source_timezone_declared, spread_reported_unit_declared) VALUES ('dup-pk', 0, 0, 'h', NULL, 2, 'f.csv', 'hash-2', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 'POINTS_MT5')",
+            "INSERT INTO import_mapping_declarations (id, created_at, updated_at, audit_hash, audit_chain_hash, event_sequence_id, source_file_name, source_file_hash, instrument_id, venue, bar_type, timeframe_value, declared_range_start_ns, declared_range_end_ns, mapping_origin, column_mapping_json, transform_engine_version, canonical_schema_version, accepted_at_ns, preview_transformed_rows_json, source_clock_anchor_timezone_ref, source_clock_fixed_offset_minutes, spread_reported_unit_declared) VALUES ('dup-pk', 0, 0, 'h', NULL, 2, 'f.csv', 'hash-2', 'EURUSD', 'PEPPERSTONE', 'TIME', '1M', 946857600000000000, 946944000000000000, 'PLATFORM_TEMPLATE', '{}', '0.1.0', 'v1', 0, '[]', 'America/New_York', 0, 'POINTS_MT5')",
         )
         .execute(&pool)
         .await

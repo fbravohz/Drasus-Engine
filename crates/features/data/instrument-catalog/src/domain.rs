@@ -283,6 +283,44 @@ pub fn compute_broker_terms_audit_hash(
     encode_hex(&hasher.finalize())
 }
 
+/// Calcula el `audit_hash` de una versión de `broker_server_clock`. Mismo
+/// criterio que [`compute_instrument_master_audit_hash`]/
+/// [`compute_broker_terms_audit_hash`]: hashea el contenido de negocio + el
+/// encadenamiento, nunca `id`/`created_at`. Añadida en el retrofit STORY-070
+/// (TASK-071): la tabla gana Grupo I completo, así que necesita su propio
+/// `audit_hash` como sus tres hermanas de la misma migración.
+#[allow(clippy::too_many_arguments)]
+pub fn compute_broker_server_clock_audit_hash(
+    id: &str,
+    updated_at_ns: i64,
+    row_version: i64,
+    previous_audit_hash: Option<&str>,
+    venue: &str,
+    clock_anchor_timezone_ref: &str,
+    clock_fixed_offset_minutes: i64,
+    venue_operational_since_ns: Option<i64>,
+) -> String {
+    const SEP: char = '\u{1F}';
+    let mut buffer = String::new();
+    let mut push = |field: &str| {
+        buffer.push_str(field);
+        buffer.push(SEP);
+    };
+
+    push(id);
+    push(&updated_at_ns.to_string());
+    push(&row_version.to_string());
+    push(previous_audit_hash.unwrap_or(GENESIS_MARKER));
+    push(venue);
+    push(clock_anchor_timezone_ref);
+    push(&clock_fixed_offset_minutes.to_string());
+    push(&venue_operational_since_ns.map(|v| v.to_string()).unwrap_or_default());
+
+    let mut hasher = Sha256::new();
+    hasher.update(buffer.as_bytes());
+    encode_hex(&hasher.finalize())
+}
+
 // ── Pruebas de la lógica pura ────────────────────────────────────────────
 
 #[cfg(test)]
@@ -440,5 +478,20 @@ mod tests {
 
         let hash_b = compute_broker_terms_audit_hash("id-1", 1_000, 1, None, "EURUSD", "OANDA", Some(200_000_000), None);
         assert_ne!(hash_a, hash_b, "cambiar default_spread debe cambiar el hash resultante");
+    }
+
+    /// Mismo criterio de no-autorreferencia (STORY-051) para
+    /// `broker_server_clock` (retrofit STORY-070/TASK-071): dos llamadas con
+    /// las mismas entradas, construidas por separado, coinciden; cambiar el
+    /// desplazamiento fijo cambia el hash.
+    #[test]
+    fn broker_server_clock_audit_hash_depends_on_content_not_just_identity() {
+        let hash_a = compute_broker_server_clock_audit_hash("id-1", 1_000, 1, None, "IC_MARKETS", "America/New_York", 420, None);
+        let hash_a_again =
+            compute_broker_server_clock_audit_hash("id-1", 1_000, 1, None, "IC_MARKETS", "America/New_York", 420, None);
+        assert_eq!(hash_a, hash_a_again, "las mismas entradas, construidas por separado, deben producir el mismo hash");
+
+        let hash_b = compute_broker_server_clock_audit_hash("id-1", 1_000, 1, None, "IC_MARKETS", "America/New_York", 0, None);
+        assert_ne!(hash_a, hash_b, "cambiar clock_fixed_offset_minutes debe cambiar el hash resultante");
     }
 }

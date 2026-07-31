@@ -20,15 +20,25 @@ pub struct NewMappingDeclaration {
     pub venue: String,
     pub bar_type: String,
     pub timeframe_value: String,
+    /// Rango declarado del tramo (ADR-0162 "Enmienda 2026-07-26") --
+    /// nanosegundos UTC, intervalo semiabierto [inicio, fin). Explícito,
+    /// nunca implícito en las filas resultantes que el lector produce.
+    pub declared_range_start_ns: i64,
+    pub declared_range_end_ns: i64,
     pub mapping_origin: String,
     pub platform_template_code: Option<String>,
     pub platform_template_version: Option<String>,
     pub column_mapping_json: String,
     pub transform_engine_version: String,
     pub canonical_schema_version: String,
-    pub accepted_at: i64,
+    pub accepted_at_ns: i64,
     pub preview_transformed_rows_json: String,
-    pub source_timezone_declared: String,
+    /// Zona ancla IANA del reloj de origen declarado (ADR-0162 "Enmienda
+    /// 2026-07-26") -- sustituye al antiguo `source_timezone_declared`.
+    pub source_clock_anchor_timezone_ref: String,
+    /// Desplazamiento fijo en minutos frente al ancla. `0` reproduce sin
+    /// pérdida la declaración plana de zona de hoy.
+    pub source_clock_fixed_offset_minutes: i64,
     pub real_volume_unit_declared: Option<String>,
     /// Unidad del spread reportado declarada por la plantilla (criterio de
     /// aceptación #13) -- siempre presente, nunca `Option`: una importación
@@ -56,15 +66,18 @@ pub struct MappingDeclarationRow {
     pub venue: String,
     pub bar_type: String,
     pub timeframe_value: String,
+    pub declared_range_start_ns: i64,
+    pub declared_range_end_ns: i64,
     pub mapping_origin: String,
     pub platform_template_code: Option<String>,
     pub platform_template_version: Option<String>,
     pub column_mapping_json: String,
     pub transform_engine_version: String,
     pub canonical_schema_version: String,
-    pub accepted_at: i64,
+    pub accepted_at_ns: i64,
     pub preview_transformed_rows_json: String,
-    pub source_timezone_declared: String,
+    pub source_clock_anchor_timezone_ref: String,
+    pub source_clock_fixed_offset_minutes: i64,
     pub real_volume_unit_declared: Option<String>,
     pub spread_reported_unit_declared: String,
 }

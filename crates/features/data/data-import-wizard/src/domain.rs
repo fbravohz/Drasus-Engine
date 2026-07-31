@@ -316,14 +316,14 @@ pub fn parse_mt5_bar_line(line: &str) -> Result<Mt5RawBarFields, Mt5LineParseErr
 const ONE_MINUTE_NS: i64 = 60_000_000_000;
 
 /// Errores al resolver el instante UTC de una fila a partir de su
-/// fecha+hora local y la zona horaria declarada.
+/// fecha+hora local y el reloj de origen declarado.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum TimestampResolutionError {
-    /// Sin declaración de zona horaria, la importación se rechaza en vez de
-    /// asumir UTC (criterio de aceptación #3 de STORY-068; ADR-0162
+    /// Sin declaración de reloj de origen, la importación se rechaza en vez
+    /// de asumir UTC (criterio de aceptación #3 de STORY-068; ADR-0162
     /// Restricción 7).
     #[error(
-        "el archivo no trae una zona horaria de origen declarada por el usuario -- \
+        "el archivo no trae un reloj de origen declarado por el usuario -- \
          la importación se rechaza en vez de asumir UTC (ADR-0162 Restricción 7)"
     )]
     MissingSourceTimezone,
@@ -336,15 +336,46 @@ pub enum TimestampResolutionError {
     NonexistentLocalTime { date: NaiveDate, time: NaiveTime, timezone: String },
 }
 
-/// Resuelve el instante de apertura de una barra en nanosegundos UTC, a
-/// partir de su fecha+hora local (tal como el archivo la reporta) y la
-/// zona horaria IANA que el usuario declaró para todo el archivo.
+/// El reloj de origen que el usuario declara para todo un archivo (ADR-0162
+/// "Enmienda 2026-07-26"): una zona ancla IANA -- elegida por su calendario
+/// de cambios de horario de verano, NO necesariamente por coincidir con el
+/// offset literal del bróker -- más un desplazamiento fijo en minutos,
+/// sumado al offset propio del ancla en todo instante.
 ///
-/// `source_timezone` es `None` cuando el usuario no declaró ninguna zona --
-/// en ese caso la función falla explícitamente en vez de asumir UTC. Esta
-/// resolución usa las tablas estáticas de `chrono-tz` (reglas de DST ya
-/// auditadas del estándar IANA): es determinista y no toca el reloj del
-/// sistema, por eso puede vivir en el Núcleo puro.
+/// `fixed_offset_minutes == 0` reproduce SIN PÉRDIDA la declaración plana de
+/// una sola zona IANA (el mecanismo de hoy): no son dos mecanismos, uno es
+/// el caso particular del otro. Caso real que sí necesita un desplazamiento
+/// distinto de cero: IC Markets opera a GMT+2 en invierno y GMT+3 en verano,
+/// pero cambia de horario en las fechas de Estados Unidos, no las europeas
+/// -- ningún identificador IANA plano describe eso; ancla
+/// `"America/New_York"` (hereda las fechas de cambio correctas, incluidas
+/// las históricas) + `fixed_offset_minutes = 420` (7 horas) sí lo describe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceClockDeclaration<'a> {
+    pub anchor_timezone_ref: &'a str,
+    pub fixed_offset_minutes: i64,
+}
+
+/// Resuelve el instante de apertura de una barra en nanosegundos UTC, a
+/// partir de su fecha+hora local (tal como el archivo la reporta) y el
+/// reloj de origen (ancla + desplazamiento) que el usuario declaró para
+/// todo el archivo.
+///
+/// `source_clock` es `None` cuando el usuario no declaró ningún reloj -- en
+/// ese caso la función falla explícitamente en vez de asumir UTC. La
+/// resolución del ancla usa las tablas estáticas de `chrono-tz` (reglas de
+/// DST ya auditadas del estándar IANA, incluidas las históricas -- ej. el
+/// cambio de fechas de DST de EE. UU. en 2007): es determinista y no toca el
+/// reloj del sistema, por eso puede vivir en el Núcleo puro.
+///
+/// Algoritmo: primero se localiza la hora local COMO SI fuera hora del
+/// ancla (con las reglas de DST del ancla) -- esto da el instante UTC que
+/// produciría una declaración de zona plana sin desplazamiento. Luego se
+/// resta el desplazamiento fijo declarado: si `local = UTC_ancla + offset(t)`
+/// y el reloj real es `local = UTC_real + offset(t) + fixed_offset`, entonces
+/// `UTC_real = UTC_ancla - fixed_offset`. Con `fixed_offset_minutes == 0`
+/// esta resta es un no-op -- de ahí la equivalencia exacta con el mecanismo
+/// de zona plana (criterio de aceptación #3 de STORY-070).
 ///
 /// Ambigüedad de "hora repetida" (cambio de horario de otoño, una misma
 /// hora local ocurre dos veces): se resuelve tomando siempre la PRIMERA
@@ -353,10 +384,11 @@ pub enum TimestampResolutionError {
 pub fn resolve_event_timestamp_ns(
     date: NaiveDate,
     time: NaiveTime,
-    source_timezone: Option<&str>,
+    source_clock: Option<SourceClockDeclaration<'_>>,
 ) -> Result<i64, TimestampResolutionError> {
-    let tz_name = source_timezone.ok_or(TimestampResolutionError::MissingSourceTimezone)?;
-    let tz: Tz = Tz::from_str(tz_name).map_err(|_| TimestampResolutionError::UnknownTimezone(tz_name.to_string()))?;
+    let clock = source_clock.ok_or(TimestampResolutionError::MissingSourceTimezone)?;
+    let tz: Tz = Tz::from_str(clock.anchor_timezone_ref)
+        .map_err(|_| TimestampResolutionError::UnknownTimezone(clock.anchor_timezone_ref.to_string()))?;
 
     let naive_datetime = date.and_time(time);
     use chrono::offset::LocalResult;
@@ -368,13 +400,21 @@ pub fn resolve_event_timestamp_ns(
         // ocurrencia -- ver doc-comment de la función.
         LocalResult::Ambiguous(earlier, _later) => earlier,
         LocalResult::None => {
-            return Err(TimestampResolutionError::NonexistentLocalTime { date, time, timezone: tz_name.to_string() })
+            return Err(TimestampResolutionError::NonexistentLocalTime {
+                date,
+                time,
+                timezone: clock.anchor_timezone_ref.to_string(),
+            })
         }
     };
 
     use chrono::Utc;
-    let utc = localized.with_timezone(&Utc);
-    Ok(utc.timestamp_nanos_opt().expect("un timestamp de un archivo de mercado real cabe en i64 nanosegundos"))
+    let anchor_utc = localized.with_timezone(&Utc);
+    // Resta el desplazamiento fijo declarado -- ver doc-comment de la
+    // función para la derivación exacta. Con desplazamiento 0 esta resta no
+    // cambia nada (`Duration::minutes(0)` es la identidad de la resta).
+    let true_utc = anchor_utc - chrono::Duration::minutes(clock.fixed_offset_minutes);
+    Ok(true_utc.timestamp_nanos_opt().expect("un timestamp de un archivo de mercado real cabe en i64 nanosegundos"))
 }
 
 /// Deriva `bar_close_timestamp_ns` de `bar_open_timestamp_ns` para una
@@ -385,6 +425,57 @@ pub fn resolve_event_timestamp_ns(
 /// el timestamp alineado al minuto, así que aquí solo se suma la duración.
 pub fn derive_bar_close_timestamp_ns(bar_open_timestamp_ns: i64) -> i64 {
     bar_open_timestamp_ns + ONE_MINUTE_NS
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Gate de Homogeneidad de Procedencia (ADR-0162 "Enmienda 2026-07-26") --
+// SOLO el chequeo de fecha de operación del bróker entra en esta Story
+// (STORY-070 §4.1 "Lo que NO entra"). El chequeo de fractura de magnitud/
+// disponibilidad queda como especificación de `pit-data-validator`, feature
+// que no existe todavía en código.
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Rechazo del chequeo de fecha de operación del Gate de Homogeneidad de
+/// Procedencia -- caso (b) de la enmienda: un tramo declarado no es tráfico
+/// genuino del bróker declarado porque antecede su fecha de operación.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ProvenanceHomogeneityError {
+    #[error(
+        "este tramo antecede la fecha de operación declarada de {venue:?} -- el tramo declara \
+         empezar en {declared_range_start_ns} ns UTC, pero {venue:?} opera desde \
+         {venue_operational_since_ns} ns UTC (ADR-0162 \"Enmienda 2026-07-26\"): declara este \
+         tramo bajo un venue/source_provider distinto, o exclúyelo del rango declarado"
+    )]
+    PrecedesVenueOperationalDate { venue: String, declared_range_start_ns: i64, venue_operational_since_ns: i64 },
+}
+
+/// Compara el inicio de un tramo declarado contra la fecha de operación
+/// declarada del bróker/venue (`broker_server_clock.venue_operational_since_ns`,
+/// hecho externo verificado, inyectado como parámetro -- esta feature nunca
+/// consulta esa tabla directamente, ADR-0137). Detectar la fractura NO es
+/// inferir su causa (frontera fijada en TASK-069): esta función solo compara
+/// dos instantes, nunca decide qué hacer con el tramo rechazado.
+///
+/// `venue_operational_since_ns` es `None` cuando ese hecho no está declarado
+/// -- en ese caso el chequeo NO CORRE y no se asume ninguna fecha (nunca un
+/// rechazo por un dato que nadie declaró, ADR-0162 "Enmienda 2026-07-26").
+pub fn check_declared_range_against_venue_operational_date(
+    venue: &str,
+    declared_range_start_ns: i64,
+    venue_operational_since_ns: Option<i64>,
+) -> Result<(), ProvenanceHomogeneityError> {
+    let Some(operational_since) = venue_operational_since_ns else {
+        // Sin fecha declarada, el chequeo no corre -- nunca se asume.
+        return Ok(());
+    };
+    if declared_range_start_ns < operational_since {
+        return Err(ProvenanceHomogeneityError::PrecedesVenueOperationalDate {
+            venue: venue.to_string(),
+            declared_range_start_ns,
+            venue_operational_since_ns: operational_since,
+        });
+    }
+    Ok(())
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -463,7 +554,7 @@ pub struct CanonicalBarRow {
 
 /// Todo lo que el mapeo de una fila necesita, que NO viene en la propia
 /// línea del archivo -- son hechos de la corrida completa (identidad de la
-/// serie, zona horaria declarada, unidad de volumen declarada), inyectados
+/// serie, reloj de origen declarado, unidad de volumen declarada), inyectados
 /// por quien orquesta el import (nunca leídos por esta feature desde otra
 /// tabla).
 #[derive(Debug, Clone)]
@@ -471,7 +562,13 @@ pub struct RunContext<'a> {
     pub instrument_id: &'a str,
     pub venue: &'a str,
     pub source_provider: &'a str,
-    pub source_timezone_declared: Option<&'a str>,
+    /// Zona ancla IANA del reloj de origen -- `None` cuando el usuario no
+    /// declaró ningún reloj (rechaza el mapeo, criterio de aceptación #3).
+    pub source_clock_anchor_timezone_ref: Option<&'a str>,
+    /// Desplazamiento fijo en minutos frente al ancla (ADR-0162 "Enmienda
+    /// 2026-07-26") -- irrelevante cuando el ancla es `None`. `0` reproduce
+    /// sin pérdida la declaración plana de zona de hoy.
+    pub source_clock_fixed_offset_minutes: i64,
     pub real_volume_unit_declared: Option<&'a str>,
     /// Unidad del spread reportado que la plantilla de plataforma declara
     /// (criterio de aceptación #13). `None` hace fallar el mapeo -- una
@@ -500,7 +597,11 @@ pub enum CanonicalMappingError {
 /// de la corrida (`RunContext`) para producir la fila canónica completa.
 /// Pura: ningún I/O, mismo input siempre produce el mismo output.
 pub fn map_to_canonical_bar(raw: &Mt5RawBarFields, ctx: &RunContext<'_>) -> Result<CanonicalBarRow, CanonicalMappingError> {
-    let bar_open_timestamp_ns = resolve_event_timestamp_ns(raw.date, raw.time, ctx.source_timezone_declared)?;
+    let source_clock = ctx.source_clock_anchor_timezone_ref.map(|anchor_timezone_ref| SourceClockDeclaration {
+        anchor_timezone_ref,
+        fixed_offset_minutes: ctx.source_clock_fixed_offset_minutes,
+    });
+    let bar_open_timestamp_ns = resolve_event_timestamp_ns(raw.date, raw.time, source_clock)?;
     let bar_close_timestamp_ns = derive_bar_close_timestamp_ns(bar_open_timestamp_ns);
     let is_activity_anomaly = is_activity_impossible(raw.open, raw.high, raw.low, raw.close, raw.volume_ticks);
     let spread_reported_unit =
@@ -544,15 +645,21 @@ pub struct MappingDeclarationHashInput<'a> {
     pub source_file_hash: &'a str,
     pub instrument_id: &'a str,
     pub venue: &'a str,
+    /// Rango declarado del tramo (ADR-0162 "Enmienda 2026-07-26") -- dos
+    /// tramos distintos del mismo archivo deben sellar hashes distintos, así
+    /// que el rango es CONTENIDO, no Grupo I.
+    pub declared_range_start_ns: i64,
+    pub declared_range_end_ns: i64,
     pub mapping_origin: &'a str,
     pub platform_template_code: Option<&'a str>,
     pub platform_template_version: Option<&'a str>,
     pub column_mapping_json: &'a str,
     pub transform_engine_version: &'a str,
     pub canonical_schema_version: &'a str,
-    pub accepted_at: i64,
+    pub accepted_at_ns: i64,
     pub preview_transformed_rows_json: &'a str,
-    pub source_timezone_declared: &'a str,
+    pub source_clock_anchor_timezone_ref: &'a str,
+    pub source_clock_fixed_offset_minutes: i64,
     pub real_volume_unit_declared: Option<&'a str>,
     /// Unidad del spread reportado declarada por la plantilla (criterio de
     /// aceptación #13) -- se sella siempre presente porque una importación
@@ -575,15 +682,18 @@ pub fn compute_mapping_declaration_audit_hash(input: &MappingDeclarationHashInpu
     push(input.source_file_hash);
     push(input.instrument_id);
     push(input.venue);
+    push(&input.declared_range_start_ns.to_string());
+    push(&input.declared_range_end_ns.to_string());
     push(input.mapping_origin);
     push(input.platform_template_code.unwrap_or(""));
     push(input.platform_template_version.unwrap_or(""));
     push(input.column_mapping_json);
     push(input.transform_engine_version);
     push(input.canonical_schema_version);
-    push(&input.accepted_at.to_string());
+    push(&input.accepted_at_ns.to_string());
     push(input.preview_transformed_rows_json);
-    push(input.source_timezone_declared);
+    push(input.source_clock_anchor_timezone_ref);
+    push(&input.source_clock_fixed_offset_minutes.to_string());
     push(input.real_volume_unit_declared.unwrap_or(""));
     push(input.spread_reported_unit_declared);
     format!("{:x}", hasher.finalize())
@@ -654,25 +764,26 @@ mod tests {
         assert!(matches!(err, FieldParseError::ExcessPricePrecision { .. }));
     }
 
-    // ── Criterio de aceptación #3: zona horaria declarada, obligatoria ──
+    // ── Criterio de aceptación #3 (STORY-068): zona horaria declarada, obligatoria ──
 
-    /// Con zona declarada, el instante exacto se calcula usando las reglas
-    /// de DST correctas de esa zona (no un offset fijo inventado).
+    /// Con reloj declarado (desplazamiento 0 -- zona plana), el instante
+    /// exacto se calcula usando las reglas de DST correctas de esa zona (no
+    /// un offset fijo inventado).
     #[test]
     fn resolve_timestamp_with_declared_timezone_produces_exact_utc_instant() {
         // 2000-01-03 00:01:00 en America/New_York (UTC-5 en enero, sin DST)
         // debe caer en 2000-01-03 05:01:00 UTC.
         let date = NaiveDate::from_ymd_opt(2000, 1, 3).unwrap();
         let time = NaiveTime::from_hms_opt(0, 1, 0).unwrap();
-        let ns = resolve_event_timestamp_ns(date, time, Some("America/New_York"))
-            .expect("con zona declarada debe resolver sin error");
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 0 };
+        let ns = resolve_event_timestamp_ns(date, time, Some(clock)).expect("con reloj declarado debe resolver sin error");
 
         use chrono::{TimeZone, Utc};
         let expected = Utc.with_ymd_and_hms(2000, 1, 3, 5, 1, 0).unwrap();
         assert_eq!(ns, expected.timestamp_nanos_opt().unwrap());
     }
 
-    /// Sin zona declarada, la importación falla con un error tipado en vez
+    /// Sin reloj declarado, la importación falla con un error tipado en vez
     /// de asumir UTC -- este es el comportamiento que protege contra la
     /// clase de error que ADR-0162 Restricción 7 prohíbe.
     #[test]
@@ -681,6 +792,143 @@ mod tests {
         let time = NaiveTime::from_hms_opt(0, 1, 0).unwrap();
         let err = resolve_event_timestamp_ns(date, time, None).unwrap_err();
         assert_eq!(err, TimestampResolutionError::MissingSourceTimezone);
+    }
+
+    // ── Criterio de aceptación #1 (STORY-070): reloj de IC Markets, dos estaciones ──
+
+    /// Oráculo de invierno: IC Markets declara GMT+2 en invierno. Con ancla
+    /// "America/New_York" (EST=UTC-5 en enero) + desplazamiento 420 min
+    /// (7h), el offset efectivo es -5h+7h=+2h -- coincide con el GMT+2 real
+    /// del bróker. 2000-01-03 00:01:00 hora de IC Markets (invierno) debe
+    /// caer en 2000-01-02 22:01:00 UTC (local menos 2h).
+    #[test]
+    fn ic_markets_winter_anchor_plus_offset_resolves_exact_gmt_plus_2_instant() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 3).unwrap();
+        let time = NaiveTime::from_hms_opt(0, 1, 0).unwrap();
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 420 };
+        let ns = resolve_event_timestamp_ns(date, time, Some(clock)).expect("debe resolver sin error");
+
+        use chrono::{TimeZone, Utc};
+        let expected = Utc.with_ymd_and_hms(2000, 1, 2, 22, 1, 0).unwrap();
+        assert_eq!(ns, expected.timestamp_nanos_opt().unwrap(), "invierno: local 00:01 GMT+2 == 22:01 UTC del día anterior");
+    }
+
+    /// Oráculo de verano: IC Markets declara GMT+3 en verano. Con la misma
+    /// ancla+desplazamiento (America/New_York en EDT=UTC-4 en julio,
+    /// -4h+7h=+3h), 2024-07-15 12:00:00 hora de IC Markets debe caer en
+    /// 2024-07-15 09:00:00 UTC (local menos 3h) -- desfase DISTINTO al de
+    /// invierno, demostrando que la misma declaración resuelve ambas
+    /// estaciones sin código nuevo por estación.
+    #[test]
+    fn ic_markets_summer_anchor_plus_offset_resolves_exact_gmt_plus_3_instant_distinct_from_winter() {
+        let date = NaiveDate::from_ymd_opt(2024, 7, 15).unwrap();
+        let time = NaiveTime::from_hms_opt(12, 0, 0).unwrap();
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 420 };
+        let ns = resolve_event_timestamp_ns(date, time, Some(clock)).expect("debe resolver sin error");
+
+        use chrono::{TimeZone, Utc};
+        let expected = Utc.with_ymd_and_hms(2024, 7, 15, 9, 0, 0).unwrap();
+        assert_eq!(
+            ns,
+            expected.timestamp_nanos_opt().unwrap(),
+            "verano: local 12:00 GMT+3 == 09:00 UTC, desfase de 3h, distinto de las 2h de invierno"
+        );
+    }
+
+    // ── Criterio de aceptación #2 (STORY-070): cambio de estación en la fecha del ancla, no la europea ──
+
+    /// 2019-03-15 cae DESPUÉS del segundo domingo de marzo de EE. UU.
+    /// (2019-03-10, ya en horario de verano de EE. UU.) pero ANTES del
+    /// último domingo de marzo de Europa (2019-03-31, todavía en horario de
+    /// invierno europeo) -- la ventana exacta de discrepancia entre ambos
+    /// calendarios. Con ancla "America/New_York", este día YA debe resolver
+    /// con el offset de VERANO del ancla (EDT=UTC-4) -- si el mecanismo
+    /// usara por error un ancla europea (todavía invierno ese día), el
+    /// resultado sería distinto.
+    #[test]
+    fn seasonal_change_follows_the_anchor_calendar_not_the_european_one() {
+        let date = NaiveDate::from_ymd_opt(2019, 3, 15).unwrap();
+        let time = NaiveTime::from_hms_opt(10, 0, 0).unwrap();
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 0 };
+        let ns = resolve_event_timestamp_ns(date, time, Some(clock)).expect("debe resolver sin error");
+
+        use chrono::{TimeZone, Utc};
+        // EDT (verano de EE. UU.) = UTC-4 -- si el ancla fuera europea (CET,
+        // todavía invierno ese día = UTC+1), el resultado sería
+        // 2019-03-15 09:00:00 UTC, no el que se afirma aquí.
+        let expected_us_summer = Utc.with_ymd_and_hms(2019, 3, 15, 14, 0, 0).unwrap();
+        assert_eq!(
+            ns,
+            expected_us_summer.timestamp_nanos_opt().unwrap(),
+            "el 15 de marzo de 2019 debe resolver con horario de VERANO de EE. UU. (offset -4h), no con el invierno europeo"
+        );
+    }
+
+    // ── Criterio de aceptación #3 (STORY-070): equivalencia con la declaración plana anterior ──
+
+    /// Desplazamiento cero debe producir EXACTAMENTE el mismo instante que
+    /// la implementación anterior (zona plana) devolvía para la misma fecha
+    /// real -- el valor esperado es el mismo golden que
+    /// `resolve_timestamp_with_declared_timezone_produces_exact_utc_instant`
+    /// ya fijaba antes de esta Story (2000-01-03 05:01:00 UTC), calculado de
+    /// forma independiente con `chrono::Utc` (no reutilizando la función bajo
+    /// prueba para producir su propio oráculo).
+    #[test]
+    fn zero_offset_declaration_is_exactly_equivalent_to_the_previous_flat_zone_mechanism() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 3).unwrap();
+        let time = NaiveTime::from_hms_opt(0, 1, 0).unwrap();
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 0 };
+        let ns = resolve_event_timestamp_ns(date, time, Some(clock)).unwrap();
+
+        use chrono::{TimeZone, Utc};
+        let value_the_old_flat_zone_mechanism_produced =
+            Utc.with_ymd_and_hms(2000, 1, 3, 5, 1, 0).unwrap().timestamp_nanos_opt().unwrap();
+        assert_eq!(
+            ns, value_the_old_flat_zone_mechanism_produced,
+            "desplazamiento 0 debe reproducir EXACTO el valor que la declaración de zona plana anterior producía"
+        );
+    }
+
+    // ── Criterio de aceptación #7 (STORY-070): fecha de operación del bróker ──
+
+    /// Con fecha de operación declarada, un tramo que la antecede se
+    /// rechaza con motivo explícito.
+    #[test]
+    fn declared_range_before_venue_operational_date_is_rejected_with_explicit_reason() {
+        let venue_operational_since_ns = 1_000_000_000_000; // fecha de fundación declarada
+        let declared_range_start_ns = 500_000_000_000; // antecede la fundación
+        let err = check_declared_range_against_venue_operational_date(
+            "IC_MARKETS",
+            declared_range_start_ns,
+            Some(venue_operational_since_ns),
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            ProvenanceHomogeneityError::PrecedesVenueOperationalDate {
+                venue: "IC_MARKETS".to_string(),
+                declared_range_start_ns,
+                venue_operational_since_ns,
+            }
+        );
+    }
+
+    /// Sin fecha de operación declarada, el chequeo NO corre -- un tramo
+    /// arbitrariamente antiguo se acepta, nunca se asume una fecha que nadie
+    /// declaró.
+    #[test]
+    fn declared_range_without_venue_operational_date_is_accepted_without_assuming_any_date() {
+        let result = check_declared_range_against_venue_operational_date("IC_MARKETS", 0, None);
+        assert!(result.is_ok(), "sin fecha de operación declarada, el chequeo no debe rechazar nada");
+    }
+
+    /// Contraprueba: un tramo que empieza EN o DESPUÉS de la fecha de
+    /// operación declarada se acepta -- discrimina el borde exacto (mata el
+    /// mutante `<` → `<=`).
+    #[test]
+    fn declared_range_starting_exactly_at_venue_operational_date_is_accepted() {
+        let result = check_declared_range_against_venue_operational_date("IC_MARKETS", 1_000, Some(1_000));
+        assert!(result.is_ok(), "un tramo que empieza EXACTAMENTE en la fecha de operación no antecede nada");
     }
 
     // ── Criterio de aceptación #4: plantilla no reconocida ──────────────
@@ -734,7 +982,8 @@ mod tests {
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
             source_provider: "MT5_TERMINAL_EXPORT",
-            source_timezone_declared: Some("America/New_York"),
+            source_clock_anchor_timezone_ref: Some("America/New_York"),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: Some(MT5_SPREAD_REPORTED_UNIT),
         };
@@ -751,7 +1000,8 @@ mod tests {
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
             source_provider: "MT5_TERMINAL_EXPORT",
-            source_timezone_declared: Some("America/New_York"),
+            source_clock_anchor_timezone_ref: Some("America/New_York"),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: Some(MT5_SPREAD_REPORTED_UNIT),
         };
@@ -767,7 +1017,8 @@ mod tests {
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
             source_provider: "MT5_TERMINAL_EXPORT",
-            source_timezone_declared: Some("America/New_York"),
+            source_clock_anchor_timezone_ref: Some("America/New_York"),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: Some("CONTRACTS"),
             spread_reported_unit_declared: Some(MT5_SPREAD_REPORTED_UNIT),
         };
@@ -789,15 +1040,18 @@ mod tests {
             source_file_hash: "abc123",
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
+            declared_range_start_ns: 0,
+            declared_range_end_ns: 1_000_000_000,
             mapping_origin: "PLATFORM_TEMPLATE",
             platform_template_code: Some(MT5_BAR_TEMPLATE_CODE),
             platform_template_version: Some(MT5_BAR_TEMPLATE_VERSION),
             column_mapping_json: "{}",
             transform_engine_version: "0.1.0",
             canonical_schema_version: "ADR-0155-v1",
-            accepted_at: 1_000,
+            accepted_at_ns: 1_000,
             preview_transformed_rows_json: "[]",
-            source_timezone_declared: "America/New_York",
+            source_clock_anchor_timezone_ref: "America/New_York",
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: MT5_SPREAD_REPORTED_UNIT,
         };
@@ -814,6 +1068,61 @@ mod tests {
         different.source_file_hash = "abc123";
         let hash_c = compute_mapping_declaration_audit_hash(&different);
         assert_eq!(hash_a, hash_c, "el mismo contenido reconstruido por separado debe producir el mismo hash");
+    }
+
+    /// Dos declaraciones con el MISMO contenido salvo el rango declarado
+    /// deben producir hashes distintos -- el rango es CONTENIDO (dos tramos
+    /// del mismo archivo son declaraciones legítimamente distintas,
+    /// ADR-0162 "Enmienda 2026-07-26"), nunca circunstancia ignorada por el
+    /// hash de auditoría.
+    #[test]
+    fn mapping_declaration_hash_differs_for_different_declared_range() {
+        let tramo_uno = MappingDeclarationHashInput {
+            source_file_name: "EURUSD_M1.csv",
+            source_file_hash: "abc123",
+            instrument_id: "EURUSD",
+            venue: "PEPPERSTONE",
+            declared_range_start_ns: 0,
+            declared_range_end_ns: 1_000_000_000,
+            mapping_origin: "PLATFORM_TEMPLATE",
+            platform_template_code: Some(MT5_BAR_TEMPLATE_CODE),
+            platform_template_version: Some(MT5_BAR_TEMPLATE_VERSION),
+            column_mapping_json: "{}",
+            transform_engine_version: "0.1.0",
+            canonical_schema_version: "ADR-0155-v1",
+            accepted_at_ns: 1_000,
+            preview_transformed_rows_json: "[]",
+            source_clock_anchor_timezone_ref: "America/New_York",
+            source_clock_fixed_offset_minutes: 0,
+            real_volume_unit_declared: None,
+            spread_reported_unit_declared: MT5_SPREAD_REPORTED_UNIT,
+        };
+        // Tramo dos: construido por separado, MISMO archivo, rango distinto.
+        let tramo_dos = MappingDeclarationHashInput {
+            source_file_name: "EURUSD_M1.csv",
+            source_file_hash: "abc123",
+            instrument_id: "EURUSD",
+            venue: "PEPPERSTONE",
+            declared_range_start_ns: 1_000_000_000,
+            declared_range_end_ns: 2_000_000_000,
+            mapping_origin: "PLATFORM_TEMPLATE",
+            platform_template_code: Some(MT5_BAR_TEMPLATE_CODE),
+            platform_template_version: Some(MT5_BAR_TEMPLATE_VERSION),
+            column_mapping_json: "{}",
+            transform_engine_version: "0.1.0",
+            canonical_schema_version: "ADR-0155-v1",
+            accepted_at_ns: 1_000,
+            preview_transformed_rows_json: "[]",
+            source_clock_anchor_timezone_ref: "America/New_York",
+            source_clock_fixed_offset_minutes: 0,
+            real_volume_unit_declared: None,
+            spread_reported_unit_declared: MT5_SPREAD_REPORTED_UNIT,
+        };
+        assert_ne!(
+            compute_mapping_declaration_audit_hash(&tramo_uno),
+            compute_mapping_declaration_audit_hash(&tramo_dos),
+            "dos tramos distintos del mismo archivo deben sellar hashes de contenido distintos"
+        );
     }
 
     impl<'a> MappingDeclarationHashInput<'a> {
@@ -965,7 +1274,8 @@ mod tests {
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
             source_provider: "MT5_TERMINAL_EXPORT",
-            source_timezone_declared: Some("America/New_York"),
+            source_clock_anchor_timezone_ref: Some("America/New_York"),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: Some(MT5_SPREAD_REPORTED_UNIT),
         };
@@ -983,7 +1293,8 @@ mod tests {
             instrument_id: "EURUSD",
             venue: "PEPPERSTONE",
             source_provider: "MT5_TERMINAL_EXPORT",
-            source_timezone_declared: Some("America/New_York"),
+            source_clock_anchor_timezone_ref: Some("America/New_York"),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
             spread_reported_unit_declared: None,
         };

@@ -70,17 +70,36 @@ pub struct VerifyInput {
     /// Bróker/venue del instrumento. Default: `"PEPPERSTONE"`.
     #[serde(default = "default_venue")]
     pub venue: String,
-    /// Zona horaria IANA declarada para el archivo de muestra. Default:
-    /// `Some("America/New_York")`. Pasa explícitamente `null` en el JSON
-    /// para ejercitar el camino de rechazo por falta de declaración
-    /// (criterio de aceptación #3 de STORY-068).
-    #[serde(default = "default_source_timezone")]
-    pub source_timezone_declared: Option<String>,
+    /// Rango declarado del tramo que cubre el fragmento embebido (ADR-0162
+    /// "Enmienda 2026-07-26") -- por defecto, exactamente el día real que
+    /// cubre `VERIFY_SAMPLE_CSV` (2000-01-03 UTC).
+    #[serde(default = "default_declared_range_start_ns")]
+    pub declared_range_start_ns: i64,
+    #[serde(default = "default_declared_range_end_ns")]
+    pub declared_range_end_ns: i64,
+    /// Zona ancla IANA del reloj de origen declarado para el archivo de
+    /// muestra. Default: `Some("America/New_York")`. Pasa explícitamente
+    /// `null` en el JSON para ejercitar el camino de rechazo por falta de
+    /// declaración (criterio de aceptación #3 de STORY-068).
+    #[serde(default = "default_source_clock_anchor_timezone_ref")]
+    pub source_clock_anchor_timezone_ref: Option<String>,
+    /// Desplazamiento fijo en minutos frente al ancla (ADR-0162 "Enmienda
+    /// 2026-07-26"). Default: `0` -- reproduce sin pérdida la declaración
+    /// plana de zona de hoy. Pasa un valor distinto de cero (ej. `420` para
+    /// reproducir el reloj de IC Markets) para ejercitar el mecanismo nuevo.
+    #[serde(default)]
+    pub source_clock_fixed_offset_minutes: i64,
     /// Convención de unidad de `<VOL>` declarada. Default: `None` (no
     /// declarada) -- para ver el humo con la corrida marcada como no
     /// verificada (criterio de aceptación #8).
     #[serde(default)]
     pub real_volume_unit_declared: Option<String>,
+    /// Fecha de operación declarada del bróker (ADR-0162 "Enmienda
+    /// 2026-07-26"). Default: `None` -- el chequeo de fecha de operación no
+    /// corre. Pasa un instante posterior a `declared_range_start_ns` para
+    /// ejercitar el camino de rechazo del Gate de Homogeneidad.
+    #[serde(default)]
+    pub venue_operational_since_ns: Option<i64>,
 }
 
 fn default_instrument_id() -> String {
@@ -91,7 +110,18 @@ fn default_venue() -> String {
     "PEPPERSTONE".to_string()
 }
 
-fn default_source_timezone() -> Option<String> {
+/// 2000-01-03T00:00:00Z en nanosegundos UTC -- inicio del día real que
+/// cubre `VERIFY_SAMPLE_CSV`.
+fn default_declared_range_start_ns() -> i64 {
+    946_857_600_000_000_000
+}
+
+/// 2000-01-04T00:00:00Z en nanosegundos UTC -- fin exclusivo del mismo día.
+fn default_declared_range_end_ns() -> i64 {
+    946_944_000_000_000_000
+}
+
+fn default_source_clock_anchor_timezone_ref() -> Option<String> {
     Some("America/New_York".to_string())
 }
 
@@ -100,8 +130,12 @@ impl Default for VerifyInput {
         Self {
             instrument_id: default_instrument_id(),
             venue: default_venue(),
-            source_timezone_declared: default_source_timezone(),
+            declared_range_start_ns: default_declared_range_start_ns(),
+            declared_range_end_ns: default_declared_range_end_ns(),
+            source_clock_anchor_timezone_ref: default_source_clock_anchor_timezone_ref(),
+            source_clock_fixed_offset_minutes: 0,
             real_volume_unit_declared: None,
+            venue_operational_since_ns: None,
         }
     }
 }
@@ -159,7 +193,7 @@ impl VerifyOutput {
 /// siempre.
 ///
 /// Uso típico desde el CLI:
-/// `drasus verify data-import-wizard --input '{"source_timezone_declared":null}'`
+/// `drasus verify data-import-wizard --input '{"source_clock_anchor_timezone_ref":null}'`
 /// (para ver el rechazo por falta de zona horaria declarada)
 pub async fn verify(input: VerifyInput) -> VerifyOutput {
     let temp_dir = std::env::temp_dir().join(format!("drasus-verify-data-import-wizard-{}", Uuid::new_v4()));
@@ -203,8 +237,12 @@ pub async fn verify(input: VerifyInput) -> VerifyOutput {
         instrument_id: input.instrument_id,
         venue: input.venue,
         source_provider: "MT5_TERMINAL_EXPORT".to_string(),
-        source_timezone_declared: input.source_timezone_declared,
+        declared_range_start_ns: input.declared_range_start_ns,
+        declared_range_end_ns: input.declared_range_end_ns,
+        source_clock_anchor_timezone_ref: input.source_clock_anchor_timezone_ref,
+        source_clock_fixed_offset_minutes: input.source_clock_fixed_offset_minutes,
         real_volume_unit_declared: input.real_volume_unit_declared,
+        venue_operational_since_ns: input.venue_operational_since_ns,
         node_id: Some(format!("drasus-verify-pid-{}", std::process::id())),
         process_id: Some(format!("drasus-pid-{}", std::process::id())),
     };
@@ -229,8 +267,66 @@ mod tests {
         let input = VerifyInput::default();
         assert_eq!(input.instrument_id, "EURUSD");
         assert_eq!(input.venue, "PEPPERSTONE");
-        assert_eq!(input.source_timezone_declared, Some("America/New_York".to_string()));
+        assert_eq!(input.source_clock_anchor_timezone_ref, Some("America/New_York".to_string()));
+        assert_eq!(input.source_clock_fixed_offset_minutes, 0);
         assert!(input.real_volume_unit_declared.is_none());
+        assert!(input.venue_operational_since_ns.is_none());
+        assert!(
+            input.declared_range_end_ns > input.declared_range_start_ns,
+            "el rango declarado por defecto debe ser válido (fin > inicio)"
+        );
+    }
+
+    /// Hallazgo del gate de mutación del Tech-Lead sobre STORY-070:
+    /// `default_declared_range_start_ns()` podía mutarse a `0`/`1`/`-1` sin
+    /// que ninguna prueba se enterara -- el rango seguía siendo
+    /// sintácticamente válido (fin > inicio) y las filas de la muestra caían
+    /// igual dentro de un rango más ancho, así que nada discriminaba el
+    /// mutante. Esta prueba cierra el hueco comparando el default contra un
+    /// ORÁCULO derivado de las fechas REALES de las filas del fragmento
+    /// embebido -- nunca repitiendo la constante literal que ya vive en la
+    /// función bajo prueba (esa repetición no discrimina nada: una prueba y
+    /// el código mutarían juntos si alguien copia el número mal una vez).
+    #[test]
+    fn default_declared_range_matches_exactly_the_real_day_covered_by_the_sample_csv() {
+        use chrono::{Datelike, Duration, TimeZone, Utc};
+
+        // Parsea el CSV real embebido y extrae la fecha de CADA fila de dato
+        // (sin la cabecera) -- verificación independiente del contenido real,
+        // nunca una suposición sobre qué día "debería" cubrir el fragmento.
+        let content = std::str::from_utf8(VERIFY_SAMPLE_CSV).expect("el fragmento embebido debe ser UTF-8 válido");
+        let mut lines = content.split('\n');
+        lines.next(); // descarta la cabecera
+        let dates: Vec<_> = lines
+            .filter(|l| !l.is_empty())
+            .map(|line| parse_mt5_bar_line(line).expect("cada línea real del fragmento debe parsear").date)
+            .collect();
+        assert!(!dates.is_empty(), "el fragmento de muestra debe traer al menos una fila de dato real");
+
+        // El fragmento cubre un ÚNICO día calendario -- si esto deja de ser
+        // cierto, el resto de esta prueba (que asume un solo día) pierde su
+        // premisa y debe revisarse antes que el código de producción.
+        let min_date = *dates.iter().min().unwrap();
+        let max_date = *dates.iter().max().unwrap();
+        assert_eq!(min_date, max_date, "esta prueba asume que el fragmento de muestra cubre un solo día calendario");
+
+        // Oráculo: medianoche UTC del día real, y el día siguiente -- ambos
+        // calculados a mano con `chrono`, sin pasar por las constantes de
+        // `public_interface.rs`.
+        let expected_start = Utc.with_ymd_and_hms(min_date.year(), min_date.month(), min_date.day(), 0, 0, 0).unwrap();
+        let expected_end = expected_start + Duration::days(1);
+
+        assert_eq!(
+            default_declared_range_start_ns(),
+            expected_start.timestamp_nanos_opt().unwrap(),
+            "el inicio del rango por defecto debe ser EXACTAMENTE la medianoche UTC del día real que cubre el \
+             fragmento de muestra -- no un valor arbitrario ni un cero que declararía un tramo desde 1970"
+        );
+        assert_eq!(
+            default_declared_range_end_ns(),
+            expected_end.timestamp_nanos_opt().unwrap(),
+            "el fin del rango por defecto debe ser EXACTAMENTE el día siguiente al día real que cubre la muestra"
+        );
     }
 
     /// La verificación de punta a punta (adaptadores reales, BD temporal)
@@ -245,14 +341,38 @@ mod tests {
         assert_eq!(output.was_noop_reimport, Some(false));
     }
 
-    /// Con `source_timezone_declared: null` explícito, `verify()` debe
-    /// reflejar el rechazo -- ejercita el camino de falta de declaración
-    /// desde el harness CLI (criterio de aceptación #3).
+    /// Con `source_clock_anchor_timezone_ref: null` explícito, `verify()`
+    /// debe reflejar el rechazo -- ejercita el camino de falta de
+    /// declaración desde el harness CLI (criterio de aceptación #3).
     #[tokio::test(flavor = "multi_thread")]
     async fn verify_with_null_timezone_reflects_rejection() {
-        let input = VerifyInput { source_timezone_declared: None, ..VerifyInput::default() };
+        let input = VerifyInput { source_clock_anchor_timezone_ref: None, ..VerifyInput::default() };
         let output = verify(input).await;
-        assert!(!output.ok, "sin zona horaria declarada, verify() debe reflejar el rechazo");
+        assert!(!output.ok, "sin reloj de origen declarado, verify() debe reflejar el rechazo");
+        assert!(output.error.is_some());
+    }
+
+    /// Criterio de aceptación #11: el harness CLI acepta la FORMA NUEVA
+    /// completa de la declaración (ancla + desplazamiento distinto de cero,
+    /// estilo IC Markets) y sigue teniendo éxito de punta a punta.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn verify_with_ic_markets_style_offset_still_succeeds() {
+        let input = VerifyInput { source_clock_fixed_offset_minutes: 420, ..VerifyInput::default() };
+        let output = verify(input).await;
+        assert!(output.ok, "un desplazamiento distinto de cero debe seguir resolviendo el reloj sin error: {:?}", output.error);
+        assert_eq!(output.rows_imported, Some(6));
+    }
+
+    /// Criterio de aceptación #7: `verify()` refleja el rechazo del Gate de
+    /// Homogeneidad cuando el tramo por defecto antecede una fecha de
+    /// operación declarada del bróker.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn verify_reflects_rejection_when_declared_range_precedes_venue_operational_date() {
+        let default_input = VerifyInput::default();
+        let input =
+            VerifyInput { venue_operational_since_ns: Some(default_input.declared_range_start_ns + 1), ..default_input };
+        let output = verify(input).await;
+        assert!(!output.ok, "un tramo que antecede la fecha de operación declarada debe reflejarse como rechazo");
         assert!(output.error.is_some());
     }
 }
