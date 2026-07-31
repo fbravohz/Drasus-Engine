@@ -55,6 +55,9 @@
 | DEBT-034 | 🟠 Media | `sovereign-data-fetcher` nunca pasó el gate de mutación (se cerró antes de que fuera gate formal): 49 supervivientes, 21 de ellos en la lógica de concurrencia | Abierta | [detalle](./debt/DEBT-034.md) |
 | DEBT-035 | 🟠 Media | La vía de mapeo manual del asistente de importación no tiene pantalla, y es la que LDR-0008 exige que pase por vista previa confirmada | Abierta | [detalle](./debt/DEBT-035.md) |
 | DEBT-036 | 🟠 Media | El puerto de salida de barras no puede cargar la referencia a la declaración sellada: la trazabilidad de ADR-0156 R8 es hoy convención, no física | Abierta | [detalle](./debt/DEBT-036.md) |
+| DEBT-037 | 🟠 Media | El mapa de componentes de `DESIGN.md` nombra clases `Glow*` retiradas por STORY-025/026: 56 menciones a un vocabulario que la librería ya no habla | Abierta | [detalle](./debt/DEBT-037.md) |
+| DEBT-038 | 🟠 Media | El check `M13` (sufijo de unidad en timestamps de dominio, ADR-0141) nace incumplido por 7 columnas anteriores a él; las dos peores se llaman `..._date` e invitan a leerse como fecha civil | Abierta | [detalle](./debt/DEBT-038.md) |
+| DEBT-039 | 🔴 Alta | El rango declarado de una importación nunca se coteja contra lo que el archivo contiene: se puede sellar como evidencia una declaración que no lo describe, y eso además rompe la deduplicación de reimportación | Abierta | [detalle](./debt/DEBT-039.md) |
 
 ---
 
