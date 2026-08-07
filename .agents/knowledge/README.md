@@ -20,13 +20,16 @@ Los documentos de `knowledge/` son **HOW-TOs de lectura bajo demanda**, no conte
 | [`persistence-claims.md`](./persistence-claims.md) | Prohibido declarar persistencia sin citar archivo y sección exactos. | Antes de afirmar que algo "quedó registrado/guardado/como regla". | Todos los agentes |
 | [`doc-first.md`](./doc-first.md) | Buscar con `grep` sobre `docs/` antes de proponer una regla, contrato, fórmula o cambio de alcance. | Antes de proponer cualquier cambio de dominio o arquitectura. | Todos los agentes |
 | [`provider-bypass.md`](./provider-bypass.md) | Detección de valores hardcoded que evitan el theme/provider del sistema. | Al escribir/revisar código de UI (Flutter principalmente). | Ingenieros de UI, TL |
+| [`session-reporting.md`](./session-reporting.md) | Redirigir a un archivo de `.agents/sessions/` el texto que iría al chat, dejando en la terminal solo el eco de tres líneas y lo que exige interacción. | Al iniciar cualquier sesión con el modo de reporte activo, y en cada turno mientras siga activo. | Todos los agentes |
+| [`write-like-gemini.md`](./write-like-gemini.md) | Los tres modos de escritura activables (Claude / Gemini Relajado / Gemini Relajado + Listas), con los 3 casos reales medidos que los demuestran. Se activa por orden explícita ("escribe como Gemini") y persiste toda la conversación (`GOVERNANCE-1.7`). | En cuanto el usuario pida cambiar de modo, o el género sea "reportar un estado" (`WRITING-EFFICIENCY-7`, activación automática). | Todos los agentes |
+| [`claude-code-mechanisms.md`](./claude-code-mechanisms.md) | Qué es y cuándo usar cada uno de los 5 mecanismos nativos de Claude Code (Rules, Skills, Agents, Hooks, MCP) frente a contenido bespoke en `.agents/`, con sintaxis exacta de creación y matriz de decisión. | Al clasificar si un documento/instrucción debería migrar a un mecanismo nativo, o al crear uno. | Context Engineer |
 
 ## Gate de Reportaje de Conocimiento (OBLIGATORIO)
 
 La lectura bajo demanda solo es verificable si se **declara**. Por eso:
 
 - **Cuando un agente detecte que el concepto en el que trabaja toca el área de un documento de este índice**, DEBE (1) leerlo bajo demanda y (2) **declarar explícitamente al invocador** —el usuario, o el Architect/Tech-Lead que lo despachó— **qué documento(s) de knowledge consultó y por qué** (qué conflicto o duda real lo disparó).
-- La declaración va en el mensaje al invocador y, si aplica, en §8 de la Orden de Trabajo. Formato: `[knowledge consultado: <doc> — <motivo>]`.
+- La declaración va en el mensaje al invocador y, si aplica, en §8 de la Orden de Trabajo — mismo formato de `GOVERNANCE-1.5`, sin una etiqueta propia: `[leído: <doc> — <motivo>]`, y un bracket `[SLUG-ID, para esto]` aparte por cada regla concreta que hayas aplicado de ese documento.
 - Esto le permite al invocador saber que el agente usó el conocimiento correcto para resolver un conflicto real, en vez de resolverlo por su cuenta cuando las instrucciones vigentes no bastaban.
 
 `governance.md` se declara siempre (gate de arranque); los demás se declaran **cuando se consultan**.

@@ -45,7 +45,7 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 | Ámbar Alerta | `#FFC94D` | `alertAmber` | 🟠 Alerta / volátil / pausa / deriva del modelo — neón principal de advertencia |
 | Naranja | `#F59423` | `alertOrange` | 🟠 Variante intensa de alerta para deriva avanzada |
 | Rojo Crítico | `#FF8A8A` | `criticalRed` | 🔴 Riesgo crítico / retiro — variante suave del fallo |
-| Carmesí | `#F0413F` | `criticalCrimson` | 🔴 Fallo sistémico / muerte / slippage letal — el estado terminal |
+| Carmesí | `#F0413F` | `criticalCrimson` | 🔴 Fallo sistémico / retiro definitivo / slippage extremo — el estado terminal |
 | Glow | `glow(color)` · `glowStrong(color)` | helper | Halo de color (`BoxShadow` desenfocado) para botones, nodos, líneas, chips, focos. Es la señal de "encendido" Reflect, presente en CASI TODO componente. `glowStrong` es doble capa: núcleo intenso (blur 10) + halo amplio (blur 30) |
 | Text Glow | `textGlow(color)` | helper | Sombra de color sobre las letras del neón semántico — el dato/estado encendido brilla |
 | Gradiente Óptimo | `#54E8D0 → #2DD4BF` | `gradOptima` | Degradado dentro de la familia óptima: rellenos de gauge, números KPI |
@@ -55,7 +55,7 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 | Gradiente Alerta | `#FFC94D → #F59423` | `gradAlert` | Familia de alerta |
 | Gradiente Crítico | `#FF8A8A → #F0413F` | `gradCritical` | Familia de fallo |
 | Orbe de Cristal | `RadialGradient(cian → índigo → púrpura)` + `glowStrong` | crystal orb | Cristal LIMPIO que **sustituye** la aberración cromática RGB (los tres filos desfasados rojo/verde/azul quedaban mal). Gradiente radial + glow potente. Vive en focos, vista MICRO y acentos |
-| Gradiente Cósmico | `#E59CFF → #B79CFF → #56A8FF` | `gradCosmic` | Gradiente decorativo para texto ceremonial (splash, onboarding, portada de autopsia, número-héroe KPI vía `ShaderMask`). Nunca como relleno de superficie/botón |
+| Gradiente Cósmico | `#E59CFF → #B79CFF → #56A8FF` | `gradCosmic` | Gradiente decorativo para texto ceremonial (splash, onboarding, portada de reporte de cierre, número-héroe KPI vía `ShaderMask`). Nunca como relleno de superficie/botón |
 | Star-field | `#E6ECF8` @ 2–5% | `starField` | Puntos de 1–2px del campo de estrellas del telón cósmico |
 | **Canvas Base** | deepSpace de paleta activa | `Gx.canvasBase` | Espejo estático del `deepSpace` de la paleta activa (`DrasusThemeState.globalCanvasBase`). Reemplaza `Gx.deepSpace` en secciones/gradientes que deben reaccionar al cambiar la paleta de fondo |
 | **Superficie Raised Dinámica** | surfaceRaised de paleta activa | `Gx.surfaceRaisedDynamic` | Espejo estático del `surfaceRaised` de la paleta activa (`DrasusThemeState.globalSurfaceRaised`). Reemplaza `Gx.surfaceRaised` en hover/filas activas que deben reaccionar a la paleta |
@@ -73,11 +73,17 @@ Drasus Engine es una plataforma de escritorio para trading cuantitativo instituc
 
 Tres voces, servidas por **`google_fonts` en runtime** (cachea en disco; plan de migración a `assets/fonts` cuando se estabilice el set final). La familia exacta la fija Naming/Flutter-Engineer; aquí se fija el rol y el carácter (ADR-0121: identificadores en inglés, prosa en español).
 
-> **Instalado (2026-06-22):** `google_fonts ^8.1.0` (Flutter 3.44.2). Familias asignadas: `displayGrotesque` → **Space Grotesk** · `uiSans` → **Inter** · `dataMono` → **JetBrains Mono**. Implementadas como helpers en `gallery_tokens.dart` (clase `Gx`): `Gx.displayGrotesque(...)`, `Gx.uiSans(...)`, `Gx.dataMono(...)`.
+> ### ⚠️ ESTADO REAL (verificado 2026-07-31): las tres voces son **Rajdhani**, no tres familias distintas
 >
-> **Actualización 2026-06-25 — familias dinámicas:** `Gx.fontDisplay`, `Gx.fontSans` y `Gx.fontMono` son ahora getters dinámicos que leen `DrasusThemeState.globalFontDisplay/Sans/Mono`. El usuario puede cambiar la fuente desde el panel de configuración y todo texto de la galería reacciona. Los helpers `displayGrotesque/uiSans/dataMono` usan estos getters internamente. **Los helpers NO tienen default de color** — el llamante DEBE pasar `color:` explícitamente con un token dinámico (`Gx.textBase`, `Gx.textBaseLabel`, etc.).
+> **STORY-023 sustituyó toda la tipografía por Rajdhani** y borró los `.ttf` de las tres familias originales. Lo instalado hoy, y lo único declarado en `ui/pubspec.yaml`, es `assets/fonts/Rajdhani-{Regular,Medium,SemiBold,Bold}.ttf` (pesos 400/500/600/700). Los tres helpers de `ui/lib/theme/gx_tokens.dart` — `Gx.displayGrotesque(...)`, `Gx.uiSans(...)`, `Gx.dataMono(...)` — **devuelven los tres la misma familia**, y sus propios comentarios lo dicen.
 >
-> **Embebido (2026-06-22):** Los `.ttf` (w400/w500 de las tres familias) están en `ui/assets/fonts/` y declarados en `pubspec.yaml`. Los helpers `Gx` usan `TextStyle(fontFamily: ...)` — **la galería es 100% offline**, sin descarga de google_fonts en runtime. `google_fonts` permanece en el pubspec para el resto del proyecto. **Pendiente:** `JetBrainsMono-Medium.ttf` es la versión NerdFont (2.4MB); reemplazar con el .ttf limpio de [fonts.google.com/specimen/JetBrains+Mono](https://fonts.google.com/specimen/JetBrains+Mono) (pesos w400/w500, ~110KB c/u).
+> Las tres secciones que siguen (Space Grotesk / Inter / JetBrains Mono) describen el **diseño de origen, no lo construido**. Se conservan porque fijan el *rol y el carácter* de cada voz — tamaños, pesos, interlineado, tracking y uso, que sí siguen vigentes y son lo que un diseñador necesita. **Ninguna de esas tres familias existe en el proyecto.** No las especifiques ni las cargues.
+>
+> **Consecuencia viva que esto causó:** `ui/test/gallery_golden_test.dart` seguía cargando los `.ttf` borrados, así que reventaba en `setUpAll` y **`flutter test` llevaba en rojo desde STORY-023** — con el efecto secundario de volver "Some tests failed" ruido de fondo. Corregido el 2026-07-31.
+>
+> **Familias dinámicas (2026-06-25):** `Gx.fontDisplay`, `Gx.fontSans` y `Gx.fontMono` son getters dinámicos que leen `ThemeState.globalFontDisplay/Sans/Mono`. El usuario puede cambiar la fuente desde el panel de configuración y todo el texto reacciona; los tres helpers usan estos getters internamente. **Los helpers NO tienen default de color** — el llamante DEBE pasar `color:` explícitamente con un token dinámico (`Gx.textBase`, `Gx.textBaseLabel`, etc.).
+>
+> **100% offline:** los helpers usan `TextStyle(fontFamily: ...)` sobre el asset embebido, sin descarga en runtime.
 
 ### Display — Grotesco Moderno · `displayGrotesque` → **Space Grotesk**
 Voz de los titulares. Peso medio (500, **no** bold): "susurra, no grita". Tracking ligeramente negativo en tamaños grandes hace que el título se sienta tallado, no inflado. Tecnológico, limpio, recto.
@@ -87,7 +93,7 @@ Voz de los titulares. Peso medio (500, **no** bold): "susurra, no grita". Tracki
 - **Sizes:** 14, 20, 24, 28, 32, 44, 56, 72
 - **Line height:** 1.05–1.15
 - **Letter spacing:** -0.02em en ≥24px; -0.01em en 14–20px
-- **Role:** Títulos de nivel ZUI, cabeceras de sección, título de panel, número-héroe de la vista MICRO y pantallas ceremoniales (splash, autopsia).
+- **Role:** Títulos de nivel ZUI, cabeceras de sección, título de panel, número-héroe de la vista MICRO y pantallas ceremoniales (splash, reporte de cierre).
 
 ### UI — Sans · `uiSans` → **Inter**
 La fuerza de trabajo que desaparece en la interfaz. Pesos 400 para texto corrido, 500 para énfasis interactivo y etiquetas de botón.
@@ -187,7 +193,7 @@ La profundidad y el "poder" Reflect vienen del **glow de color**, no de sombras 
 
 > **Regla General de Superficie (2026-06-25):** todo componente que ocupe un área de fondo debe usar uno de los wrappers de superficie (`panelSurface`, `cardSurface`, `frosted`) en lugar de `Container(color: Gx.surfaceFill)`. Estos wrappers leen el modo global de superficie (`DrasusThemeState.globalSurfaceMode`) y renderizan la receta correcta (glass = BackdropFilter + blur, tint = translúcido, solid = sólido, enhancedGlass = gradiente profundo + borde semántico). Un componente que use un `Container` con `color: Gx.surfaceFill` se verá como un rectángulo sólido en todos los modos, perdiendo el efecto vidrio/blur.
 >
-> **Regla de Envoltorio (2026-06-25):** un componente NO debe auto-envolverse en una superficie. La superficie la aplica el llamante. El componente expone solo su contenido; el llamante (ej. `gallery_tab.dart`) lo envuelve en `panelSurface(child: componente)`. Excepciones: componentes autocontenidos que requieren un fondo propio (ZuiNavPill, GlowInput) usan `panelSurface()` — no `frosted()` ni `glassEnhanced()` — para ser dinámicos al modo.
+> **Regla de Envoltorio (2026-06-25):** un componente NO debe auto-envolverse en una superficie. La superficie la aplica el llamante. El componente expone solo su contenido; el llamante (ej. `gallery_tab.dart`) lo envuelve en `panelSurface(child: componente)`. Excepciones: componentes autocontenidos que requieren un fondo propio (ZuiNavPill, `custom_ui.Input`) usan `panelSurface()` — no `frosted()` ni `glassEnhanced()` — para ser dinámicos al modo.
 >
 > **Regla de Migración (2026-06-25):** para envolver un `Container` existente sin reescribir su decoración, usar `PanelFromDecoration(decoration: ...)`. Este wrapper respeta la decoración original en modo `solid` y aplica `frosted()` sobre el contenido en los modos glass/tint/enhancedGlass.
 >
@@ -321,12 +327,22 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 | Estado | Tratamiento visual |
 |---|---|
 | default | Reposo — glow tenue del color de estado |
-| hover | `glowStrong` intensificado + leve escala · superficie → `surfaceRaised` |
+| hover | `glowStrong` intensificado · superficie → `surfaceRaised` — **sin cambio de tamaño** (ver la regla de abajo) |
 | focus | Borde 1.5px + glow limpio (`glow(color, blur 18)`) · **NUNCA** aberración cromática RGB |
 | active / selected | Filo neón 2px + glow del color de estado |
 | disabled | Texto `textMuted` · opacidad reducida · sin glow |
 | loading | Glow pulsante del color de estado |
 | error / crítico | Borde + texto + glow en `criticalCrimson` |
+
+**⚠️ REGLA IRROMPIBLE — un estado de puntero jamás cambia la geometría del objeto que lo produce** (añadida 2026-08-01 tras un bug real en `Dropzone`).
+
+El área que reacciona al cursor es la misma área que lo detecta. Si al pasar el cursor el componente encoge, crece o engorda su borde, su límite se mueve por debajo del propio cursor: se dispara `onExit`, el componente vuelve al tamaño anterior, el cursor queda dentro otra vez y se dispara `onEnter`. El resultado es un parpadeo que se realimenta solo y deja la pieza inservible — no se puede pulsar.
+
+En la práctica, en hover/focus están **prohibidos**: cambiar el texto por uno de longitud distinta, cambiar el grosor del borde (en Flutter el borde consume espacio interior), y cambiar padding o tamaño de fuente. El realce se expresa con color, opacidad, glow y superficie. Un cambio de texto por estado solo es admisible si la caja tiene tamaño fijo e independiente de su contenido.
+
+Dos excepciones acotadas, ambas por la misma razón —no reducen el área reactiva ni alteran el layout—: un `Transform`/`AnimatedScale` que **agranda** en hover (`fab.dart`) es estable, porque el cursor que ya estaba dentro sigue dentro; y encoger al **pulsar** (`button.dart`) tampoco oscila, porque durante la pulsación el puntero está capturado. Encoger en hover no tiene excepción: eso es el bug.
+
+**Regla de texto seleccionable** (misma fecha, mismo origen): etiquetas, títulos y textos de botón **no** son seleccionables — seleccionarlos al arrastrar es ruido y no sirven fuera de la aplicación. Todo texto que el usuario pueda necesitar **fuera** —mensajes de error, huellas, identificadores, rutas, valores calculados— es seleccionable y ofrece copiado a un clic (`custom_ui.CopyableText`, o `copyable: true` en `Banner`/`KeyValue`). El disparador que la originó: un error en pantalla que hubo que transcribir a mano para poder reportarlo.
 
 **Ejes semánticos de color** (irrompible — ver §"Tokens — Colors"): `óptimo` → `optimaCyan` · `transición` → `transitionIndigo` · `alerta` → `alertAmber` · `crítico` → `criticalCrimson`. Cada relleno usa el gradiente de su familia (`gradOptima`, `gradTransition`, `gradAlert`, `gradCritical`).
 
@@ -513,11 +529,11 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 
 | id | Role | Variantes / Estados | Tokens |
 |---|---|---|---|
-| organism-cell-card | Tarjeta de una célula/estrategia | salud óptima/transición/alerta/muerta | cardInner, neón teñido por salud; `sonarPulse` al activar; `scanRing` en estado live |
+| organism-cell-card | Tarjeta de una célula/estrategia | salud óptima/transición/alerta/retirada | cardInner, neón teñido por salud; `sonarPulse` al activar; `scanRing` en estado live |
 | vitality-spectrum-legend | Leyenda del espectro de vitalidad | los 4 estados | espectro completo |
 | crystal-orb | Orbe de cristal (gradiente radial + glowStrong) | teñido por estado | RadialGradient(cian→índigo→púrpura) + glowStrong; `scanRing(optimaCyan)` en monitoreo activo; `sonarPulse` al cambiar de estado |
 | galaxy-background | Fondo de galaxia (star-field) | tenue | starField |
-| autopsy-header | Portada de autopsia/reporte funerario | muerte (carmesí) | gradCosmic, criticalCrimson, dataMono |
+| ceremonial-header | Portada ceremonial de un reporte de cierre | retiro definitivo (carmesí) | gradCosmic, criticalCrimson, dataMono |
 | canvas-zoom-frame | Marco de transición de zoom canvas (relacional ↔ interior) | los 2 estados + breadcrumb | glassFill, galaxia |
 | dashboard-panel | Panel de monitoreo del Dashboard (widgets + métricas) | tabla + chips + métricas; `scanRing(optimaCyan)` ambiental mientras el portafolio está activo | panelSolid, chips, dataMono |
 | expectation-envelope-badge | Indicador "dentro/fuera del sobre" | dentro=óptimo, fuera=crítico | optimaCyan, criticalCrimson |
@@ -526,9 +542,13 @@ Columnas de cada tabla: **id** (nombre kebab-case del widget) · **Role** (qué 
 
 ## Component Map — De la Especificación al Código
 
-> **Regla de oro:** si un componente está en esta tabla, YA EXISTE en `ui/lib/gallery/`. Reutilízalo. Solo crea uno nuevo si no aparece aquí y lo necesitas — y cuando lo hagas, regístralo en ambas secciones: Catálogo (§4–§11) y este Map.
+> **Regla de oro:** si una fila de esta tabla nombra una clase, esa clase EXISTE hoy en el código con esa firma exacta. Si no existe, la fila lo dice con **"Sin construir"** y no nombra clase alguna. Reutiliza lo que existe; solo crea uno nuevo si no aparece aquí y lo necesitas — y cuando lo hagas, regístralo en ambas secciones: Catálogo (§4–§11) y este Map.
+
+> **Dónde vive cada cosa (tras STORY-025/026):** la librería reutilizable es **`ui/lib/components/`** (`custom_ui.*`) y los tokens/superficies viven en **`ui/lib/theme/`**. Todo lo que apunta a `ui/lib/gallery/` es **vitrina**: maquetas de exhibición con datos incrustados y, casi siempre, **constructor sin parámetros**. Una vitrina se mira, no se reutiliza con datos propios — si necesitas la pieza con datos reales, hay que construirla en `components/`.
 
 Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El Designer sabe qué pedir; el Flutter Engineer sabe en qué archivo está y cómo se llama.
+
+> **Verificación:** las 127 filas se contrastaron una a una contra el código real el **2026-07-31** (STORY-073, criterio 12). Las firmas anotadas son las del código, no las del diseño original.
 
 ### §0 — Sistema de Superficie (cross-cutting, aplica a TODO)
 
@@ -539,60 +559,63 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 | `frosted` | `frosted({child, radius, padding, solidColor?, glow?})` | `ui/lib/theme/surfaces.dart` (movido desde `gallery/gallery_fx.dart` en STORY-026 — `components/` no depende de `gallery/`) |
 | `panel-surface` | `panelSurface({child, radius, padding, glow?})` | `ui/lib/theme/surfaces.dart` |
 | `card-surface` | `cardSurface({child, radius, padding, glow?})` | `ui/lib/theme/surfaces.dart` |
-| `panel-from-decoration` | `PanelFromDecoration({child, decoration, padding, solidColor?})` | `gallery/gallery_fx.dart` |
-| `glass-surface` | `GlassSurface({child, borderRadius, tint?, rimOpacity?})` | `widgets/glass_surface.dart` |
-| `surface-fill` | `Gx.surfaceFill` (getter dinámico → `DrasusThemeState.globalComponentBgColor`) | `gallery/gallery_tokens.dart` |
-| `surface-panel` | `Gx.surfacePanel` (getter dinámico → +4% ligereza en solid) | `gallery/gallery_tokens.dart` |
-| `surface-card` | `Gx.surfaceCard` (getter dinámico → +8% ligereza en solid) | `gallery/gallery_tokens.dart` |
-| `canvas-base` | `Gx.canvasBase` (getter dinámico → deepSpace de la paleta activa) | `gallery/gallery_tokens.dart` |
-| `surface-raised-dynamic` | `Gx.surfaceRaisedDynamic` (getter dinámico → surfaceRaised de la paleta activa) | `gallery/gallery_tokens.dart` |
-| `border-base` | `Gx.borderBase` (getter dinámico → énfasis @ 35%) | `gallery/gallery_tokens.dart` |
-| `rim-light` | derivado de `Gx.accentDynamic.withOpacity(0.035)` | `gallery/gallery_fx.dart` (interno de `frosted()`) |
+| `panel-from-decoration` | `PanelFromDecoration({child, decoration, padding, solidColor?})` | `ui/lib/theme/surfaces.dart` (movido junto a `frosted()` en STORY-026; la fila anterior lo situaba en `gallery/gallery_fx.dart`) |
+| `glass-surface` | **Sin construir** — no existe ninguna clase `GlassSurface` ni el archivo `widgets/glass_surface.dart` en el código. El vidrio se obtiene con `frosted()` / `panelSurface()` / `cardSurface()` de `ui/lib/theme/surfaces.dart`, que leen el modo global de tema | — |
+| `surface-fill` | `Gx.surfaceFill` (getter dinámico → `ThemeState.globalComponentBgColor`) | `ui/lib/theme/gx_tokens.dart` |
+| `surface-panel` | `Gx.surfacePanel` (getter dinámico → +4% ligereza en solid) | `ui/lib/theme/gx_tokens.dart` |
+| `surface-card` | `Gx.surfaceCard` (getter dinámico → +8% ligereza en solid) | `ui/lib/theme/gx_tokens.dart` |
+| `canvas-base` | `Gx.canvasBase` (getter dinámico → deepSpace de la paleta activa) | `ui/lib/theme/gx_tokens.dart` |
+| `surface-raised-dynamic` | `Gx.surfaceRaisedDynamic` (getter dinámico → surfaceRaised de la paleta activa) | `ui/lib/theme/gx_tokens.dart` |
+| `border-base` | `Gx.borderBase` (getter dinámico → énfasis @ 35%) | `ui/lib/theme/gx_tokens.dart` |
+| `rim-light` | derivado de `Gx.accentDynamic` con opacidad baja; no es un símbolo público | `ui/lib/theme/surfaces.dart` (interno de `frosted()`) |
 
-> **Espejos estáticos involucrados (en `DrasusThemeState`):** `globalSurfaceMode` (modo activo), `globalAccent` (énfasis), `globalTextColor` (texto base), `globalComponentBgColor` (fondo de componentes), `globalCanvasBase` (deepSpace de paleta), `globalSurfaceRaised` (surfaceRaised de paleta), `globalFontDisplay/Sans/Mono` (familias tipográficas). Todos se sincronizan en `load()` y en cada `set*()` y son legibles sin `BuildContext`.
+> **Espejos estáticos involucrados (en `ThemeState`, `ui/lib/theme/theme_scope.dart` — la clase se llama `ThemeState`, NO `DrasusThemeState`; se renombró a neutral en STORY-025):** `globalSurfaceMode` (modo activo), `globalAccent` (énfasis), `globalTextColor` (texto base), `globalComponentBgColor` (fondo de componentes), `globalCanvasBase` (deepSpace de paleta), `globalSurfaceRaised` (surfaceRaised de paleta), `globalFontDisplay/Sans/Mono` (familias tipográficas). Todos se sincronizan en `load()` y en cada `set*()` y son legibles sin `BuildContext`.
 
 ### §1 — Tokens, Tipografía y Efectos
 
 | Id | Widget Dart / Helper | Archivo |
 |---|---|---|
-| `display-grotesque` | `Gx.displayGrotesque({fontSize, height, required color})` → Space Grotesk w500 | `gallery/gallery_tokens.dart` |
-| `ui-sans` | `Gx.uiSans({fontSize, height, required color, weight})` → Inter w400/w500 | `gallery/gallery_tokens.dart` |
-| `data-mono` | `Gx.dataMono({fontSize, height, required color})` → JetBrains Mono w400/w500 | `gallery/gallery_tokens.dart` |
-| `glow` | `Gx.glow(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
-| `glow-strong` | `Gx.glowStrong(color, {blur, opacity})` → `List<BoxShadow>` | `gallery/gallery_tokens.dart` |
-| `text-glow` | `Gx.textGlow(color)` → `List<Shadow>` | `gallery/gallery_tokens.dart` |
-| `linear-gradient` | `Gx.linear(colors, {begin, end})` → `LinearGradient` | `gallery/gallery_tokens.dart` |
-| `grad-optima` | `Gx.gradOptima` | `gallery/gallery_tokens.dart` |
-| `grad-reactor` | `Gx.gradReactor` | `gallery/gallery_tokens.dart` |
-| `grad-transition` | `Gx.gradTransition` | `gallery/gallery_tokens.dart` |
-| `grad-aurora` | `Gx.gradAurora` | `gallery/gallery_tokens.dart` |
-| `grad-alert` | `Gx.gradAlert` | `gallery/gallery_tokens.dart` |
-| `grad-critical` | `Gx.gradCritical` | `gallery/gallery_tokens.dart` |
-| `grad-cosmic` | `Gx.gradCosmic` | `gallery/gallery_tokens.dart` |
+| `display-grotesque` | `Gx.displayGrotesque({fontSize, height, required color})` → Space Grotesk w500 | `ui/lib/theme/gx_tokens.dart` |
+| `ui-sans` | `Gx.uiSans({fontSize, height, required color, weight})` → Inter w400/w500 | `ui/lib/theme/gx_tokens.dart` |
+| `data-mono` | `Gx.dataMono({fontSize, height, required color})` → JetBrains Mono w400/w500 | `ui/lib/theme/gx_tokens.dart` |
+| `glow` | `Gx.glow(color, {blur, opacity})` → `List<BoxShadow>` | `ui/lib/theme/gx_tokens.dart` |
+| `glow-strong` | `Gx.glowStrong(color, {blur, opacity})` → `List<BoxShadow>` | `ui/lib/theme/gx_tokens.dart` |
+| `text-glow` | `Gx.textGlow(color)` → `List<Shadow>` | `ui/lib/theme/gx_tokens.dart` |
+| `linear-gradient` | `Gx.linear(colors, {begin, end})` → `LinearGradient` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-optima` | `Gx.gradOptima` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-reactor` | `Gx.gradReactor` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-transition` | `Gx.gradTransition` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-aurora` | `Gx.gradAurora` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-alert` | `Gx.gradAlert` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-critical` | `Gx.gradCritical` | `ui/lib/theme/gx_tokens.dart` |
+| `grad-cosmic` | `Gx.gradCosmic` | `ui/lib/theme/gx_tokens.dart` |
 
 ### §4 — Layout y Estructura
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
 | `panel-solid` / `panel-glass` / `card` | `custom_ui.Surface({child, padding, radius, glow})` (`ui/lib/components/surface.dart`) — delega a `panelSurface()`; la receta glass/tint/solid la decide el modo global de tema, no el componente (STORY-025/026, corrige la fila anterior que apuntaba a `_panelSolid`/`frosted` de galería, ya movidos/renombrados) | `ui/lib/components/surface.dart` |
-| `divider / separator` | `Gx.vDivider({height})` | `gallery/gallery_tokens.dart` |
-| `tabs / tab-bar` | `custom_ui.Tabs` (`ui/lib/components/tabs.dart`) — corrige la fila anterior que apuntaba a `_tabsMock()`, mockup de galería sin estado real | `ui/lib/components/tabs.dart` |
+| `divider / separator` | **Sin construir** — no existe ningún helper `Gx.vDivider`. Solo existe el token de color `Gx.divider` (`Color`, `ui/lib/theme/gx_tokens.dart`); el separador se compone hoy a mano con `Container`/`Border` sobre ese color | — |
+| `card` (superficie elevada) | `custom_ui.Card({required child, padding, radius, glow})` — delega a `cardSurface()` (+8% ligereza sobre el panel). Faltaba en el Map pese a existir | `ui/lib/components/card.dart` |
+| `bento-card` | `custom_ui.BentoCard({required icon, required title, height, child})` — tarjeta del bento grid del Dashboard (ADR-0136). Faltaba en el Map pese a existir | `ui/lib/components/bento_card.dart` |
+| `drawer / sheet` | `custom_ui.Sheet({required child, height})` — panel deslizante. Faltaba en el Map pese a existir; es el componente real detrás del id `drawer / sheet` del Catálogo §4 y §9 | `ui/lib/components/sheet.dart` |
+| `tabs / tab-bar` | `custom_ui.Tabs({required tabs: List<TabItem>, isScrollable, onChanged, initialIndex})` — `TabItem({icon?, required label, required child})`; corrige la fila anterior que apuntaba a `_tabsMock()`, mockup de galería sin estado real | `ui/lib/components/tabs.dart` |
 | `segmented-control` | `custom_ui.Segmented({options, selected, onChanged})` | `ui/lib/components/segmented.dart` |
 | `stepper / wizard` | `custom_ui.Stepper({steps, currentStep, onStepTapped})` — corrige la fila anterior (`GlowStepper`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/stepper.dart` |
-| `pipeline-8-steps` | `Pipeline8Steps()` | `gallery/sections/section_drasus_core_extended.dart` |
-| `accordion / collapse` | `GlowAccordion({title, content, isExpanded})` | `gallery/sections/section_feedback_extended.dart` |
+| `pipeline-8-steps` | `Pipeline8Steps()` — **vitrina**: constructor sin parámetros, los 8 pasos están incrustados en la clase; no acepta datos propios | `ui/lib/gallery/sections/section_drasus_core_extended.dart` |
+| `accordion / collapse` | `custom_ui.Accordion({items: List<AccordionItem>, openIndex, onChanged})` — corrige la fila anterior (`GlowAccordion`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29); `AccordionItem({title, content})` | `ui/lib/components/accordion.dart` |
 
 ### §5 — Navegación
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `canvas-breadcrumb` | `ZuiNavPill({segments})` | `gallery/sections/section_nav.dart` |
-| `menu / dropdown-menu` | `GlowContextMenu({items})` | `gallery/gallery_fx.dart` |
-| `command-palette` | `GlowCommandPalette({onSelect})` | `gallery/sections/section_nav.dart` |
-| `tree-view` | `GlowTreeView({root})` | `gallery/sections/section_nav.dart` |
-| `pagination` | `GlowPagination({current, total, onPage})` | `gallery/sections/section_nav.dart` |
-| `anchor / scrollspy` | `GlowScrollspy({sections})` | `gallery/sections/section_nav.dart` |
-| `back-to-top` | `GlowBackToTop()` | `gallery/sections/section_std_missing.dart` |
+| `canvas-breadcrumb` | `ZuiNavPill()` — **vitrina**: constructor sin parámetros (la fila anterior anunciaba un `segments` que nunca existió); los niveles están incrustados y el estado activo es interno | `ui/lib/gallery/sections/section_nav.dart` |
+| `menu / dropdown-menu` | Sin construir — el mockup `GlowContextMenu` que existía en la galería fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` (`custom_ui.Dropdown<T>` es un select de formulario, no un menú contextual) | — |
+| `command-palette` | Sin construir — el mockup `GlowCommandPalette` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `tree-view` | `custom_ui.TreeView({nodes: List<TreeViewNode>, selected, onSelect})` — corrige la fila anterior (`GlowTreeView`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29); `TreeViewNode` define los nodos del árbol | `ui/lib/components/tree_view.dart` |
+| `pagination` | `custom_ui.Pagination({page, total, onChanged})` — corrige la fila anterior (`GlowPagination`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/pagination.dart` |
+| `anchor / scrollspy` | `custom_ui.Scrollspy({sections: List<String>, active, onChanged})` — corrige la fila anterior (`GlowScrollspy`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/scrollspy.dart` |
+| `back-to-top` | `custom_ui.BackToTop({controller, onPressed})` — corrige la fila anterior (`GlowBackToTop`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/back_to_top.dart` |
 
 ### §6 — Inputs y Formularios
 
@@ -604,21 +627,21 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 | `number-input / stepper` | `custom_ui.NumberInput({value, onChanged, min, max, step})` | `ui/lib/components/number_input.dart` |
 | `select / dropdown` | `custom_ui.Dropdown<T>({value, items, onChanged, hint})` — `DropdownItem<T>({value, label})`; `label` es `String` puro, sin slot de icono | `ui/lib/components/dropdown.dart` |
 | `combobox / autocomplete` | `custom_ui.Combobox<T>({value, items, onChanged, hint})` | `ui/lib/components/combobox.dart` |
-| `multiselect` | `custom_ui.MultiSelect<T>({value, items, onChanged})` | `ui/lib/components/multi_select.dart` |
+| `multiselect` | `custom_ui.MultiSelect<T>({selected, items, onChanged})` — el parámetro se llama `selected`, NO `value` (la fila anterior lo nombraba mal); `MultiSelectItem<T>({value, label})` | `ui/lib/components/multi_select.dart` |
 | `date-range` | `custom_ui.DateRangePicker({range, onChanged})` — `DateRange({start: DateTime, end: DateTime})` | `ui/lib/components/date_range_picker.dart` |
-| `file-upload / dropzone` | `custom_ui.Dropzone({onTap, label})` — `onTap` es `VoidCallback` sin payload de archivo; el drag real no está implementado, solo el estado visual de hover | `ui/lib/components/dropzone.dart` |
+| `file-upload / dropzone` | `custom_ui.Dropzone({onTap, label})` — `onTap` es `VoidCallback` sin payload de archivo. **Soltar un archivo encima NO hace nada: el arrastre real sigue sin implementarse**, y desde 2026-08-01 la etiqueta ya no lo insinúa. El hover solo cambia color y glow — nunca el tamaño ni el texto (ver `DEBT-044`) | `ui/lib/components/dropzone.dart` |
 | `form-field` | `custom_ui.FormField({label, child, errorText, helperText})` | `ui/lib/components/form_field.dart` |
-| `cascader` | `GlowCascader({options, onSelected})` | `gallery/sections/section_std_missing.dart` |
-| `transfer / dual-list` | `GlowTransferList({source, target})` | `gallery/sections/section_std_missing.dart` |
-| `switch / toggle` | `GlowSwitch({initial, color?})` | `gallery/gallery_fx.dart` |
-| `slider` | `GlowSlider({initial, min, max, color?})` | `gallery/gallery_fx.dart` |
-| `date-picker` | `GlowDatePicker({initial, onSelected})` | `gallery/gallery_fx.dart` |
-| `time-picker` | `GlowTimePicker({initial})` | `gallery/sections/section_std_missing.dart` |
-| `color-picker` | `GlowColorPicker({initial})` | `gallery/sections/section_std_missing.dart` |
-| `rating` | `GlowRating({initial, onChanged})` | `gallery/sections/section_inputs_extended.dart` |
-| `tags-input / chips-input` | `GlowTagsInput({initial, suggestions})` | `gallery/sections/section_inputs_extended.dart` |
-| `otp / pin-input` | `GlowOtpInput({length, onComplete})` | `gallery/sections/section_inputs_extended.dart` |
-| `mention-input` | `GlowMentionInput({hint, suggestions})` | `gallery/sections/section_std_missing.dart` |
+| `cascader` | `custom_ui.Cascader<T>({value, nodes: List<CascaderNode<T>>, onChanged})` — corrige la fila anterior (`GlowCascader`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/cascader.dart` |
+| `transfer / dual-list` | `custom_ui.TransferList({available: List<String>, selected: List<String>, onChanged})` — corrige la fila anterior (`GlowTransferList`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/transfer_list.dart` |
+| `switch / toggle` | `custom_ui.Switch({value, onChanged})` — corrige la fila anterior (`GlowSwitch`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/switch.dart` |
+| `slider` | `custom_ui.Slider({value, initialValue, onChanged, min, max})` — corrige la fila anterior (`GlowSlider`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/slider.dart` |
+| `date-picker` | `custom_ui.DatePicker({value, onChanged, firstDate, lastDate})` — corrige la fila anterior (`GlowDatePicker`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/date_picker.dart` |
+| `time-picker` | `custom_ui.TimePicker({value, onChanged})` — corrige la fila anterior (`GlowTimePicker`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/time_picker.dart` |
+| `color-picker` | `custom_ui.ColorPicker({value, onChanged, swatches})` — corrige la fila anterior (`GlowColorPicker`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/color_picker.dart` |
+| `rating` | `custom_ui.Rating({value, onChanged, max})` — corrige la fila anterior (`GlowRating`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/rating.dart` |
+| `tags-input / chips-input` | Sin construir — el mockup `GlowTagsInput` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` (`custom_ui.Chip` es una etiqueta estática de solo lectura, no un input de tags) | — |
+| `otp / pin-input` | `custom_ui.OtpInput({length, onCompleted, onChanged})` — corrige la fila anterior (`GlowOtpInput`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/otp_input.dart` |
+| `mention-input` | `custom_ui.MentionInput({controller, suggestions: List<String>, onChanged, hint})` — corrige la fila anterior (`GlowMentionInput`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/mention_input.dart` |
 
 ### §7 — Botones y Acciones
 
@@ -628,95 +651,99 @@ Cada fila es una ruta directa del ID del catálogo al widget Dart concreto. El D
 | `button-glass` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.secondary})` | `ui/lib/components/button.dart` |
 | `button-ghost` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.ghost})` | `ui/lib/components/button.dart` |
 | `button-danger` | `custom_ui.Button({label, onPressed, variant: ButtonVariant.danger})` | `ui/lib/components/button.dart` |
-| `icon-button` | `_iconBtn(icon)` (maqueta) | `gallery/gallery_tab.dart` |
-| `button-group` | `custom_ui.ButtonGroup` | `ui/lib/components/button_group.dart` |
-| `split-button` | `custom_ui.SplitButton` | `ui/lib/components/split_button.dart` |
-| `toggle-button` | `custom_ui.ToggleButton({value, onChanged})` | `ui/lib/components/toggle_button.dart` |
-| `fab` | `GlowFab({icon, onTap})` | `gallery/sections/section_buttons_extended.dart` |
-| `loading-button` | `GlowLoadingButton({label, isLoading})` | `gallery/sections/section_buttons_extended.dart` |
+| `icon-button` | **Sin construir** como componente reutilizable — solo existe `_iconBtn(IconData)`, función **privada** de `ui/lib/gallery/gallery_registry.dart` (no de `gallery_tab.dart`, como decía la fila anterior): no se puede importar desde fuera de ese archivo | — |
+| `button-group` | `custom_ui.ButtonGroup({required items, selected, onChanged})` | `ui/lib/components/button_group.dart` |
+| `split-button` | `custom_ui.SplitButton({label, onPressed, actions, onActionSelected})` — `label` y `actions` tienen valor por defecto | `ui/lib/components/split_button.dart` |
+| `toggle-button` | `custom_ui.ToggleButton({value, onChanged, label, labelOff, icon, initial})` | `ui/lib/components/toggle_button.dart` |
+| `fab` | `custom_ui.Fab({icon, onPressed, tooltip})` — corrige la fila anterior (`GlowFab`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/fab.dart` |
+| `loading-button` | Consolidado en `custom_ui.Button({..., loading: true})` — corrige la fila anterior (`GlowLoadingButton`); no es una clase separada (ver nota en `components.dart`) | `ui/lib/components/button.dart` |
 
 ### §8 — Data Display
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
 | `table / data-grid` | `custom_ui.Table({columns: List<TableColumn>, rows: List<List<Widget>>, onRowTap})` — corrige la fila anterior (`GlowTable`, clase inexistente); cada celda es un `Widget` arbitrario | `ui/lib/components/table.dart` |
-| `tree-table` | `custom_ui.TreeTable` | `ui/lib/components/tree_table.dart` |
-| `list / list-item` | `GlowList({items, onTap})` | `gallery/sections/section_data_display_extended.dart` |
-| `key-value-row` | `custom_ui.KeyValue({label, value})` — corrige la fila anterior (maqueta en galería, sin clase real) | `ui/lib/components/key_value.dart` |
+| `tree-table` | `custom_ui.TreeTable({required columns: List<TreeTableColumn>, required nodes: List<TreeTableNode>, onNodeTap})` — `TreeTableNode({required id, required cells, children, initiallyExpanded})` | `ui/lib/components/tree_table.dart` |
+| `list / list-item` | Sin construir — el mockup `GlowList` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `key-value-row` | `custom_ui.KeyValue({label, value, valueColor, mono, copyable})` — corrige la fila anterior (maqueta en galería, sin clase real). `copyable: true` hace **el valor** seleccionable y le añade botón de copiado; la etiqueta nunca lo es | `ui/lib/components/key_value.dart` |
 | `badge / tag / chip / pill` | `custom_ui.Chip({label, status: ChipStatus?, pill})` (estado semántico) · `custom_ui.Badge({count, label, child})` (indicador superpuesto) — corrige la fila anterior (`_chip()`, maqueta en galería) | `ui/lib/components/chip.dart` / `ui/lib/components/badge.dart` |
-| `regime-chip` | `_regimeChip(label, regime)` | `gallery/gallery_tab.dart` |
+| `regime-chip` | **Sin construir** — no existe ningún `_regimeChip` en el código (la fila anterior lo daba por vivo en `gallery_tab.dart`). Se cubre hoy con `custom_ui.Chip({label, status: ChipStatus})`, que ya aplica color y glow semántico | `ui/lib/components/chip.dart` |
 | `tooltip` | `custom_ui.Tooltip({message, child})` — corrige la fila anterior (`GlowTooltip`, clase inexistente) | `ui/lib/components/tooltip.dart` |
-| `popover` | `GlowPopover({content, child})` | `gallery/gallery_fx.dart` |
-| `timeline` | `GlowTimeline({events})` | `gallery/sections/section_data_display_extended.dart` |
-| `carousel` | `GlowCarousel({items})` | `gallery/sections/section_data_display_extended.dart` |
-| `calendar / scheduler` | `GlowCalendar({onDayTapped})` | `gallery/gallery_fx.dart` |
-| `code-block` | `GlowCode({code, language})` | `gallery/sections/section_data_display_extended.dart` |
-| `kbd` | `GlowKbd({key})` | `gallery/sections/section_data_display_extended.dart` |
-| `stat / metric` | `_kpi(value, label, color?)` (maqueta en galería) | `gallery/gallery_tab.dart` |
-| `gauge` | `GaugeSection()` (radial animado) | `gallery/sections/section_animations.dart` |
-| `micro-gauge / vitality-bar` | `_vitalityBar(label, value, color?)` (maqueta) | `gallery/gallery_tab.dart` |
-| `progress-bar` | `GlowProgress({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
-| `progress-circular` | `GlowProgressCircular({value, color?})` | `gallery/sections/section_data_display_extended.dart` |
-| `skeleton` | `GlowSkeleton({width, height})` | `gallery/sections/section_data_display_extended.dart` |
+| `popover` | Sin construir — el mockup `GlowPopover` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `timeline` | Sin construir — el mockup `GlowTimeline` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `carousel` | `custom_ui.Carousel({items: List<Widget>, itemHeight, onPageChanged})` — corrige la fila anterior (`GlowCarousel`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/carousel.dart` |
+| `calendar / scheduler` | `custom_ui.Calendar({value, onChanged, events})` — corrige la fila anterior (`GlowCalendar`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/calendar.dart` |
+| `code-block` | Sin construir — el mockup `GlowCode` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `kbd` | Sin construir — el mockup `GlowKbd` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
+| `stat / metric` | **Sin construir** — no existe ningún `_kpi` en el código (la fila anterior lo daba por vivo en `gallery_tab.dart`) | — |
+| `gauge` | `GaugeSection()` (radial animado) — **vitrina**: constructor sin parámetros, valores incrustados | `ui/lib/gallery/sections/section_animations.dart` |
+| `micro-gauge / vitality-bar` | **Sin construir** — no existe ningún `_vitalityBar` en el código (la fila anterior lo daba por vivo en `gallery_tab.dart`) | — |
+| `progress-bar` | Sin construir — el mockup `GlowProgress` (barra lineal) fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` (existe `custom_ui.ProgressCircular`, que es un anillo, no una barra) | — |
+| `progress-circular` | `custom_ui.ProgressCircular({value, size, color})` — corrige la fila anterior (`GlowProgressCircular`, clase inexistente tras el rename de ADR-0138 enmienda 2026-06-29) | `ui/lib/components/progress_circular.dart` |
+| `skeleton` | Sin construir — el mockup `GlowSkeleton` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` | — |
 | `empty-state` | `custom_ui.Empty({message, icon, subtitle})` — corrige la fila anterior (`GlowEmpty`, clase inexistente) | `ui/lib/components/empty.dart` |
 
 ### §9 — Feedback y Overlays
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `alert / banner / callout` | `custom_ui.Banner({message, type: BannerType.info/success/warning/error})` — corrige la fila anterior (`GlowBanner`, clase inexistente) | `ui/lib/components/banner.dart` |
-| `toast / snackbar` | `GlowToast({message, type})` | `gallery/sections/section_feedback_extended.dart` |
+| `alert / banner / callout` | `custom_ui.Banner({message, type: BannerType.info/success/warning/error, copyable})` — corrige la fila anterior (`GlowBanner`, clase inexistente). `copyable: true` en todo banner de error: el mensaje de fallo es el texto que el usuario más necesita sacar de la app | `ui/lib/components/banner.dart` |
+| `copy-button` | `custom_ui.CopyButton({required text, tooltip, size})` — icono de copiado con acuse visual de 2 s | `ui/lib/components/copy_button.dart` |
+| `copyable-text` | `custom_ui.CopyableText({required text, style, tooltip})` — texto seleccionable + `CopyButton` ya emparejados | `ui/lib/components/copy_button.dart` |
+| `toast / snackbar` | Sin construir — el mockup `GlowToast` fue retirado por STORY-025/026 sin reemplazo; no existe hoy en `ui/lib/components/` (existe `custom_ui.NotificationCard` para notificaciones persistentes en lista, pero no un toast/snackbar efímero superpuesto) | — |
 | `notification-card` | `custom_ui.NotificationCard({title, message, type, read, onTap, onDismiss})` | `ui/lib/components/notification_card.dart` |
-| `modal / dialog` | `custom_ui.Dialog` | `ui/lib/components/dialog.dart` |
-| `popconfirm` | `custom_ui.Popconfirm({message, child, onConfirm, onCancel})` | `ui/lib/components/popconfirm.dart` |
-| `spinner / loader` | `_spinner()` / `_scanRing(color)` (maqueta) | `gallery/gallery_tab.dart` |
+| `modal / dialog` | `custom_ui.Dialog({required title, required content, actions, maxWidth})` — `title` y `content` son obligatorios | `ui/lib/components/dialog.dart` |
+| `popconfirm` | `custom_ui.Popconfirm({required message, required child, description, confirmLabel, cancelLabel, onConfirm, onCancel})` | `ui/lib/components/popconfirm.dart` |
+| `spinner / loader` | **Sin construir** — no existen `_spinner` ni `_scanRing` en el código (la fila anterior los daba por vivos en `gallery_tab.dart`). Lo que sí existe: `ScanRingWidget({required child, color, maxRadius, period, active})` (anillos animados alrededor de un hijo) en `ui/lib/gallery/gallery_fx.dart`, y `custom_ui.ProgressCircular({value, size, color})` para progreso real | `ui/lib/components/progress_circular.dart` |
 
 ### §10 — Data-Viz (Dominio Drasus)
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `dag-node-graph` | `InteractiveDag()` (canvas + nodos + bezier) | `gallery/gallery_fx.dart` |
-| `dag-nodes-section` | `DagNodesSection()` | `gallery/sections/section_dag_nodes.dart` |
-| `monte-carlo-cone` | `MonteCarloLinesWidget()` (scanInit eléctrico) | `gallery/sections/section_dataviz_new.dart` |
-| `scatter-umap-pca` | `StrategyCluster3dWidget()` (nebulosa 3D) | `gallery/sections/section_dataviz_new.dart` |
-| `trade-timeline` | `TradeTimelinePainter(hover:)` → `HoverableChart` | `gallery/gallery_painters.dart` |
-| `trade-tape` | `TradeTapeSection()` | `gallery/sections/section_trade_tape.dart` |
-| `equity-curve` | `EquityCurveAnimated()` (animado) / `EquityCurvePainter({hover})` | `gallery/sections/section_animations.dart` / `gallery/gallery_painters.dart` |
-| `multi-equity-overlay` | `MultiEquityOverlayPainter({hover})` | `gallery/gallery_painters.dart` |
-| `wfa-chart` | `WfaChartPainter({hover})` | `gallery/gallery_painters.dart` |
-| `returns-calendar` | `ReturnsCalendarPainter({hover})` | `gallery/gallery_painters.dart` |
-| `fitness-evolution` | `FitnessEvolutionPainter({hover})` | `gallery/gallery_painters.dart` |
-| `rolling-metric` | `RollingMetricPainter({hover})` | `gallery/gallery_painters.dart` |
-| `underwater-plot` | `UnderwaterPlotPainter({hover})` | `gallery/gallery_painters.dart` |
-| `risk-return-scatter` | `RiskReturnScatterPainter({hover})` | `gallery/gallery_painters.dart` |
-| `trade-distribution` | `TradeDistributionPainter({hover})` | `gallery/gallery_painters.dart` |
-| `parameter-sensitivity` | `ParameterSensitivityPainter({hover})` | `gallery/gallery_painters.dart` |
-| `regime-timeline` | `RegimeTimelinePainter({hover})` | `gallery/gallery_painters.dart` |
-| `optimization-contour` | `OptimizationContourPainter({hover})` | `gallery/gallery_painters.dart` |
-| `hoverable-chart` | `HoverableChart({builder, height})` — wrapper con `MouseRegion` | `gallery/gallery_painters.dart` |
-| `odometer` | `OdometerSection()` (animación numérica) | `gallery/sections/section_animations.dart` |
+> **Todos los `*Painter` de esta sección son vitrina:** llevan la serie de datos incrustada en el propio painter y solo aceptan `{hover}` (posición del cursor). **Ninguno dibuja datos reales.** Conectarlos a resultados de verdad exige añadirles un parámetro de datos — trabajo no hecho. Además, viven en `section_dataviz_quant.dart`, **no** en `gallery_painters.dart` (que solo contiene `CosmicBackdropPainter`, `DagLinesPainter` y `MonteCarloPainter`), como afirmaban las filas anteriores.
+
+| `dag-node-graph` | `InteractiveDag()` (canvas + nodos + bezier) — vitrina sin parámetros | `ui/lib/gallery/gallery_fx.dart` |
+| `dag-nodes-section` | `DagNodesSection()` — vitrina sin parámetros | `ui/lib/gallery/sections/section_dag_nodes.dart` |
+| `monte-carlo-cone` | `MonteCarloLinesWidget()` (scanInit eléctrico) — vitrina sin parámetros | `ui/lib/gallery/sections/section_dataviz_new.dart` |
+| `scatter-umap-pca` | `StrategyCluster3dWidget()` (nebulosa 3D) — vitrina sin parámetros | `ui/lib/gallery/sections/section_dataviz_new.dart` |
+| `trade-timeline` | `TradeTimelinePainter({hover})` → `HoverableChart` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `trade-tape` | `TradeTapeSection()` — vitrina sin parámetros | `ui/lib/gallery/sections/section_trade_tape.dart` |
+| `equity-curve` | `EquityCurveAnimated()` (animado, vitrina sin parámetros) / `EquityCurvePainter({hover})` | `ui/lib/gallery/sections/section_animations.dart` / `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `multi-equity-overlay` | `MultiEquityOverlayPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `wfa-chart` | `WfaChartPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `returns-calendar` | `ReturnsCalendarPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `fitness-evolution` | `FitnessEvolutionPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `rolling-metric` | `RollingMetricPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `underwater-plot` | `UnderwaterPlotPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `risk-return-scatter` | `RiskReturnScatterPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `trade-distribution` | `TradeDistributionPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `parameter-sensitivity` | `ParameterSensitivityPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `regime-timeline` | `RegimeTimelinePainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `optimization-contour` | `OptimizationContourPainter({hover})` | `ui/lib/gallery/sections/section_dataviz_quant.dart` |
+| `hoverable-chart` | `HoverableChart({required builder, height})` — wrapper con `MouseRegion`; **sí es reutilizable** (recibe el painter por `builder`) | `ui/lib/gallery/gallery_fx.dart` |
+| `odometer` | `OdometerSection()` (animación numérica) — vitrina sin parámetros; el primitivo reutilizable es `OdometerNumber` en `ui/lib/widgets/odometer_number.dart` | `ui/lib/gallery/sections/section_animations.dart` |
 
 ### §11 — Núcleo Drasus (Piezas Únicas)
 
 | Id | Widget Dart | Archivo |
 |---|---|---|
-| `organism-cell-card` | `_organismCell({status, label})` (maqueta en galería) | `gallery/gallery_tab.dart` |
-| `vitality-spectrum-legend` | `_vitalityLegend()` (maqueta en galería) | `gallery/gallery_tab.dart` |
-| `crystal-orb` | `_crystalOrb(color)` (maqueta) | `gallery/gallery_tab.dart` |
-| `galaxy-background` | `CosmicBackdropPainter()` → `CustomPaint` en `gallery_preview_main.dart` | `gallery/gallery_painters.dart` |
-| `autopsy-header` | `LightBurstText(...)` con `gradCosmic` + `ShaderMask` | `gallery/gallery_fx.dart` |
-| `canvas-zoom-frame` | `ZuiZoomFrame({zoom, content})` | `gallery/sections/section_drasus_core_extended.dart` |
-| `dashboard-panel` | `DashboardTab()` (tab en panel_operativo) | `tabs/dashboard_tab.dart` |
-| `expectation-envelope-badge` | `ExpectationEnvelopeBadge({isInside})` | `gallery/sections/section_drasus_core_extended.dart` |
-| `fleet-command-panel` | `FleetCommandPanel({source, items})` | `gallery/sections/section_drasus_core_extended.dart` |
-| `accent-ab` | `AccentAbSection()` | `gallery/sections/section_drasus_core_extended.dart` |
+| `organism-cell-card` | **Sin construir** — no existe ningún `_organismCell` en el código (la fila anterior lo daba por vivo en `gallery_tab.dart`) | — |
+| `vitality-spectrum-legend` | **Sin construir** — no existe ningún `_vitalityLegend` en el código (la fila anterior lo daba por vivo en `gallery_tab.dart`) | — |
+| `crystal-orb` | `_crystalOrb()` — función **privada** de `ui/lib/gallery/gallery_registry.dart` (no de `gallery_tab.dart`) y **sin argumentos**: la fila anterior anunciaba un `color` que no existe. No importable desde fuera de ese archivo | — |
+| `galaxy-background` | `CosmicBackdropPainter({...})` → se usa vía `CustomPaint` en `ui/lib/tabs/canvas_tab.dart` y `ui/lib/tabs/dashboard_tab.dart`; **no** en `gallery_preview_main.dart`, que no lo referencia | `ui/lib/gallery/gallery_painters.dart` |
+| `ceremonial-header` | `LightBurstText(String text)` — argumento **posicional**, no con nombre; se combina con `Gx.gradCosmic` + `ShaderMask` en el sitio de uso | `ui/lib/gallery/gallery_fx.dart` |
+| `canvas-zoom-frame` | `ZuiZoomFrame()` — **vitrina** sin parámetros; la fila anterior anunciaba `{zoom, content}`, que nunca existieron: el nivel de zoom es estado interno y el contenido está incrustado | `ui/lib/gallery/sections/section_drasus_core_extended.dart` |
+| `dashboard-panel` | `DashboardTab()` (tab en `operational_panel.dart`) | `ui/lib/tabs/dashboard_tab.dart` |
+| `expectation-envelope-badge` | `ExpectationEnvelopeBadge()` — **vitrina** sin parámetros; la fila anterior anunciaba un `isInside` que no existe (el estado dentro/fuera es interno y se alterna al tocar) | `ui/lib/gallery/sections/section_drasus_core_extended.dart` |
+| `fleet-command-panel` | `FleetCommandPanel()` — **vitrina** sin parámetros; la fila anterior anunciaba `{source, items}`, que nunca existieron: los tres nodos de la flota están incrustados como constantes en la clase | `ui/lib/gallery/sections/section_drasus_core_extended.dart` |
+| `accent-ab` | `AccentAbSection({colorA, colorB})` (ambos con valor por defecto) — vive en `section_animations.dart`, **no** en `section_drasus_core_extended.dart` como decía la fila anterior | `ui/lib/gallery/sections/section_animations.dart` |
 
 ### Glow Primitive (fábrica de interacción)
 
-Un único widget compositivo (`HoverGlow` en `gallery/gallery_fx.dart`) sirve como base reutilizable para cualquier superficie que necesite hover con glow + escala. No se crean wrappers por componente — se compone:
+Un único widget compositivo — `HoverGlow({required child, required color, radius = Gx.rPanel, scale = 1.03})` en `ui/lib/gallery/gallery_fx.dart` — sirve como base reutilizable para cualquier superficie que necesite hover con glow + escala. No se crean wrappers por componente — se compone:
 
 ```dart
-// Tarjeta con hover: glow potente + escala 1.02 en 160ms
+// Tarjeta con hover: glow potente + escala 1.03 (el valor por defecto) en 160ms
 HoverGlow(
   color: Gx.transitionIndigo,
   radius: Gx.rPanel,
@@ -733,18 +760,19 @@ HoverGlow(
 
 ### Cómo pedir un componente (Designer → Engineer)
 
-El Designer nunca pide "un dropdown con vidrio". Pide: **"`GlowDropdown` con label 'Régimen' y opciones [Tendencia, Rango, Volátil, Calmo]"**. El Engineer busca `GlowDropdown` en este Map, ve que está en `gallery/gallery_fx.dart`, y lo instancia. Sin invención, sin ambigüedad.
+El Designer nunca pide "un dropdown con vidrio". Pide: **"`Dropdown` con label 'Régimen' y opciones [Tendencia, Rango, Volátil, Calmo]"**. El Engineer busca `Dropdown` en este Map, ve que es `custom_ui.Dropdown<T>` en `ui/lib/components/dropdown.dart`, y lo instancia. Sin invención, sin ambigüedad.
 
 ### Cómo crear un componente nuevo (cuando NO existe)
 
 1. Verificar que no existe en este Map
-2. Si es un widget de interacción → `gallery/gallery_fx.dart` (mismo patrón: `StatefulWidget` + `_XxxState` con foco/hover locales)
-3. Si es un CustomPainter → `gallery/gallery_painters.dart` (mismo patrón: `shouldRepaint` ligero, sin blur en animación)
-4. Si es una sección standalone → `gallery/sections/` (mismo patrón: `StatelessWidget` o `StatefulWidget` con builder)
-5. Registrarlo inmediatamente en el Catálogo (§4–§11) y en este Map
-6. Usar `frosted()`, `panelSurface()`, `cardSurface()` o `PanelFromDecoration` para TODA superficie — nunca un `Color` sólido suelto
-7. **Nunca `const`** en la instanciación (el `const` congela los colores al cambiar el modo global de superficie)
-8. Surface colors via `Gx.surfaceFill/surfacePanel/surfaceCard` — nunca `Gx.glassFill/panelSolid/cardInner` raw
+2. **Si es una pieza reutilizable con datos propios → `ui/lib/components/<nombre>.dart`** y exportarla en `ui/lib/components/components.dart` (alias `custom_ui`). Este es el caso normal desde STORY-025/026: la librería real vive ahí, no en `gallery/`
+3. Si es un primitivo de interacción compartido (hover/glow/anillos) → `ui/lib/gallery/gallery_fx.dart` (patrón: `StatefulWidget` + `_XxxState` con foco/hover locales)
+4. Si es un CustomPainter → junto a sus pares: `ui/lib/gallery/sections/section_dataviz_quant.dart` para gráficas de dominio, `ui/lib/gallery/gallery_painters.dart` para fondos y grafos (patrón: `shouldRepaint` ligero, sin blur en animación)
+5. Si es una **vitrina** de exhibición (datos incrustados, sin parámetros) → `ui/lib/gallery/sections/` y su entrada en `gallery_registry.dart`. Una vitrina NO es un componente: no la referencies desde una pantalla real
+6. Registrarlo inmediatamente en el Catálogo (§4–§11) y en este Map, con la **firma real**
+7. Usar `frosted()`, `panelSurface()`, `cardSurface()` o `PanelFromDecoration` (todos en `ui/lib/theme/surfaces.dart`) para TODA superficie — nunca un `Color` sólido suelto
+8. **Nunca `const`** en la instanciación (el `const` congela los colores al cambiar el modo global de superficie)
+9. Colores de superficie vía `Gx.surfaceFill/surfacePanel/surfaceCard` (getters dinámicos) — nunca `Gx.glassFill/panelSolid/cardInner` en crudo: existen como `const` en `gx_tokens.dart` pero son de la paleta fija y no siguen el modo global
 
 ---
 
@@ -753,7 +781,7 @@ El Designer nunca pide "un dropdown con vidrio". Pide: **"`GlowDropdown` con lab
 ### Do
 - **Antes de crear, busca en el Component Map.** Si el componente ya existe, reutilízalo — nunca lo dupliques.
 - **Reutiliza `frosted()`, `panelSurface()`, `cardSurface()`, `PanelFromDecoration`** para toda superficie. El color via `Gx.surfaceFill/surfacePanel/surfaceCard` — NUNCA tokens raw.
-- **Nunca uses `const`** en widgets que dependen del modo de superficie (todos los Glow*, InteractiveDag, secciones, etc.). El `const` impide que Flutter reconstruya al cambiar el modo.
+- **Nunca uses `const`** en widgets que dependen del modo de superficie (todos los widgets de `ui/lib/components/`, `InteractiveDag`, secciones, etc.). El `const` impide que Flutter reconstruya al cambiar el modo.
 - Pon cada zona de datos sobre la pila sólida (`#080A18` → `#0E1426` → `#11182E`) y reserva el vidrio para el chrome (nav, menús, botones, inputs).
 - Ata SIEMPRE el color a un estado (óptimo/transición/alerta/crítico). El neón es semántico y escaso: pocos puntos encendidos sobre la oscuridad.
 - Usa el grotesco display a peso 500 para titulares; sube el piso tipográfico (cuerpo 14px, datos 13px) — se acabaron los 9–10px.
@@ -768,7 +796,7 @@ El Designer nunca pide "un dropdown con vidrio". Pide: **"`GlowDropdown` con lab
 
 ### Don't
 - **No dupliques componentes.** Si ya existe en el Component Map, reutilízalo aunque "no sea exactamente igual" — extiéndelo con parámetros en vez de clonarlo.
-- **No uses `const`** en widgets de superficie (Glow*, secciones, InteractiveDag, etc.) — el `const` congela la instancia y evita que los colores reaccionen al cambio de modo.
+- **No uses `const`** en widgets de superficie (los de `ui/lib/components/`, secciones, `InteractiveDag`, etc.) — el `const` congela la instancia y evita que los colores reaccionen al cambio de modo.
 - No uses gráficos de velas japonesas ni libros de órdenes como elemento central — Drasus destrona al precio (prioridad mínima, salvo que se especifique).
 - No uses el color como decoración: nada de neón "porque se ve bonito" sin un estado detrás.
 - No uses negro plano `#000000` de lienzo ni gris neutro de oficina en bordes — todo lleva el tinte azul-violeta.
@@ -840,7 +868,7 @@ Ambas viven en el mismo canvas con focus mode de visibilidad independiente.
 
 4. Crea un input de filtro: superficie de vidrio Apple, radio 10px, texto 14px en `#E6ECF8`, placeholder `#5C6B8C`. En foco (real, `FocusNode`), el borde sube a 1.5px en `#9A8CFF`, el relleno se vuelve más opaco y aparece un glow limpio alrededor (`glow(#9A8CFF, blur 18)`). Sin aberración cromática.
 
-5. Crea la portada de una autopsia (Inspector Panel): fondo `#080A18` con telón cósmico tenue, un número-héroe en mono 28px, un título ceremonial en display 500 a 56px con el gradiente cósmico (`#E59CFF → #B79CFF → #56A8FF`) vía `ShaderMask`, borde y glow en carmesí `#F0413F` indicando muerte de la estrategia.
+5. Crea la portada de un reporte de cierre (Inspector Panel): fondo `#080A18` con telón cósmico tenue, un número-héroe en mono 28px, un título ceremonial en display 500 a 56px con el gradiente cósmico (`#E59CFF → #B79CFF → #56A8FF`) vía `ShaderMask`, borde y glow en carmesí `#F0413F` indicando el retiro definitivo de la estrategia.
 
 ## Type Pairing Logic
 
@@ -941,7 +969,7 @@ const transitionPurple = Color(0xFF8B83E8);
 const alertAmber       = Color(0xFFFFC94D); // 🟠 alerta / volátil
 const alertOrange      = Color(0xFFF59423);
 const criticalRed      = Color(0xFFFF8A8A); // 🔴 crítico
-const criticalCrimson  = Color(0xFFF0413F); // 🔴 fallo / muerte
+const criticalCrimson  = Color(0xFFF0413F); // 🔴 fallo / retiro definitivo
 
 // Gradientes (compatibles dentro de cada familia semántica)
 const gradOptima     = [optimaCyan, optimaTeal];
@@ -1026,9 +1054,10 @@ Toda la superficie de la UI se controla desde un solo enum global, sincronizado 
 ui/lib/gallery/
   gallery_tokens.dart   # ÚNICO sitio con hex → Color/TextStyle + gradientes + glow. Clase Gx.
   gallery_painters.dart # CustomPainter: telón cósmico, líneas de DAG, cono MC, heatmap, scatter
-  gallery_fx.dart       # Efectos: frosted(), panelSurface(), cardSurface(), PanelFromDecoration
-                        #   GlowButton, GlowSwitch, GlowSlider, GlowInput, GlowDropdown,
-                        #   GlowCalendar, LightBurstText, InteractiveDag
+  gallery_fx.dart       # Efectos: frosted(), panelSurface(), cardSurface(), PanelFromDecoration,
+                        #   HoverGlow, LightBurstText, InteractiveDag (los componentes de formulario
+                        #   — Button, Switch, Slider, Input, Dropdown, Calendar — se movieron a
+                        #   ui/lib/components/ en STORY-025/026, ver Component Map)
   gallery_tab.dart      # GalleryTab: arma la vitrina por secciones
   sections/             # archivos por sección del catálogo
 ```

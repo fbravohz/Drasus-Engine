@@ -4,14 +4,16 @@
 //
 // Por el "Contrato del nodo Canvas por-feature" (ADR-0136), esta superficie
 // se abre al hacer clic en el card-node de la feature en el Canvas — Vista
-// Relacional. La infraestructura genérica de card-node con builder por
-// feature todavía no existe (EPIC-8, ver canvas_tab.dart: los nodos son
-// rectángulos inertes sin lógica de conexión). `canvas_tab.dart` monta este
-// panel como caso especial mínimo para esta única feature mientras esa
-// infraestructura llega — el cableado genérico queda como deuda de
-// integración visual (mismo tratamiento que "Nodo de Canvas" en
-// docs/execution/STORY-051-hybrid-data-transformer.md §8), no bloquea esta
-// entrega.
+// Relacional. **La infraestructura genérica ya existe** (STORY-073,
+// 2026-07-31): `canvas_inspector_registry.dart` mapea nombre de feature ->
+// constructor de panel, y `canvas_tab.dart` despacha por ese mapa sin
+// ninguna rama por feature. Este panel estuvo meses construido y
+// referenciado desde ninguna parte; se adoptó añadiendo UNA entrada al
+// registro, que fue la prueba objetiva de que el mecanismo era genérico de
+// verdad y no un caso especial disfrazado. La nota anterior de este
+// encabezado decía lo contrario (cableado especial, infraestructura
+// pendiente de EPIC-8) y quedó obsoleta -- corregida al detectarlo el gate
+// de QA de STORY-073.
 //
 // Cáscara delgada (ADR-0117): cero lógica de negocio. Los únicos cómputos en
 // este archivo son de presentación (formatear duración, derivar
@@ -52,7 +54,16 @@ const int _kMaxBarsRenderizadas = 50;
 // vida del envío async (patrón G1: await directo, sin Timer.periodic) y el
 // resultado de la última corrida.
 class HybridDataTransformerInspectorPanel extends StatefulWidget {
-  const HybridDataTransformerInspectorPanel({super.key});
+  // Costura de prueba (STORY-073 Etapa 4, mismo patrón que `loadRecordsOverride`
+  // en hybrid_data_transformer_dashboard_widget.dart): `flutter test` no tiene
+  // la librería nativa compilada, así que un test de widget que alcance este
+  // panel desde el lienzo (criterio de aceptación #9) inyecta un doble aquí
+  // en vez de cruzar el puente FFI real en `initState()`.
+  final Future<List<SourceDatasetDto>> Function({required String dbPath})?
+      loadDatasetsOverride;
+
+  const HybridDataTransformerInspectorPanel(
+      {super.key, this.loadDatasetsOverride});
 
   @override
   State<HybridDataTransformerInspectorPanel> createState() =>
@@ -120,10 +131,12 @@ class _HybridDataTransformerInspectorPanelState
     super.dispose();
   }
 
-  // Lee list_source_datasets() por FFI y puebla el Dropdown "Dataset de origen".
+  // Lee list_source_datasets() por FFI (o el doble inyectado en pruebas) y
+  // puebla el Dropdown "Dataset de origen".
   Future<void> _cargarDatasets() async {
     setState(() => _loadingDatasets = true);
-    final datasets = await listSourceDatasets(dbPath: _kDbPath);
+    final loader = widget.loadDatasetsOverride ?? listSourceDatasets;
+    final datasets = await loader(dbPath: _kDbPath);
     if (!mounted) return;
     setState(() {
       _datasets = datasets;
@@ -338,8 +351,7 @@ class _HybridDataTransformerInspectorPanelState
         const SizedBox(height: Gx.space12),
         custom_ui.FormField(
           label: 'Venue',
-          child:
-              custom_ui.Input(controller: _venueCtrl, hint: 'Ej. BINANCE'),
+          child: custom_ui.Input(controller: _venueCtrl, hint: 'Ej. BINANCE'),
         ),
         const SizedBox(height: Gx.space12),
         custom_ui.FormField(
@@ -350,8 +362,7 @@ class _HybridDataTransformerInspectorPanelState
         const SizedBox(height: Gx.space12),
         custom_ui.FormField(
           label: 'Ruta al Parquet de origen',
-          helperText:
-              'Alternativa a ticks explícitos — Parquet ya descargado.',
+          helperText: 'Alternativa a ticks explícitos — Parquet ya descargado.',
           child: custom_ui.Input(
               controller: _sourceParquetPathCtrl,
               hint: '/ruta/al/archivo.parquet'),
@@ -481,9 +492,13 @@ class _HybridDataTransformerInspectorPanelState
             type: custom_ui.BannerType.success),
         const SizedBox(height: Gx.space12),
         custom_ui.KeyValue(
-            label: 'Filas de entrada', value: outcome.rowsIn.toString(), mono: true),
+            label: 'Filas de entrada',
+            value: outcome.rowsIn.toString(),
+            mono: true),
         custom_ui.KeyValue(
-            label: 'Filas de salida', value: outcome.rowsOut.toString(), mono: true),
+            label: 'Filas de salida',
+            value: outcome.rowsOut.toString(),
+            mono: true),
         custom_ui.KeyValue(
             label: 'Duración',
             value: _formatDuracion(outcome.transformDurationNs),

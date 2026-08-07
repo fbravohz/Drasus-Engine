@@ -523,8 +523,8 @@ Widget _legend(String t, Color c) => Padding(
       ]),
     );
 
-/// Cabecera de reporte de autopsia con título degradado y metadatos.
-Widget _autopsyHeader() => Container(
+/// Cabecera ceremonial de reporte de cierre con título degradado y metadatos.
+Widget _closingReportHeader() => Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
           gradient: Gx.linear([Gx.surfacePanel, Gx.canvasBase]),
@@ -971,7 +971,7 @@ List<GalleryEntry> _inputsExtended() => [
       GalleryEntry('Color Picker', (ctx) => custom_ui.ColorPicker()),
       // Dropzone — modo demo: al tocar simula 2s de carga (Batch 4 STORY-025).
       GalleryEntry('File Upload / Dropzone',
-          (ctx) => custom_ui.Dropzone(label: 'Arrastra archivos o toca para cargar')),
+          (ctx) => custom_ui.Dropzone(label: 'Toca para cargar un archivo')),
       // MentionInput — non-controlado; sugerencias de usuarios simulados.
       GalleryEntry(
           'Mention Input',
@@ -1632,7 +1632,7 @@ List<GalleryEntry> _tradeTape() => [
           fullWidth: true),
     ];
 
-/// §11 Núcleo Drasus: célula organismo, orbe de cristal, leyenda, autopsia.
+/// §11 Núcleo Drasus: célula organismo, orbe de cristal, leyenda, reporte de cierre.
 List<GalleryEntry> _drasusCore() => [
       GalleryEntry(
           'Célula / organismo (hover)',
@@ -1650,10 +1650,10 @@ List<GalleryEntry> _drasusCore() => [
                       _legend('Óptimo / tendencia', Gx.optimaCyan),
                       _legend('Transición / incubación', Gx.transitionIndigo),
                       _legend('Alerta / volátil', Gx.alertAmber),
-                      _legend('Crítico / muerte', Gx.criticalCrimson),
+                      _legend('Crítico / retirada', Gx.criticalCrimson),
                     ]),
               )),
-      GalleryEntry('Portada de autopsia', (ctx) => _autopsyHeader()),
+      GalleryEntry('Portada de reporte de cierre', (ctx) => _closingReportHeader()),
     ];
 
 /// §11 Núcleo Drasus extendido: fleet-command, zui-zoom, expectation, pipeline.

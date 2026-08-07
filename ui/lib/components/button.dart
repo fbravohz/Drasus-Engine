@@ -9,10 +9,10 @@ import '../theme/surfaces.dart';
 
 // Variantes semánticas del botón — mapean a los estados de vitalidad del sistema.
 enum ButtonVariant {
-  primary,   // acción de confirmación/éxito (gradOptima — cian)
+  primary, // acción de confirmación/éxito (gradOptima — cian)
   secondary, // acción de transición/incubación (gradTransition — índigo)
-  danger,    // acción destructiva (gradCritical — carmesí)
-  ghost,     // acción neutro/secundaria (superficie frosted, sin gradiente)
+  danger, // acción destructiva (gradCritical — carmesí)
+  ghost, // acción neutro/secundaria (superficie frosted, sin gradiente)
 }
 
 // Botón con gradiente, glow y animación de pulso de luz al pulsar.
@@ -43,12 +43,34 @@ class Button extends StatefulWidget {
 
 class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
   // Controla el pulso de glow al soltar el botón (explosión de luz).
-  late final AnimationController _burst = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 460),
-  );
+  //
+  // BUG REAL corregido (hallado por STORY-073, Flutter-Engineer, al probar
+  // el primer botón `ButtonVariant.ghost` fuera de la galería): esto era
+  // `late final ... = AnimationController(...)`, una inicialización
+  // PEREZOSA que solo se dispara en el primer ACCESO al campo. `build()`
+  // solo lee `_burst` en la rama `AnimatedBuilder` (variantes
+  // primary/secondary/danger) — la rama `ghost` usa `frosted()` y nunca la
+  // toca. Un botón ghost que se monta y se desmonta sin que ninguna otra
+  // rama lo haya leído antes llega a `dispose()` con `_burst` TODAVÍA sin
+  // construir; `_burst.dispose()` dispara el primer acceso ahí mismo,
+  // construyendo un `AnimationController` (que busca su `TickerMode` en el
+  // árbol de widgets vía `vsync: this`) sobre un elemento ya desactivado —
+  // "Looking up a deactivated widget's ancestor is unsafe". Creación
+  // ANSIOSA en `initState()` (ver abajo) garantiza que el ticker se
+  // construye mientras el elemento sigue vivo, sin importar qué rama de
+  // `build()` se ejecute después.
+  late final AnimationController _burst;
   bool _hover = false;
   bool _down = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _burst = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 460),
+    );
+  }
 
   // El botón es interactivo solo si está habilitado, no está en carga y tiene callback.
   bool get _interactive =>
@@ -56,26 +78,26 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
 
   // Gradiente según variante semántica.
   List<Color> _gradient() => switch (widget.variant) {
-        ButtonVariant.primary   => Gx.gradOptima,
+        ButtonVariant.primary => Gx.gradOptima,
         ButtonVariant.secondary => Gx.gradTransition,
-        ButtonVariant.danger    => Gx.gradCritical,
-        ButtonVariant.ghost     => [],
+        ButtonVariant.danger => Gx.gradCritical,
+        ButtonVariant.ghost => [],
       };
 
   // Color de glow según variante semántica.
   Color _glowColor() => switch (widget.variant) {
-        ButtonVariant.primary   => Gx.optimaCyan,
+        ButtonVariant.primary => Gx.optimaCyan,
         ButtonVariant.secondary => Gx.transitionIndigo,
-        ButtonVariant.danger    => Gx.criticalCrimson,
-        ButtonVariant.ghost     => Gx.accentDynamic,
+        ButtonVariant.danger => Gx.criticalCrimson,
+        ButtonVariant.ghost => Gx.accentDynamic,
       };
 
   // Color del texto según variante — legible sobre cada gradiente.
   Color _textColor() => switch (widget.variant) {
-        ButtonVariant.primary   => Gx.canvasBase,   // oscuro sobre cian claro
-        ButtonVariant.secondary => Gx.pureWhite,    // blanco sobre índigo
-        ButtonVariant.danger    => Gx.pureWhite,    // blanco sobre carmesí
-        ButtonVariant.ghost     => Gx.textBase,     // dinámico sobre superficie
+        ButtonVariant.primary => Gx.canvasBase, // oscuro sobre cian claro
+        ButtonVariant.secondary => Gx.pureWhite, // blanco sobre índigo
+        ButtonVariant.danger => Gx.pureWhite, // blanco sobre carmesí
+        ButtonVariant.ghost => Gx.textBase, // dinámico sobre superficie
       };
 
   @override
@@ -99,7 +121,8 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
               width: 14,
               height: 14,
               // Spinner en el color del texto del botón (legible sobre gradiente).
-              child: CircularProgressIndicator(strokeWidth: 1.5, color: textColor),
+              child:
+                  CircularProgressIndicator(strokeWidth: 1.5, color: textColor),
             ),
             const SizedBox(width: 8),
             Text(widget.label,
@@ -108,15 +131,14 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
                     .copyWith(letterSpacing: 0.3)),
           ])
         : Text(widget.label,
-            style:
-                Gx.uiSans(fontSize: 13, weight: FontWeight.w600, color: textColor)
-                    .copyWith(letterSpacing: 0.3));
+            style: Gx.uiSans(
+                    fontSize: 13, weight: FontWeight.w600, color: textColor)
+                .copyWith(letterSpacing: 0.3));
 
     // Superficie del botón: ghost usa frosted(), el resto usa Container con gradiente.
     final Widget surface = isGhost
         ? frosted(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
             glow: _hover && _interactive
                 ? Gx.glow(glowColor, blur: 14, opacity: 0.3)
                 : null,
@@ -135,8 +157,7 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
                   gradient: Gx.linear(_gradient()),
                   borderRadius: BorderRadius.circular(Gx.rButton),
                   // Sin glow cuando no es interactivo (disabled / loading sin callback).
-                  boxShadow:
-                      _interactive ? Gx.glowStrong(glowColor, k) : null,
+                  boxShadow: _interactive ? Gx.glowStrong(glowColor, k) : null,
                 ),
                 child: child,
               );
@@ -159,8 +180,7 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
                 widget.onPressed?.call();
               }
             : null,
-        onTapCancel:
-            _interactive ? () => setState(() => _down = false) : null,
+        onTapCancel: _interactive ? () => setState(() => _down = false) : null,
         child: AnimatedScale(
           scale: _down ? 0.96 : 1.0,
           duration: const Duration(milliseconds: 110),

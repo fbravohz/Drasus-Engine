@@ -26,22 +26,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drasus_ui/gallery/gallery_tab.dart';
+import 'package:drasus_ui/theme/theme_scope.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// Carga las tres familias tipográficas embebidas desde assets/fonts/.
-// Debe llamarse una vez antes de los tests (setUpAll) para registrar
-// las familias en el motor de texto y que los goldens muestren glifos reales.
+// Carga la tipografía embebida desde assets/fonts/. Debe llamarse una vez
+// antes de los tests (setUpAll) para registrar la familia en el motor de
+// texto y que los goldens muestren glifos reales.
+//
+// Por qué una sola familia (corregido 2026-07-31): este mapa listaba
+// SpaceGrotesk, Inter y JetBrainsMono, tres familias que STORY-023 sustituyó
+// por Rajdhani borrando sus .ttf. `File.readAsBytesSync` sobre un archivo
+// inexistente lanzaba en `setUpAll`, así que ESTE ARCHIVO llevaba en rojo
+// desde entonces y arrastraba a todo `flutter test` con él. Un suite que
+// nunca puede ponerse verde convierte "Some tests failed" en ruido de fondo
+// y esconde la siguiente regresión real: el mapa debe reflejar `pubspec.yaml`
+// y nada más.
 Future<void> _loadEmbeddedFonts() async {
   // Mapa: nombre de familia → lista de archivos .ttf asociados.
   // Refleja exactamente la declaración en pubspec.yaml.
   final fonts = {
-    'SpaceGrotesk': ['assets/fonts/SpaceGrotesk-Medium.ttf'],
-    'Inter': [
-      'assets/fonts/Inter-Regular.ttf',
-      'assets/fonts/Inter-Medium.ttf',
-    ],
-    'JetBrainsMono': [
-      'assets/fonts/JetBrainsMono-Regular.ttf',
-      'assets/fonts/JetBrainsMono-Medium.ttf',
+    'Rajdhani': [
+      'assets/fonts/Rajdhani-Regular.ttf',
+      'assets/fonts/Rajdhani-Medium.ttf',
+      'assets/fonts/Rajdhani-SemiBold.ttf',
+      'assets/fonts/Rajdhani-Bold.ttf',
     ],
   };
 
@@ -59,8 +67,23 @@ Future<void> _loadEmbeddedFonts() async {
 }
 
 void main() {
-  // Carga fuentes una sola vez antes de todos los tests de este archivo.
-  setUpAll(_loadEmbeddedFonts);
+  // Carga fuentes e inicializa el tema una sola vez antes de todos los tests.
+  //
+  // Por qué también el tema (añadido 2026-07-31): registrar la familia con
+  // FontLoader NO basta. La escala tipográfica (`Gx.panelTitle`, `Gx.body`,
+  // `Gx.dataSmall`…) vive en espejos estáticos de `ThemeState` que nacen como
+  // `TextStyle(fontSize: N)` SIN familia y solo la reciben cuando `load()`
+  // dispara `_syncStyleScale()`. Sin esa llamada, todo texto que use la escala
+  // caía en Ahem y se congelaba en el golden como cajas grises — justo lo que
+  // el encabezado de este archivo dice que se quiere evitar. El golden medía
+  // entonces media pantalla real y media pantalla de cajas.
+  setUpAll(() async {
+    await _loadEmbeddedFonts();
+    // Sin valores persistidos: fuerza los defaults, que es lo que debe
+    // capturar el golden (un tema que el usuario no ha tocado).
+    SharedPreferences.setMockInitialValues({});
+    await ThemeState().load();
+  });
 
   testWidgets('gallery_full_scroll', (WidgetTester tester) async {
     // Viewport para el layout maestro-detalle (STORY-022):

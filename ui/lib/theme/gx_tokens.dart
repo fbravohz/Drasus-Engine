@@ -46,7 +46,7 @@ class Gx {
   static const alertAmber = Color(0xFFFFC94D); // alerta / volátil
   static const alertOrange = Color(0xFFF59423);
   static const criticalRed = Color(0xFFFF8A8A); // crítico
-  static const criticalCrimson = Color(0xFFF0413F); // fallo / muerte
+  static const criticalCrimson = Color(0xFFF0413F); // fallo / retiro definitivo
 
   // --- Fondos y bordes de chip por estado ---
   static const optimaChipBg = Color(0xFF08251F);
@@ -343,4 +343,5 @@ class Gx {
   static const IconData iconAdd = IconsaxPlusLinear.add;
   static const IconData iconCheck = IconsaxPlusLinear.tick_circle;
   static const IconData iconChevronDown = IconsaxPlusLinear.arrow_down;
+  static const IconData iconCopy = IconsaxPlusLinear.copy;
 }

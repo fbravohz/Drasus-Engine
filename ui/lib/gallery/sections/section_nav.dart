@@ -123,7 +123,7 @@ class _CommandPaletteState extends State<CommandPalette> {
     'Ejecutar backtest SPX',
     'Incubar estrategia #12',
     'Retirar node-19',
-    'Ver autopsia node-07',
+    'Ver reporte de cierre node-07',
   ];
 
   @override

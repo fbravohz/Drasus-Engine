@@ -8,5 +8,8 @@
   "attribution": {
     "commit": ""
   },
-  "outputStyle": "default"
+  "outputStyle": "default",
+  "output": {
+    "showDiffs": "none"
+  }
 }

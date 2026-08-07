@@ -14,11 +14,11 @@ Abstrae canales de notificación (email, webhook, Slack, SMS). El Core dispara e
 
 ## Comportamientos Observables
 
-- [ ] Execute dispara evento "KILL_SWITCH_ACTIVATED"
+- 1. Execute dispara evento "KILL_SWITCH_ACTIVATED"
   → Notification enruta a: email al admin, Slack al channel #trading, webhook a URL configurada
   → Usuario recibe múltiples notificaciones simultáneamente
 
-- [ ] El usuario configura canal Slack
+- 2. El usuario configura canal Slack
   → Siguiente evento se envía automáticamente a Slack (sin cambiar código)
 
 ---
@@ -32,9 +32,9 @@ Abstrae canales de notificación (email, webhook, Slack, SMS). El Core dispara e
 
 ## Parámetros Configurables
 
-| Parámetro | Default | Rango | Qué hace |
-|---|---|---|---|
-| CHANNELS | email | email / slack / webhook / sms | Canales activos |
+| Parámetro | Default | Rango                         | Qué hace        |
+| --------- | ------- | ----------------------------- | --------------- |
+| CHANNELS  | email   | email / slack / webhook / sms | Canales activos |
 
 ---
 

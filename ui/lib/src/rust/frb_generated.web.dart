@@ -14,6 +14,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
+import 'api/data_import_wizard.dart';
 import 'api/hybrid_data_transformer.dart';
 import 'api/jobs.dart';
 import 'api/verification.dart';
@@ -26,6 +27,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.generalizedFrbRustBinding,
     required super.portManager,
   });
+
+  @protected
+  BigInt dco_decode_I128(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -70,6 +74,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   JobSummary dco_decode_job_summary(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
   List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw);
 
   @protected
@@ -85,6 +92,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<JobSummary> dco_decode_list_job_summary(dynamic raw);
 
   @protected
+  List<ManualColumnMappingDto> dco_decode_list_manual_column_mapping_dto(
+      dynamic raw);
+
+  @protected
+  List<PreviewCanonicalBarDto> dco_decode_list_preview_canonical_bar_dto(
+      dynamic raw);
+
+  @protected
+  List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
@@ -98,6 +116,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       dynamic raw);
 
   @protected
+  ManualColumnMappingDto dco_decode_manual_column_mapping_dto(dynamic raw);
+
+  @protected
+  ManualImportColumnsResultDto dco_decode_manual_import_columns_result_dto(
+      dynamic raw);
+
+  @protected
+  ManualImportConfirmResultDto dco_decode_manual_import_confirm_result_dto(
+      dynamic raw);
+
+  @protected
+  ManualImportContentRangeResultDto
+      dco_decode_manual_import_content_range_result_dto(dynamic raw);
+
+  @protected
+  ManualImportPreviewResultDto dco_decode_manual_import_preview_result_dto(
+      dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
@@ -108,6 +145,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
+
+  @protected
+  PreviewCanonicalBarDto dco_decode_preview_canonical_bar_dto(dynamic raw);
+
+  @protected
+  SelectManualImportFileResultDto
+      dco_decode_select_manual_import_file_result_dto(dynamic raw);
 
   @protected
   SourceDatasetDto dco_decode_source_dataset_dto(dynamic raw);
@@ -135,6 +179,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   VerificationOutcome dco_decode_verification_outcome(dynamic raw);
+
+  @protected
+  BigInt sse_decode_I128(SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -183,6 +230,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   JobSummary sse_decode_job_summary(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
   List<AuditEventSummary> sse_decode_list_audit_event_summary(
       SseDeserializer deserializer);
 
@@ -201,6 +251,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<JobSummary> sse_decode_list_job_summary(SseDeserializer deserializer);
 
   @protected
+  List<ManualColumnMappingDto> sse_decode_list_manual_column_mapping_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  List<PreviewCanonicalBarDto> sse_decode_list_preview_canonical_bar_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
@@ -216,6 +277,27 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  ManualColumnMappingDto sse_decode_manual_column_mapping_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  ManualImportColumnsResultDto sse_decode_manual_import_columns_result_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  ManualImportConfirmResultDto sse_decode_manual_import_confirm_result_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  ManualImportContentRangeResultDto
+      sse_decode_manual_import_content_range_result_dto(
+          SseDeserializer deserializer);
+
+  @protected
+  ManualImportPreviewResultDto sse_decode_manual_import_preview_result_dto(
+      SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
@@ -227,6 +309,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+
+  @protected
+  PreviewCanonicalBarDto sse_decode_preview_canonical_bar_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  SelectManualImportFileResultDto
+      sse_decode_select_manual_import_file_result_dto(
+          SseDeserializer deserializer);
 
   @protected
   SourceDatasetDto sse_decode_source_dataset_dto(SseDeserializer deserializer);
@@ -260,6 +351,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  void sse_encode_I128(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -310,6 +404,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_job_summary(JobSummary self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_audit_event_summary(
       List<AuditEventSummary> self, SseSerializer serializer);
 
@@ -329,6 +426,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       List<JobSummary> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_manual_column_mapping_dto(
+      List<ManualColumnMappingDto> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_preview_canonical_bar_dto(
+      List<PreviewCanonicalBarDto> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
       Uint8List self, SseSerializer serializer);
 
@@ -345,6 +453,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       List<TransformationRecordDto> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_manual_column_mapping_dto(
+      ManualColumnMappingDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_manual_import_columns_result_dto(
+      ManualImportColumnsResultDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_manual_import_confirm_result_dto(
+      ManualImportConfirmResultDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_manual_import_content_range_result_dto(
+      ManualImportContentRangeResultDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_manual_import_preview_result_dto(
+      ManualImportPreviewResultDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
@@ -357,6 +485,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_preview_canonical_bar_dto(
+      PreviewCanonicalBarDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_select_manual_import_file_result_dto(
+      SelectManualImportFileResultDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_source_dataset_dto(

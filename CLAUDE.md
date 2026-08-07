@@ -55,6 +55,8 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 - `.agents/knowledge/ponytail.md` — HOW TO: simplificación deliberada (Capa 3 de comentarios).
 - `.agents/knowledge/memory-policy.md` — HOW TO: qué y cómo recordar entre sesiones (mecánica del harness + disciplina de Drasus + `.agents/memory/` vs. `.agents/state/`).
 - `.agents/knowledge/critical-domain-reasoning.md` — HOW TO: ojo crítico experto antes de sellar decisiones de dominio (7 comprobaciones + gate de especialista); obligatorio para Architect/TL/ingenieros al canonizar reglas cuant/estadística/cripto/legal.
+- `.agents/knowledge/session-reporting.md` — HOW TO: escribir el reporte de sesión en `.agents/sessions/` en vez de volcar el texto al chat (eco de tres líneas + solo lo que exige interacción). Plantilla en `.agents/templates/session-report.md`.
+- `.agents/knowledge/write-like-gemini.md` — HOW TO: modo de escritura activable por comando (Claude / Gemini Relajado / Gemini Relajado + Listas), con los 3 casos reales medidos; activación universal en `GOVERNANCE-1.7`.
 
 Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `governance.md` (el único documento `SIEMPRE`). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.
 
@@ -76,11 +78,9 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 ---
 
-## 4. Memoria entre Sesiones (Recuerdo tipo "persona")
+## 4. Memoria entre Sesiones — DESACTIVADA (2026-08-07)
 
-Existe memoria nativa de proyecto en `~/Drasus-Engine/.agents/memory/` (índice `MEMORY.md` + un hecho por archivo). Se carga cada sesión: por eso un agente "recuerda" decisiones pasadas sin que se las repitan. Es curada, no automática — nunca dupliques lo que ya registra el código, el git o estos documentos.
-
-**📖 Política completa (mecánica del harness + disciplina de Drasus + protocolo del Tech-Lead + por qué `.agents/state/` es un sistema distinto):** `.agents/knowledge/memory-policy.md`.
+`autoMemoryEnabled: false` en `.claude/settings.local.json`: el sistema de memoria automática está apagado, no se lee ni se escribe. **Prohibido escribir nuevas entradas en `.agents/memory/`** — cualquier aprendizaje de valor va directo al documento de dominio (skill, knowledge, ADR) que lo consume. Los archivos ya existentes en `~/Drasus-Engine/.agents/memory/` quedan como están, sin tocarlos: el propietario los revisará y depurará él mismo en una tarea aparte.
 
 ---
 

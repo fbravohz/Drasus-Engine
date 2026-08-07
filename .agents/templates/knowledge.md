@@ -1,6 +1,6 @@
 # Plantilla de Documento — Formato Estándar para `.agents/knowledge/`
 
-Cómo estructurar un documento completo de `.agents/knowledge/` (no un bloque suelto — para eso, `.agents/templates/instruction-formats.md`). Un documento de knowledge es un contenedor de bloques, en orden fijo: Lecturas Obligatorias → Filtro de Verificación → N reglas sin límite → Ejemplos al cierre si aplican. El Filtro de Verificación va segundo (no al final) para que agregar reglas nunca lo desplace ni obligue a reordenar nada.
+Cómo estructurar un documento completo de `.agents/knowledge/` (no un bloque suelto — para eso, `.agents/templates/instruction-formats.md`). Un documento de knowledge es un contenedor de bloques, en orden fijo: Lecturas Obligatorias → Filtro de Verificación → N reglas sin límite → Ejemplos al cierre si aplican. El Filtro de Verificación va segundo (no al final) para que agregar reglas nunca lo desplace ni obligue a reordenar nada; Ejemplos, en namespace propio `<DOC>-EJ-N` (igual mecánica que el Filtro, ver `instruction-formats.md`), vive siempre al cierre físico sin competir por número con las reglas que se agreguen después.
 
 **Regla de oro:** todo documento de knowledge usa los formatos de `instruction-formats.md` para cada bloque que contiene. Esta plantilla no repite esos campos — dice cómo se ensamblan varios bloques en un documento coherente.
 
@@ -41,9 +41,9 @@ Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
 
 ---
 
-## <DOC>-N+1 — Ejemplos
+## <DOC>-EJ — Ejemplos
 
-### <DOC>-N+1.K — <Título del bloque de casos>
+### <DOC>-EJ-K — <Título del bloque de casos>
 <Ver "Sección de Ejemplos" abajo y instruction-formats.md, "Formato: Ejemplos">
 ```
 
@@ -64,10 +64,10 @@ Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
 * **Por qué no por regla:** el formato Regla de `instruction-formats.md` ya exige (cuando aplica) un par ❌/✅ atómico por cada definición específica. Ese ejemplo prueba la regla aislada. Un ejemplo *compuesto* — texto real donde 2+ reglas del documento actúan juntas — es información nueva, no una repetición; meterlo dentro de cada regla la infla y duplica contenido entre reglas vecinas.
 * **Por qué al final:** las reglas de un documento rara vez se aplican una por una — se aplican juntas sobre el mismo párrafo. Un ejemplo o varios al cierre puede mostrar eso (texto antes/después citando qué IDs de regla intervinieron) sin que ninguna regla individual cargue con el peso de la demostración completa.
 
-**Formato de cada ejemplo (idéntico a `WRITING-EFFICIENCY-7`, líneas 149-173):**
+**Formato de cada ejemplo (idéntico a `WRITING-EFFICIENCY-EJ` en `.agents/knowledge/writing-efficiency.md`):**
 
 `````
-### <DOC>-N.K — <Título del bloque de casos>
+### <DOC>-EJ-K — <Título del bloque de casos>
 
 <Intro: qué son los casos compuestos de esta sección y qué NO reemplazan
 (los ❌/✅ atómicos de cada regla) — 1-2 líneas>
@@ -89,8 +89,9 @@ Si hay medición real disponible (tokens, palabras, tiempo), agrégala como tabl
 
 Así se ve esta plantilla aplicada — `.agents/knowledge/writing-efficiency.md` es el primer documento retrofitteado con este formato:
 
-* 6 reglas (`WRITING-EFFICIENCY-1` a `-6`), cada una con el formato Regla — Completo de `instruction-formats.md`.
-* Una sección `## WRITING-EFFICIENCY-7 — Ejemplos` al final, con sub-ID `### WRITING-EFFICIENCY-7.1 — Casos Compuestos` y un caso compuesto citando `WRITING-EFFICIENCY-1.1`, `-1.2` y `-2.1` a la vez, más la tabla de medición real tomada de `.agents/documents/tmp/gemini_vs_claude.md`.
+* Filtro de Verificación en namespace propio (`WRITING-EFFICIENCY-FV-1` a `-FV-5`), como segunda sección del documento.
+* 7 reglas (`WRITING-EFFICIENCY-1` a `-7`), cada una con el formato Regla — Completo o Ligero de `instruction-formats.md` según lo que necesita.
+* Una sección `## WRITING-EFFICIENCY-EJ — Ejemplos` en namespace propio, física al cierre del documento, con sub-ID `### WRITING-EFFICIENCY-EJ-1 — Casos Compuestos` y un caso compuesto citando `WRITING-EFFICIENCY-1.1`, `-1.2` y `-2.1` a la vez, más la tabla de medición real tomada de `.agents/documents/tmp/gemini_vs_claude.md`.
 
 ---
 
@@ -102,7 +103,7 @@ Así se ve esta plantilla aplicada — `.agents/knowledge/writing-efficiency.md`
 - [ ] ¿El Filtro de Verificación vive en `<DOC>-FV-N`, como segunda sección (o primera si no hay Lecturas Obligatorias) — nunca al final?
 - [ ] ¿Cada regla dentro eligió Completo o Ligero según lo que necesita, no por costumbre (`instruction-formats.md`, "Formato: Regla")?
 - [ ] ¿Los IDs de regla son `<DOC>-N` (máximo 2 segmentos con sus sub-ítems, `<DOC>-N.M`) y append-only — ver `instruction-formats.md`, "Niveles de ID" y "Estabilidad de IDs"?
-- [ ] ¿La sección `## Ejemplos` está al final, no repetida dentro de cada regla, y sin `Aplica a`/`Precedencia`/`Filtro de verificación` (`instruction-formats.md`, "Formato: Ejemplos")?
-- [ ] ¿Cada sub-ID `### <DOC>-N.K` de Ejemplos lleva su título pegado, con el párrafo de intro antes del primer Caso?
+- [ ] ¿La sección `## <DOC>-EJ — Ejemplos` vive en namespace propio, física al final del documento — después de la última Regla, sin competir por número con ellas —, no repetida dentro de cada regla, y sin `Aplica a`/`Precedencia`/`Filtro de verificación` (`instruction-formats.md`, "Formato: Ejemplos")?
+- [ ] ¿Cada sub-ID `### <DOC>-EJ-K` de Ejemplos lleva su título pegado, con el párrafo de intro antes del primer Caso?
 - [ ] ¿Cada ejemplo compuesto cita los IDs de regla que demuestra?
 - [ ] ¿Toda medición mostrada es real (con fuente), nunca estimada sin decirlo?

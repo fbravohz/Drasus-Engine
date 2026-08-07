@@ -8,19 +8,34 @@
 import 'package:flutter/material.dart' hide Banner;
 import '../theme/gx_tokens.dart';
 import '../theme/surfaces.dart';
+import 'copy_button.dart';
 
 // Tipos de mensaje disponibles — cada uno mapea a un color semántico de vitalidad.
 enum BannerType { info, success, warning, error }
 
 // Banner de mensaje contextual con icono, borde izquierdo y glow semántico.
 // Contrato funcional: [message] texto del mensaje; [type] tipo semántico que
-// determina el color e icono (info/success/warning/error).
+// determina el color e icono (info/success/warning/error); [copyable] hace el
+// mensaje seleccionable y añade un botón de copiado.
+//
+// Sobre [copyable] (2026-08-01): por defecto es `false` porque un banner
+// informativo corto no se lleva a ningún lado. Se activa cuando el mensaje es
+// algo que el usuario puede necesitar FUERA de la aplicación — un fallo que
+// va a reportar, un identificador, una ruta. El caso que lo originó: un error
+// inesperado del asistente de importación que el propietario tuvo que
+// transcribir a mano porque no se dejaba seleccionar.
 class Banner extends StatelessWidget {
   final String message;
   final BannerType type;
+  final bool copyable;
 
   // No es const: frosted() lee el modo global estático y debe poder reconstruirse.
-  Banner({super.key, required this.message, required this.type});
+  Banner({
+    super.key,
+    required this.message,
+    required this.type,
+    this.copyable = false,
+  });
 
   // Color primario del banner según el tipo semántico.
   Color _color() => switch (type) {
@@ -55,7 +70,9 @@ class Banner extends StatelessWidget {
           Icon(_icon(), size: 16, color: color, shadows: Gx.textGlow(color)),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message, style: Gx.bodySecondary),
+            child: copyable
+                ? CopyableText(text: message, style: Gx.bodySecondary)
+                : Text(message, style: Gx.bodySecondary),
           ),
         ]),
       ),

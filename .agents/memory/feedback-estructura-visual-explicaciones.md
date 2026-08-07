@@ -5,10 +5,10 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 2efeeeb3-0a36-45a2-bb5d-56ac9007bf90
-  modified: 2026-07-24T01:06:15.224Z
+  modified: 2026-08-02T07:40:01.629Z
 ---
 
-Al aplicar la estructura Contexto-Antes-de-Detalle (`writing-efficiency.md` `WRITING-EFFICIENCY-4.1`: problema → solución → por qué → detalle) en una explicación al usuario:
+Al aplicar la estructura Contexto-Antes-de-Detalle (`writing-efficiency.md` `WRITING-EFFICIENCY-6.1`: problema → solución → por qué → detalle) en una explicación al usuario:
 
 - Etiqueta o encabezado corto por bloque (ej. `### 1. Problema`) en su **propia línea**, con salto de línea antes de empezar el texto del bloque — nunca la etiqueta pegada al texto en la misma línea.
 - Bullets para cualquier bloque que liste 2 o más ítems (varios riesgos, varias causas, varios pasos) — nunca enumerarlos en prosa corrida dentro de una oración.

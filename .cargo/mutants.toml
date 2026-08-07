@@ -1,0 +1,15 @@
+# Configuración del gate de mutación (ADR-0133 capa 8).
+#
+# El código generado por `flutter_rust_bridge_codegen` se excluye del gate, y
+# no es una concesión: mutarlo mide la corrección de una herramienta de
+# terceros, no la del código de Drasus. Ese archivo se reescribe entero cada
+# vez que la superficie FFI cambia, así que ninguna prueba que escribiéramos
+# contra él sobreviviría a la siguiente regeneración. La primera corrida del
+# gate sobre `bridge` (2026-07-31) devolvió 118 supervivientes, 107 de ellos
+# ahí dentro -- ruido que oculta los 11 reales.
+#
+# Lo que SÍ se gatea del puente es `src/api/**`, que es código escrito a mano
+# y donde vive la lógica de traducción que puede equivocarse.
+exclude_globs = [
+    "crates/bridge/src/frb_generated.rs",
+]

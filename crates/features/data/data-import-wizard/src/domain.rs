@@ -7,9 +7,10 @@
 //! llega como parámetro — nunca lo busca por su cuenta (ni en disco, ni en
 //! otra tabla, ni en el reloj del sistema).
 
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use chrono_tz::Tz;
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -238,10 +239,9 @@ pub fn parse_counter_field(field: &'static str, raw: &str) -> Result<i64, FieldP
 /// nunca lo hará dentro del rango de un archivo de barras real, pero se usa
 /// el mismo tipo que `Bars.volume_traded` para no introducir una asimetría
 /// de tipos entre el lector y el esquema que alimenta.
-pub fn parse_volume_field(raw: &str) -> Result<i128, FieldParseError> {
+pub fn parse_volume_field(field: &'static str, raw: &str) -> Result<i128, FieldParseError> {
     // Sin `.trim()` -- mismo motivo que `parse_counter_field`.
-    raw.parse::<i128>()
-        .map_err(|_| FieldParseError::InvalidInteger { field: "<VOL>", raw: raw.to_string() })
+    raw.parse::<i128>().map_err(|_| FieldParseError::InvalidInteger { field, raw: raw.to_string() })
 }
 
 /// Los nueve campos de una fila de barra M1 de MT5, ya parseados a sus
@@ -300,7 +300,7 @@ pub fn parse_mt5_bar_line(line: &str) -> Result<Mt5RawBarFields, Mt5LineParseErr
     let low = parse_price_to_scaled("<LOW>", fields[4])?;
     let close = parse_price_to_scaled("<CLOSE>", fields[5])?;
     let volume_ticks = parse_counter_field("<TICKVOL>", fields[6])?;
-    let volume_traded_raw = parse_volume_field(fields[7])?;
+    let volume_traded_raw = parse_volume_field("<VOL>", fields[7])?;
     let spread_reported_raw = parse_counter_field("<SPREAD>", fields[8])?;
 
     Ok(Mt5RawBarFields { date, time, open, high, low, close, volume_ticks, volume_traded_raw, spread_reported_raw })
@@ -334,6 +334,20 @@ pub enum TimestampResolutionError {
     /// 03:00) -- ese instante local, literalmente, no ocurrió.
     #[error("la hora local {date} {time} no existe en la zona {timezone:?} (hueco del cambio de horario)")]
     NonexistentLocalTime { date: NaiveDate, time: NaiveTime, timezone: String },
+    /// La fecha es sintácticamente válida pero cae fuera del rango que se
+    /// puede representar en nanosegundos con `i64` (aproximadamente 1677 a
+    /// 2262) -- ej. el año 9999, que `NaiveDate::parse_from_str` acepta sin
+    /// objeción. Antes esto entraba en pánico con `expect()`; el pánico
+    /// cruzaba la frontera FFI como excepción y dejaba la pantalla colgada
+    /// sin mensaje (hallazgo del gate de QA de STORY-073). Se rechaza con
+    /// motivo explícito, NUNCA se sustituye por un valor por defecto: una
+    /// fecha que no se puede representar es un dato que el usuario debe
+    /// corregir, no uno que Drasus deba adivinar.
+    #[error(
+        "la fecha {date} {time} está fuera del rango representable en nanosegundos \
+         (aprox. 1677-2262) -- corrige o excluye esa fila; el dato no se sustituye por un valor por defecto"
+    )]
+    TimestampOutOfRepresentableRange { date: NaiveDate, time: NaiveTime },
 }
 
 /// El reloj de origen que el usuario declara para todo un archivo (ADR-0162
@@ -414,7 +428,14 @@ pub fn resolve_event_timestamp_ns(
     // función para la derivación exacta. Con desplazamiento 0 esta resta no
     // cambia nada (`Duration::minutes(0)` es la identidad de la resta).
     let true_utc = anchor_utc - chrono::Duration::minutes(clock.fixed_offset_minutes);
-    Ok(true_utc.timestamp_nanos_opt().expect("un timestamp de un archivo de mercado real cabe en i64 nanosegundos"))
+    // `timestamp_nanos_opt` devuelve `None` fuera de ~1677-2262. Una fecha
+    // como el año 9999 pasa el parseo sintáctico sin problema y llega hasta
+    // aquí: se rechaza con motivo, nunca se sustituye ni se entra en pánico
+    // (un pánico cruza la frontera FFI como excepción y deja la pantalla
+    // colgada sin mensaje -- gate de QA de STORY-073).
+    true_utc
+        .timestamp_nanos_opt()
+        .ok_or(TimestampResolutionError::TimestampOutOfRepresentableRange { date, time })
 }
 
 /// Deriva `bar_close_timestamp_ns` de `bar_open_timestamp_ns` para una
@@ -517,7 +538,13 @@ pub struct CanonicalBarRow {
     pub bar_open_timestamp_ns: i64,
     pub bar_close_timestamp_ns: i64,
     pub bar_type: &'static str,
-    pub timeframe_value: &'static str,
+    /// Etiqueta de temporalidad declarada (ej. "1M", "5M") -- `String` propia
+    /// (no `&'static str`) porque la vía de mapeo manual (STORY-073) la
+    /// recibe como declaración del llamador, no como constante fija de una
+    /// plantilla: un archivo genérico puede traer cualquier cadencia, y
+    /// asumir "1M" en silencio sería exactamente la clase de suposición que
+    /// LDR-0008 prohíbe.
+    pub timeframe_value: String,
     pub open: i64,
     pub high: i64,
     pub low: i64,
@@ -614,7 +641,7 @@ pub fn map_to_canonical_bar(raw: &Mt5RawBarFields, ctx: &RunContext<'_>) -> Resu
         bar_open_timestamp_ns,
         bar_close_timestamp_ns,
         bar_type: "TIME",
-        timeframe_value: "1M",
+        timeframe_value: "1M".to_string(),
         open: raw.open,
         high: raw.high,
         low: raw.low,
@@ -626,6 +653,704 @@ pub fn map_to_canonical_bar(raw: &Mt5RawBarFields, ctx: &RunContext<'_>) -> Resu
         is_activity_anomaly,
         volume_unit_unverified: ctx.real_volume_unit_declared.is_none(),
     })
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Vía de mapeo manual declarado por el usuario (STORY-073, LDR-0008) -- un
+// archivo que Drasus NO conoce (ninguna plantilla de plataforma reconoce su
+// cabecera), donde el usuario declara qué campo canónico es cada columna
+// origen. A diferencia de la vía de plantilla (arriba), aquí Drasus nunca
+// afirma nada por su cuenta: cada campo canónico obligatorio debe estar
+// declarado explícitamente, o la importación se rechaza (criterio de
+// aceptación #6 -- "un campo sin declarar se rechaza, nunca se asume").
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Los ocho campos canónicos de una barra que la vía de mapeo manual exige
+/// -- el mismo conjunto que la plantilla MT5 provee siempre (Timestamp
+/// combina `<DATE>`+`<TIME>`). Ninguno es opcional: un archivo que no traiga
+/// alguno de estos NO es un caso de "campo ausente se omite", es un archivo
+/// que no describe una barra completa (ver `docs/features/data-import-
+/// wizard.md` "marca de tiempo y precio son el mínimo exigido" -- para
+/// `Bars`, OHLC + volumen + spread ES el mínimo, no un techo).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CanonicalBarField {
+    /// Marca de tiempo combinada en UNA columna (ej. "2024-03-01 10:00:00").
+    Timestamp,
+    /// Fecha, cuando el archivo trae fecha y hora en columnas SEPARADAS (ej.
+    /// el archivo real de MetaTrader del propietario: `<DATE>` TAB `<TIME>`,
+    /// la forma más común de la industria -- corrección del Tech-Lead
+    /// 2026-07-31 sobre la medición contra ese archivo real). Se declara
+    /// JUNTO a [`Self::TimestampTime`], nunca sola -- ver
+    /// [`resolve_manual_mapping`].
+    TimestampDate,
+    /// Hora, cuando el archivo trae fecha y hora en columnas separadas. Se
+    /// declara junto a [`Self::TimestampDate`], nunca sola.
+    TimestampTime,
+    Open,
+    High,
+    Low,
+    Close,
+    VolumeTicks,
+    VolumeTraded,
+    SpreadReported,
+}
+
+impl CanonicalBarField {
+    /// Los siete campos SIN relación con la marca de tiempo -- cada uno
+    /// individualmente obligatorio en el mapeo manual, sin excepción. Usado
+    /// para recorrer "cada campo obligatorio" en las pruebas que lo ejercen
+    /// campo por campo (criterio de aceptación #6). La marca de tiempo NO
+    /// entra en esta lista a propósito: es una elección entre DOS
+    /// estrategias mutuamente excluyentes (`Timestamp` combinado, o
+    /// `TimestampDate`+`TimestampTime` separados), no un campo fijo más --
+    /// se valida aparte, con su propia lógica, en [`resolve_manual_mapping`].
+    pub const ALL_NON_TIMESTAMP: [CanonicalBarField; 7] = [
+        CanonicalBarField::Open,
+        CanonicalBarField::High,
+        CanonicalBarField::Low,
+        CanonicalBarField::Close,
+        CanonicalBarField::VolumeTicks,
+        CanonicalBarField::VolumeTraded,
+        CanonicalBarField::SpreadReported,
+    ];
+
+    /// Etiqueta legible del campo canónico -- se sella tal cual en
+    /// `column_mapping_json` (evidencia de qué le mostró Drasus al usuario)
+    /// y aparece en los mensajes de rechazo.
+    pub fn label(&self) -> &'static str {
+        match self {
+            CanonicalBarField::Timestamp => "Timestamp",
+            CanonicalBarField::TimestampDate => "TimestampDate",
+            CanonicalBarField::TimestampTime => "TimestampTime",
+            CanonicalBarField::Open => "Open",
+            CanonicalBarField::High => "High",
+            CanonicalBarField::Low => "Low",
+            CanonicalBarField::Close => "Close",
+            CanonicalBarField::VolumeTicks => "VolumeTicks",
+            CanonicalBarField::VolumeTraded => "VolumeTraded",
+            CanonicalBarField::SpreadReported => "SpreadReported",
+        }
+    }
+}
+
+/// Una correspondencia declarada por el usuario: "la columna origen
+/// `source_column` es el campo canónico `canonical_field`". El asistente
+/// visual construye un `Vec` de esto en el Paso 2 (uno por campo canónico) y
+/// lo pasa tal cual -- es la evidencia que LDR-0008 exige sellar.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManualColumnMapping {
+    pub source_column: String,
+    pub canonical_field: CanonicalBarField,
+}
+
+/// Errores al validar el mapeo declarado contra la cabecera real del
+/// archivo -- ninguno de estos se resuelve adivinando: cada uno exige que el
+/// usuario corrija su declaración.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ManualMappingError {
+    #[error(
+        "el campo canónico obligatorio {0:?} no fue declarado en el mapeo -- se rechaza, nunca se \
+         asume (criterio de aceptación #6, LDR-0008)"
+    )]
+    MissingRequiredField(CanonicalBarField),
+    #[error("el campo canónico {0:?} fue declarado más de una vez -- cada campo canónico mapea a exactamente una columna origen")]
+    DuplicateFieldMapping(CanonicalBarField),
+    #[error("la columna origen {source_column:?} declarada para el campo {canonical_field:?} no existe en la cabecera real del archivo")]
+    UnknownSourceColumn { canonical_field: CanonicalBarField, source_column: String },
+    /// Ninguna de las dos estrategias de marca de tiempo se declaró --
+    /// distinto de `MissingRequiredField` porque aquí hay DOS caminos
+    /// válidos, no uno, y el mensaje debe ofrecer ambos (corrección del
+    /// Tech-Lead 2026-07-31: el archivo real del propietario, y media
+    /// industria, trae fecha y hora separadas).
+    #[error(
+        "no se declaró ninguna marca de tiempo -- declara Timestamp (una columna combinada) \
+         o TimestampDate + TimestampTime (fecha y hora en columnas separadas, ej. el formato de MetaTrader)"
+    )]
+    MissingTimestampDeclaration,
+    /// El usuario declaró AMBAS estrategias a la vez (`Timestamp` combinado
+    /// Y `TimestampDate`/`TimestampTime` separados) -- contradictorio.
+    /// "Nada se adivina" corta en las dos direcciones: ni inferir cuál
+    /// columna es la buena, ni asumir cuál de las dos declaraciones
+    /// contradictorias prevalece.
+    #[error(
+        "se declaró la marca de tiempo tanto combinada (Timestamp) como separada \
+         (TimestampDate/TimestampTime) a la vez -- declara UNA sola estrategia, nunca ambas"
+    )]
+    AmbiguousTimestampDeclaration,
+}
+
+/// Cuál de las dos estrategias mutuamente excluyentes de marca de tiempo
+/// declaró el usuario -- resuelto por [`resolve_manual_mapping`], nunca
+/// adivinado: si el usuario declaró dos columnas, se resuelven dos; si
+/// declaró una, se resuelve una.
+#[derive(Debug, Clone, Copy)]
+pub enum ResolvedTimestampMapping {
+    /// El usuario declaró UNA columna combinada (`Timestamp`).
+    Combined { timestamp_idx: usize },
+    /// El usuario declaró DOS columnas separadas (`TimestampDate` +
+    /// `TimestampTime`) -- la forma del archivo real del propietario.
+    Split { date_idx: usize, time_idx: usize },
+}
+
+/// El mapeo ya validado y resuelto a posiciones de columna dentro de una
+/// fila partida por el delimitador detectado -- construir esto es la prueba
+/// de que los siete campos obligatorios NO temporales están presentes, y de
+/// que la marca de tiempo se resolvió bajo exactamente una de sus dos
+/// estrategias válidas (nunca se llega aquí con un campo ausente o con una
+/// declaración de tiempo ambigua).
+#[derive(Debug, Clone, Copy)]
+pub struct ResolvedManualMapping {
+    pub timestamp: ResolvedTimestampMapping,
+    pub open_idx: usize,
+    pub high_idx: usize,
+    pub low_idx: usize,
+    pub close_idx: usize,
+    pub volume_ticks_idx: usize,
+    pub volume_traded_idx: usize,
+    pub spread_reported_idx: usize,
+}
+
+/// Valida el mapeo declarado por el usuario contra la cabecera real del
+/// archivo: cada columna origen declarada debe existir en `header_columns`,
+/// ningún campo canónico puede declararse dos veces, los siete campos NO
+/// temporales ([`CanonicalBarField::ALL_NON_TIMESTAMP`]) deben estar todos
+/// presentes, y la marca de tiempo debe resolverse bajo EXACTAMENTE una de
+/// sus dos estrategias (combinada o separada) -- nunca ninguna, nunca ambas.
+/// Pura: no hay adivinanza posible aquí, solo verificación de lo declarado.
+pub fn resolve_manual_mapping(
+    mappings: &[ManualColumnMapping],
+    header_columns: &[String],
+) -> Result<ResolvedManualMapping, ManualMappingError> {
+    let mut resolved_by_field: HashMap<CanonicalBarField, usize> = HashMap::new();
+    for mapping in mappings {
+        let idx = header_columns.iter().position(|c| c == &mapping.source_column).ok_or_else(|| {
+            ManualMappingError::UnknownSourceColumn {
+                canonical_field: mapping.canonical_field,
+                source_column: mapping.source_column.clone(),
+            }
+        })?;
+        if resolved_by_field.insert(mapping.canonical_field, idx).is_some() {
+            return Err(ManualMappingError::DuplicateFieldMapping(mapping.canonical_field));
+        }
+    }
+
+    let get = |field: CanonicalBarField| -> Result<usize, ManualMappingError> {
+        resolved_by_field.get(&field).copied().ok_or(ManualMappingError::MissingRequiredField(field))
+    };
+
+    // Resuelve la marca de tiempo bajo EXACTAMENTE una de sus dos
+    // estrategias -- las ocho combinaciones posibles de "¿cuál de las tres
+    // variantes de tiempo se declaró?" se cubren explícitamente, ninguna se
+    // asume.
+    let has_combined = resolved_by_field.contains_key(&CanonicalBarField::Timestamp);
+    let has_date = resolved_by_field.contains_key(&CanonicalBarField::TimestampDate);
+    let has_time = resolved_by_field.contains_key(&CanonicalBarField::TimestampTime);
+    let timestamp = match (has_combined, has_date, has_time) {
+        (true, false, false) => {
+            ResolvedTimestampMapping::Combined { timestamp_idx: resolved_by_field[&CanonicalBarField::Timestamp] }
+        }
+        (false, true, true) => ResolvedTimestampMapping::Split {
+            date_idx: resolved_by_field[&CanonicalBarField::TimestampDate],
+            time_idx: resolved_by_field[&CanonicalBarField::TimestampTime],
+        },
+        (false, true, false) => return Err(ManualMappingError::MissingRequiredField(CanonicalBarField::TimestampTime)),
+        (false, false, true) => return Err(ManualMappingError::MissingRequiredField(CanonicalBarField::TimestampDate)),
+        (false, false, false) => return Err(ManualMappingError::MissingTimestampDeclaration),
+        (true, _, _) => return Err(ManualMappingError::AmbiguousTimestampDeclaration),
+    };
+
+    Ok(ResolvedManualMapping {
+        timestamp,
+        open_idx: get(CanonicalBarField::Open)?,
+        high_idx: get(CanonicalBarField::High)?,
+        low_idx: get(CanonicalBarField::Low)?,
+        close_idx: get(CanonicalBarField::Close)?,
+        volume_ticks_idx: get(CanonicalBarField::VolumeTicks)?,
+        volume_traded_idx: get(CanonicalBarField::VolumeTraded)?,
+        spread_reported_idx: get(CanonicalBarField::SpreadReported)?,
+    })
+}
+
+/// Detecta el delimitador de un archivo CSV genérico contando ocurrencias de
+/// los tres candidatos habituales (coma, punto y coma, tabulador) en la
+/// línea de cabecera y eligiendo el más frecuente. Esto es inferencia de
+/// FORMATO de archivo, no de significado de columna -- no está sujeto a la
+/// misma restricción que el mapeo semántico (`docs/features/data-import-
+/// wizard.md` "Comportamientos Observables"). Si ningún candidato aparece,
+/// asume coma (el separador más común de un CSV de una sola columna no
+/// existe en la práctica -- este es un valor por defecto razonable, no una
+/// adivinanza sobre el CONTENIDO).
+pub fn detect_csv_delimiter(header_line: &str) -> char {
+    let stripped = strip_line_ending(header_line);
+    const CANDIDATES: [char; 3] = [',', ';', '\t'];
+    CANDIDATES
+        .into_iter()
+        .map(|c| (c, stripped.matches(c).count()))
+        .filter(|(_, count)| *count > 0)
+        .max_by_key(|(_, count)| *count)
+        .map(|(c, _)| c)
+        .unwrap_or(',')
+}
+
+/// Parsea la línea de cabecera de un archivo CSV genérico: detecta el
+/// delimitador y devuelve los nombres de columna, recortados de espacios en
+/// blanco alrededor (a diferencia del parseo estricto de MT5, un CSV
+/// arbitrario de un bróker cualquiera SÍ puede traer espacios cosméticos
+/// alrededor del delimitador sin que eso sea una fila malformada).
+pub fn parse_generic_csv_header(header_line: &str) -> (char, Vec<String>) {
+    let stripped = strip_line_ending(header_line);
+    let delimiter = detect_csv_delimiter(stripped);
+    let columns = stripped.split(delimiter).map(|c| c.trim().to_string()).collect();
+    (delimiter, columns)
+}
+
+/// Devuelve solo los nombres de columna detectados en la cabecera de un
+/// archivo -- la operación "obtener las columnas detectadas" que el Paso 2
+/// del asistente necesita para poblar los `select` de mapeo (STORY-073 §4.2).
+pub fn detect_csv_columns(file_bytes: &[u8]) -> Result<Vec<String>, ManualImportCoreError> {
+    let content = std::str::from_utf8(file_bytes).map_err(|_| ManualImportCoreError::InvalidUtf8)?;
+    let header_line = content.split('\n').next().ok_or(ManualImportCoreError::EmptyFile)?;
+    if header_line.is_empty() {
+        return Err(ManualImportCoreError::EmptyFile);
+    }
+    let (_delimiter, columns) = parse_generic_csv_header(header_line);
+    Ok(columns)
+}
+
+/// ponytail: sin soporte de comillas RFC4180 (un valor que contenga el
+/// delimitador entre comillas se partiría mal) -- mismo nivel de sencillez
+/// que el parseo estricto de MT5 (tampoco lo tiene). Escalar a un parser CSV
+/// real (crate `csv`) si un archivo real del propietario lo necesita.
+fn split_generic_csv_row(line: &str, delimiter: char) -> Vec<&str> {
+    strip_line_ending(line).split(delimiter).map(|f| f.trim()).collect()
+}
+
+/// Formatos de marca de tiempo reconocidos por la vía de mapeo manual, en
+/// orden de intento. Cubren ISO-8601 con/sin fracción de segundo y las
+/// variantes más comunes con espacio en vez de `T`. Esto es inferencia de
+/// FORMATO sobre una columna que el usuario YA declaró como `Timestamp`
+/// (decisión semántica suya) -- no es adivinar significado, es aplicar un
+/// analizador determinista sobre un campo cuyo rol ya está fijado.
+const GENERIC_TIMESTAMP_FORMATS: &[&str] = &[
+    "%Y-%m-%dT%H:%M:%S%.f",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d %H:%M:%S%.f",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y/%m/%d %H:%M:%S",
+    "%Y.%m.%d %H:%M:%S",
+];
+
+/// Ningún formato de la lista reconocida coincidió -- se rechaza en vez de
+/// intentar una heurística adicional no auditada.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("el campo de marca de tiempo {raw:?} no coincide con ningún formato reconocido (ISO-8601 u otro formato común declarado)")]
+pub struct GenericTimestampParseError {
+    pub raw: String,
+}
+
+/// Parsea una marca de tiempo genérica probando [`GENERIC_TIMESTAMP_FORMATS`]
+/// en orden y devolviendo el primer resultado válido.
+pub fn parse_generic_timestamp(raw: &str) -> Result<NaiveDateTime, GenericTimestampParseError> {
+    for format in GENERIC_TIMESTAMP_FORMATS {
+        if let Ok(parsed) = NaiveDateTime::parse_from_str(raw, format) {
+            return Ok(parsed);
+        }
+    }
+    Err(GenericTimestampParseError { raw: raw.to_string() })
+}
+
+/// Formatos de FECHA sola reconocidos cuando el usuario declara
+/// `TimestampDate` por separado (corrección del Tech-Lead 2026-07-31: el
+/// archivo real de MetaTrader del propietario usa `"2000.01.03"`, formato
+/// que ya cubre `parse_mt5_bar_line` para la vía de plantilla -- aquí se
+/// reconoce igual para la vía manual, sin duplicar la lógica de fecha/hora
+/// combinada).
+const GENERIC_DATE_FORMATS: &[&str] = &["%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"];
+
+/// Formatos de HORA sola reconocidos cuando el usuario declara
+/// `TimestampTime` por separado -- mismo formato que MT5 (`"00:01:00"`) más
+/// la variante con fracción de segundo.
+const GENERIC_TIME_FORMATS: &[&str] = &["%H:%M:%S%.f", "%H:%M:%S"];
+
+/// Parsea una columna de FECHA sola probando [`GENERIC_DATE_FORMATS`] en
+/// orden.
+pub fn parse_generic_date(raw: &str) -> Result<NaiveDate, GenericTimestampParseError> {
+    for format in GENERIC_DATE_FORMATS {
+        if let Ok(parsed) = NaiveDate::parse_from_str(raw, format) {
+            return Ok(parsed);
+        }
+    }
+    Err(GenericTimestampParseError { raw: raw.to_string() })
+}
+
+/// Parsea una columna de HORA sola probando [`GENERIC_TIME_FORMATS`] en
+/// orden.
+pub fn parse_generic_time(raw: &str) -> Result<NaiveTime, GenericTimestampParseError> {
+    for format in GENERIC_TIME_FORMATS {
+        if let Ok(parsed) = NaiveTime::parse_from_str(raw, format) {
+            return Ok(parsed);
+        }
+    }
+    Err(GenericTimestampParseError { raw: raw.to_string() })
+}
+
+/// Los ocho campos de una fila de barra genérica, ya parseados a sus tipos
+/// nativos -- análogo a [`Mt5RawBarFields`] pero con un único campo de
+/// marca de tiempo combinada en vez de fecha+hora separadas (el asistente
+/// declara "Timestamp" como UN campo canónico, ver Cáscara Visual Paso 2).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManualRawBarFields {
+    pub timestamp: NaiveDateTime,
+    pub open: i64,
+    pub high: i64,
+    pub low: i64,
+    pub close: i64,
+    pub volume_ticks: i64,
+    pub volume_traded_raw: i128,
+    pub spread_reported_raw: i64,
+}
+
+/// Errores de parseo de una fila de dato bajo el mapeo manual.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ManualRowParseError {
+    #[error(
+        "la fila no tiene suficientes columnas para el mapeo declarado (se esperaban al menos \
+         {expected_at_least}, se encontraron {found}): {raw:?}"
+    )]
+    UnexpectedFieldCount { found: usize, expected_at_least: usize, raw: String },
+    #[error(transparent)]
+    Timestamp(#[from] GenericTimestampParseError),
+    #[error(transparent)]
+    Field(#[from] FieldParseError),
+}
+
+/// Parsea una fila de dato cruda bajo un [`ResolvedManualMapping`] ya
+/// validado -- extrae cada campo por su posición de columna resuelta y lo
+/// convierte a su tipo nativo, reutilizando los mismos convertidores que la
+/// vía de plantilla (`parse_price_to_scaled`/`parse_counter_field`/
+/// `parse_volume_field`) para que ambas vías compartan la MISMA aritmética
+/// de escalado (ADR-0002: nunca coma flotante en el dominio).
+pub fn parse_manual_csv_row(
+    raw_line: &str,
+    delimiter: char,
+    resolved: &ResolvedManualMapping,
+) -> Result<ManualRawBarFields, ManualRowParseError> {
+    let fields = split_generic_csv_row(raw_line, delimiter);
+    // El mayor índice que la marca de tiempo ocupa -- uno solo si es
+    // combinada, el mayor de los dos si es separada (fecha y hora pueden
+    // estar en cualquier orden dentro de la fila, nunca se asume cuál va
+    // primero).
+    let timestamp_max_idx = match &resolved.timestamp {
+        ResolvedTimestampMapping::Combined { timestamp_idx } => *timestamp_idx,
+        ResolvedTimestampMapping::Split { date_idx, time_idx } => (*date_idx).max(*time_idx),
+    };
+    let max_idx = [
+        timestamp_max_idx,
+        resolved.open_idx,
+        resolved.high_idx,
+        resolved.low_idx,
+        resolved.close_idx,
+        resolved.volume_ticks_idx,
+        resolved.volume_traded_idx,
+        resolved.spread_reported_idx,
+    ]
+    .into_iter()
+    .max()
+    .expect("el arreglo de índices nunca está vacío -- ocho valores fijos");
+    if fields.len() <= max_idx {
+        return Err(ManualRowParseError::UnexpectedFieldCount {
+            found: fields.len(),
+            expected_at_least: max_idx + 1,
+            raw: raw_line.to_string(),
+        });
+    }
+
+    // Resuelve la marca de tiempo bajo la estrategia que el usuario declaró
+    // -- combinada (un solo parseo) o separada (fecha y hora, cada una con
+    // su propio parseo, luego combinadas con `NaiveDate::and_time`). Ningún
+    // campo se adivina: si el usuario declaró dos columnas, se leen dos.
+    let timestamp = match &resolved.timestamp {
+        ResolvedTimestampMapping::Combined { timestamp_idx } => parse_generic_timestamp(fields[*timestamp_idx])?,
+        ResolvedTimestampMapping::Split { date_idx, time_idx } => {
+            let date = parse_generic_date(fields[*date_idx])?;
+            let time = parse_generic_time(fields[*time_idx])?;
+            date.and_time(time)
+        }
+    };
+    let open = parse_price_to_scaled("Open", fields[resolved.open_idx])?;
+    let high = parse_price_to_scaled("High", fields[resolved.high_idx])?;
+    let low = parse_price_to_scaled("Low", fields[resolved.low_idx])?;
+    let close = parse_price_to_scaled("Close", fields[resolved.close_idx])?;
+    let volume_ticks = parse_counter_field("VolumeTicks", fields[resolved.volume_ticks_idx])?;
+    let volume_traded_raw = parse_volume_field("VolumeTraded", fields[resolved.volume_traded_idx])?;
+    let spread_reported_raw = parse_counter_field("SpreadReported", fields[resolved.spread_reported_idx])?;
+
+    Ok(ManualRawBarFields { timestamp, open, high, low, close, volume_ticks, volume_traded_raw, spread_reported_raw })
+}
+
+/// Contexto de la corrida para la vía manual -- análogo a [`RunContext`]
+/// pero sin `bar_type`/plantilla (siempre "TIME": un archivo mapeado a mano
+/// campo por campo con OHLC es, por construcción del propio esquema
+/// elegido, una barra de tiempo) y con la temporalidad declarada
+/// explícitamente en vez de fija en "1M": un archivo genérico puede traer
+/// cualquier cadencia, y asumir 1 minuto sería la misma clase de suposición
+/// silenciosa que ADR-0162 prohíbe para el reloj de origen.
+#[derive(Debug, Clone)]
+pub struct ManualRunContext<'a> {
+    pub instrument_id: &'a str,
+    pub venue: &'a str,
+    pub source_provider: &'a str,
+    pub source_clock_anchor_timezone_ref: Option<&'a str>,
+    pub source_clock_fixed_offset_minutes: i64,
+    pub real_volume_unit_declared: Option<&'a str>,
+    /// Unidad del spread reportado -- a diferencia de la vía de plantilla
+    /// (donde la plantilla la afirma), aquí es el usuario quien la declara
+    /// sobre SU archivo. `None` rechaza el mapeo de la fila (mismo trato que
+    /// la vía de plantilla, criterio de aceptación #13).
+    pub spread_reported_unit_declared: Option<&'a str>,
+    /// Etiqueta de temporalidad declarada (ej. "5M") -- se sella tal cual en
+    /// `timeframe_value` del ledger.
+    pub timeframe_value: &'a str,
+    /// Duración de una barra en nanosegundos, usada para derivar
+    /// `bar_close_timestamp_ns` a partir de `bar_open_timestamp_ns` -- el
+    /// equivalente declarado de `ONE_MINUTE_NS` para un archivo cuya
+    /// cadencia Drasus no puede conocer por su cuenta.
+    pub bar_interval_ns: i64,
+}
+
+/// Combina una fila cruda ya parseada bajo mapeo manual con el contexto de
+/// la corrida para producir la fila canónica completa -- misma forma de
+/// salida (`CanonicalBarRow`) que la vía de plantilla, para que ambas vías
+/// alimenten el mismo puerto `bars_out` sin distinción aguas abajo.
+pub fn map_manual_row_to_canonical_bar(
+    raw: &ManualRawBarFields,
+    ctx: &ManualRunContext<'_>,
+) -> Result<CanonicalBarRow, CanonicalMappingError> {
+    let source_clock = ctx.source_clock_anchor_timezone_ref.map(|anchor_timezone_ref| SourceClockDeclaration {
+        anchor_timezone_ref,
+        fixed_offset_minutes: ctx.source_clock_fixed_offset_minutes,
+    });
+    let bar_open_timestamp_ns = resolve_event_timestamp_ns(raw.timestamp.date(), raw.timestamp.time(), source_clock)?;
+    let bar_close_timestamp_ns = bar_open_timestamp_ns + ctx.bar_interval_ns;
+    let is_activity_anomaly = is_activity_impossible(raw.open, raw.high, raw.low, raw.close, raw.volume_ticks);
+    let spread_reported_unit =
+        ctx.spread_reported_unit_declared.ok_or(CanonicalMappingError::MissingSpreadUnitDeclaration)?.to_string();
+
+    Ok(CanonicalBarRow {
+        instrument_id: ctx.instrument_id.to_string(),
+        venue: ctx.venue.to_string(),
+        source_provider: ctx.source_provider.to_string(),
+        bar_open_timestamp_ns,
+        bar_close_timestamp_ns,
+        bar_type: "TIME",
+        timeframe_value: ctx.timeframe_value.to_string(),
+        open: raw.open,
+        high: raw.high,
+        low: raw.low,
+        close: raw.close,
+        volume_ticks: raw.volume_ticks,
+        volume_traded_raw: raw.volume_traded_raw,
+        spread_reported_raw: raw.spread_reported_raw,
+        spread_reported_unit,
+        is_activity_anomaly,
+        volume_unit_unverified: ctx.real_volume_unit_declared.is_none(),
+    })
+}
+
+/// Errores del parseo y mapeo COMPLETO de un archivo bajo la vía manual --
+/// el subconjunto puro (sin ledger, sin I/O más allá de los bytes ya en
+/// memoria) que tanto la vista previa como la confirmación comparten.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ManualImportCoreError {
+    #[error("el archivo está vacío: no hay ni siquiera una cabecera que leer")]
+    EmptyFile,
+    #[error("el archivo no es UTF-8 válido")]
+    InvalidUtf8,
+    #[error(transparent)]
+    Mapping(#[from] ManualMappingError),
+    #[error("error al parsear la línea de dato número {line_number}: {source}")]
+    Row {
+        line_number: usize,
+        #[source]
+        source: ManualRowParseError,
+    },
+    #[error("error al mapear la línea de dato número {line_number} al esquema canónico: {source}")]
+    Canonical {
+        line_number: usize,
+        #[source]
+        source: CanonicalMappingError,
+    },
+}
+
+/// Cuántas filas de dato transformado produce la vista previa ACOTADA
+/// ([`preview_manual_bar_file`]) -- el mismo número que el orquestador sella
+/// como evidencia en el ledger (antes vivía como `PREVIEW_ROW_LIMIT` privado
+/// de `orchestrator.rs`; se mueve aquí porque ahora el Núcleo también la
+/// necesita para acotar su propio parseo, no solo para recortar un `Vec` ya
+/// construido -- una sola fuente de verdad para el número).
+pub const PREVIEW_ROW_LIMIT: usize = 10;
+
+/// Núcleo compartido de parseo+mapeo, con un límite de filas OPCIONAL --
+/// implementación privada detrás de dos superficies públicas
+/// ([`parse_and_map_manual_bar_file`] sin límite, [`preview_manual_bar_file`]
+/// acotado a [`PREVIEW_ROW_LIMIT`]). Ambas ejecutan EXACTAMENTE el mismo
+/// parseo por fila (`parse_manual_csv_row` + `map_manual_row_to_canonical_bar`)
+/// -- la única diferencia es CUÁNTAS filas se procesan antes de detenerse,
+/// nunca CÓMO se procesa cada una. Esto es lo que sostiene LDR-0008
+/// condición técnica 1 sin pagar el costo del archivo completo en cada
+/// vista previa: lo que el usuario ve en una vista previa acotada es, fila a
+/// fila, el mismo cálculo que produce lo que se sella -- solo que se detiene
+/// antes.
+///
+/// Medido contra el archivo real del propietario (2026-07-31, 9.231.696
+/// filas, 535 MB): parsear el archivo completo cuesta ~5.3 s y ~700 MB de
+/// asignaciones -- pagable UNA vez por confirmación real, no en cada ajuste
+/// de mapeo mientras el usuario mira la vista previa.
+fn parse_and_map_manual_bar_file_bounded(
+    file_bytes: &[u8],
+    column_mappings: &[ManualColumnMapping],
+    ctx: &ManualRunContext<'_>,
+    row_limit: Option<usize>,
+) -> Result<Vec<CanonicalBarRow>, ManualImportCoreError> {
+    let content = std::str::from_utf8(file_bytes).map_err(|_| ManualImportCoreError::InvalidUtf8)?;
+    let mut lines = content.split('\n');
+    let header_line = lines.next().ok_or(ManualImportCoreError::EmptyFile)?;
+    if header_line.is_empty() {
+        return Err(ManualImportCoreError::EmptyFile);
+    }
+    let (delimiter, header_columns) = parse_generic_csv_header(header_line);
+    let resolved = resolve_manual_mapping(column_mappings, &header_columns)?;
+
+    let mut bars = Vec::new();
+    for (idx, raw_line) in lines.enumerate() {
+        // El `split('\n')` final tras el último salto de línea produce una
+        // cadena vacía -- se ignora, no es una fila de dato.
+        if raw_line.is_empty() {
+            continue;
+        }
+        let line_number = idx + 1; // 1-based, cuenta solo filas de dato (sin la cabecera)
+        let raw_fields = parse_manual_csv_row(raw_line, delimiter, &resolved)
+            .map_err(|source| ManualImportCoreError::Row { line_number, source })?;
+        let bar = map_manual_row_to_canonical_bar(&raw_fields, ctx)
+            .map_err(|source| ManualImportCoreError::Canonical { line_number, source })?;
+        bars.push(bar);
+        // El límite se comprueba DESPUÉS de acumular la fila -- una fila
+        // malformada en la posición 3 de una vista previa de 10 sigue
+        // reportando su error real, nunca se descarta en silencio solo
+        // porque cae dentro de la ventana acotada.
+        if let Some(limit) = row_limit {
+            if bars.len() >= limit {
+                break;
+            }
+        }
+    }
+    Ok(bars)
+}
+
+/// Parsea y mapea un archivo COMPLETO bajo la vía de mapeo manual: detecta
+/// el delimitador, resuelve el mapeo declarado contra la cabecera real, y
+/// convierte CADA fila de dato a `CanonicalBarRow`. Función PURA -- sin
+/// `SqlitePool`, sin reloj de sistema, sin ningún parámetro que permita
+/// tocar la base de datos.
+///
+/// Uso previsto: la confirmación (`import_manual_bar_file`), que necesita el
+/// archivo completo para sellar todas las filas y para el cotejo de rango
+/// (DEBT-039) -- se paga UNA vez por intento de confirmación, nunca en cada
+/// ajuste de mapeo. Para el ciclo interactivo "ajusto el mapeo y vuelvo a
+/// mirar", usa [`preview_manual_bar_file`].
+pub fn parse_and_map_manual_bar_file(
+    file_bytes: &[u8],
+    column_mappings: &[ManualColumnMapping],
+    ctx: &ManualRunContext<'_>,
+) -> Result<Vec<CanonicalBarRow>, ManualImportCoreError> {
+    parse_and_map_manual_bar_file_bounded(file_bytes, column_mappings, ctx, None)
+}
+
+/// Vista previa ACOTADA a [`PREVIEW_ROW_LIMIT`] filas de dato -- pensada para
+/// el ciclo "el usuario ajusta el mapeo y vuelve a mirar" (Paso 2-4 del
+/// asistente), donde el archivo completo NO debe pagarse en cada intento
+/// (corrección del Tech-Lead 2026-07-31, medición sobre el archivo real del
+/// propietario: ~5.3 s y ~700 MB por vuelta si se usa la función sin límite).
+///
+/// Ejecuta el MISMO parseo por fila que [`parse_and_map_manual_bar_file`]
+/// (comparten [`parse_and_map_manual_bar_file_bounded`]) -- lo que el
+/// usuario ve aquí es exactamente lo que se sellará si confirma, nunca una
+/// ruta paralela que pudiera divergir (LDR-0008 condición técnica 1). Nunca
+/// asume el orden del archivo: como esta función solo lee las primeras
+/// filas físicas, NO sirve para calcular el rango real de contenido
+/// (mínimo/máximo) -- eso exige el archivo completo y vive en
+/// `parse_and_map_manual_bar_file`, invocado una sola vez por intento de
+/// confirmación (o por análisis explícito de rango, ver Bridge).
+pub fn preview_manual_bar_file(
+    file_bytes: &[u8],
+    column_mappings: &[ManualColumnMapping],
+    ctx: &ManualRunContext<'_>,
+) -> Result<Vec<CanonicalBarRow>, ManualImportCoreError> {
+    parse_and_map_manual_bar_file_bounded(file_bytes, column_mappings, ctx, Some(PREVIEW_ROW_LIMIT))
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Cotejo elemental del rango declarado contra el contenido real (DEBT-039,
+// STORY-073) -- comparte las DOS vías (plantilla y manual): un rango
+// declarado que un archivo no respalda es una declaración falsa sellada de
+// buena fe (LDR-0008), sin importar quién declaró el mapeo de columnas.
+//
+// Alcance deliberado: esto es CONTENCIÓN (todo el contenido parseado cae
+// dentro del rango declarado), no un cotejo de "el rango declarado no debe
+// ser desproporcionadamente más ancho que el contenido" -- esa segunda
+// comprobación exigiría un umbral estadístico (¿cuánto es "demasiado
+// ancho"?) que es exactamente el tipo de juicio de dominio que
+// `pit-data-validator` (Gate de Homogeneidad de Procedencia, fractura de
+// magnitud/disponibilidad) debe resolver con un especialista, no una
+// comparación elemental de dos instantes. Ver DEBT-039 "por qué no es un
+// defecto de STORY-070" y el reporte de esta Story para la justificación
+// completa de por qué NO se inventa aquí un umbral no auditado.
+// ═══════════════════════════════════════════════════════════════════════
+
+/// El contenido realmente parseado del archivo cae fuera del rango que el
+/// usuario declaró para este tramo -- la declaración no describe lo que el
+/// archivo contiene.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum DeclaredRangeContentMismatchError {
+    #[error(
+        "el rango declarado [{declared_range_start_ns}, {declared_range_end_ns}) no cubre el contenido \
+         real del archivo, que abarca [{content_min_open_ns}, {content_max_close_ns}) (DEBT-039) -- \
+         corrige el rango declarado o segmenta la importación en tramos que sí correspondan al contenido"
+    )]
+    ContentOutsideDeclaredRange {
+        declared_range_start_ns: i64,
+        declared_range_end_ns: i64,
+        content_min_open_ns: i64,
+        content_max_close_ns: i64,
+    },
+}
+
+/// Compara el rango declarado del tramo contra el mínimo/máximo REAL de las
+/// barras ya parseadas -- nunca al revés (el rango declarado nunca filtra ni
+/// recorta filas, ver comentario de `declared_range_start_ns` en
+/// `ImportBarFileInput`). Un archivo sin filas de dato no puede contradecir
+/// ningún rango -- el chequeo no corre (nunca se asume una falla sobre datos
+/// que no existen).
+pub fn check_declared_range_against_parsed_content(
+    declared_range_start_ns: i64,
+    declared_range_end_ns: i64,
+    bars: &[CanonicalBarRow],
+) -> Result<(), DeclaredRangeContentMismatchError> {
+    let Some(content_min_open_ns) = bars.iter().map(|bar| bar.bar_open_timestamp_ns).min() else {
+        return Ok(());
+    };
+    let content_max_close_ns =
+        bars.iter().map(|bar| bar.bar_close_timestamp_ns).max().expect("bars no está vacío -- ya se comprobó arriba");
+
+    if content_min_open_ns < declared_range_start_ns || content_max_close_ns > declared_range_end_ns {
+        return Err(DeclaredRangeContentMismatchError::ContentOutsideDeclaredRange {
+            declared_range_start_ns,
+            declared_range_end_ns,
+            content_min_open_ns,
+            content_max_close_ns,
+        });
+    }
+    Ok(())
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -792,6 +1517,40 @@ mod tests {
         let time = NaiveTime::from_hms_opt(0, 1, 0).unwrap();
         let err = resolve_event_timestamp_ns(date, time, None).unwrap_err();
         assert_eq!(err, TimestampResolutionError::MissingSourceTimezone);
+    }
+
+    /// Una fecha del año 9999 es **sintácticamente válida** -- `NaiveDate`
+    /// la acepta sin objeción -- pero no cabe en `i64` nanosegundos. Antes
+    /// esto entraba en pánico; un pánico de Rust cruza la frontera FFI como
+    /// excepción de Dart, y la pantalla no captura excepciones, así que el
+    /// usuario se quedaba mirando "Analizando…" para siempre, sin mensaje.
+    ///
+    /// Lo que esta prueba afirma no es solo "no entra en pánico": afirma que
+    /// devuelve un **rechazo tipado y nombrado**, porque la alternativa
+    /// tentadora -- devolver `0` o recortar al máximo representable -- sería
+    /// sustituir en silencio un dato del usuario por uno inventado. Con 9,2
+    /// millones de filas, una sola corrupta bastaba para colgar la pantalla.
+    #[test]
+    fn resolve_timestamp_beyond_representable_range_is_rejected_not_panicking() {
+        let date = NaiveDate::from_ymd_opt(9999, 12, 31).unwrap();
+        let time = NaiveTime::from_hms_opt(23, 59, 0).unwrap();
+        let clock = SourceClockDeclaration { anchor_timezone_ref: "America/New_York", fixed_offset_minutes: 420 };
+
+        let err = resolve_event_timestamp_ns(date, time, Some(clock)).expect_err(
+            "una fecha fuera del rango representable debe rechazarse con motivo, nunca entrar en pánico \
+             ni sustituirse por un valor por defecto",
+        );
+        assert_eq!(err, TimestampResolutionError::TimestampOutOfRepresentableRange { date, time });
+
+        // El extremo opuesto (antes de ~1677) tiene el mismo tratamiento --
+        // no es un caso especial del futuro lejano, es el rango del tipo.
+        let ancient = NaiveDate::from_ymd_opt(1600, 1, 1).unwrap();
+        let err_ancient = resolve_event_timestamp_ns(ancient, time, Some(clock))
+            .expect_err("una fecha anterior al rango representable también se rechaza");
+        assert_eq!(
+            err_ancient,
+            TimestampResolutionError::TimestampOutOfRepresentableRange { date: ancient, time }
+        );
     }
 
     // ── Criterio de aceptación #1 (STORY-070): reloj de IC Markets, dos estaciones ──
@@ -1300,5 +2059,568 @@ mod tests {
         };
         let err = map_to_canonical_bar(&raw, &ctx).unwrap_err();
         assert_eq!(err, CanonicalMappingError::MissingSpreadUnitDeclaration);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Vía de mapeo manual (STORY-073) -- criterios de aceptación 1, 2 y 6.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Cabecera y filas de un archivo DELIBERADAMENTE distinto de la
+    /// plantilla MT5: delimitador coma (no tabulador), nombres de columna en
+    /// español y orden barajado, marca de tiempo combinada en una sola
+    /// columna (no fecha+hora separadas) -- ningún archivo con esta forma
+    /// coincidiría jamás con `detect_mt5_bar_template`.
+    const ARBITRARY_CSV: &str = "SpreadPts,Cierre,Fecha,VolumenReal,Maximo,Minimo,VolumenTicks,Apertura\n\
+         5,2.50500000,2024-03-01 10:00:00,1000,2.51000000,2.49000000,10,2.50000000\n";
+
+    fn arbitrary_column_mapping() -> Vec<ManualColumnMapping> {
+        vec![
+            ManualColumnMapping { source_column: "Fecha".to_string(), canonical_field: CanonicalBarField::Timestamp },
+            ManualColumnMapping { source_column: "Apertura".to_string(), canonical_field: CanonicalBarField::Open },
+            ManualColumnMapping { source_column: "Maximo".to_string(), canonical_field: CanonicalBarField::High },
+            ManualColumnMapping { source_column: "Minimo".to_string(), canonical_field: CanonicalBarField::Low },
+            ManualColumnMapping { source_column: "Cierre".to_string(), canonical_field: CanonicalBarField::Close },
+            ManualColumnMapping {
+                source_column: "VolumenTicks".to_string(),
+                canonical_field: CanonicalBarField::VolumeTicks,
+            },
+            ManualColumnMapping {
+                source_column: "VolumenReal".to_string(),
+                canonical_field: CanonicalBarField::VolumeTraded,
+            },
+            ManualColumnMapping {
+                source_column: "SpreadPts".to_string(),
+                canonical_field: CanonicalBarField::SpreadReported,
+            },
+        ]
+    }
+
+    fn arbitrary_run_context<'a>() -> ManualRunContext<'a> {
+        ManualRunContext {
+            instrument_id: "EURUSD",
+            venue: "GENERIC_BROKER",
+            source_provider: "MANUAL_UPLOAD",
+            source_clock_anchor_timezone_ref: Some("UTC"),
+            source_clock_fixed_offset_minutes: 0,
+            real_volume_unit_declared: Some("CONTRACTS"),
+            spread_reported_unit_declared: Some("POINTS_GENERIC"),
+            timeframe_value: "5M",
+            bar_interval_ns: 300_000_000_000, // 5 minutos
+        }
+    }
+
+    /// Criterio de aceptación #1: un archivo con columnas arbitrarias
+    /// (delimitador, nombres y orden distintos de cualquier plantilla
+    /// conocida) se importa declarando el mapeo manualmente.
+    #[test]
+    fn arbitrary_csv_with_manual_mapping_parses_and_maps_successfully() {
+        let ctx = arbitrary_run_context();
+        let bars = parse_and_map_manual_bar_file(ARBITRARY_CSV.as_bytes(), &arbitrary_column_mapping(), &ctx)
+            .expect("un CSV de columnas arbitrarias con mapeo completo debe importar sin error");
+        assert_eq!(bars.len(), 1, "el fragmento trae exactamente una fila de dato");
+    }
+
+    /// Criterio de aceptación #2: la vista previa muestra DATO TRANSFORMADO
+    /// (escala entera ×10⁸, nanosegundos UTC) -- nunca solo el mapeo de
+    /// nombres de columna. El oráculo se calcula A MANO (multiplicación
+    /// independiente y `chrono::Utc` directo), nunca reutilizando las
+    /// funciones bajo prueba como su propio oráculo (regla anti-tautología).
+    #[test]
+    fn manual_preview_carries_transformed_scaled_values_not_column_labels() {
+        let ctx = arbitrary_run_context();
+        let bars = parse_and_map_manual_bar_file(ARBITRARY_CSV.as_bytes(), &arbitrary_column_mapping(), &ctx).unwrap();
+        let bar = &bars[0];
+
+        // "2.50000000" * 10^8 == 250_000_000, calculado a mano, no vía
+        // parse_price_to_scaled.
+        assert_eq!(bar.open, 250_000_000, "el open debe ser el ENTERO escalado, no la cadena \"2.50000000\"");
+        assert_eq!(bar.high, 251_000_000);
+        assert_eq!(bar.low, 249_000_000);
+        assert_eq!(bar.close, 250_500_000);
+        assert_eq!(bar.volume_ticks, 10);
+        assert_eq!(bar.volume_traded_raw, 1000);
+        assert_eq!(bar.spread_reported_raw, 5);
+
+        use chrono::{TimeZone, Utc};
+        let expected_open_ns = Utc.with_ymd_and_hms(2024, 3, 1, 10, 0, 0).unwrap().timestamp_nanos_opt().unwrap();
+        assert_eq!(
+            bar.bar_open_timestamp_ns, expected_open_ns,
+            "el timestamp de apertura debe ser el instante UTC real en nanosegundos, no la cadena de fecha"
+        );
+        assert_eq!(
+            bar.bar_close_timestamp_ns,
+            expected_open_ns + 300_000_000_000,
+            "el cierre debe derivarse sumando EXACTAMENTE la duración declarada de 5 minutos"
+        );
+
+        // La proyección serializable que el ledger sella también lleva dato
+        // transformado, nunca el mapeo de nombres.
+        let preview = crate::schemas::PreviewBarRow::from(bar);
+        assert_eq!(preview.open, 250_000_000);
+        assert_eq!(preview.bar_open_timestamp_ns, expected_open_ns);
+    }
+
+    /// Criterio de aceptación #6: por cada uno de los ocho campos
+    /// obligatorios, si falta del mapeo declarado, se rechaza identificando
+    /// exactamente esa VARIANTE -- nunca se asume ni se completa con un
+    /// default. (Nombre corregido tras el gate de mutación del Tech-Lead
+    /// 2026-07-31: esta prueba compara la VARIANTE del enum, no la cadena de
+    /// [`CanonicalBarField::label`] -- esa cobertura vive en
+    /// `canonical_bar_field_label_returns_exact_expected_string_for_each_variant`,
+    /// abajo.)
+    #[test]
+    fn resolve_manual_mapping_rejects_each_missing_required_field_by_variant() {
+        let (_delimiter, header_columns) = parse_generic_csv_header(ARBITRARY_CSV.lines().next().unwrap());
+        for missing_field in CanonicalBarField::ALL_NON_TIMESTAMP {
+            let incomplete_mapping: Vec<ManualColumnMapping> =
+                arbitrary_column_mapping().into_iter().filter(|m| m.canonical_field != missing_field).collect();
+            let err = resolve_manual_mapping(&incomplete_mapping, &header_columns)
+                .expect_err(&format!("debe rechazar cuando falta {missing_field:?}"));
+            assert_eq!(
+                err,
+                ManualMappingError::MissingRequiredField(missing_field),
+                "el error debe nombrar EXACTAMENTE el campo ausente, no un genérico"
+            );
+        }
+    }
+
+    /// Contraprueba de #6: con los ocho campos presentes, la resolución
+    /// nunca falla por "campo ausente" -- discrimina el caso positivo del
+    /// negativo de la prueba anterior.
+    #[test]
+    fn resolve_manual_mapping_accepts_when_all_eight_required_fields_are_present() {
+        let (_delimiter, header_columns) = parse_generic_csv_header(ARBITRARY_CSV.lines().next().unwrap());
+        let result = resolve_manual_mapping(&arbitrary_column_mapping(), &header_columns);
+        assert!(result.is_ok(), "con el mapeo completo, la resolución debe tener éxito: {result:?}");
+    }
+
+    /// Una columna origen declarada que no existe en la cabecera real se
+    /// rechaza -- nunca se ignora en silencio ni se sustituye por otra.
+    #[test]
+    fn resolve_manual_mapping_rejects_unknown_source_column() {
+        let (_delimiter, header_columns) = parse_generic_csv_header(ARBITRARY_CSV.lines().next().unwrap());
+        let mut mapping = arbitrary_column_mapping();
+        mapping[0].source_column = "ColumnaQueNoExiste".to_string();
+        let err = resolve_manual_mapping(&mapping, &header_columns).unwrap_err();
+        assert!(matches!(err, ManualMappingError::UnknownSourceColumn { .. }));
+    }
+
+    /// El mismo campo canónico declarado dos veces (contra dos columnas
+    /// origen distintas) se rechaza -- una correspondencia ambigua no es una
+    /// declaración válida.
+    #[test]
+    fn resolve_manual_mapping_rejects_duplicate_field_mapping() {
+        let (_delimiter, header_columns) = parse_generic_csv_header(ARBITRARY_CSV.lines().next().unwrap());
+        let mut mapping = arbitrary_column_mapping();
+        mapping.push(ManualColumnMapping { source_column: "Minimo".to_string(), canonical_field: CanonicalBarField::Open });
+        let err = resolve_manual_mapping(&mapping, &header_columns).unwrap_err();
+        assert!(matches!(err, ManualMappingError::DuplicateFieldMapping(CanonicalBarField::Open)));
+    }
+
+    /// La propagación de punta a punta: un archivo con UN campo obligatorio
+    /// sin declarar se rechaza a través de `parse_and_map_manual_bar_file`
+    /// completo, no solo en el resolutor aislado.
+    #[test]
+    fn parse_and_map_manual_bar_file_rejects_when_a_required_field_is_undeclared() {
+        let ctx = arbitrary_run_context();
+        let incomplete_mapping: Vec<ManualColumnMapping> =
+            arbitrary_column_mapping().into_iter().filter(|m| m.canonical_field != CanonicalBarField::SpreadReported).collect();
+        let err = parse_and_map_manual_bar_file(ARBITRARY_CSV.as_bytes(), &incomplete_mapping, &ctx).unwrap_err();
+        assert!(matches!(
+            err,
+            ManualImportCoreError::Mapping(ManualMappingError::MissingRequiredField(CanonicalBarField::SpreadReported))
+        ));
+    }
+
+    // ── Delimitador y cabecera genérica ───────────────────────────────────
+
+    #[test]
+    fn detect_csv_delimiter_prefers_the_most_frequent_candidate_and_defaults_to_comma() {
+        assert_eq!(detect_csv_delimiter("a,b,c,d"), ',');
+        assert_eq!(detect_csv_delimiter("a;b;c;d"), ';');
+        assert_eq!(detect_csv_delimiter("a\tb\tc\td"), '\t');
+        // Mezcla: la coma aparece 3 veces, el punto y coma 1 -- gana la coma.
+        assert_eq!(detect_csv_delimiter("a,b,c,d;e"), ',');
+        // Ningún candidato presente -- valor por defecto documentado.
+        assert_eq!(detect_csv_delimiter("solo_una_columna"), ',');
+    }
+
+    #[test]
+    fn detect_csv_columns_returns_trimmed_column_names_in_order() {
+        let columns = detect_csv_columns(ARBITRARY_CSV.as_bytes()).unwrap();
+        assert_eq!(
+            columns,
+            vec!["SpreadPts", "Cierre", "Fecha", "VolumenReal", "Maximo", "Minimo", "VolumenTicks", "Apertura"]
+        );
+    }
+
+    #[test]
+    fn detect_csv_columns_rejects_empty_file() {
+        let err = detect_csv_columns(b"").unwrap_err();
+        assert_eq!(err, ManualImportCoreError::EmptyFile);
+    }
+
+    // ── Marca de tiempo genérica ───────────────────────────────────────────
+
+    #[test]
+    fn parse_generic_timestamp_supports_iso_and_common_formats() {
+        use chrono::{TimeZone, Utc};
+        let expected = Utc.with_ymd_and_hms(2024, 3, 1, 10, 30, 45).unwrap().naive_utc();
+        assert_eq!(parse_generic_timestamp("2024-03-01T10:30:45").unwrap(), expected);
+        assert_eq!(parse_generic_timestamp("2024-03-01 10:30:45").unwrap(), expected);
+        assert_eq!(parse_generic_timestamp("2024/03/01 10:30:45").unwrap(), expected);
+        assert_eq!(parse_generic_timestamp("2024.03.01 10:30:45").unwrap(), expected);
+    }
+
+    #[test]
+    fn parse_generic_timestamp_rejects_unrecognized_format() {
+        let err = parse_generic_timestamp("no es una fecha").unwrap_err();
+        assert_eq!(err, GenericTimestampParseError { raw: "no es una fecha".to_string() });
+    }
+
+    // ── Cotejo de rango declarado contra contenido real (DEBT-039) ────────
+
+    fn sample_bar_with_open_and_close_ns(open_ns: i64, close_ns: i64) -> CanonicalBarRow {
+        CanonicalBarRow {
+            instrument_id: "EURUSD".to_string(),
+            venue: "PEPPERSTONE".to_string(),
+            source_provider: "TEST".to_string(),
+            bar_open_timestamp_ns: open_ns,
+            bar_close_timestamp_ns: close_ns,
+            bar_type: "TIME",
+            timeframe_value: "1M".to_string(),
+            open: 1,
+            high: 1,
+            low: 1,
+            close: 1,
+            volume_ticks: 0,
+            volume_traded_raw: 0,
+            spread_reported_raw: 0,
+            spread_reported_unit: "POINTS_MT5".to_string(),
+            is_activity_anomaly: false,
+            volume_unit_unverified: false,
+        }
+    }
+
+    /// Criterio de aceptación #5 (DEBT-039): contenido real que cae FUERA
+    /// del rango declarado se rechaza -- ni el aviso ni el silencio son
+    /// aceptables, se rechaza con el motivo exacto.
+    #[test]
+    fn declared_range_content_mismatch_is_rejected_when_content_falls_outside_declared_range() {
+        let bars = vec![sample_bar_with_open_and_close_ns(1_000, 2_000)];
+        // El rango declarado empieza DESPUÉS de que el contenido real ya
+        // arrancó -- una declaración que no describe el archivo.
+        let err = check_declared_range_against_parsed_content(1_500, 3_000, &bars).unwrap_err();
+        assert_eq!(
+            err,
+            DeclaredRangeContentMismatchError::ContentOutsideDeclaredRange {
+                declared_range_start_ns: 1_500,
+                declared_range_end_ns: 3_000,
+                content_min_open_ns: 1_000,
+                content_max_close_ns: 2_000,
+            }
+        );
+    }
+
+    /// Contraprueba de borde: contenido EXACTAMENTE en los límites del rango
+    /// declarado se acepta -- mata el mutante `<`→`<=`/`>`→`>=`.
+    #[test]
+    fn declared_range_content_mismatch_accepts_content_exactly_at_the_declared_boundaries() {
+        let bars = vec![sample_bar_with_open_and_close_ns(1_000, 2_000)];
+        let result = check_declared_range_against_parsed_content(1_000, 2_000, &bars);
+        assert!(result.is_ok(), "contenido exactamente en el borde del rango declarado debe aceptarse: {result:?}");
+    }
+
+    /// Un solo nanosegundo de contenido fuera del borde superior ya se
+    /// rechaza -- discrimina el borde exacto en la otra dirección.
+    #[test]
+    fn declared_range_content_mismatch_rejects_content_one_nanosecond_past_the_declared_end() {
+        let bars = vec![sample_bar_with_open_and_close_ns(1_000, 2_001)];
+        let result = check_declared_range_against_parsed_content(1_000, 2_000, &bars);
+        assert!(result.is_err(), "un solo nanosegundo fuera del rango declarado debe rechazarse");
+    }
+
+    /// Un archivo sin filas de dato no puede contradecir ningún rango
+    /// declarado -- el chequeo no corre, nunca se asume una falla sobre
+    /// datos que no existen.
+    #[test]
+    fn declared_range_content_mismatch_check_does_not_run_when_there_are_no_bars() {
+        let result = check_declared_range_against_parsed_content(0, 1, &[]);
+        assert!(result.is_ok(), "sin filas de dato, el cotejo no debe rechazar nada");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Gate de mutación del Tech-Lead sobre STORY-073 (2026-07-31) -- tres
+    // supervivientes cerrados aquí, uno más cerrado en orchestrator.rs
+    // (columna JSON sellada, defensa en profundidad del mismo foco).
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Foco 1 (grave): `CanonicalBarField::label()` podía mutarse a
+    /// devolver `""` o `"xyzzy"` para cualquier variante sin que ninguna de
+    /// las 82 pruebas anteriores se enterara -- y esta etiqueta se sella tal
+    /// cual en `column_mapping_json` (evidencia de LDR-0008 de qué se le
+    /// mostró al usuario). Ejercita la función DIRECTAMENTE, las ocho
+    /// variantes, con el valor exacto esperado -- ninguna coincidencia
+    /// posible con una cadena vacía o basura.
+    #[test]
+    fn canonical_bar_field_label_returns_exact_expected_string_for_each_variant() {
+        assert_eq!(CanonicalBarField::Timestamp.label(), "Timestamp");
+        assert_eq!(CanonicalBarField::Open.label(), "Open");
+        assert_eq!(CanonicalBarField::High.label(), "High");
+        assert_eq!(CanonicalBarField::Low.label(), "Low");
+        assert_eq!(CanonicalBarField::Close.label(), "Close");
+        assert_eq!(CanonicalBarField::VolumeTicks.label(), "VolumeTicks");
+        assert_eq!(CanonicalBarField::VolumeTraded.label(), "VolumeTraded");
+        assert_eq!(CanonicalBarField::SpreadReported.label(), "SpreadReported");
+    }
+
+    /// Foco 2: `expected_at_least` (el número que el usuario lee para saber
+    /// cuántas columnas le faltan) podía mutarse de `max_idx + 1` a
+    /// `max_idx - 1` o `max_idx * 1` sin que ninguna prueba lo notara --
+    /// ninguna prueba anterior ejercitaba `UnexpectedFieldCount` en
+    /// absoluto. `max_idx` aquí es 7 (el mayor índice declarado,
+    /// `spread_reported_idx`): el valor correcto (8) es distinto de AMBOS
+    /// mutantes (6 y 7), así que esta prueba los mata a los dos a la vez.
+    #[test]
+    fn parse_manual_csv_row_reports_exact_expected_column_count_when_row_is_too_short() {
+        let resolved = ResolvedManualMapping {
+            timestamp: ResolvedTimestampMapping::Combined { timestamp_idx: 0 },
+            open_idx: 1,
+            high_idx: 2,
+            low_idx: 3,
+            close_idx: 4,
+            volume_ticks_idx: 5,
+            volume_traded_idx: 6,
+            spread_reported_idx: 7,
+        };
+        let short_row = "a,b,c,d,e"; // 5 campos -- faltan los necesarios para llegar al índice 7
+        let err = parse_manual_csv_row(short_row, ',', &resolved).unwrap_err();
+        match err {
+            ManualRowParseError::UnexpectedFieldCount { found, expected_at_least, .. } => {
+                assert_eq!(found, 5);
+                assert_eq!(
+                    expected_at_least, 8,
+                    "expected_at_least debe ser EXACTAMENTE max_idx+1 (8) -- ni max_idx-1 (6) ni max_idx*1 (7)"
+                );
+            }
+            other => panic!("se esperaba UnexpectedFieldCount, se obtuvo {other:?}"),
+        }
+    }
+
+    /// Foco 3: `line_number = idx + 1` dentro de
+    /// `parse_and_map_manual_bar_file` podía mutarse a `idx * 1` (números de
+    /// línea base cero) sin que ninguna prueba lo notara -- mismo patrón que
+    /// `parse_error_reports_the_correct_one_based_line_number` ya prueba
+    /// para la vía de plantilla (`orchestrator.rs`), que la vía manual había
+    /// copiado en el código pero no en las pruebas. Fila malformada en
+    /// posición CONOCIDA (la 3a fila de dato, `idx=2`): bajo el mutante,
+    /// `2*1==2` reportaría línea 2, no 3.
+    #[test]
+    fn parse_and_map_manual_bar_file_reports_correct_one_based_line_number_for_malformed_row() {
+        let ctx = arbitrary_run_context();
+        let header = "SpreadPts,Cierre,Fecha,VolumenReal,Maximo,Minimo,VolumenTicks,Apertura\n";
+        let good_row = "5,2.50500000,2024-03-01 10:00:00,1000,2.51000000,2.49000000,10,2.50000000\n";
+        let bad_row = "5,2.50500000,2024-03-01 10:10:00,1000,NOPE,2.49000000,10,2.50000000\n"; // Maximo/High inválido
+        let content = format!("{header}{good_row}{good_row}{bad_row}");
+
+        let result = parse_and_map_manual_bar_file(content.as_bytes(), &arbitrary_column_mapping(), &ctx);
+        match result {
+            Err(ManualImportCoreError::Row { line_number, .. }) => assert_eq!(
+                line_number, 3,
+                "la 3a fila de dato (tras 2 filas buenas) debe reportarse como línea 3, no 2 (idx*1) ni ningún otro valor"
+            ),
+            other => panic!("se esperaba ManualImportCoreError::Row, se obtuvo {other:?}"),
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Ajuste 2 del Tech-Lead (2026-07-31): fecha y hora en columnas
+    // separadas -- la forma REAL del archivo del propietario
+    // (`<DATE>` TAB `<TIME>`) y de "media industria", que la vía manual no
+    // podía describir hasta ahora.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Cabecera y filas con fecha y hora en columnas SEPARADAS, en el MISMO
+    /// formato exacto que trae el archivo real del propietario
+    /// (`datasets/EURUSD_M1_2000-01-01_2025-05-01.csv`: `"2000.01.03"` /
+    /// `"00:01:00"`) -- pero con nombres de columna y delimitador propios
+    /// (coma, no tabulador), para demostrar que la vía manual la resuelve
+    /// por lo que el usuario DECLARA, no por reconocer el archivo de MT5.
+    const SPLIT_DATETIME_CSV: &str = "FechaOperacion,HoraOperacion,Open,High,Low,Close,TickVol,Vol,Spread\n\
+         2000.01.03,00:01:00,1.00730,1.00750,1.00730,1.00730,5,0,50\n\
+         2000.01.03,00:02:00,1.00790,1.00790,1.00790,1.00790,1,0,50\n";
+
+    fn split_datetime_column_mapping() -> Vec<ManualColumnMapping> {
+        vec![
+            ManualColumnMapping {
+                source_column: "FechaOperacion".to_string(),
+                canonical_field: CanonicalBarField::TimestampDate,
+            },
+            ManualColumnMapping {
+                source_column: "HoraOperacion".to_string(),
+                canonical_field: CanonicalBarField::TimestampTime,
+            },
+            ManualColumnMapping { source_column: "Open".to_string(), canonical_field: CanonicalBarField::Open },
+            ManualColumnMapping { source_column: "High".to_string(), canonical_field: CanonicalBarField::High },
+            ManualColumnMapping { source_column: "Low".to_string(), canonical_field: CanonicalBarField::Low },
+            ManualColumnMapping { source_column: "Close".to_string(), canonical_field: CanonicalBarField::Close },
+            ManualColumnMapping { source_column: "TickVol".to_string(), canonical_field: CanonicalBarField::VolumeTicks },
+            ManualColumnMapping { source_column: "Vol".to_string(), canonical_field: CanonicalBarField::VolumeTraded },
+            ManualColumnMapping {
+                source_column: "Spread".to_string(),
+                canonical_field: CanonicalBarField::SpreadReported,
+            },
+        ]
+    }
+
+    /// El caso que motivó el ajuste: un archivo con fecha y hora separadas,
+    /// EXACTAMENTE como el archivo real del propietario, se importa por la
+    /// vía manual declarando DOS columnas -- oráculo del instante UTC
+    /// calculado a mano con `chrono::Utc`, nunca reutilizando
+    /// `resolve_event_timestamp_ns` como su propio oráculo.
+    #[test]
+    fn manual_mapping_supports_split_date_and_time_columns_like_the_real_metatrader_file() {
+        let ctx = arbitrary_run_context();
+        let bars = parse_and_map_manual_bar_file(SPLIT_DATETIME_CSV.as_bytes(), &split_datetime_column_mapping(), &ctx)
+            .expect("un archivo con fecha y hora en columnas separadas debe importar por la vía manual declarando DOS columnas");
+        assert_eq!(bars.len(), 2, "las dos filas de dato reales deben importarse");
+
+        use chrono::{TimeZone, Utc};
+        // arbitrary_run_context() declara ancla "UTC" con desplazamiento 0.
+        let expected_first_open = Utc.with_ymd_and_hms(2000, 1, 3, 0, 1, 0).unwrap().timestamp_nanos_opt().unwrap();
+        assert_eq!(
+            bars[0].bar_open_timestamp_ns, expected_first_open,
+            "fecha y hora declaradas por separado deben combinarse en el instante UTC correcto"
+        );
+        assert_eq!(bars[0].open, 100_730_000, "el resto del mapeo (OHLC) debe funcionar igual que con Timestamp combinado");
+    }
+
+    /// Ambas estrategias declaradas a la vez es una contradicción -- "nada
+    /// se adivina" corta también en esta dirección: ni Drasus decide cuál
+    /// de las dos declaraciones prevalece.
+    #[test]
+    fn resolve_manual_mapping_rejects_combined_and_split_timestamp_declared_together() {
+        let header = vec!["A".to_string(), "B".to_string(), "C".to_string()];
+        let mappings = vec![
+            ManualColumnMapping { source_column: "A".to_string(), canonical_field: CanonicalBarField::Timestamp },
+            ManualColumnMapping { source_column: "B".to_string(), canonical_field: CanonicalBarField::TimestampDate },
+            ManualColumnMapping { source_column: "C".to_string(), canonical_field: CanonicalBarField::TimestampTime },
+        ];
+        let err = resolve_manual_mapping(&mappings, &header).unwrap_err();
+        assert_eq!(err, ManualMappingError::AmbiguousTimestampDeclaration);
+    }
+
+    /// Declarar solo `TimestampDate` sin `TimestampTime` es una estrategia
+    /// separada INCOMPLETA -- se rechaza nombrando exactamente la mitad que
+    /// falta, nunca se completa asumiendo medianoche o cualquier otro valor.
+    #[test]
+    fn resolve_manual_mapping_rejects_split_timestamp_missing_the_time_half() {
+        let header = vec!["A".to_string()];
+        let mappings = vec![ManualColumnMapping { source_column: "A".to_string(), canonical_field: CanonicalBarField::TimestampDate }];
+        let err = resolve_manual_mapping(&mappings, &header).unwrap_err();
+        assert_eq!(err, ManualMappingError::MissingRequiredField(CanonicalBarField::TimestampTime));
+    }
+
+    /// Contraparte: solo `TimestampTime` sin `TimestampDate`.
+    #[test]
+    fn resolve_manual_mapping_rejects_split_timestamp_missing_the_date_half() {
+        let header = vec!["A".to_string()];
+        let mappings = vec![ManualColumnMapping { source_column: "A".to_string(), canonical_field: CanonicalBarField::TimestampTime }];
+        let err = resolve_manual_mapping(&mappings, &header).unwrap_err();
+        assert_eq!(err, ManualMappingError::MissingRequiredField(CanonicalBarField::TimestampDate));
+    }
+
+    /// Ninguna de las dos estrategias declarada -- error dedicado que ofrece
+    /// AMBOS caminos válidos, no el genérico de un campo cualquiera.
+    #[test]
+    fn resolve_manual_mapping_rejects_when_no_timestamp_strategy_is_declared_at_all() {
+        let header = vec!["A".to_string()];
+        let mappings: Vec<ManualColumnMapping> = Vec::new();
+        let err = resolve_manual_mapping(&mappings, &header).unwrap_err();
+        assert_eq!(err, ManualMappingError::MissingTimestampDeclaration);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Ajuste 1 del Tech-Lead (2026-07-31): la vista previa acotada NO debe
+    // pagar el costo del archivo completo -- medido contra el archivo real
+    // del propietario (9.231.696 filas, 535 MB): ~5.3 s / ~700 MB por
+    // llamada sin acotar.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Construye un CSV sintético de `n` filas de dato (cadencia de 1
+    /// minuto dentro de la misma hora, suficiente para `n <= 59`) -- usado
+    /// para demostrar el límite sin necesitar el archivo real de 535 MB en
+    /// la prueba.
+    fn build_many_rows_csv(n: usize) -> String {
+        assert!(n < 60, "helper de prueba: solo soporta menos de 60 filas (cadencia de minutos dentro de una hora)");
+        let mut content = "Fecha,Apertura,Maximo,Minimo,Cierre,VolumenTicks,VolumenReal,SpreadPts\n".to_string();
+        for minute in 0..n {
+            content.push_str(&format!(
+                "2024-03-01 10:{minute:02}:00,2.50000000,2.51000000,2.49000000,2.50500000,10,1000,5\n"
+            ));
+        }
+        content
+    }
+
+    /// La vista previa NUNCA debe superar `PREVIEW_ROW_LIMIT`, sin importar
+    /// cuántas filas traiga el archivo -- mientras que el parseo completo
+    /// (reservado a la confirmación) SÍ procesa el archivo entero. Esta es
+    /// la propiedad que hace barata la vista previa repetida.
+    #[test]
+    fn preview_manual_bar_file_respects_the_row_limit_while_full_parse_returns_everything() {
+        let ctx = arbitrary_run_context();
+        let content = build_many_rows_csv(15);
+        let mapping = arbitrary_column_mapping();
+
+        let preview = preview_manual_bar_file(content.as_bytes(), &mapping, &ctx).expect("la vista previa debe tener éxito");
+        assert_eq!(
+            preview.len(),
+            PREVIEW_ROW_LIMIT,
+            "la vista previa acotada debe devolver EXACTAMENTE {PREVIEW_ROW_LIMIT} filas de un archivo de 15, nunca las 15"
+        );
+
+        let full = parse_and_map_manual_bar_file(content.as_bytes(), &mapping, &ctx).expect("el parseo completo debe tener éxito");
+        assert_eq!(full.len(), 15, "el parseo completo (solo al confirmar) SÍ debe procesar el archivo entero");
+    }
+
+    /// LDR-0008 condición técnica 1, la parte que este ajuste no puede
+    /// sacrificar: las primeras filas de la vista previa acotada deben ser
+    /// EXACTAMENTE las primeras filas del parseo completo -- mismo cálculo,
+    /// nunca una ruta paralela que pudiera divergir. `CanonicalBarRow`
+    /// deriva `PartialEq`, así que esta es una comparación estructural
+    /// completa, no campo por campo a mano.
+    #[test]
+    fn preview_manual_bar_file_first_rows_are_the_same_computation_as_the_full_parse() {
+        let ctx = arbitrary_run_context();
+        let content = build_many_rows_csv(15);
+        let mapping = arbitrary_column_mapping();
+
+        let preview = preview_manual_bar_file(content.as_bytes(), &mapping, &ctx).unwrap();
+        let full = parse_and_map_manual_bar_file(content.as_bytes(), &mapping, &ctx).unwrap();
+
+        assert_eq!(
+            preview,
+            full[..PREVIEW_ROW_LIMIT].to_vec(),
+            "la vista previa acotada debe coincidir EXACTAMENTE, fila por fila, con las primeras filas del parseo \
+             completo -- es el mismo cálculo, no una segunda ruta que podría divergir (LDR-0008 condición técnica 1)"
+        );
+    }
+
+    /// Una fila malformada DENTRO de la ventana acotada se sigue reportando
+    /// como error real -- el límite nunca la descarta en silencio ni la
+    /// trata como si no existiera.
+    #[test]
+    fn preview_manual_bar_file_surfaces_a_malformed_row_error_even_within_the_bound() {
+        let ctx = arbitrary_run_context();
+        let header = "Fecha,Apertura,Maximo,Minimo,Cierre,VolumenTicks,VolumenReal,SpreadPts\n";
+        let good_row = "2024-03-01 10:00:00,2.50000000,2.51000000,2.49000000,2.50500000,10,1000,5\n";
+        let bad_row = "2024-03-01 10:01:00,NOPE,2.51000000,2.49000000,2.50500000,10,1000,5\n";
+        let content = format!("{header}{good_row}{bad_row}");
+
+        let err = preview_manual_bar_file(content.as_bytes(), &arbitrary_column_mapping(), &ctx).unwrap_err();
+        assert!(
+            matches!(err, ManualImportCoreError::Row { .. }),
+            "una fila malformada dentro del límite acotado debe seguir reportándose como error, nunca truncarse en silencio"
+        );
     }
 }

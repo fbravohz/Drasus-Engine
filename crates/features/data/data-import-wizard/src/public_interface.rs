@@ -21,14 +21,20 @@ use shared::public_interface::{create_pool, run_migrations, SystemClock};
 // ── Re-exports para que Bridge/CLI y los tests de integración accedan ──────
 
 pub use crate::domain::{
-    compute_mapping_declaration_audit_hash, compute_source_file_hash, detect_mt5_bar_template, is_activity_impossible,
-    map_to_canonical_bar, mt5_bar_column_mapping, parse_mt5_bar_line, parse_price_to_scaled, scaled_to_price_string,
-    CanonicalBarRow, CanonicalMappingError, FieldParseError, MappingDeclarationHashInput, Mt5LineParseError,
-    Mt5RawBarFields, RunContext, TemplateDetectionError, TimestampResolutionError, MT5_BAR_TEMPLATE_CODE,
-    MT5_BAR_TEMPLATE_VERSION,
+    check_declared_range_against_parsed_content, compute_mapping_declaration_audit_hash, compute_source_file_hash,
+    detect_csv_columns, detect_csv_delimiter, detect_mt5_bar_template, is_activity_impossible,
+    map_manual_row_to_canonical_bar, map_to_canonical_bar, mt5_bar_column_mapping, parse_and_map_manual_bar_file,
+    parse_generic_csv_header, parse_generic_timestamp, parse_manual_csv_row, parse_mt5_bar_line, parse_price_to_scaled,
+    preview_manual_bar_file, resolve_manual_mapping, scaled_to_price_string, CanonicalBarField, CanonicalBarRow,
+    CanonicalMappingError, DeclaredRangeContentMismatchError, FieldParseError, GenericTimestampParseError,
+    ManualColumnMapping, ManualImportCoreError, ManualMappingError, ManualRawBarFields, ManualRowParseError,
+    ManualRunContext, MappingDeclarationHashInput, Mt5LineParseError, Mt5RawBarFields, ResolvedManualMapping,
+    RunContext, TemplateDetectionError, TimestampResolutionError, MT5_BAR_TEMPLATE_CODE, MT5_BAR_TEMPLATE_VERSION,
+    PREVIEW_ROW_LIMIT,
 };
 pub use crate::orchestrator::{
-    import_mt5_bar_file, ImportBarFileError, ImportBarFileInput, ImportBarFileOutcome, CANONICAL_SCHEMA_VERSION,
+    import_manual_bar_file, import_mt5_bar_file, ImportBarFileError, ImportBarFileInput, ImportBarFileOutcome,
+    ManualImportBarFileError, ManualImportBarFileInput, ManualImportBarFileOutcome, CANONICAL_SCHEMA_VERSION,
     TRANSFORM_ENGINE_VERSION,
 };
 pub use crate::persistence::{MappingDeclarationRepository, MappingDeclarationRepositoryError};
@@ -355,9 +361,28 @@ mod tests {
     /// Criterio de aceptación #11: el harness CLI acepta la FORMA NUEVA
     /// completa de la declaración (ancla + desplazamiento distinto de cero,
     /// estilo IC Markets) y sigue teniendo éxito de punta a punta.
+    ///
+    /// El rango declarado por defecto (`default_declared_range_*`) está
+    /// calibrado EXACTAMENTE al día real que cubre la muestra bajo
+    /// desplazamiento CERO (ver el test golden de arriba) -- un
+    /// desplazamiento de 7 horas mueve el instante resuelto de cada fila al
+    /// día calendario ANTERIOR, así que el rango por defecto, sin ensanchar,
+    /// dejaría el contenido real fuera del tramo declarado y el cotejo de
+    /// rango (DEBT-039, STORY-073) lo rechazaría -- correctamente: sería una
+    /// declaración que ya no describe lo que este `verify()` produce. Se
+    /// ensancha un día completo a cada lado para aislar lo que esta prueba
+    /// SÍ quiere ejercer (la resolución del desplazamiento), sin relajar el
+    /// cotejo de rango en sí.
     #[tokio::test(flavor = "multi_thread")]
     async fn verify_with_ic_markets_style_offset_still_succeeds() {
-        let input = VerifyInput { source_clock_fixed_offset_minutes: 420, ..VerifyInput::default() };
+        const ONE_DAY_NS: i64 = 86_400_000_000_000;
+        let default_input = VerifyInput::default();
+        let input = VerifyInput {
+            source_clock_fixed_offset_minutes: 420,
+            declared_range_start_ns: default_input.declared_range_start_ns - ONE_DAY_NS,
+            declared_range_end_ns: default_input.declared_range_end_ns + ONE_DAY_NS,
+            ..default_input
+        };
         let output = verify(input).await;
         assert!(output.ok, "un desplazamiento distinto de cero debe seguir resolviendo el reloj sin error: {:?}", output.error);
         assert_eq!(output.rows_imported, Some(6));

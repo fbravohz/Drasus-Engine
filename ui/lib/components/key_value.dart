@@ -4,17 +4,27 @@
 
 import 'package:flutter/material.dart';
 import '../theme/gx_tokens.dart';
+import 'copy_button.dart';
 
 // Fila etiqueta → valor con separador inferior por token de borde.
 // Contrato funcional: [label] texto descriptivo de la clave; [value] texto
 // del valor a mostrar; [valueColor] color semántico del valor (null = usa
 // el color de texto base dinámico — legible en todos los temas); [mono] si true
-// renderiza el valor en tipografía monoespaciada (útil para números/hashes).
+// renderiza el valor en tipografía monoespaciada (útil para números/hashes);
+// [copyable] hace el valor seleccionable y añade un botón de copiado.
+//
+// Sobre [copyable] (2026-08-01): la etiqueta NUNCA es seleccionable —no sirve
+// de nada fuera de la app y seleccionarla al arrastrar es ruido—, pero el
+// VALOR sí puede necesitarse fuera: una huella SHA-256, un identificador de
+// declaración, una ruta. Esos son justo los valores que nadie transcribe a
+// mano sin equivocarse. Default `false`: un valor corto y legible no lo
+// necesita.
 class KeyValue extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
   final bool mono;
+  final bool copyable;
 
   // NO const: lee tokens dinámicos (Gx.textBaseLabel/borderBase) en build().
   // Un StatelessWidget const no se reconstruye al cambiar paleta/modo y
@@ -26,7 +36,16 @@ class KeyValue extends StatelessWidget {
     required this.value,
     this.valueColor,
     this.mono = false,
+    this.copyable = false,
   });
+
+  // Estilo del valor, compartido por la variante copiable y la normal para
+  // que activar [copyable] no cambie cómo se ve el dato, solo qué se puede
+  // hacer con él.
+  TextStyle _valueStyle(Color vc) => (mono
+          ? Gx.dataMono(fontSize: 13, color: vc)
+          : Gx.uiSans(fontSize: 13, color: vc))
+      .copyWith(shadows: valueColor != null ? Gx.textGlow(vc, 6) : null);
 
   @override
   // Fila con etiqueta en label muted a la izquierda y valor a la derecha.
@@ -52,16 +71,19 @@ class KeyValue extends StatelessWidget {
           const SizedBox(width: 8),
           // Valor: puede ser monoespaciado (datos numéricos) o sans (texto).
           // El glow solo aparece cuando hay un color semántico explícito.
-          Text(
-            value,
-            style: mono
-                ? Gx.dataMono(fontSize: 13, color: vc).copyWith(
-                    shadows: valueColor != null ? Gx.textGlow(vc, 6) : null,
-                  )
-                : Gx.uiSans(fontSize: 13, color: vc).copyWith(
-                    shadows: valueColor != null ? Gx.textGlow(vc, 6) : null,
-                  ),
-          ),
+          if (copyable)
+            // Seleccionable + botón de copiado. `Flexible` porque un valor
+            // copiable suele ser largo (hash, ruta) y debe poder envolver en
+            // vez de desbordar la fila.
+            Flexible(
+              child: CopyableText(
+                text: value,
+                style: _valueStyle(vc),
+                tooltip: 'Copiar $label',
+              ),
+            )
+          else
+            Text(value, style: _valueStyle(vc)),
         ],
       ),
     );

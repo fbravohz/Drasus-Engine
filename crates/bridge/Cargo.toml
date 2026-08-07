@@ -38,6 +38,12 @@ sovereign-data-fetcher = { path = "../features/data/sovereign-data-fetcher" }
 # 3). Acceso exclusivo vía su `public_interface` (ADR-0137).
 hybrid-data-transformer = { path = "../features/data/hybrid-data-transformer" }
 
+# data-import-wizard provee la vía de mapeo manual (`parse_and_map_manual_
+# bar_file`, `import_manual_bar_file`) que el Bridge envuelve en
+# `api::data_import_wizard` (STORY-073 Etapa 3). Acceso exclusivo vía su
+# `public_interface` (ADR-0137).
+data-import-wizard = { path = "../features/data/data-import-wizard" }
+
 # flutter_rust_bridge genera los bindings Dart desde las funciones Rust
 # marcadas con #[frb(...)]. En tiempo de ejecución proporciona el runtime
 # de comunicación entre los dos lados de la frontera.
@@ -60,3 +66,10 @@ sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runti
 # todo el workspace).
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# chrono se usa SOLO en las pruebas de `api::data_import_wizard` para
+# construir rangos declarados legibles (`Utc.with_ymd_and_hms`) -- misma
+# versión que ya fija `data-import-wizard` (ADR-0003: contratos de tipo
+# consistentes en todo el workspace).
+[dev-dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

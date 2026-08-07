@@ -4,7 +4,7 @@
 |---|---|
 | **ID** | DEBT-039 |
 | **Severidad** | 🔴 Alta |
-| **Estado** | Abierta |
+| **Estado** | 🟠 **Parcialmente saldada (2026-07-31, STORY-073 Etapa 2)** — ver "Qué quedó cerrado y qué no" al final |
 | **Abierta** | 2026-07-27 |
 | **Origen** | Gate de QA de STORY-070 (foco 3), confirmado por el Tech-Lead contra el código |
 | **Disparador de pago** | **La entrega del hito de la pantalla de importación** — antes de que un usuario real pueda sellar una declaración. No después. |
@@ -41,6 +41,18 @@ Esa es la razón de que esta deuda tenga disparador propio en vez de esperar su 
 2. **Adelantar TTR-005** antes de que la pantalla sea usable.
 
 Lo que no es opción es entregar la pantalla y dejar el hueco abierto sin decidir.
+
+## Qué quedó cerrado y qué no (2026-07-31, STORY-073 Etapa 2)
+
+**Cerrado:** `check_declared_range_against_parsed_content` (dominio puro) rechaza cuando **el contenido cae fuera del rango declarado** — mínimo de apertura anterior al inicio declarado, o máximo de cierre posterior al fin. Cableado en **ambas vías** (plantilla y manual). Es un chequeo estructural, sin umbral inventado.
+
+**NO cerrado, y el ingeniero lo reportó en vez de dar la deuda por saldada:** el caso que motiva esta ficha —declarar 2007 cuando el tramo empieza en 2010— **no lo caza la contención**, porque el contenido está trivialmente contenido en un rango más ancho. Lo mismo con "un siglo sobre un archivo de un día".
+
+**Por qué no se cerró con un umbral, y por qué eso fue correcto:** medir "cuánto más ancho es demasiado" exige un criterio de dominio con auditoría de especialista (`.agents/knowledge/critical-domain-reasoning.md`), no una elección de implementación. Inventar ese número en una etapa de código habría sido exactamente el fallo que ese documento existe para impedir.
+
+**La salida, y no necesita umbral alguno.** Un tramo declarado es una afirmación de **procedencia**, no de presencia de dato: declarar "de 2010 a 2017 esto viene de IC Markets" es legítimo aunque el archivo tenga huecos dentro. Por eso ninguna regla automática puede decidir si un rango ancho es un error o una declaración deliberada — **pero el usuario sí puede, si se lo enseñas**. La primera y la última fecha que el archivo realmente contiene, mostradas **junto a** lo que el usuario acaba de declarar, en el paso de confirmación. Ahí la discrepancia de 2007 salta a la vista y la decide quien responde por ella.
+
+Eso encaja con LDR-0008 sin forzar nada: lo ves antes de firmarlo. **Asignado a la Etapa 4 (interfaz) de STORY-073.** Lo que quede después de eso —detección estadística de rangos absurdos sin intervención humana— pertenece al Gate de Homogeneidad de `pit-data-validator` (TTR-005) y sigue siendo especificación.
 
 ## Relación con otras deudas
 

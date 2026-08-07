@@ -30,6 +30,7 @@ export 'slider.dart';      // Slider
 export 'surface.dart';     // Surface
 export 'table.dart';       // Table, TableColumn
 export 'banner.dart';      // Banner, BannerType
+export 'copy_button.dart'; // CopyButton, CopyableText
 export 'tooltip.dart';     // Tooltip
 export 'empty.dart';       // Empty
 export 'chip.dart';        // Chip, ChipStatus

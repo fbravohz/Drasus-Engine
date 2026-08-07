@@ -16,7 +16,7 @@ Referencia rápida — elige por lo que el contenido necesita, no por costumbre.
 | Regla — Completo | La instrucción compite con otra, tiene doc satélite, plantilla de salida, o 2+ definiciones citables por sub-ID. | `<DOC>-N`, en el cuerpo. | Descripción, `Aplica a`, definiciones con sub-ID; campos de cierre solo si aplican. | Campos de cierre sin contenido real (se omiten, nunca `N/A`). |
 | Regla — Ligero | Una sola idea, sin conflicto, sin doc satélite, sin plantilla. | `<DOC>-N`, en el cuerpo. | Una línea: etiqueta + cuerpo. | Descripción rápida, `Aplica a` propio, campos de cierre. |
 | Filtro de Verificación | El documento necesita un chequeo de pre-salida que consolide sus reglas. | `<DOC>-FV-N`, namespace propio — segunda sección, justo después de Lecturas Obligatorias (o primera si no hay tabla). | Lista numerada de preguntas, cada una citando la regla que verifica. | `Precedencia`, `Documento extendido`, `Plantilla de referencia`. |
-| Ejemplos | Mostrar 2+ reglas del documento actuando juntas sobre un texto real. | `<DOC>-N`, cierre del documento. | Intro + casos con `### <DOC>-N.K`, antes/después, medición real si existe. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
+| Ejemplos | Mostrar 2+ reglas del documento actuando juntas sobre un texto real. | `<DOC>-EJ-N`, namespace propio — cierre del documento, después de la última Regla. | Intro + casos con `### <DOC>-EJ-K`, antes/después, medición real si existe. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
 
 ### Cómo Agregar un Formato Nuevo
 
@@ -35,7 +35,7 @@ Esta tabla no es una lista cerrada — crece cuando aparece un tipo de contenido
 * **`<DOC>-N`:** la unidad de primer nivel — un bloque `## <DOC>-N — <Título>`. Todo formato del catálogo (Regla, Filtro de Verificación, Ejemplos) vive en este nivel.
 * **`<DOC>-N.M`:** un ítem citable dentro del bloque `<DOC>-N` — una definición de una Regla, una pregunta de un Filtro de Verificación. Nunca más profundo.
 * **Agrupación visual no es nivel de ID:** si un documento grande organiza varios bloques bajo un título mayor (ej. "Identidad y Rol" en un SKILL.md extenso), ese título es lectura, no numeración — los bloques debajo siguen siendo `<DOC>-N` planos, en la misma secuencia.
-* **Posiciones fijas:** Lecturas Obligatorias siempre es `<DOC>-0`. Filtro de Verificación usa namespace propio `<DOC>-FV-N` (ver su formato), no compite por número con las Reglas. El resto de las Reglas toma el siguiente número libre de su propia secuencia — ver "Estabilidad de IDs" abajo.
+* **Posiciones fijas:** Lecturas Obligatorias siempre es `<DOC>-0`. Filtro de Verificación usa namespace propio `<DOC>-FV-N` (ver su formato), no compite por número con las Reglas. Ejemplos usa namespace propio `<DOC>-EJ-N` (ver su formato), tampoco compite por número con las Reglas — por eso puede vivir físicamente al cierre del documento sin importar cuántas Reglas se agreguen después. El resto de las Reglas toma el siguiente número libre de su propia secuencia — ver "Estabilidad de IDs" abajo.
 
 ---
 
@@ -89,7 +89,7 @@ Tabla de qué otros documentos leer antes de operar bajo este, y cuándo — un 
   ```
   | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
   |---|---|---|---|
-  | `<ruta/al/doc.md>` | <1 línea: qué resuelve> | `SIEMPRE` o el disparador puntual | <a quién aplica> |
+  | [[<ruta/al/doc.md>]] | <1 línea: qué resuelve> | `SIEMPRE` o el disparador puntual | <a quién aplica> |
   ```
 * **`SIEMPRE` es valor reservado:** solo para el propio documento madre (`governance.md` u otro con supremacía declarada). Cualquier otra fila lleva un disparador concreto.
 * **No duplica `Documento extendido`:** ese campo de una Regla apunta al detalle de UNA regla puntual; esta tabla es el índice de lectura de TODO el documento.
@@ -101,9 +101,9 @@ Ejemplo:
 
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
-| `.agents/knowledge/governance.md` | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
-| `.agents/knowledge/writing-efficiency.md` | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Context Engineer |
-| `.agents/templates/instruction-formats.md` | Catálogo de formatos de bloque. | Al canonizar o reescribir un bloque de knowledge/skill. | Context Engineer |
+| [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| [[.agents/knowledge/writing-efficiency.md]] | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Context Engineer |
+| [[.agents/templates/instruction-formats.md]] | Catálogo de formatos de bloque. | Al canonizar o reescribir un bloque de knowledge/skill. | Context Engineer |
 ```
 
 ---
@@ -136,9 +136,11 @@ Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento exten
 
 **`Documento extendido` vs. `Lectura bajo demanda` — no son lo mismo, y confundirlos es el error que origina esta distinción:** `Documento extendido` es la versión larga de ESTA MISMA regla — el archivo satélite elabora lo que aquí se resume, hablan del mismo tema. `Lectura bajo demanda` apunta a OTRA regla, que vive en otro documento, y que solo aplica si un caso concreto la dispara — típicamente el resultado de partir un documento grande en varios más chicos por economía de tokens. Ejemplo real: una regla de "rigor de archivos" que antes cubría también dot-directories y lectura progresiva, y ahora esos dos casos viven aparte en `tool-usage.md` — eso es `Lectura bajo demanda`, no `Documento extendido`, porque `tool-usage.md` no elabora la regla de rigor, cubre un caso distinto.
 
-**Toda referencia a otro archivo dentro de una Regla vive en un campo declarado — nunca suelta en la descripción o el cuerpo de una definición.** Los lugares válidos son: el ❌/✅ (si el archivo es parte del ejemplo de uso correcto/incorrecto), `Documento extendido`, `Lectura bajo demanda`, o `Plantilla de referencia`. Si necesitas mencionar un archivo fuera de esos campos, es señal de que falta declarar el campo correcto — no de que la prosa lo resuelve.
+**Toda referencia a otro archivo o a una regla ajena dentro de una Regla vive en un campo declarado o citada inline con su ID exacto — nunca una mención vaga sin ID ni ruta.** Los lugares válidos son: el ❌/✅ (si el archivo es parte del ejemplo de uso correcto/incorrecto), `Documento extendido`, `Lectura bajo demanda`, `Plantilla de referencia`, o directo en el cuerpo de la definición citando el `<OTRO-DOC>-N`/`<OTRO-DOC>-N.M` exacto entre backticks. Si necesitas mencionar un archivo o regla fuera de esos usos, es señal de que falta declarar el campo correcto o el ID exacto — no de que la prosa vaga lo resuelve.
 
-**Referencias entre documentos citan el archivo, nunca el ID de una regla ajena.** `Lectura bajo demanda` y `Documento extendido` apuntan siempre a una ruta (`<ruta/al/archivo.md>`) — nunca a un `<OTRO-DOC>-N` específico dentro de ese archivo. Citar el ID interno de otro documento amarra este documento a una numeración que no controla; el archivo completo es la única unidad estable para referenciar desde afuera. Citar tu propio `<DOC>-N`/`<DOC>-N.M` dentro del mismo documento (Precedencia, Filtro de verificación, IDs para listas) sigue siendo normal y obligatorio.
+**Referencias entre documentos pueden citar el ID interno de una regla ajena, no solo el archivo.** Los IDs son append-only y estables (ver "Estabilidad de IDs") — citar `<OTRO-DOC>-N`/`<OTRO-DOC>-N.M` directo ancla la referencia al ítem exacto en vez de obligar a releer el documento completo, y es preferible cuando la regla que citas es puntual. `Lectura bajo demanda` y `Documento extendido` siguen usando siempre una ruta (`<ruta/al/archivo.md>`) porque apuntan a un documento entero, no a un ítem — la cita de ID puntual va suelta en el cuerpo de la definición, entre backticks. Citar tu propio `<DOC>-N`/`<DOC>-N.M` dentro del mismo documento (Precedencia, Filtro de verificación, IDs para listas) sigue siendo normal y obligatorio.
+
+**Toda referencia directa a otro documento se escribe como wikilink de Obsidian, nunca como ruta suelta en texto plano.** Formato: `[[ruta/relativa/al/archivo.md]]` — la misma ruta que ya usa el proyecto, con extensión (para que siga siendo grepeable fuera de Obsidian). Si la referencia apunta a una regla puntual, ancla el enlace al encabezado `## <DOC>-N` que la contiene: `[[ruta/al/archivo.md#<DOC>-N — <Título exacto del encabezado>]]`, copiando el título tal cual aparece — Obsidian resuelve el salto por coincidencia exacta de texto, no por el ID solo. Un sub-ID `<DOC>-N.M` no tiene encabezado propio (vive dentro del bloque `<DOC>-N`, ver "Niveles de ID"): enlaza al encabezado contenedor y deja el sub-ID exacto entre backticks junto al enlace, para ubicarlo dentro de esa sección al llegar. Si editas el texto de un `<Título>`, corrige todo wikilink `[[...#...]]` que citaba ese texto — exactamente el tipo de contradicción silenciosa que `CONTEXT-ENGINEER-6.1` existe para atrapar.
 
 `````
 ## <DOC>-N — <Título de la regla>
@@ -163,7 +165,7 @@ Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Documento exten
 
 **Documento extendido:** <solo si existe un archivo satélite real que elabora ESTA MISMA regla — se omite si no existe>
 
-**Lectura bajo demanda:** `<ruta/al/archivo.md>` — <disparador: qué caso puntual hace que esa OTRA regla aplique en vez de, o además de, esta. Se omite si no aplica; se repite la línea si hay más de un caso>
+**Lectura bajo demanda:** [[<ruta/al/archivo.md>]] — <disparador: qué caso puntual hace que esa OTRA regla aplique en vez de, o además de, esta. Se omite si no aplica; se repite la línea si hay más de un caso>
 
 **Plantilla de referencia:**
 ```
@@ -184,7 +186,7 @@ Una línea basta — sin descripción rápida separada, sin `Aplica a` propio (h
 ```
 * **<DOC>-N — <Título>:** <cuerpo en una línea, sin campos de cierre>.
 
-  **Lectura bajo demanda:** `<ruta/al/archivo.md>` — <disparador puntual>.
+  **Lectura bajo demanda:** [[<ruta/al/archivo.md>]] — <disparador puntual>.
 ```
 
 ### Ejemplo Aplicado (Regla, Genérico)
@@ -242,9 +244,10 @@ El chequeo de pre-salida que consolida las reglas de un documento en una sola li
 
 ## Formato: Ejemplos
 
-Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del documento a la vez — no reemplazan los ❌/✅ de cada regla (esos son atómicos, uno por definición).
+Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del documento a la vez — no reemplazan los ❌/✅ de cada regla (esos son atómicos, uno por definición). Usa namespace propio, separado de la secuencia numérica de las Reglas, para no competir nunca por posición ni por número con ellas — el mismo motivo que el Filtro de Verificación, y lo que le permite vivir siempre al cierre físico del documento aunque se agreguen Reglas nuevas después.
 
-* **ID y contenido:** `## <DOC>-N — Ejemplos` para la sección, `### <DOC>-N.K` por cada sub-bloque de casos, con título pegado al sub-ID igual que una regla normal.
+* **ID y posición:** `## <DOC>-EJ — Ejemplos` para la sección, física al cierre del documento — después de la última Regla, sin importar su número. Se puebla incrementalmente: cada caso nuevo suma su propio ítem aquí.
+* **IDs internos:** `<DOC>-EJ-1`, `<DOC>-EJ-2`... — secuencia propia, también append-only (ver "Estabilidad de IDs"), con título pegado al sub-ID igual que un ítem de Filtro de Verificación.
 * **Campos que no lleva:** `Aplica a`, `Precedencia`, `Filtro de verificación`. No define un bloque nuevo — solo muestra evidencia de reglas que ya existen en el mismo documento.
 * **Formato del cuerpo:** un párrafo de intro (qué son los casos, qué NO reemplazan) y, por cada caso:
   ```
@@ -269,10 +272,12 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 - [ ] ¿Omitiste los campos de cierre que no aplican, en vez de escribir `N/A`?
 - [ ] Si incluiste `Documento extendido`, ¿el archivo satélite existe de verdad y elabora ESTA MISMA regla (si en realidad es un tema distinto y condicional, va en `Lectura bajo demanda`, no aquí)?
 - [ ] ¿Toda referencia a otro archivo vive en un campo declarado (❌/✅, `Documento extendido`, `Lectura bajo demanda`, `Plantilla de referencia`) y ninguna quedó suelta en la descripción o el cuerpo de una definición?
-- [ ] ¿Ninguna referencia a otro documento cita el ID interno de una regla ajena — solo la ruta del archivo, vía `Lectura bajo demanda`/`Documento extendido`?
+- [ ] ¿Toda referencia a otro documento — la ruta del archivo (`Lectura bajo demanda`/`Documento extendido`) o el ID interno de una regla ajena citado inline — es exacta y verificable, nunca una mención vaga?
+- [ ] ¿Toda referencia directa a otro documento es un wikilink `[[ruta/archivo.md]]` (o `[[ruta/archivo.md#<DOC>-N — Título exacto>]]` si apunta a una regla puntual), nunca una ruta suelta en texto plano?
 - [ ] ¿El ID tiene máximo 2 segmentos (`<DOC>-N` o `<DOC>-N.M`) — ningún `<DOC>-N.M.K`?
 - [ ] Si editaste un documento existente, ¿respetaste que los IDs ya publicados son permanentes — la regla nueva toma el siguiente número libre, nunca uno ya usado, salvo reescritura completa autorizada en el turno actual?
 - [ ] Si el documento tiene Filtro de Verificación, ¿vive en `<DOC>-FV-N` (namespace propio), como segunda sección tras Lecturas Obligatorias?
+- [ ] Si el documento tiene una sección de Ejemplos, ¿vive en `<DOC>-EJ-N` (namespace propio), física al cierre del documento — después de la última Regla, sin competir por número con ellas?
 - [ ] Si incluiste una plantilla de ejemplo, ¿es copiable tal cual, sin placeholders sueltos?
 - [ ] ¿Respeté el espaciado exacto (etiqueta y cuerpo en líneas separadas, línea en blanco entre ítems, `---` entre bloques)?
 - [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita?

@@ -53,11 +53,17 @@
 | DEBT-032 | 🟠 Media | El patrón de ledger de referencia tiene dos huecos (prueba del clasificador no discriminante + migración sin triggers) y se propagan por copia | Abierta | [detalle](./debt/DEBT-032.md) |
 | DEBT-033 | 🟠 Media | El techo de magnitud de la escala ×10⁸ excluye las cripto de oferta extrema (SHIB/PEPE): una barra horaria normal desborda `i64` — requiere decisión del Architect sobre ADR-0141 | Abierta | [detalle](./debt/DEBT-033.md) |
 | DEBT-034 | 🟠 Media | `sovereign-data-fetcher` nunca pasó el gate de mutación (se cerró antes de que fuera gate formal): 49 supervivientes, 21 de ellos en la lógica de concurrencia | Abierta | [detalle](./debt/DEBT-034.md) |
-| DEBT-035 | 🟠 Media | La vía de mapeo manual del asistente de importación no tiene pantalla, y es la que LDR-0008 exige que pase por vista previa confirmada | Abierta | [detalle](./debt/DEBT-035.md) |
+| DEBT-035 | 🟠 Media | La vía de mapeo manual del asistente de importación no tiene pantalla, y es la que LDR-0008 exige que pase por vista previa confirmada | ✅ Pagada (STORY-073) | [detalle](./debt/DEBT-035.md) |
 | DEBT-036 | 🟠 Media | El puerto de salida de barras no puede cargar la referencia a la declaración sellada: la trazabilidad de ADR-0156 R8 es hoy convención, no física | Abierta | [detalle](./debt/DEBT-036.md) |
-| DEBT-037 | 🟠 Media | El mapa de componentes de `DESIGN.md` nombra clases `Glow*` retiradas por STORY-025/026: 56 menciones a un vocabulario que la librería ya no habla | Abierta | [detalle](./debt/DEBT-037.md) |
+| DEBT-037 | 🟠 Media | El mapa de componentes de `DESIGN.md` presentaba como usables 10 clases inexistentes, ~30 rutas muertas y 5 firmas inventadas; el barrido de las 127 filas destapó bastante más que las 56 menciones registradas | ✅ Pagada (STORY-073) | [detalle](./debt/DEBT-037.md) |
 | DEBT-038 | 🟠 Media | El check `M13` (sufijo de unidad en timestamps de dominio, ADR-0141) nace incumplido por 7 columnas anteriores a él; las dos peores se llaman `..._date` e invitan a leerse como fecha civil | Abierta | [detalle](./debt/DEBT-038.md) |
-| DEBT-039 | 🔴 Alta | El rango declarado de una importación nunca se coteja contra lo que el archivo contiene: se puede sellar como evidencia una declaración que no lo describe, y eso además rompe la deduplicación de reimportación | Abierta | [detalle](./debt/DEBT-039.md) |
+| DEBT-039 | 🔴 Alta | El rango declarado de una importación nunca se coteja contra lo que el archivo contiene: se puede sellar como evidencia una declaración que no lo describe, y eso además rompe la deduplicación de reimportación | 🟠 Parcial (STORY-073) | [detalle](./debt/DEBT-039.md) |
+| DEBT-040 | 🟠 Media | La confirmación de importación carga el archivo entero en memoria: medido 704 MB de estructuras sobre un archivo real de 535 MB — con ticks o cripto multi-giga no se vuelve lento, se vuelve imposible | Abierta | [detalle](./debt/DEBT-040.md) |
+| DEBT-041 | 🔴 Alta | El puente FFI no reconoce fecha y hora en columnas separadas (`TimestampDate`/`TimestampTime`), aunque el Núcleo ya las implementa: bloquea importar el archivo real (`<DATE>` TAB `<TIME>`) que motiva el criterio 13 de STORY-073 | ✅ Pagada (STORY-073) | [detalle](./debt/DEBT-041.md) |
+| DEBT-042 | 🟠 Media | El puente FFI nunca pasó el gate de mutación: su primera corrida destapó 9 huecos previos en 5 módulos — funciones que pueden devolver la lista vacía, o el reloj devolver 1970, sin que nada falle | Abierta | [detalle](./debt/DEBT-042.md) |
+| DEBT-043 | 🟡 Baja | Los mensajes de rechazo de la importación conservan jerga de programador ("parsear", `{:?}`, "ledger") donde ADR-0156 R1 exige lenguaje del usuario | Abierta | [detalle](./debt/DEBT-043.md) |
+| DEBT-044 | 🟡 Baja | La zona de carga del asistente parece aceptar archivos soltados y no los acepta: no hay arrastre real cableado (el texto ya dejó de prometerlo) | Abierta | [detalle](./debt/DEBT-044.md) |
+| DEBT-045 | 🟠 Media | Los nodos del lienzo son nombres pelados: no dicen qué consume ni qué produce cada feature — costó una sesión de prueba completa del propietario, que abrió la feature vecina | ✅ Pagada (2026-08-02) | [detalle](./debt/DEBT-045.md) |
 
 ---
 

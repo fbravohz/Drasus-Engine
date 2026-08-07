@@ -25,3 +25,6 @@ local.properties
 
 # Archivos temporales de macOS.
 .DS_Store
+
+# Salida de diffs de golden tests fallidos (flutter test) — artefacto local, nunca se versiona.
+test/failures/

@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1617610923;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1589158660;
 
 // Section: executor
 
@@ -46,6 +46,150 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__data_import_wizard__analyze_manual_bar_file_content_range_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "analyze_manual_bar_file_content_range",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_column_mappings =
+                <Vec<crate::api::data_import_wizard::ManualColumnMappingDto>>::sse_decode(
+                    &mut deserializer,
+                );
+            let api_instrument_id = <String>::sse_decode(&mut deserializer);
+            let api_venue = <String>::sse_decode(&mut deserializer);
+            let api_source_provider = <String>::sse_decode(&mut deserializer);
+            let api_source_clock_anchor_timezone_ref =
+                <Option<String>>::sse_decode(&mut deserializer);
+            let api_source_clock_fixed_offset_minutes = <i64>::sse_decode(&mut deserializer);
+            let api_real_volume_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_spread_reported_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_timeframe_value = <String>::sse_decode(&mut deserializer);
+            let api_bar_interval_ns = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::data_import_wizard::analyze_manual_bar_file_content_range(
+                                api_file_bytes,
+                                api_column_mappings,
+                                api_instrument_id,
+                                api_venue,
+                                api_source_provider,
+                                api_source_clock_anchor_timezone_ref,
+                                api_source_clock_fixed_offset_minutes,
+                                api_real_volume_unit_declared,
+                                api_spread_reported_unit_declared,
+                                api_timeframe_value,
+                                api_bar_interval_ns,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__data_import_wizard__confirm_manual_bar_import_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "confirm_manual_bar_import",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_db_path = <String>::sse_decode(&mut deserializer);
+            let api_source_file_name = <String>::sse_decode(&mut deserializer);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_instrument_id = <String>::sse_decode(&mut deserializer);
+            let api_venue = <String>::sse_decode(&mut deserializer);
+            let api_source_provider = <String>::sse_decode(&mut deserializer);
+            let api_declared_range_start_ns = <i64>::sse_decode(&mut deserializer);
+            let api_declared_range_end_ns = <i64>::sse_decode(&mut deserializer);
+            let api_source_clock_anchor_timezone_ref =
+                <Option<String>>::sse_decode(&mut deserializer);
+            let api_source_clock_fixed_offset_minutes = <i64>::sse_decode(&mut deserializer);
+            let api_real_volume_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_spread_reported_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_venue_operational_since_ns = <Option<i64>>::sse_decode(&mut deserializer);
+            let api_timeframe_value = <String>::sse_decode(&mut deserializer);
+            let api_bar_interval_ns = <i64>::sse_decode(&mut deserializer);
+            let api_column_mappings =
+                <Vec<crate::api::data_import_wizard::ManualColumnMappingDto>>::sse_decode(
+                    &mut deserializer,
+                );
+            let api_node_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_process_id = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::data_import_wizard::confirm_manual_bar_import(
+                                api_db_path,
+                                api_source_file_name,
+                                api_file_bytes,
+                                api_instrument_id,
+                                api_venue,
+                                api_source_provider,
+                                api_declared_range_start_ns,
+                                api_declared_range_end_ns,
+                                api_source_clock_anchor_timezone_ref,
+                                api_source_clock_fixed_offset_minutes,
+                                api_real_volume_unit_declared,
+                                api_spread_reported_unit_declared,
+                                api_venue_operational_since_ns,
+                                api_timeframe_value,
+                                api_bar_interval_ns,
+                                api_column_mappings,
+                                api_node_id,
+                                api_process_id,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__clock__get_clock_timestamp_ns_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -143,6 +287,47 @@ fn wire__crate__api__jobs__get_jobs_summary_impl(
                     (move || async move {
                         let output_ok = Result::<_, ()>::Ok(
                             crate::api::jobs::get_jobs_summary(api_db_path).await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__data_import_wizard__get_manual_import_columns_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_manual_import_columns",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::data_import_wizard::get_manual_import_columns(
+                                api_file_bytes,
+                            )
+                            .await,
                         )?;
                         Ok(output_ok)
                     })()
@@ -340,6 +525,112 @@ fn wire__crate__api__verification__list_verifiable_features_impl(
         },
     )
 }
+fn wire__crate__api__data_import_wizard__preview_manual_bar_import_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "preview_manual_bar_import",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_column_mappings =
+                <Vec<crate::api::data_import_wizard::ManualColumnMappingDto>>::sse_decode(
+                    &mut deserializer,
+                );
+            let api_instrument_id = <String>::sse_decode(&mut deserializer);
+            let api_venue = <String>::sse_decode(&mut deserializer);
+            let api_source_provider = <String>::sse_decode(&mut deserializer);
+            let api_source_clock_anchor_timezone_ref =
+                <Option<String>>::sse_decode(&mut deserializer);
+            let api_source_clock_fixed_offset_minutes = <i64>::sse_decode(&mut deserializer);
+            let api_real_volume_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_spread_reported_unit_declared = <Option<String>>::sse_decode(&mut deserializer);
+            let api_timeframe_value = <String>::sse_decode(&mut deserializer);
+            let api_bar_interval_ns = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::data_import_wizard::preview_manual_bar_import(
+                                api_file_bytes,
+                                api_column_mappings,
+                                api_instrument_id,
+                                api_venue,
+                                api_source_provider,
+                                api_source_clock_anchor_timezone_ref,
+                                api_source_clock_fixed_offset_minutes,
+                                api_real_volume_unit_declared,
+                                api_spread_reported_unit_declared,
+                                api_timeframe_value,
+                                api_bar_interval_ns,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__data_import_wizard__select_manual_import_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "select_manual_import_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::data_import_wizard::select_manual_import_file(
+                                api_file_bytes,
+                            )
+                            .await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__data_fetcher__submit_download_job_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -513,6 +804,14 @@ fn wire__crate__api__verification__verify_feature_impl(
 }
 
 // Section: dart2rust
+
+impl SseDecode for i128 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return inner.parse().unwrap();
+    }
+}
 
 impl SseDecode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -717,6 +1016,18 @@ impl SseDecode for crate::api::jobs::JobSummary {
     }
 }
 
+impl SseDecode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::api::audit::AuditEventSummary> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -785,6 +1096,34 @@ impl SseDecode for Vec<crate::api::jobs::JobSummary> {
     }
 }
 
+impl SseDecode for Vec<crate::api::data_import_wizard::ManualColumnMappingDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::api::data_import_wizard::ManualColumnMappingDto>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::data_import_wizard::PreviewCanonicalBarDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::api::data_import_wizard::PreviewCanonicalBarDto>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -841,6 +1180,83 @@ impl SseDecode for Vec<crate::api::hybrid_data_transformer::TransformationRecord
     }
 }
 
+impl SseDecode for crate::api::data_import_wizard::ManualColumnMappingDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_sourceColumn = <String>::sse_decode(deserializer);
+        let mut var_canonicalField = <String>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::ManualColumnMappingDto {
+            source_column: var_sourceColumn,
+            canonical_field: var_canonicalField,
+        };
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::ManualImportColumnsResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_columns = <Vec<String>>::sse_decode(deserializer);
+        let mut var_error = <Option<String>>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::ManualImportColumnsResultDto {
+            columns: var_columns,
+            error: var_error,
+        };
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::ManualImportConfirmResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_ok = <bool>::sse_decode(deserializer);
+        let mut var_declarationId = <String>::sse_decode(deserializer);
+        let mut var_mappingOrigin = <String>::sse_decode(deserializer);
+        let mut var_eventSequenceId = <i64>::sse_decode(deserializer);
+        let mut var_auditHash = <String>::sse_decode(deserializer);
+        let mut var_rowsImported = <u64>::sse_decode(deserializer);
+        let mut var_wasNoopReimport = <bool>::sse_decode(deserializer);
+        let mut var_error = <Option<String>>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::ManualImportConfirmResultDto {
+            ok: var_ok,
+            declaration_id: var_declarationId,
+            mapping_origin: var_mappingOrigin,
+            event_sequence_id: var_eventSequenceId,
+            audit_hash: var_auditHash,
+            rows_imported: var_rowsImported,
+            was_noop_reimport: var_wasNoopReimport,
+            error: var_error,
+        };
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::ManualImportContentRangeResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_rowsParsedTotal = <u64>::sse_decode(deserializer);
+        let mut var_contentMinOpenTimestampNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_contentMaxCloseTimestampNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_error = <Option<String>>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::ManualImportContentRangeResultDto {
+            rows_parsed_total: var_rowsParsedTotal,
+            content_min_open_timestamp_ns: var_contentMinOpenTimestampNs,
+            content_max_close_timestamp_ns: var_contentMaxCloseTimestampNs,
+            error: var_error,
+        };
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::ManualImportPreviewResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_rows =
+            <Vec<crate::api::data_import_wizard::PreviewCanonicalBarDto>>::sse_decode(deserializer);
+        let mut var_error = <Option<String>>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::ManualImportPreviewResultDto {
+            rows: var_rows,
+            error: var_error,
+        };
+    }
+}
+
 impl SseDecode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -884,6 +1300,60 @@ impl SseDecode for Option<u32> {
         } else {
             return None;
         }
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::PreviewCanonicalBarDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_instrumentId = <String>::sse_decode(deserializer);
+        let mut var_venue = <String>::sse_decode(deserializer);
+        let mut var_sourceProvider = <String>::sse_decode(deserializer);
+        let mut var_barOpenTimestampNs = <i64>::sse_decode(deserializer);
+        let mut var_barCloseTimestampNs = <i64>::sse_decode(deserializer);
+        let mut var_barType = <String>::sse_decode(deserializer);
+        let mut var_timeframeValue = <String>::sse_decode(deserializer);
+        let mut var_open = <i64>::sse_decode(deserializer);
+        let mut var_high = <i64>::sse_decode(deserializer);
+        let mut var_low = <i64>::sse_decode(deserializer);
+        let mut var_close = <i64>::sse_decode(deserializer);
+        let mut var_volumeTicks = <i64>::sse_decode(deserializer);
+        let mut var_volumeTradedRaw = <i128>::sse_decode(deserializer);
+        let mut var_spreadReportedRaw = <i64>::sse_decode(deserializer);
+        let mut var_spreadReportedUnit = <String>::sse_decode(deserializer);
+        let mut var_isActivityAnomaly = <bool>::sse_decode(deserializer);
+        let mut var_volumeUnitUnverified = <bool>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::PreviewCanonicalBarDto {
+            instrument_id: var_instrumentId,
+            venue: var_venue,
+            source_provider: var_sourceProvider,
+            bar_open_timestamp_ns: var_barOpenTimestampNs,
+            bar_close_timestamp_ns: var_barCloseTimestampNs,
+            bar_type: var_barType,
+            timeframe_value: var_timeframeValue,
+            open: var_open,
+            high: var_high,
+            low: var_low,
+            close: var_close,
+            volume_ticks: var_volumeTicks,
+            volume_traded_raw: var_volumeTradedRaw,
+            spread_reported_raw: var_spreadReportedRaw,
+            spread_reported_unit: var_spreadReportedUnit,
+            is_activity_anomaly: var_isActivityAnomaly,
+            volume_unit_unverified: var_volumeUnitUnverified,
+        };
+    }
+}
+
+impl SseDecode for crate::api::data_import_wizard::SelectManualImportFileResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_fileSizeBytes = <u64>::sse_decode(deserializer);
+        let mut var_sourceFileHash = <String>::sse_decode(deserializer);
+        return crate::api::data_import_wizard::SelectManualImportFileResultDto {
+            file_size_bytes: var_fileSizeBytes,
+            source_file_hash: var_sourceFileHash,
+        };
     }
 }
 
@@ -1030,42 +1500,72 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        2 => wire__crate__api__data_fetcher__get_job_status_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__jobs__get_jobs_summary_impl(port, ptr, rust_vec_len, data_len),
-        4 => {
+        1 => wire__crate__api__data_import_wizard__analyze_manual_bar_file_content_range_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        2 => wire__crate__api__data_import_wizard__confirm_manual_bar_import_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        4 => wire__crate__api__data_fetcher__get_job_status_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__jobs__get_jobs_summary_impl(port, ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__data_import_wizard__get_manual_import_columns_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        7 => {
             wire__crate__api__audit__get_recent_audit_events_impl(port, ptr, rust_vec_len, data_len)
         }
-        5 => wire__crate__api__data_fetcher__list_download_records_impl(
+        8 => wire__crate__api__data_fetcher__list_download_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__hybrid_data_transformer__list_source_datasets_impl(
+        9 => wire__crate__api__hybrid_data_transformer__list_source_datasets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__hybrid_data_transformer__list_transformation_records_impl(
+        10 => wire__crate__api__hybrid_data_transformer__list_transformation_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__data_fetcher__submit_download_job_impl(
+        12 => wire__crate__api__data_import_wizard__preview_manual_bar_import_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__hybrid_data_transformer__submit_hybrid_data_transformation_impl(
+        13 => wire__crate__api__data_import_wizard__select_manual_import_file_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => {
+        14 => wire__crate__api__data_fetcher__submit_download_job_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        15 => wire__crate__api__hybrid_data_transformer__submit_hybrid_data_transformation_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        16 => {
             wire__crate__api__verification__verify_feature_impl(port, ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -1080,8 +1580,8 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__clock__get_clock_timestamp_ns_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__verification__list_verifiable_features_impl(
+        3 => wire__crate__api__clock__get_clock_timestamp_ns_impl(ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__verification__list_verifiable_features_impl(
             ptr,
             rust_vec_len,
             data_len,
@@ -1303,6 +1803,194 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::jobs::JobSummary>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::data_import_wizard::ManualColumnMappingDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.source_column.into_into_dart().into_dart(),
+            self.canonical_field.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::ManualColumnMappingDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::data_import_wizard::ManualColumnMappingDto>
+    for crate::api::data_import_wizard::ManualColumnMappingDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::ManualColumnMappingDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::data_import_wizard::ManualImportColumnsResultDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.columns.into_into_dart().into_dart(),
+            self.error.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::ManualImportColumnsResultDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::data_import_wizard::ManualImportColumnsResultDto>
+    for crate::api::data_import_wizard::ManualImportColumnsResultDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::ManualImportColumnsResultDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::data_import_wizard::ManualImportConfirmResultDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.ok.into_into_dart().into_dart(),
+            self.declaration_id.into_into_dart().into_dart(),
+            self.mapping_origin.into_into_dart().into_dart(),
+            self.event_sequence_id.into_into_dart().into_dart(),
+            self.audit_hash.into_into_dart().into_dart(),
+            self.rows_imported.into_into_dart().into_dart(),
+            self.was_noop_reimport.into_into_dart().into_dart(),
+            self.error.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::ManualImportConfirmResultDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::data_import_wizard::ManualImportConfirmResultDto>
+    for crate::api::data_import_wizard::ManualImportConfirmResultDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::ManualImportConfirmResultDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::data_import_wizard::ManualImportContentRangeResultDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.rows_parsed_total.into_into_dart().into_dart(),
+            self.content_min_open_timestamp_ns
+                .into_into_dart()
+                .into_dart(),
+            self.content_max_close_timestamp_ns
+                .into_into_dart()
+                .into_dart(),
+            self.error.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::ManualImportContentRangeResultDto
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::api::data_import_wizard::ManualImportContentRangeResultDto,
+    > for crate::api::data_import_wizard::ManualImportContentRangeResultDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::ManualImportContentRangeResultDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::data_import_wizard::ManualImportPreviewResultDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.rows.into_into_dart().into_dart(),
+            self.error.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::ManualImportPreviewResultDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::data_import_wizard::ManualImportPreviewResultDto>
+    for crate::api::data_import_wizard::ManualImportPreviewResultDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::ManualImportPreviewResultDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::data_import_wizard::PreviewCanonicalBarDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.instrument_id.into_into_dart().into_dart(),
+            self.venue.into_into_dart().into_dart(),
+            self.source_provider.into_into_dart().into_dart(),
+            self.bar_open_timestamp_ns.into_into_dart().into_dart(),
+            self.bar_close_timestamp_ns.into_into_dart().into_dart(),
+            self.bar_type.into_into_dart().into_dart(),
+            self.timeframe_value.into_into_dart().into_dart(),
+            self.open.into_into_dart().into_dart(),
+            self.high.into_into_dart().into_dart(),
+            self.low.into_into_dart().into_dart(),
+            self.close.into_into_dart().into_dart(),
+            self.volume_ticks.into_into_dart().into_dart(),
+            self.volume_traded_raw.into_into_dart().into_dart(),
+            self.spread_reported_raw.into_into_dart().into_dart(),
+            self.spread_reported_unit.into_into_dart().into_dart(),
+            self.is_activity_anomaly.into_into_dart().into_dart(),
+            self.volume_unit_unverified.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::PreviewCanonicalBarDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::data_import_wizard::PreviewCanonicalBarDto>
+    for crate::api::data_import_wizard::PreviewCanonicalBarDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::PreviewCanonicalBarDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::api::data_import_wizard::SelectManualImportFileResultDto
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.file_size_bytes.into_into_dart().into_dart(),
+            self.source_file_hash.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::data_import_wizard::SelectManualImportFileResultDto
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::api::data_import_wizard::SelectManualImportFileResultDto,
+    > for crate::api::data_import_wizard::SelectManualImportFileResultDto
+{
+    fn into_into_dart(self) -> crate::api::data_import_wizard::SelectManualImportFileResultDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::hybrid_data_transformer::SourceDatasetDto {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1427,6 +2115,13 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::verification::VerificationOut
 {
     fn into_into_dart(self) -> crate::api::verification::VerificationOutcome {
         self
+    }
+}
+
+impl SseEncode for i128 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.to_string(), serializer);
     }
 }
 
@@ -1564,6 +2259,16 @@ impl SseEncode for crate::api::jobs::JobSummary {
     }
 }
 
+impl SseEncode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <String>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::api::audit::AuditEventSummary> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1614,6 +2319,26 @@ impl SseEncode for Vec<crate::api::jobs::JobSummary> {
     }
 }
 
+impl SseEncode for Vec<crate::api::data_import_wizard::ManualColumnMappingDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::data_import_wizard::ManualColumnMappingDto>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::data_import_wizard::PreviewCanonicalBarDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::data_import_wizard::PreviewCanonicalBarDto>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1656,6 +2381,56 @@ impl SseEncode for Vec<crate::api::hybrid_data_transformer::TransformationRecord
     }
 }
 
+impl SseEncode for crate::api::data_import_wizard::ManualColumnMappingDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.source_column, serializer);
+        <String>::sse_encode(self.canonical_field, serializer);
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::ManualImportColumnsResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<String>>::sse_encode(self.columns, serializer);
+        <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::ManualImportConfirmResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.ok, serializer);
+        <String>::sse_encode(self.declaration_id, serializer);
+        <String>::sse_encode(self.mapping_origin, serializer);
+        <i64>::sse_encode(self.event_sequence_id, serializer);
+        <String>::sse_encode(self.audit_hash, serializer);
+        <u64>::sse_encode(self.rows_imported, serializer);
+        <bool>::sse_encode(self.was_noop_reimport, serializer);
+        <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::ManualImportContentRangeResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u64>::sse_encode(self.rows_parsed_total, serializer);
+        <Option<i64>>::sse_encode(self.content_min_open_timestamp_ns, serializer);
+        <Option<i64>>::sse_encode(self.content_max_close_timestamp_ns, serializer);
+        <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::ManualImportPreviewResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::api::data_import_wizard::PreviewCanonicalBarDto>>::sse_encode(
+            self.rows, serializer,
+        );
+        <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
 impl SseEncode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1693,6 +2468,37 @@ impl SseEncode for Option<u32> {
         if let Some(value) = self {
             <u32>::sse_encode(value, serializer);
         }
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::PreviewCanonicalBarDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.instrument_id, serializer);
+        <String>::sse_encode(self.venue, serializer);
+        <String>::sse_encode(self.source_provider, serializer);
+        <i64>::sse_encode(self.bar_open_timestamp_ns, serializer);
+        <i64>::sse_encode(self.bar_close_timestamp_ns, serializer);
+        <String>::sse_encode(self.bar_type, serializer);
+        <String>::sse_encode(self.timeframe_value, serializer);
+        <i64>::sse_encode(self.open, serializer);
+        <i64>::sse_encode(self.high, serializer);
+        <i64>::sse_encode(self.low, serializer);
+        <i64>::sse_encode(self.close, serializer);
+        <i64>::sse_encode(self.volume_ticks, serializer);
+        <i128>::sse_encode(self.volume_traded_raw, serializer);
+        <i64>::sse_encode(self.spread_reported_raw, serializer);
+        <String>::sse_encode(self.spread_reported_unit, serializer);
+        <bool>::sse_encode(self.is_activity_anomaly, serializer);
+        <bool>::sse_encode(self.volume_unit_unverified, serializer);
+    }
+}
+
+impl SseEncode for crate::api::data_import_wizard::SelectManualImportFileResultDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u64>::sse_encode(self.file_size_bytes, serializer);
+        <String>::sse_encode(self.source_file_hash, serializer);
     }
 }
 

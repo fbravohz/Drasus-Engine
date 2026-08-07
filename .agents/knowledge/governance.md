@@ -4,7 +4,7 @@ Supremacía y reglas que aplican a toda interacción, sin importar el dominio de
 
 Slug ID: `GOVERNANCE`.
 
-Tamaño: `11824 caracteres (~2956 tokens aprox., ratio 4:1)`.
+Tamaño: `13646 caracteres (~3412 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -16,7 +16,7 @@ Checklist interno para cada regla propia del documento.
 
 * **GOVERNANCE-FV-1:** 
 
-  ¿leí el 100% de este documento, declaré `GOVERNANCE` + mi rol en el primer mensaje, y declaré cada lectura y aplicación posterior bajo demanda (`GOVERNANCE-1`)?
+  ¿leí el 100% de este documento, declaré `GOVERNANCE` + mi rol en el primer mensaje, y declaré cada lectura y cada regla aplicada en su propio bracket `[SLUG-ID, para esto]`, sin agrupar (`GOVERNANCE-1`)?
 
 * **GOVERNANCE-FV-2:** 
 
@@ -66,19 +66,27 @@ Este documento tiene máxima prioridad sobre cualquier otra regla de cualquier s
 
 * **GOVERNANCE-1.5 — Declaración de Lectura y Aplicación Bajo Demanda:** 
 
-  toda lectura de un documento, sin importar cual sea — disparada por una regla de `Lectura bajo demanda`/`Documento extendido` o por la necesidad de la tarea — se declara al invocador en el momento en que finalizas la lectura: qué documento y por qué. Si ese documento define un Filtro de Verificación o reglas aplicables a la tarea, declara también que las aplicaste, citando el ID concreto de ESE documento — nunca escribas el ID de una regla de otro documento dentro de otro; eso genera cruce de referencias y para eso está la sección `Lectura bajo demanda` si una regla lo requiere.
-  * ❌ *Incorrecto:* aplicar una regla de `commenting-policy.md` sin decir que se leyó ni qué ítem se aplicó.
-  * ✅ *Correcto:* `[leído: <document-name>.md — iba a comentar código nuevo] [aplicado: SLUG-ID-X]`.
+  toda lectura de un documento, sin importar cual sea — disparada por una regla de `Lectura bajo demanda`/`Documento extendido` o por la necesidad de la tarea — se declara al invocador en el momento en que finalizas la lectura: qué documento y por qué. Toda regla que aplicaste se declara aparte, un bracket propio por regla, sin importar de qué documento provenga — el que acabas de leer o cualquier otro ya leído en la sesión: `[SLUG-ID, para esto]`. Nunca agrupes dos o más IDs ni sus justificaciones dentro del mismo bracket. Esta declaración es obligatoria en toda respuesta o edición donde aplicaste al menos una regla, no una formalidad ocasional: si al revisar tu propia salida no puedes señalar el bracket exacto de cada regla que dices haber aplicado, la regla no se aplicó de verdad y debes corregirlo antes de enviar.
+  * ❌ *Incorrecto:* aplicar una regla sin declarar nada, o agrupar varias en un solo bracket: `[aplicado: SLUG-ID-X, SLUG-ID-Y]`.
+  * ✅ *Correcto:* `[leído: commenting-policy.md — iba a comentar código nuevo] [COMMENTING-POLICY-2, para decidir la capa del comentario] [GOVERNANCE-3.2, para el idioma del comentario]`.
 
 * **GOVERNANCE-1.6 - Método de Escritura Eficiente:**
 
-  Toda escritura, sin importar cual sea - respuesta de chat, escritura de archivo, plan, documentacion o comentarios debe seguir de manera `OBLIGATORIA` los lineamientos del documento `.agents/knowledge/writing-efficiency.md`
+  Toda escritura, sin importar cual sea - respuesta de chat, escritura de archivo, plan, documentacion o comentarios debe seguir de manera `OBLIGATORIA` los lineamientos del documento [[.agents/knowledge/writing-efficiency.md]]
+
+* **GOVERNANCE-1.7 — Modo de Escritura Activable (Gemini/Claude):**
+
+  el modo de escritura por defecto es "Claude" (el estilo actual). Si el usuario pide explícitamente cambiar de modo — "escribe/reescríbelo como Gemini", "modo gemini relajado", "modo gemini relajado + listas", "modo Claude" — en cualquier punto de la conversación, no solo al inicio, incluso pegado a la invocación de otro skill: lee [[.agents/knowledge/write-like-gemini.md]] completo y activa el modo pedido desde esa misma respuesta. El modo activado se mantiene para TODA escritura — respuesta de chat y archivo — mientras dure la conversación o el agente, hasta que el usuario pida cambiarlo; se declara cada ronda con su propio bracket (`GOVERNANCE-1.5`).
+  * ❌ *Incorrecto:* aplicar el modo Gemini en la respuesta donde se activó y volver a prosa Claude en la siguiente sin que el usuario lo haya pedido.
+  * ✅ *Correcto:* mantener el modo activo y declararlo con su bracket en cada respuesta, hasta recibir instrucción explícita de cambiarlo.
 
 **Precedencia:** gana sobre cualquier otra regla de cualquier skill o agente — única excepción: instrucción explícita del usuario en el turno actual, si detectas `OVERRIDE` del usuario, declaralo y advierte cual regla sera afectada.
 
 **Filtro de verificación:** `GOVERNANCE-FV-1`.
 
-**Lectura bajo demanda:** `.agents/knowledge/writing-efficiency.md` — antes de enviar cualquier respuesta o escribir cualquier documento, **obligatorio**.
+**Lectura bajo demanda:** [[.agents/knowledge/writing-efficiency.md]] — antes de enviar cualquier respuesta o escribir cualquier documento, **obligatorio**.
+
+**Lectura bajo demanda:** [[.agents/knowledge/write-like-gemini.md]] — en cuanto el usuario mencione cualquier variante de "escribe/reescribe como Gemini" o "modo Claude".
 
 ---
 
@@ -102,7 +110,7 @@ Las dos reglas de manipulación de archivos que aplican en cualquier tarea, sin 
 
 **Filtro de verificación:** `GOVERNANCE-FV-2`.
 
-**Lectura bajo demanda:** `.agents/knowledge/tool-usage.md` — si vas a buscar dentro de una carpeta con punto, o a leer un archivo >2000 líneas/50KB.
+**Lectura bajo demanda:** [[.agents/knowledge/tool-usage.md]] — si vas a buscar dentro de una carpeta con punto, o a leer un archivo >2000 líneas/50KB.
 
 ---
 
@@ -178,9 +186,9 @@ Guardas que procesas mentalmente antes de responder o editar; si alguna respuest
 
 **Filtro de verificación:** `GOVERNANCE-FV-4`.
 
-**Lectura bajo demanda:** `.agents/knowledge/persistence-claims.md` — antes de afirmar que algo "quedó registrado/guardado/como regla".
+**Lectura bajo demanda:** [[.agents/knowledge/persistence-claims.md]] — antes de afirmar que algo "quedó registrado/guardado/como regla".
 
-**Lectura bajo demanda:** `.agents/knowledge/doc-first.md` — antes de proponer una regla, contrato, fórmula o cambio de alcance.
+**Lectura bajo demanda:** [[.agents/knowledge/doc-first.md]] — antes de proponer una regla, contrato, fórmula o cambio de alcance.
 
 ---
 

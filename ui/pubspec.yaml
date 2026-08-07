@@ -24,6 +24,11 @@ dependencies:
   freezed_annotation: ^3.1.0
   iconsax_plus: ^1.0.0
   shared_preferences: ^2.2.0
+  # Diálogo nativo de selección de archivo (Paso 1 del asistente de
+  # importación, STORY-073) — el componente `Dropzone` de la librería propia
+  # solo señala el tap; abrir el diálogo del sistema y leer los bytes reales
+  # es responsabilidad de esta librería estándar, no de custom_ui.
+  file_selector: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

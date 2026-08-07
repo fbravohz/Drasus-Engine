@@ -11,6 +11,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'api/audit.dart';
 import 'api/clock.dart';
 import 'api/data_fetcher.dart';
+import 'api/data_import_wizard.dart';
 import 'api/hybrid_data_transformer.dart';
 import 'api/jobs.dart';
 import 'api/verification.dart';
@@ -75,7 +76,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1617610923;
+  int get rustContentHash => -1589158660;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -87,12 +88,51 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<ManualImportContentRangeResultDto>
+      crateApiDataImportWizardAnalyzeManualBarFileContentRange(
+          {required List<int> fileBytes,
+          required List<ManualColumnMappingDto> columnMappings,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs});
+
+  Future<ManualImportConfirmResultDto>
+      crateApiDataImportWizardConfirmManualBarImport(
+          {required String dbPath,
+          required String sourceFileName,
+          required List<int> fileBytes,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          required PlatformInt64 declaredRangeStartNs,
+          required PlatformInt64 declaredRangeEndNs,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          PlatformInt64? venueOperationalSinceNs,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs,
+          required List<ManualColumnMappingDto> columnMappings,
+          String? nodeId,
+          String? processId});
+
   PlatformInt64 crateApiClockGetClockTimestampNs();
 
   Future<JobStatusDto?> crateApiDataFetcherGetJobStatus(
       {required String dbPath, required String jobId});
 
   Future<List<JobSummary>> crateApiJobsGetJobsSummary({required String dbPath});
+
+  Future<ManualImportColumnsResultDto>
+      crateApiDataImportWizardGetManualImportColumns(
+          {required List<int> fileBytes});
 
   Future<List<AuditEventSummary>> crateApiAuditGetRecentAuditEvents(
       {required String dbPath, required BigInt limit});
@@ -108,6 +148,24 @@ abstract class RustLibApi extends BaseApi {
           {required String dbPath});
 
   List<FeatureDescriptor> crateApiVerificationListVerifiableFeatures();
+
+  Future<ManualImportPreviewResultDto>
+      crateApiDataImportWizardPreviewManualBarImport(
+          {required List<int> fileBytes,
+          required List<ManualColumnMappingDto> columnMappings,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs});
+
+  Future<SelectManualImportFileResultDto>
+      crateApiDataImportWizardSelectManualImportFile(
+          {required List<int> fileBytes});
 
   Future<DownloadJobResult> crateApiDataFetcherSubmitDownloadJob(
       {required String dbPath,
@@ -151,11 +209,183 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<ManualImportContentRangeResultDto>
+      crateApiDataImportWizardAnalyzeManualBarFileContentRange(
+          {required List<int> fileBytes,
+          required List<ManualColumnMappingDto> columnMappings,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+        sse_encode_list_manual_column_mapping_dto(columnMappings, serializer);
+        sse_encode_String(instrumentId, serializer);
+        sse_encode_String(venue, serializer);
+        sse_encode_String(sourceProvider, serializer);
+        sse_encode_opt_String(sourceClockAnchorTimezoneRef, serializer);
+        sse_encode_i_64(sourceClockFixedOffsetMinutes, serializer);
+        sse_encode_opt_String(realVolumeUnitDeclared, serializer);
+        sse_encode_opt_String(spreadReportedUnitDeclared, serializer);
+        sse_encode_String(timeframeValue, serializer);
+        sse_encode_i_64(barIntervalNs, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 1, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_manual_import_content_range_result_dto,
+        decodeErrorData: null,
+      ),
+      constMeta:
+          kCrateApiDataImportWizardAnalyzeManualBarFileContentRangeConstMeta,
+      argValues: [
+        fileBytes,
+        columnMappings,
+        instrumentId,
+        venue,
+        sourceProvider,
+        sourceClockAnchorTimezoneRef,
+        sourceClockFixedOffsetMinutes,
+        realVolumeUnitDeclared,
+        spreadReportedUnitDeclared,
+        timeframeValue,
+        barIntervalNs
+      ],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta
+      get kCrateApiDataImportWizardAnalyzeManualBarFileContentRangeConstMeta =>
+          const TaskConstMeta(
+            debugName: "analyze_manual_bar_file_content_range",
+            argNames: [
+              "fileBytes",
+              "columnMappings",
+              "instrumentId",
+              "venue",
+              "sourceProvider",
+              "sourceClockAnchorTimezoneRef",
+              "sourceClockFixedOffsetMinutes",
+              "realVolumeUnitDeclared",
+              "spreadReportedUnitDeclared",
+              "timeframeValue",
+              "barIntervalNs"
+            ],
+          );
+
+  @override
+  Future<ManualImportConfirmResultDto>
+      crateApiDataImportWizardConfirmManualBarImport(
+          {required String dbPath,
+          required String sourceFileName,
+          required List<int> fileBytes,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          required PlatformInt64 declaredRangeStartNs,
+          required PlatformInt64 declaredRangeEndNs,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          PlatformInt64? venueOperationalSinceNs,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs,
+          required List<ManualColumnMappingDto> columnMappings,
+          String? nodeId,
+          String? processId}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(dbPath, serializer);
+        sse_encode_String(sourceFileName, serializer);
+        sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+        sse_encode_String(instrumentId, serializer);
+        sse_encode_String(venue, serializer);
+        sse_encode_String(sourceProvider, serializer);
+        sse_encode_i_64(declaredRangeStartNs, serializer);
+        sse_encode_i_64(declaredRangeEndNs, serializer);
+        sse_encode_opt_String(sourceClockAnchorTimezoneRef, serializer);
+        sse_encode_i_64(sourceClockFixedOffsetMinutes, serializer);
+        sse_encode_opt_String(realVolumeUnitDeclared, serializer);
+        sse_encode_opt_String(spreadReportedUnitDeclared, serializer);
+        sse_encode_opt_box_autoadd_i_64(venueOperationalSinceNs, serializer);
+        sse_encode_String(timeframeValue, serializer);
+        sse_encode_i_64(barIntervalNs, serializer);
+        sse_encode_list_manual_column_mapping_dto(columnMappings, serializer);
+        sse_encode_opt_String(nodeId, serializer);
+        sse_encode_opt_String(processId, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 2, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_manual_import_confirm_result_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDataImportWizardConfirmManualBarImportConstMeta,
+      argValues: [
+        dbPath,
+        sourceFileName,
+        fileBytes,
+        instrumentId,
+        venue,
+        sourceProvider,
+        declaredRangeStartNs,
+        declaredRangeEndNs,
+        sourceClockAnchorTimezoneRef,
+        sourceClockFixedOffsetMinutes,
+        realVolumeUnitDeclared,
+        spreadReportedUnitDeclared,
+        venueOperationalSinceNs,
+        timeframeValue,
+        barIntervalNs,
+        columnMappings,
+        nodeId,
+        processId
+      ],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDataImportWizardConfirmManualBarImportConstMeta =>
+      const TaskConstMeta(
+        debugName: "confirm_manual_bar_import",
+        argNames: [
+          "dbPath",
+          "sourceFileName",
+          "fileBytes",
+          "instrumentId",
+          "venue",
+          "sourceProvider",
+          "declaredRangeStartNs",
+          "declaredRangeEndNs",
+          "sourceClockAnchorTimezoneRef",
+          "sourceClockFixedOffsetMinutes",
+          "realVolumeUnitDeclared",
+          "spreadReportedUnitDeclared",
+          "venueOperationalSinceNs",
+          "timeframeValue",
+          "barIntervalNs",
+          "columnMappings",
+          "nodeId",
+          "processId"
+        ],
+      );
+
+  @override
   PlatformInt64 crateApiClockGetClockTimestampNs() {
     return handler.executeSync(SyncTask(
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_i_64,
@@ -182,7 +412,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(dbPath, serializer);
         sse_encode_String(jobId, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
+            funcId: 4, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_box_autoadd_job_status_dto,
@@ -208,7 +438,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(dbPath, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
+            funcId: 5, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_job_summary,
@@ -226,6 +456,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<ManualImportColumnsResultDto>
+      crateApiDataImportWizardGetManualImportColumns(
+          {required List<int> fileBytes}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 6, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_manual_import_columns_result_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDataImportWizardGetManualImportColumnsConstMeta,
+      argValues: [fileBytes],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDataImportWizardGetManualImportColumnsConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_manual_import_columns",
+        argNames: ["fileBytes"],
+      );
+
+  @override
   Future<List<AuditEventSummary>> crateApiAuditGetRecentAuditEvents(
       {required String dbPath, required BigInt limit}) {
     return handler.executeNormal(NormalTask(
@@ -234,7 +491,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(dbPath, serializer);
         sse_encode_u_64(limit, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_audit_event_summary,
@@ -260,7 +517,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(dbPath, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_download_record_dto,
@@ -287,7 +544,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(dbPath, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
+            funcId: 9, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_source_dataset_dto,
@@ -314,7 +571,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(dbPath, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 10, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_transformation_record_dto,
@@ -339,7 +596,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return handler.executeSync(SyncTask(
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_feature_descriptor,
@@ -355,6 +612,104 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "list_verifiable_features",
         argNames: [],
+      );
+
+  @override
+  Future<ManualImportPreviewResultDto>
+      crateApiDataImportWizardPreviewManualBarImport(
+          {required List<int> fileBytes,
+          required List<ManualColumnMappingDto> columnMappings,
+          required String instrumentId,
+          required String venue,
+          required String sourceProvider,
+          String? sourceClockAnchorTimezoneRef,
+          required PlatformInt64 sourceClockFixedOffsetMinutes,
+          String? realVolumeUnitDeclared,
+          String? spreadReportedUnitDeclared,
+          required String timeframeValue,
+          required PlatformInt64 barIntervalNs}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+        sse_encode_list_manual_column_mapping_dto(columnMappings, serializer);
+        sse_encode_String(instrumentId, serializer);
+        sse_encode_String(venue, serializer);
+        sse_encode_String(sourceProvider, serializer);
+        sse_encode_opt_String(sourceClockAnchorTimezoneRef, serializer);
+        sse_encode_i_64(sourceClockFixedOffsetMinutes, serializer);
+        sse_encode_opt_String(realVolumeUnitDeclared, serializer);
+        sse_encode_opt_String(spreadReportedUnitDeclared, serializer);
+        sse_encode_String(timeframeValue, serializer);
+        sse_encode_i_64(barIntervalNs, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 12, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_manual_import_preview_result_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDataImportWizardPreviewManualBarImportConstMeta,
+      argValues: [
+        fileBytes,
+        columnMappings,
+        instrumentId,
+        venue,
+        sourceProvider,
+        sourceClockAnchorTimezoneRef,
+        sourceClockFixedOffsetMinutes,
+        realVolumeUnitDeclared,
+        spreadReportedUnitDeclared,
+        timeframeValue,
+        barIntervalNs
+      ],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDataImportWizardPreviewManualBarImportConstMeta =>
+      const TaskConstMeta(
+        debugName: "preview_manual_bar_import",
+        argNames: [
+          "fileBytes",
+          "columnMappings",
+          "instrumentId",
+          "venue",
+          "sourceProvider",
+          "sourceClockAnchorTimezoneRef",
+          "sourceClockFixedOffsetMinutes",
+          "realVolumeUnitDeclared",
+          "spreadReportedUnitDeclared",
+          "timeframeValue",
+          "barIntervalNs"
+        ],
+      );
+
+  @override
+  Future<SelectManualImportFileResultDto>
+      crateApiDataImportWizardSelectManualImportFile(
+          {required List<int> fileBytes}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 13, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_select_manual_import_file_result_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDataImportWizardSelectManualImportFileConstMeta,
+      argValues: [fileBytes],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDataImportWizardSelectManualImportFileConstMeta =>
+      const TaskConstMeta(
+        debugName: "select_manual_import_file",
+        argNames: ["fileBytes"],
       );
 
   @override
@@ -379,7 +734,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(timeframe, serializer);
         sse_encode_String(outputType, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
+            funcId: 14, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_download_job_result,
@@ -454,7 +809,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_opt_String(processId, serializer);
         sse_encode_opt_String(sessionId, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
+            funcId: 15, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_transform_outcome_dto,
@@ -517,7 +872,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(featureId, serializer);
         sse_encode_String(inputJson, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_verification_outcome,
@@ -534,6 +889,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         debugName: "verify_feature",
         argNames: ["featureId", "inputJson"],
       );
+
+  @protected
+  BigInt dco_decode_I128(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BigInt.parse(raw);
+  }
 
   @protected
   String dco_decode_String(dynamic raw) {
@@ -710,6 +1071,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
   List<AuditEventSummary> dco_decode_list_audit_event_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_audit_event_summary).toList();
@@ -740,6 +1107,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ManualColumnMappingDto> dco_decode_list_manual_column_mapping_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_manual_column_mapping_dto)
+        .toList();
+  }
+
+  @protected
+  List<PreviewCanonicalBarDto> dco_decode_list_preview_canonical_bar_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_preview_canonical_bar_dto)
+        .toList();
+  }
+
+  @protected
+  List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as List<int>;
+  }
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
@@ -767,6 +1158,78 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ManualColumnMappingDto dco_decode_manual_column_mapping_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ManualColumnMappingDto(
+      sourceColumn: dco_decode_String(arr[0]),
+      canonicalField: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  ManualImportColumnsResultDto dco_decode_manual_import_columns_result_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ManualImportColumnsResultDto(
+      columns: dco_decode_list_String(arr[0]),
+      error: dco_decode_opt_String(arr[1]),
+    );
+  }
+
+  @protected
+  ManualImportConfirmResultDto dco_decode_manual_import_confirm_result_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return ManualImportConfirmResultDto(
+      ok: dco_decode_bool(arr[0]),
+      declarationId: dco_decode_String(arr[1]),
+      mappingOrigin: dco_decode_String(arr[2]),
+      eventSequenceId: dco_decode_i_64(arr[3]),
+      auditHash: dco_decode_String(arr[4]),
+      rowsImported: dco_decode_u_64(arr[5]),
+      wasNoopReimport: dco_decode_bool(arr[6]),
+      error: dco_decode_opt_String(arr[7]),
+    );
+  }
+
+  @protected
+  ManualImportContentRangeResultDto
+      dco_decode_manual_import_content_range_result_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return ManualImportContentRangeResultDto(
+      rowsParsedTotal: dco_decode_u_64(arr[0]),
+      contentMinOpenTimestampNs: dco_decode_opt_box_autoadd_i_64(arr[1]),
+      contentMaxCloseTimestampNs: dco_decode_opt_box_autoadd_i_64(arr[2]),
+      error: dco_decode_opt_String(arr[3]),
+    );
+  }
+
+  @protected
+  ManualImportPreviewResultDto dco_decode_manual_import_preview_result_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ManualImportPreviewResultDto(
+      rows: dco_decode_list_preview_canonical_bar_dto(arr[0]),
+      error: dco_decode_opt_String(arr[1]),
+    );
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
@@ -788,6 +1251,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_u_32(raw);
+  }
+
+  @protected
+  PreviewCanonicalBarDto dco_decode_preview_canonical_bar_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 17)
+      throw Exception('unexpected arr length: expect 17 but see ${arr.length}');
+    return PreviewCanonicalBarDto(
+      instrumentId: dco_decode_String(arr[0]),
+      venue: dco_decode_String(arr[1]),
+      sourceProvider: dco_decode_String(arr[2]),
+      barOpenTimestampNs: dco_decode_i_64(arr[3]),
+      barCloseTimestampNs: dco_decode_i_64(arr[4]),
+      barType: dco_decode_String(arr[5]),
+      timeframeValue: dco_decode_String(arr[6]),
+      open: dco_decode_i_64(arr[7]),
+      high: dco_decode_i_64(arr[8]),
+      low: dco_decode_i_64(arr[9]),
+      close: dco_decode_i_64(arr[10]),
+      volumeTicks: dco_decode_i_64(arr[11]),
+      volumeTradedRaw: dco_decode_I128(arr[12]),
+      spreadReportedRaw: dco_decode_i_64(arr[13]),
+      spreadReportedUnit: dco_decode_String(arr[14]),
+      isActivityAnomaly: dco_decode_bool(arr[15]),
+      volumeUnitUnverified: dco_decode_bool(arr[16]),
+    );
+  }
+
+  @protected
+  SelectManualImportFileResultDto
+      dco_decode_select_manual_import_file_result_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return SelectManualImportFileResultDto(
+      fileSizeBytes: dco_decode_u_64(arr[0]),
+      sourceFileHash: dco_decode_String(arr[1]),
+    );
   }
 
   @protected
@@ -892,6 +1395,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       outputJson: dco_decode_String(arr[2]),
       error: dco_decode_opt_String(arr[3]),
     );
+  }
+
+  @protected
+  BigInt sse_decode_I128(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return BigInt.parse(inner);
   }
 
   @protected
@@ -1103,6 +1613,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<AuditEventSummary> sse_decode_list_audit_event_summary(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1166,6 +1688,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ManualColumnMappingDto> sse_decode_list_manual_column_mapping_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ManualColumnMappingDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_manual_column_mapping_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<PreviewCanonicalBarDto> sse_decode_list_preview_canonical_bar_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PreviewCanonicalBarDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_preview_canonical_bar_dto(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var len_ = sse_decode_i_32(deserializer);
+    return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -1212,6 +1767,75 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ManualColumnMappingDto sse_decode_manual_column_mapping_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sourceColumn = sse_decode_String(deserializer);
+    var var_canonicalField = sse_decode_String(deserializer);
+    return ManualColumnMappingDto(
+        sourceColumn: var_sourceColumn, canonicalField: var_canonicalField);
+  }
+
+  @protected
+  ManualImportColumnsResultDto sse_decode_manual_import_columns_result_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_columns = sse_decode_list_String(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return ManualImportColumnsResultDto(columns: var_columns, error: var_error);
+  }
+
+  @protected
+  ManualImportConfirmResultDto sse_decode_manual_import_confirm_result_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ok = sse_decode_bool(deserializer);
+    var var_declarationId = sse_decode_String(deserializer);
+    var var_mappingOrigin = sse_decode_String(deserializer);
+    var var_eventSequenceId = sse_decode_i_64(deserializer);
+    var var_auditHash = sse_decode_String(deserializer);
+    var var_rowsImported = sse_decode_u_64(deserializer);
+    var var_wasNoopReimport = sse_decode_bool(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return ManualImportConfirmResultDto(
+        ok: var_ok,
+        declarationId: var_declarationId,
+        mappingOrigin: var_mappingOrigin,
+        eventSequenceId: var_eventSequenceId,
+        auditHash: var_auditHash,
+        rowsImported: var_rowsImported,
+        wasNoopReimport: var_wasNoopReimport,
+        error: var_error);
+  }
+
+  @protected
+  ManualImportContentRangeResultDto
+      sse_decode_manual_import_content_range_result_dto(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_rowsParsedTotal = sse_decode_u_64(deserializer);
+    var var_contentMinOpenTimestampNs =
+        sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_contentMaxCloseTimestampNs =
+        sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return ManualImportContentRangeResultDto(
+        rowsParsedTotal: var_rowsParsedTotal,
+        contentMinOpenTimestampNs: var_contentMinOpenTimestampNs,
+        contentMaxCloseTimestampNs: var_contentMaxCloseTimestampNs,
+        error: var_error);
+  }
+
+  @protected
+  ManualImportPreviewResultDto sse_decode_manual_import_preview_result_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_rows = sse_decode_list_preview_canonical_bar_dto(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return ManualImportPreviewResultDto(rows: var_rows, error: var_error);
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -1254,6 +1878,58 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     } else {
       return null;
     }
+  }
+
+  @protected
+  PreviewCanonicalBarDto sse_decode_preview_canonical_bar_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_instrumentId = sse_decode_String(deserializer);
+    var var_venue = sse_decode_String(deserializer);
+    var var_sourceProvider = sse_decode_String(deserializer);
+    var var_barOpenTimestampNs = sse_decode_i_64(deserializer);
+    var var_barCloseTimestampNs = sse_decode_i_64(deserializer);
+    var var_barType = sse_decode_String(deserializer);
+    var var_timeframeValue = sse_decode_String(deserializer);
+    var var_open = sse_decode_i_64(deserializer);
+    var var_high = sse_decode_i_64(deserializer);
+    var var_low = sse_decode_i_64(deserializer);
+    var var_close = sse_decode_i_64(deserializer);
+    var var_volumeTicks = sse_decode_i_64(deserializer);
+    var var_volumeTradedRaw = sse_decode_I128(deserializer);
+    var var_spreadReportedRaw = sse_decode_i_64(deserializer);
+    var var_spreadReportedUnit = sse_decode_String(deserializer);
+    var var_isActivityAnomaly = sse_decode_bool(deserializer);
+    var var_volumeUnitUnverified = sse_decode_bool(deserializer);
+    return PreviewCanonicalBarDto(
+        instrumentId: var_instrumentId,
+        venue: var_venue,
+        sourceProvider: var_sourceProvider,
+        barOpenTimestampNs: var_barOpenTimestampNs,
+        barCloseTimestampNs: var_barCloseTimestampNs,
+        barType: var_barType,
+        timeframeValue: var_timeframeValue,
+        open: var_open,
+        high: var_high,
+        low: var_low,
+        close: var_close,
+        volumeTicks: var_volumeTicks,
+        volumeTradedRaw: var_volumeTradedRaw,
+        spreadReportedRaw: var_spreadReportedRaw,
+        spreadReportedUnit: var_spreadReportedUnit,
+        isActivityAnomaly: var_isActivityAnomaly,
+        volumeUnitUnverified: var_volumeUnitUnverified);
+  }
+
+  @protected
+  SelectManualImportFileResultDto
+      sse_decode_select_manual_import_file_result_dto(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_fileSizeBytes = sse_decode_u_64(deserializer);
+    var var_sourceFileHash = sse_decode_String(deserializer);
+    return SelectManualImportFileResultDto(
+        fileSizeBytes: var_fileSizeBytes, sourceFileHash: var_sourceFileHash);
   }
 
   @protected
@@ -1376,6 +2052,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  void sse_encode_I128(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.toString(), serializer);
   }
 
   @protected
@@ -1521,6 +2203,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_audit_event_summary(
       List<AuditEventSummary> self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1570,6 +2261,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_manual_column_mapping_dto(
+      List<ManualColumnMappingDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_manual_column_mapping_dto(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_preview_canonical_bar_dto(
+      List<PreviewCanonicalBarDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_preview_canonical_bar_dto(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_prim_u_8_loose(
+      List<int> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer
+        .putUint8List(self is Uint8List ? self : Uint8List.fromList(self));
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
       Uint8List self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1605,6 +2325,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     for (final item in self) {
       sse_encode_transformation_record_dto(item, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_manual_column_mapping_dto(
+      ManualColumnMappingDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.sourceColumn, serializer);
+    sse_encode_String(self.canonicalField, serializer);
+  }
+
+  @protected
+  void sse_encode_manual_import_columns_result_dto(
+      ManualImportColumnsResultDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_String(self.columns, serializer);
+    sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_manual_import_confirm_result_dto(
+      ManualImportConfirmResultDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.ok, serializer);
+    sse_encode_String(self.declarationId, serializer);
+    sse_encode_String(self.mappingOrigin, serializer);
+    sse_encode_i_64(self.eventSequenceId, serializer);
+    sse_encode_String(self.auditHash, serializer);
+    sse_encode_u_64(self.rowsImported, serializer);
+    sse_encode_bool(self.wasNoopReimport, serializer);
+    sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_manual_import_content_range_result_dto(
+      ManualImportContentRangeResultDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_64(self.rowsParsedTotal, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.contentMinOpenTimestampNs, serializer);
+    sse_encode_opt_box_autoadd_i_64(
+        self.contentMaxCloseTimestampNs, serializer);
+    sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_manual_import_preview_result_dto(
+      ManualImportPreviewResultDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_preview_canonical_bar_dto(self.rows, serializer);
+    sse_encode_opt_String(self.error, serializer);
   }
 
   @protected
@@ -1647,6 +2416,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (self != null) {
       sse_encode_box_autoadd_u_32(self, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_preview_canonical_bar_dto(
+      PreviewCanonicalBarDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.instrumentId, serializer);
+    sse_encode_String(self.venue, serializer);
+    sse_encode_String(self.sourceProvider, serializer);
+    sse_encode_i_64(self.barOpenTimestampNs, serializer);
+    sse_encode_i_64(self.barCloseTimestampNs, serializer);
+    sse_encode_String(self.barType, serializer);
+    sse_encode_String(self.timeframeValue, serializer);
+    sse_encode_i_64(self.open, serializer);
+    sse_encode_i_64(self.high, serializer);
+    sse_encode_i_64(self.low, serializer);
+    sse_encode_i_64(self.close, serializer);
+    sse_encode_i_64(self.volumeTicks, serializer);
+    sse_encode_I128(self.volumeTradedRaw, serializer);
+    sse_encode_i_64(self.spreadReportedRaw, serializer);
+    sse_encode_String(self.spreadReportedUnit, serializer);
+    sse_encode_bool(self.isActivityAnomaly, serializer);
+    sse_encode_bool(self.volumeUnitUnverified, serializer);
+  }
+
+  @protected
+  void sse_encode_select_manual_import_file_result_dto(
+      SelectManualImportFileResultDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_64(self.fileSizeBytes, serializer);
+    sse_encode_String(self.sourceFileHash, serializer);
   }
 
   @protected

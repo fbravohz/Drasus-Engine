@@ -2,7 +2,26 @@
 
 Toda regla sobre cómo redactar — prosa, bloques de respuesta, traducción de términos, densidad de tokens — vive en este único documento.
 
-Slug ID: `WRITING-EFFICIENCY` para búsqueda rápida de secciones.
+Slug ID: `WRITING-EFFICIENCY`.
+
+Tamaño: `19600 caracteres (~4900 tokens aprox., ratio 4:1)`.
+
+---
+
+## WRITING-EFFICIENCY-FV — Filtro de Verificación
+
+Antes de enviar cualquier texto, revisa esta lista — es el chequeo interno que las reglas de este documento citan como propio.
+
+**Aplica a:** todo texto que un agente produce, como último paso antes de enviarlo.
+
+* **WRITING-EFFICIENCY-FV-1:** ¿Empaqueté ítems paralelos con oración de contexto + lista? ¿Corté conectores sin cortar contenido, caso borde o matiz? (`WRITING-EFFICIENCY-1`)
+* **WRITING-EFFICIENCY-FV-2:** ¿Evité jerga sin traducir, relleno, nominalizaciones, voz pasiva evitable, afirmaciones sueltas? (`WRITING-EFFICIENCY-2`)
+* **WRITING-EFFICIENCY-FV-3:** ¿Todo identificador interno lleva su traducción llana, en este mismo mensaje (no solo la primera vez)? (`WRITING-EFFICIENCY-3`)
+* **WRITING-EFFICIENCY-FV-4:** ¿Elegí la forma correcta según el género del intercambio (`WRITING-EFFICIENCY-6.1` a `-6.4`) y respeté el formato visual de bloques (encabezado en línea propia, bullets, paréntesis explicativo)? (`WRITING-EFFICIENCY-4`, `WRITING-EFFICIENCY-6`)
+* **WRITING-EFFICIENCY-FV-5:** si escribí o edité un documento, ¿el título y la descripción rápida están libres de backstory y rutas literales? (`WRITING-EFFICIENCY-5`)
+* **WRITING-EFFICIENCY-FV-6:** si el género es reportar un estado, ¿apliqué los cinco movimientos y, si corresponde, activé y declaré el Modo Gemini con su bracket? (`WRITING-EFFICIENCY-7`, `write-like-gemini.md`)
+
+De ser satisfactoria cada validación de la lista, declara `WRITING-EFFICIENCY - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -20,23 +39,17 @@ El objetivo es que el texto se entienda en una sola pasada, no gastar menos toke
 
 * **WRITING-EFFICIENCY-1.2 — Cortar Conectores, No Contenido:** 
 
-  corta relleno narrativo, backstory, ❌/✅ redundantes, plantillas-espejo; nunca cortes dato técnico, caso borde, matiz arquitectónico, ni la oración-gancho de contexto (`WRITING-EFFICIENCY-4.1`).
+  corta relleno narrativo, backstory, ❌/✅ redundantes, plantillas-espejo; nunca cortes dato técnico, caso borde, matiz arquitectónico, ni la oración-gancho de contexto (`WRITING-EFFICIENCY-6`).
   * ❌ *Incorrecto:* "Es fundamental que te detengas a revisar cinco preguntas clave antes de responder. "
   * ✅ *Correcto:* "Antes de responder, verifica cinco preguntas."
 
-**Precedencia:** N/A.
-
-**Filtro de verificación:** `WRITING-EFFICIENCY-6.1`.
-
-**Documento extendido:** `WRITING-EFFICIENCY-7.1`
-
-**Plantilla de referencia:** N/A.
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-1`.
 
 ---
 
 ## WRITING-EFFICIENCY-2 — Claridad Absoluta
 
-El lenguaje es técnicamente exacto pero directo: si el usuario necesita releer una frase para entenderla, está mal redactada.
+El lenguaje es técnicamente exacto pero directo: si el usuario necesita releer una frase para entenderla, está mal redactada. Aplica la economía de `WRITING-EFFICIENCY-1` al nivel de la oración y el párrafo.
 
 **Aplica a:** todos los roles/skills, en cualquier texto producido.
 
@@ -48,17 +61,11 @@ El lenguaje es técnicamente exacto pero directo: si el usuario necesita releer 
 
 * **WRITING-EFFICIENCY-2.2 — Obligatorio:** 
 
-  una idea por oración, una idea principal por párrafo (conectores como "por eso" no cuentan como relleno); orden de exposición fijado en `WRITING-EFFICIENCY-4.1`; ejemplos y tablas solo cuando comparan 2+ opciones o datos paralelos.
+  una idea por oración, una idea principal por párrafo (conectores como "por eso" no cuentan como relleno); orden de exposición fijado en `WRITING-EFFICIENCY-6`; ejemplos y tablas solo cuando comparan 2+ opciones o datos paralelos.
   * ❌ *Incorrecto:* "El sistema usa SQLite y por eso hay que cuidar los locks y además conviene revisar los índices."
   * ✅ *Correcto:* "El sistema usa SQLite. Por eso hay que cuidar los locks. Además, conviene revisar los índices."
 
-**Precedencia:** corolario de `WRITING-EFFICIENCY-1` — aplica su economía al nivel de la oración y el párrafo; no compite.
-
-**Filtro de verificación:** `WRITING-EFFICIENCY-6.2`.
-
-**Documento extendido:** N/A.
-
-**Plantilla de referencia:** N/A.
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-2`.
 
 ---
 
@@ -80,39 +87,15 @@ Los identificadores ágiles y términos internos (`STORY-###`, `ADR-XXXX`, `TTR-
   * ❌ *Incorrecto:* traducir SPIKE-001 al mencionarlo por primera vez y después usarlo pelado el resto de la conversación.
   * ✅ *Correcto:* traducirlo de nuevo si reaparece en un mensaje posterior, aunque ya se haya traducido antes.
 
-**Precedencia:** N/A — no compite con otra regla.
-
-**Filtro de verificación:** `WRITING-EFFICIENCY-6.3`.
-
-**Documento extendido:** N/A.
-
-**Plantilla de referencia:** N/A.
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-3`.
 
 ---
 
-## WRITING-EFFICIENCY-4 — Contexto Antes de Detalle y Formato Visual de los Bloques
+## WRITING-EFFICIENCY-4 — Formato Visual de los Bloques
 
-Toda respuesta pone el contexto antes que el detalle, pero la forma exacta depende del género del intercambio (`WRITING-EFFICIENCY-4.1.1` a `-4.1.4`) — nunca un molde único forzado sobre cualquier pregunta. Un mensaje que arranca en detalle sin haber dado contexto falla la Auditoría Final y debe reescribirse.
+Cada bloque de una respuesta estructurada sigue una forma visual fija — encabezado, bullets, paréntesis explicativo — sin importar el género del intercambio (`WRITING-EFFICIENCY-6`).
 
 **Aplica a:** todos los roles/skills, en cualquier explicación estructurada al usuario.
-
-* **WRITING-EFFICIENCY-4.1 — Contexto Antes de Detalle, Forma Según el Género:** 
-
-  el principio no cambia — el contexto va antes que el detalle —, pero su forma sí depende de qué tipo de intercambio es. Forzar el molde de un género sobre otro (inventar un "problema" donde el usuario solo pidió un reporte de estado) empeora la respuesta en vez de ordenarla.
-  1. **WRITING-EFFICIENCY-4.1.1 — Explicar un cambio o decisión ya tomada:**
-
-     problema → solución → por qué → detalle técnico.
-  2. **WRITING-EFFICIENCY-4.1.2 — Reportar un estado o historial:**
-
-     (ante "¿en qué quedó X?", "qué ha pasado") contexto breve → hechos relevantes en lista (cronológica u organizada) → síntesis del estado actual → siguiente paso.
-  3. **WRITING-EFFICIENCY-4.1.3 — Responder una pregunta puntual o de hecho:**
-
-     respuesta directa, sin forzar bloques ni encabezados — el largo lo marca la pregunta, no la plantilla.
-  4. **WRITING-EFFICIENCY-4.1.4 — Responder una consulta exploratoria, un debate o una opinión:**
-
-     postura o recomendación corta + el trade-off principal (2-3 oraciones); no implementar ni decidir por el usuario, solo orientar.
-  * ❌ *Incorrecto:* ante "¿en qué quedó el Tech-Lead?" responder con "1. Problema: ... 2. Solución: ... 3. Por qué: ..." — no hay problema que resolver, solo estado que reportar.
-  * ✅ *Correcto:* "El PROGRESS dice que el frente activo es EPIC-1, pero eso quedó escrito antes del trabajo real de los últimos 3 commits. Lo que pasó: [lista]. Estatus real hoy: [síntesis]. Siguiente paso: [acción]."
 
 * **WRITING-EFFICIENCY-4.2 — Encabezado En Línea Propia:** 
   
@@ -132,13 +115,56 @@ Toda respuesta pone el contexto antes que el detalle, pero la forma exacta depen
   * ❌ *Incorrecto:* "Uso `BEGIN IMMEDIATE` para evitar la corrupción."
   * ✅ *Correcto:* "Uso `BEGIN IMMEDIATE` (toma el lock de escritura al abrir la transacción) para evitar la corrupción."
 
-**Precedencia:** N/A — no compite con otra regla; elegir el género correcto (`4.1.1`-`4.1.4`) es obligatorio, no estilístico.
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-4`.
 
-**Filtro de verificación:** `WRITING-EFFICIENCY-6.4`.
+---
+
+## WRITING-EFFICIENCY-5 — Encabezados Sin Backstory Ni Rutas Literales
+
+Títulos y descripciones rápidas de un documento de referencia dicen qué es y cómo se usa, no por qué nació — concreta para encabezados la prohibición de relleno de `WRITING-EFFICIENCY-2.1`.
+
+**Aplica a:** todos los roles/skills, al escribir o editar el título y la descripción rápida de cualquier documento.
+
+* **WRITING-EFFICIENCY-5.1 — Sin Historia De Origen Ni Rutas Literales:** 
+
+  el encabezado no lleva por qué nació la regla, qué error corrigió, ni rutas de carpeta exactas cuando una descripción conceptual alcanza. Esa historia va en el commit o en memoria, no en el documento.
+  * ❌ *Incorrecto:* "Cómo escribir UNA regla dentro de cualquier documento de `.agents/knowledge/` o `.claude/skills/`... Nace de una corrección real: `base.md` tenía 8 puntos y ninguno seguía la misma forma."
+  * ✅ *Correcto:* "Cómo escribir una regla dentro de cualquier documento de instrucciones para agentes o skills, para que sea encontrable por ID y aplicable sin ambigüedad de formato."
+
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-5`.
+
+---
+
+## WRITING-EFFICIENCY-6 — Contexto Antes de Detalle, Forma Según el Género
+
+El principio no cambia — el contexto va antes que el detalle —, pero su forma sí depende de qué tipo de intercambio es; nunca un molde único forzado sobre cualquier pregunta. Forzar el molde de un género sobre otro (inventar un "problema" donde el usuario solo pidió un reporte de estado) empeora la respuesta en vez de ordenarla. Un mensaje que arranca en detalle sin haber dado contexto falla la Auditoría Final y debe reescribirse.
+
+**Aplica a:** todos los roles/skills, en cualquier explicación estructurada al usuario.
+
+* **WRITING-EFFICIENCY-6.1 — Explicar un cambio o decisión ya tomada:**
+
+  problema → solución → por qué → detalle técnico.
+
+* **WRITING-EFFICIENCY-6.2 — Reportar un estado o historial:**
+
+  (ante "¿en qué quedó X?", "qué ha pasado") contexto breve → hechos relevantes en lista (cronológica u organizada) → síntesis del estado actual → siguiente paso.
+
+* **WRITING-EFFICIENCY-6.3 — Responder una pregunta puntual o de hecho:**
+
+  respuesta directa, sin forzar bloques ni encabezados — el largo lo marca la pregunta, no la plantilla.
+
+* **WRITING-EFFICIENCY-6.4 — Responder una consulta exploratoria, un debate o una opinión:**
+
+  postura o recomendación corta + el trade-off principal (2-3 oraciones); no implementar ni decidir por el usuario, solo orientar.
+
+* ❌ *Incorrecto:* ante "¿en qué quedó el Tech-Lead?" responder con "1. Problema: ... 2. Solución: ... 3. Por qué: ..." — no hay problema que resolver, solo estado que reportar.
+* ✅ *Correcto:* "El PROGRESS dice que el frente activo es EPIC-1, pero eso quedó escrito antes del trabajo real de los últimos 3 commits. Lo que pasó: [lista]. Estatus real hoy: [síntesis]. Siguiente paso: [acción]."
+
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-4`.
 
 **Plantilla de referencia:**
 ```
-Forma 4.1.1 — Explicar un cambio o decisión:
+Forma 6.1 — Explicar un cambio o decisión:
 
 ### 1. Problema
 
@@ -157,7 +183,7 @@ Texto de la justificación.
 
 - `nombre_de_sintaxis` (qué hace, en paréntesis)
 
-Forma 4.1.2 — Reportar un estado o historial:
+Forma 6.2 — Reportar un estado o historial:
 
 **Contexto:** una oración que resume el desfase o el punto de partida.
 
@@ -170,60 +196,56 @@ Forma 4.1.2 — Reportar un estado o historial:
 
 **Siguiente paso:** acción concreta pendiente.
 
-Formas 4.1.3 y 4.1.4 no llevan plantilla de bloques — su forma es una respuesta directa (4.1.3) o una recomendación corta + trade-off (4.1.4).
+Formas 6.3 y 6.4 no llevan plantilla de bloques — su forma es una respuesta directa (6.3) o una recomendación corta + trade-off (6.4).
 ```
 
 ---
 
-## WRITING-EFFICIENCY-5 — Encabezados Sin Backstory Ni Rutas Literales
+## WRITING-EFFICIENCY-7 — Estilo Gemini: Modo Por Defecto
 
-Títulos y descripciones rápidas de un documento de referencia dicen qué es y cómo se usa, no por qué nació.
+Cuando el género es "reportar un estado" (`WRITING-EFFICIENCY-6.2`), el Modo Gemini Relajado + Listas ([[.agents/knowledge/write-like-gemini.md]]) se activa desde la primera palabra sin que el usuario lo pida — no como reparación de un texto que ya salió largo. Los cinco movimientos de abajo son propios del género "reportar un estado"; el registro de verbosidad (Claude/Gemini) y sus ejemplos medidos viven en `write-like-gemini.md`, no aquí.
 
-**Aplica a:** todos los roles/skills, al escribir o editar el título y la descripción rápida de cualquier documento.
+**Aplica a:** todos los roles/skills, en reportes de estado, resúmenes de turno y reportes de sesión ([[.agents/knowledge/session-reporting.md]]).
 
-* **WRITING-EFFICIENCY-5.1 — Sin Historia De Origen Ni Rutas Literales:** 
+* **WRITING-EFFICIENCY-7.1 — Resultado Antes Que Proceso:**
 
-  el encabezado no lleva por qué nació la regla, qué error corrigió, ni rutas de carpeta exactas cuando una descripción conceptual alcanza. Esa historia va en el commit o en memoria, no en el documento.
-  * ❌ *Incorrecto:* "Cómo escribir UNA regla dentro de cualquier documento de `.agents/knowledge/` o `.claude/skills/`... Nace de una corrección real: `base.md` tenía 8 puntos y ninguno seguía la misma forma."
-  * ✅ *Correcto:* "Cómo escribir una regla dentro de cualquier documento de instrucciones para agentes o skills, para que sea encontrable por ID y aplicable sin ambigüedad de formato."
+  la primera cláusula nombra el hecho o la decisión; el camino para llegar ahí va después, y solo si el usuario lo necesita para actuar.
+  * ❌ *Incorrecto:* "Después de revisar varias opciones y evaluar el impacto, decidimos usar X."
+  * ✅ *Correcto:* "Usamos X."
 
-**Precedencia:** corolario de `WRITING-EFFICIENCY-2.1` (Prohibido: relleno) — no compite, lo concreta para encabezados.
+* **WRITING-EFFICIENCY-7.2 — Un Hecho, Una Vez:**
 
-**Filtro de verificación:** `WRITING-EFFICIENCY-6.5`.
+  si un dato ya vive en una tabla, no lo repitas en prosa alrededor — y viceversa.
+  * ❌ *Incorrecto:* una tabla que dice "7 pruebas nuevas" y, debajo, un párrafo que vuelve a decir que se agregaron 7 pruebas.
+  * ✅ *Correcto:* el dato vive en un solo lugar.
 
-**Documento extendido:** N/A.
+* **WRITING-EFFICIENCY-7.3 — Cero Metacomentario Sobre el Propio Texto:**
 
-**Plantilla de referencia:** N/A.
+  nada de "vale la pena que leas esto", "es importante notar", "cabe destacar" — el hecho justifica su propia importancia.
 
----
+* **WRITING-EFFICIENCY-7.4 — Fragmenta Cláusulas Independientes:**
 
-## WRITING-EFFICIENCY-6 — Filtro de Verificación
+  si una oración une dos ideas con "y", "pero" o un guion largo y la segunda no depende gramaticalmente de la primera, sepáralas en bullets.
+  * ❌ *Incorrecto:* "El sistema procesa el archivo y valida cada fila, pero si hay un error se detiene."
+  * ✅ *Correcto:* "Procesa el archivo. Valida cada fila. Si hay error, se detiene."
 
-Antes de enviar cualquier texto, revisa esta lista — es el chequeo interno que las 5 reglas de este documento citan como propio.
+* **WRITING-EFFICIENCY-7.5 — Cita Sin Marco Decorativo:**
 
-**Cuando respondas al usuario confirma: "He leido y aplicaré el filtro de verificación WRITING-EFFICIENCY" HAZLO SIEMPRE, O SERA CONSIDERADO VIOLACIÓN DEL PROTOCOLO DE RESPUESTA**
+  cita textual solo si la paráfrasis pierde algo real — directo, sin anunciarla.
+  * ❌ *Incorrecto:* "lo que dice es lo siguiente: 'X'."
+  * ✅ *Correcto:* "'X'."
 
-**Aplica a:** todo texto que un agente produce, como último paso antes de enviarlo.
+**Precedencia:** `WRITING-EFFICIENCY-1.2` manda sobre esto — nunca cortar dato técnico, caso borde o matiz para cumplirla.
 
-* **WRITING-EFFICIENCY-6.1:** ¿Empaqueté ítems paralelos con oración de contexto + lista? ¿Corté conectores sin cortar contenido, caso borde o matiz?
-* **WRITING-EFFICIENCY-6.2:** ¿Evité jerga sin traducir, relleno, nominalizaciones, voz pasiva evitable, afirmaciones sueltas?
-* **WRITING-EFFICIENCY-6.3:** ¿Todo identificador interno lleva su traducción llana, en este mismo mensaje (no solo la primera vez)?
-* **WRITING-EFFICIENCY-6.4:** ¿Elegí la forma correcta según el género del intercambio (`WRITING-EFFICIENCY-4.1.1` a `-4.1.4`) y respeté el formato visual de bloques (encabezado en línea propia, bullets, paréntesis explicativo)?
-* **WRITING-EFFICIENCY-6.5:** si escribí o edité un documento, ¿el título y la descripción rápida están libres de backstory y rutas literales?
+**Filtro de verificación:** `WRITING-EFFICIENCY-FV-6`.
 
-**Precedencia:** N/A — es el filtro, no compite con las reglas que verifica.
-
-**Filtro de verificación:** N/A.
-
-**Documento extendido:** N/A — el detalle de cada chequeo vive en su regla correspondiente (`WRITING-EFFICIENCY-1` a `-5`) dentro de este mismo archivo.
-
-**Plantilla de referencia:** N/A.
+**Documento extendido:** [[.agents/knowledge/write-like-gemini.md]] — los tres modos de verbosidad (Claude / Gemini Relajado / Gemini Relajado + Listas), con los tres casos reales medidos (`wc -w -m`, no estimado).
 
 ---
 
-## WRITING-EFFICIENCY-7 — Ejemplos
+## WRITING-EFFICIENCY-EJ — Ejemplos
 
-### WRITING-EFFICIENCY-7.1 — Casos Compuestos
+### WRITING-EFFICIENCY-EJ-1 — Casos Compuestos
 El mismo texto real escrito varias veces, aplicando distintas reglas de este documento a la vez. No reemplazan los ❌/✅ de cada regla (esos son atómicos, uno por definición) — muestran cómo varias reglas actúan juntas sobre un párrafo real.
 
 **Caso: lista de prohibiciones — demuestra `WRITING-EFFICIENCY-1.1`, `-1.2` y `-2.1` a la vez.**
@@ -250,11 +272,11 @@ El mismo texto real escrito varias veces, aplicando distintas reglas de este doc
 
 Mismo contenido verificable en los tres casos — la reducción es ruido cortado, no información perdida (`WRITING-EFFICIENCY-1.2`).
 
-### WRITING-EFFICIENCY-7.2 — Explicar un Problema Técnico Desde Cero
+### WRITING-EFFICIENCY-EJ-2 — Explicar un Problema Técnico Desde Cero
 
 Cuando el usuario pide entender un problema que no conoce —no una actualización sobre uno que ya conoce— la forma cambia. Este es el caso de referencia: el propietario pidió *"explícame todo este tema desde cero, como si no supiera qué es, y por qué no hemos podido dar con la solución"*, y calificó el resultado como el estándar de claridad a replicar.
 
-**Caso: el patrón de ledger append-only — demuestra `WRITING-EFFICIENCY-2.1`, `-3.1` y `-4.1` a la vez.**
+**Caso: el patrón de ledger append-only — demuestra `WRITING-EFFICIENCY-2.1`, `-3.1` y `-6` a la vez.**
 
 * **Antes (jerga sin traducir, ~85 tokens):** "El patrón de ledger append-only exige `event_sequence_id INTEGER UNIQUE` monótono sin huecos, encadenamiento por `audit_chain_hash`, triggers `BEFORE UPDATE/DELETE` con `RAISE(ABORT)`, y escritura envuelta en `BEGIN IMMEDIATE` con clasificador de errores transitorios vs. permanentes y reintento acotado. La implementación de referencia presentaba dos defectos que se propagaron por copia."
 
@@ -279,4 +301,4 @@ Es **más largo en tokens y más corto en esfuerzo del lector** — la excepció
 4. **El error propio va incluido y sin suavizar.** *"Cometí, escribiendo el documento que existe para impedir ese error, exactamente ese error."* Es lo que vuelve la explicación creíble; omitirlo la convierte en informe defensivo.
 5. **Cierra con por qué fue difícil de ver, que es la pregunta real.** *"No es que la solución sea difícil — cada arreglo son treinta líneas. Es que nada lo detectaba: todas las pruebas en verde durante meses."* Sin ese cierre el usuario entiende el defecto pero no por qué se le ocultó, que es lo que de verdad preguntó.
 
-**Cuándo aplica este género:** el usuario pide entender, no decidir. Si pide decidir, gana `WRITING-EFFICIENCY-4.1` (contexto antes de detalle, formato de bloques) y la analogía sobra.
+**Cuándo aplica este género:** el usuario pide entender, no decidir. Si pide decidir, gana `WRITING-EFFICIENCY-6` (contexto antes de detalle, formato de bloques) y la analogía sobra.

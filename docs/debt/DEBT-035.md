@@ -4,8 +4,9 @@
 |---|---|
 | **ID** | DEBT-035 |
 | **Severidad** | 🟠 Media |
-| **Estado** | Abierta |
+| **Estado** | ✅ Pagada (STORY-073, 2026-07-31) — pendiente la corrida del propietario con el archivo real |
 | **Abierta** | 2026-07-25 (cierre de STORY-068) |
+| **Pagada** | 2026-07-31 — [STORY-073](../execution/STORY-073-asistente-importacion-pantalla.md) construyó la pantalla de la vía manual |
 | **Feature** | [`data-import-wizard`](../features/data-import-wizard.md) |
 | **Origen** | Alcance declarado de [STORY-068](../execution/STORY-068-mt5-bar-reader.md) §3 y §8 |
 
@@ -30,6 +31,12 @@ Es también una deuda de Definición de Terminado (ADR-0117): la Superficie de V
 **La Story del asistente visual de importación** — que es la misma que habilita la vía de mapeo manual. Las dos cosas nacen juntas o ninguna: el motor de mapeo manual sin vista previa confirmada no debe construirse.
 
 No antes: hoy no hay vía manual que proteger. No después: el día que exista el motor de mapeo manual sin pantalla, la exposición legal es real.
+
+## Cómo quedó pagada (2026-07-31)
+
+STORY-073 construyó la pantalla completa de la vía manual: arrastrar el archivo, declarar qué es cada columna, **vista previa del dato ya transformado** (acotada a las primeras filas para que abrirla no cueste 5 segundos ni 700 MB) y confirmación explícita. La condición 1 de LDR-0008 queda satisfecha en su forma exigida: el usuario confirma sobre sus propios datos convertidos, no sobre una tabla de nombres de columna.
+
+**Lo que sigue pendiente y no depende de código:** el criterio 13 de STORY-073 — importar de punta a punta el archivo real de 9,2 millones de filas desde la aplicación de escritorio. Solo el propietario puede ejecutarlo (no hay forma de manejar la interfaz gráfica desde el entorno de agentes). **Si esa corrida falla, esta deuda se reabre** — la pantalla existe y está probada con pruebas de widget, pero nadie la ha usado todavía contra el archivo que motivó todo.
 
 ## Relacionadas
 

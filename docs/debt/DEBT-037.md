@@ -4,8 +4,9 @@
 |---|---|
 | **ID** | DEBT-037 |
 | **Severidad** | 🟠 Media |
-| **Estado** | Abierta |
+| **Estado** | ✅ Pagada (STORY-073, 2026-07-31) |
 | **Abierta** | 2026-07-26 (hallazgo colateral del UI-Designer en la Etapa 0.5 del asistente de importación) |
+| **Pagada** | 2026-07-31 — barrido completo de las 127 filas del mapa contra el código real (criterio 12 de [STORY-073](../execution/STORY-073-asistente-importacion-pantalla.md)) |
 | **Documento** | `docs/DESIGN.md` — secciones del "Component Map" |
 | **Origen** | STORY-025/026 renombraron y movieron la librería de componentes; el mapa del documento de diseño no se actualizó |
 
@@ -35,4 +36,20 @@ No antes: es documentación, no hay defecto vivo en el producto. No después: ca
 
 ## Cómo se verifica que quedó pagada
 
-`grep -c "Glow" docs/DESIGN.md` devuelve `0`, y cada fila del mapa nombra una clase que existe en `ui/lib/components/`.
+**El criterio original de esta ficha era inservible y se sustituyó.** Decía: `grep -c "Glow" docs/DESIGN.md` devuelve `0`. Es imposible de cumplir sin destruir contenido correcto — "Glow" es un concepto vivo del sistema de diseño (`Gx.glow`, `Gx.textGlow`, `HoverGlow`, la sección "Elevation y Glow"), y hay 51 apariciones legítimas. Peor: el criterio premiaba **borrar** las notas históricas ("corrige la fila anterior: `GlowButton`, clase inexistente"), que son justo lo que necesita un diseñador que aún recuerda el nombre viejo. Un criterio verificable por `grep` no es, por eso solo, un criterio correcto.
+
+**Criterio real aplicado:** ninguna fila del mapa presenta como usable una clase que no exista. Cada fila o nombra una clase existente **con su firma verificada contra el código**, o dice explícitamente **"Sin construir"** y no ofrece nada que instanciar. Los nombres retirados solo pueden aparecer negados ("clase inexistente", "fue retirado", "no existe").
+
+**Cómo se comprobó (2026-07-31):** barrido de las 127 filas una a una contra `ui/lib/`, más dos verificaciones automáticas — (1) todo identificador entrecomillado del mapa existe en el código, y (2) todo identificador que NO existe aparece únicamente en contexto de negación explícita. Ambas en verde.
+
+## Qué destapó el barrido, más allá de lo registrado
+
+La ficha estimaba "56 menciones del prefijo viejo". El defecto real era más grande y de otra naturaleza:
+
+- **10 símbolos presentados como usables que no existen en ninguna parte** — no eran nombres viejos de clases vivas, eran clases que nunca sobrevivieron: `GlassSurface`, `Gx.vDivider`, `_regimeChip`, `_kpi`, `_vitalityBar`, `_spinner`, `_scanRing`, `_organismCell`, `_vitalityLegend`, y `_crystalOrb` con un argumento inventado.
+- **~30 filas con ruta obsoleta**: todo el bloque de tokens apuntaba a `gallery/gallery_tokens.dart` (el archivo no existe; es `theme/gx_tokens.dart`), y los 14 painters de dominio a `gallery_painters.dart` (viven en `sections/section_dataviz_quant.dart`).
+- **5 firmas inventadas** en piezas que sí existen: `ZuiNavPill({segments})`, `ZuiZoomFrame({zoom, content})`, `ExpectationEnvelopeBadge({isInside})`, `FleetCommandPanel({source, items})` y `MultiSelect({value})` — todas con parámetros que el código nunca tuvo. Las cuatro primeras son **vitrinas con constructor vacío**: el mapa las anunciaba como piezas que aceptan datos propios, y no lo son.
+- **3 componentes reales ausentes del mapa**: `custom_ui.Card`, `custom_ui.BentoCard` y `custom_ui.Sheet` existen y no estaban registrados — la puerta abierta a que alguien los reconstruya.
+- **`DrasusThemeState`**, la clase nombrada en la nota de superficies, no existe: se llama `ThemeState`.
+
+La lección de fondo: el mapa mezclaba sin distinguir **librería reutilizable** (`components/`) y **vitrina de exhibición** (`gallery/`, datos incrustados, constructor vacío). Esa confusión es la misma que costó STORY-025. El mapa ahora lo marca fila por fila.
