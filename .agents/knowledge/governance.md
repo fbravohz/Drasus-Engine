@@ -4,7 +4,7 @@ Supremacía y reglas que aplican a toda interacción, sin importar el dominio de
 
 Slug ID: `GOVERNANCE`.
 
-Tamaño: `13646 caracteres (~3412 tokens aprox., ratio 4:1)`.
+Tamaño: `13624 caracteres (~3406 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -66,7 +66,7 @@ Este documento tiene máxima prioridad sobre cualquier otra regla de cualquier s
 
 * **GOVERNANCE-1.5 — Declaración de Lectura y Aplicación Bajo Demanda:** 
 
-  toda lectura de un documento, sin importar cual sea — disparada por una regla de `Lectura bajo demanda`/`Documento extendido` o por la necesidad de la tarea — se declara al invocador en el momento en que finalizas la lectura: qué documento y por qué. Toda regla que aplicaste se declara aparte, un bracket propio por regla, sin importar de qué documento provenga — el que acabas de leer o cualquier otro ya leído en la sesión: `[SLUG-ID, para esto]`. Nunca agrupes dos o más IDs ni sus justificaciones dentro del mismo bracket. Esta declaración es obligatoria en toda respuesta o edición donde aplicaste al menos una regla, no una formalidad ocasional: si al revisar tu propia salida no puedes señalar el bracket exacto de cada regla que dices haber aplicado, la regla no se aplicó de verdad y debes corregirlo antes de enviar.
+  toda lectura de un documento, sin importar cual sea — disparada por una regla de `Lectura bajo demanda` o por la necesidad de la tarea — se declara al invocador en el momento en que finalizas la lectura: qué documento y por qué. Toda regla que aplicaste se declara aparte, un bracket propio por regla, sin importar de qué documento provenga — el que acabas de leer o cualquier otro ya leído en la sesión: `[SLUG-ID, para esto]`. Nunca agrupes dos o más IDs ni sus justificaciones dentro del mismo bracket. Esta declaración es obligatoria en toda respuesta o edición donde aplicaste al menos una regla, no una formalidad ocasional: si al revisar tu propia salida no puedes señalar el bracket exacto de cada regla que dices haber aplicado, la regla no se aplicó de verdad y debes corregirlo antes de enviar.
   * ❌ *Incorrecto:* aplicar una regla sin declarar nada, o agrupar varias en un solo bracket: `[aplicado: SLUG-ID-X, SLUG-ID-Y]`.
   * ✅ *Correcto:* `[leído: commenting-policy.md — iba a comentar código nuevo] [COMMENTING-POLICY-2, para decidir la capa del comentario] [GOVERNANCE-3.2, para el idioma del comentario]`.
 

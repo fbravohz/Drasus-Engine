@@ -55,7 +55,7 @@ Añadido por mí:
 | Archivo | Qué cambió | Por qué |
 |---|---|---|
 | `.agents/knowledge/session-reporting.md` *(nuevo)* | 7 reglas + filtro de verificación + ejemplos | Fuente de comportamiento del modo |
-| `.agents/templates/session-report.md` *(nuevo)* | Plantilla del archivo, la entrada, la sección de subagente y el eco | Separa forma de reglas, como el resto del proyecto |
+| `.agents/templates/template-session-report.md` *(nuevo)* | Plantilla del archivo, la entrada, la sección de subagente y el eco | Separa forma de reglas, como el resto del proyecto |
 | `.agents/sessions/README.md` *(nuevo)* | Qué es la carpeta y qué no es | Que nadie la confunda con documentación en seis meses |
 | `.agents/knowledge/README.md` | Fila en el índice | Sin fila, el documento no se encuentra ni se lee |
 | `CLAUDE.md` | Referencia al documento nuevo | Es el mapa que se carga al iniciar sesión |
@@ -205,7 +205,7 @@ Se cortó narración, no hechos ni matices.
 |---|---|---|
 | `.agents/sessions/2026-08-02-reporte-de-sesion.md` | Turnos 1 y 2 reescritos; sección renombrada a "Comprobado" | Petición tuya; el nombre anterior no se entendía |
 | `.agents/knowledge/session-reporting.md` | Sección renombrada; regla nueva: los reportes se escriben en estilo Gemini | Sin la regla, el próximo turno vuelve al estilo largo |
-| `.agents/templates/session-report.md` | Plantilla y checklist alineados | La plantilla es lo que se copia |
+| `.agents/templates/template-session-report.md` | Plantilla y checklist alineados | La plantilla es lo que se copia |
 
 ### Comprobado
 

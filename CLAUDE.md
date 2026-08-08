@@ -55,7 +55,7 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 - `.agents/knowledge/ponytail.md` — HOW TO: simplificación deliberada (Capa 3 de comentarios).
 - `.agents/knowledge/memory-policy.md` — HOW TO: qué y cómo recordar entre sesiones (mecánica del harness + disciplina de Drasus + `.agents/memory/` vs. `.agents/state/`).
 - `.agents/knowledge/critical-domain-reasoning.md` — HOW TO: ojo crítico experto antes de sellar decisiones de dominio (7 comprobaciones + gate de especialista); obligatorio para Architect/TL/ingenieros al canonizar reglas cuant/estadística/cripto/legal.
-- `.agents/knowledge/session-reporting.md` — HOW TO: escribir el reporte de sesión en `.agents/sessions/` en vez de volcar el texto al chat (eco de tres líneas + solo lo que exige interacción). Plantilla en `.agents/templates/session-report.md`.
+- `.agents/knowledge/session-reporting.md` — HOW TO: escribir el reporte de sesión en `.agents/sessions/` en vez de volcar el texto al chat (eco de tres líneas + solo lo que exige interacción). Plantilla en `.agents/templates/template-session-report.md`.
 - `.agents/knowledge/write-like-gemini.md` — HOW TO: modo de escritura activable por comando (Claude / Gemini Relajado / Gemini Relajado + Listas), con los 3 casos reales medidos; activación universal en `GOVERNANCE-1.7`.
 
 Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `governance.md` (el único documento `SIEMPRE`). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.

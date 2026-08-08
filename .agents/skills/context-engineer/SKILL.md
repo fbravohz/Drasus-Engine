@@ -4,7 +4,7 @@ Refactoriza documentos e instrucciones para agentes de IA, y diseña/estandariza
 
 Slug ID: `CONTEXT-ENGINEER`.
 
-Tamaño: `16236 caracteres (~4059 tokens aprox., ratio 4:1)`.
+Tamaño: `15832 caracteres (~3958 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -14,9 +14,6 @@ Tamaño: `16236 caracteres (~4059 tokens aprox., ratio 4:1)`.
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[.agents/knowledge/writing-efficiency.md]] | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Context Engineer |
-| [[.agents/templates/instruction-formats.md]] | Catálogo de formatos de bloque. | Al canonizar o reescribir un bloque de knowledge/skill. | Context Engineer |
-| [[.agents/templates/knowledge.md]] | Cómo ensamblar varios bloques en un documento completo. | Al reescribir o crear un documento entero de `.agents/knowledge/`. | Context Engineer |
-| [[.agents/knowledge/claude-code-mechanisms.md]] | Qué es y cuándo usar cada uno de los 5 mecanismos nativos de Claude Code (Rules, Skills, Agents, Hooks, MCP), con sintaxis de creación y matriz de decisión. | Al clasificar si un documento/instrucción debería migrar a un mecanismo nativo, o al crear uno. | Context Engineer |
 
 ---
 
@@ -29,7 +26,7 @@ Antes de entregar cualquier documento reescrito o diseñado, revisa esta lista.
 * **CONTEXT-ENGINEER-FV-1:** ¿el entregable es solo el documento reescrito, la regla canonizada, o el proceso/documento nuevo pedido, sin contenido de dominio añadido? (`CONTEXT-ENGINEER-1.3`)
 * **CONTEXT-ENGINEER-FV-2:** ¿seguí los 5 pasos del protocolo, en orden, incluyendo señalar contenido fuera de dominio? (`CONTEXT-ENGINEER-2`)
 * **CONTEXT-ENGINEER-FV-3:** ¿respeté las 3 restricciones — nada inventado, nada cortado, dueño ambiguo preguntado? (`CONTEXT-ENGINEER-3`)
-* **CONTEXT-ENGINEER-FV-4:** ¿pasé la Auditoría Final de `governance.md` y, si canonicé o rediseñé un bloque o documento, el checklist correspondiente de `.agents/templates/instruction-formats.md` o `.agents/templates/knowledge.md` — incluido el campo `Tamaño` recalculado?
+* **CONTEXT-ENGINEER-FV-4:** ¿pasé la Auditoría Final de `governance.md` y, si canonicé o rediseñé un bloque o documento, el checklist correspondiente de `.agents/templates/template-instruction-formats.md` o `.agents/templates/template-knowledge.md` — incluido el campo `Tamaño` recalculado?
 * **CONTEXT-ENGINEER-FV-5:** ¿evalué si el contenido reescrito calza mejor en uno de los 5 mecanismos nativos de Claude Code, y si detecté un caso, lo señalé sin migrar unilateralmente? (`CONTEXT-ENGINEER-5`)
 * **CONTEXT-ENGINEER-FV-6:** ¿prioricé la parte mecánicamente verificable hacia un Hook antes de conformarme con texto advisory, y apliqué el test explícito de Rule vs. knowledge doc en vez de decidir por costumbre? (`CONTEXT-ENGINEER-5.3`, `-5.4`)
 * **CONTEXT-ENGINEER-FV-7:** ¿revisé el documento (y su cruce con otros ya leídos) en busca de contradicciones o rutas de anulación entre reglas, y evalué activamente si una mejora genuina — unificar reglas redundantes, podar un ejemplo que ya no aporta — merece proponerse? (`CONTEXT-ENGINEER-6`)
@@ -60,7 +57,7 @@ Quién es el Context Engineer, cómo se invoca y qué entrega.
 
 * **CONTEXT-ENGINEER-1.3 — Entregable Único:**
 
-  el documento reescrito, el bloque nuevo canonizado con `.agents/templates/instruction-formats.md`, o — si el usuario pidió un proceso o fuente de verdad nueva para agentes — el documento/proceso nuevo diseñado.
+  el documento reescrito, el bloque nuevo canonizado con `.agents/templates/template-instruction-formats.md`, o — si el usuario pidió un proceso o fuente de verdad nueva para agentes — el documento/proceso nuevo diseñado.
   * ❌ *Incorrecto:* entregar además un resumen de decisiones de producto o una recomendación de arquitectura de negocio.
   * ✅ *Correcto:* entregar solo el texto reescrito, la regla canonizada, o el proceso/documento nuevo pedido.
 
@@ -88,7 +85,7 @@ Pasos obligatorios, en orden, para refactorizar o diseñar un documento o proces
 
 * **CONTEXT-ENGINEER-2.3 — Formato de Regla Nueva:**
 
-  si el documento define un bloque nuevo de knowledge/skill (no solo prosa suelta), elige el formato correcto de `.agents/templates/instruction-formats.md` según su catálogo (Lecturas Obligatorias, Regla — Completo/Ligero, Filtro de Verificación, Ejemplos) — nunca por costumbre. Para una Regla: ID único, `Aplica a`, precedencia, filtro de verificación solo si aplican — y sub-ID por cada ítem que otra regla pueda necesitar citar. Si el documento agrupa varios bloques, usa además `.agents/templates/knowledge.md` para ensamblarlos.
+  si el documento define un bloque nuevo de knowledge/skill (no solo prosa suelta), elige el formato correcto de `.agents/templates/template-instruction-formats.md` según su catálogo (Lecturas Obligatorias, Regla — Completo/Ligero, Filtro de Verificación, Ejemplos) — nunca por costumbre. Para una Regla: ID único, `Aplica a`, precedencia, filtro de verificación solo si aplican — y sub-ID por cada ítem que otra regla pueda necesitar citar. Si el documento agrupa varios bloques, usa además `.agents/templates/template-knowledge.md` para ensamblarlos.
   * ❌ *Incorrecto:* canonizar una regla nueva sin ID, o con la sección de Ejemplos repetida dentro de cada regla.
   * ✅ *Correcto:* ID único + campos de cierre completos, sección de Ejemplos una sola vez al final del documento.
 
@@ -106,7 +103,9 @@ Pasos obligatorios, en orden, para refactorizar o diseñar un documento o proces
 
 **Filtro de verificación:** `CONTEXT-ENGINEER-FV-2`.
 
-**Documento extendido:** [[.agents/knowledge/writing-efficiency.md]], [[.agents/templates/instruction-formats.md]], [[.agents/templates/knowledge.md]].
+**Lectura bajo demanda:** [[.agents/templates/template-instruction-formats.md]] — al canonizar o reescribir un bloque de knowledge/skill.
+
+**Lectura bajo demanda:** [[.agents/templates/template-knowledge.md]] — al reescribir o crear un documento entero de `.agents/knowledge/`.
 
 ---
 
@@ -172,7 +171,7 @@ El Context Engineer no solo refactoriza prosa — también reconoce cuándo un d
 
 **Filtro de verificación:** `CONTEXT-ENGINEER-FV-5`, `CONTEXT-ENGINEER-FV-6`.
 
-**Documento extendido:** [[.agents/knowledge/claude-code-mechanisms.md]].
+**Lectura bajo demanda:** [[.agents/knowledge/claude-code-mechanisms.md]] — al clasificar si un documento/instrucción debería migrar a un mecanismo nativo, o al crear uno.
 
 ---
 

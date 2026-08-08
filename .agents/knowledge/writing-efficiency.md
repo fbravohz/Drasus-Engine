@@ -4,7 +4,7 @@ Toda regla sobre cómo redactar — prosa, bloques de respuesta, traducción de 
 
 Slug ID: `WRITING-EFFICIENCY`.
 
-Tamaño: `19600 caracteres (~4900 tokens aprox., ratio 4:1)`.
+Tamaño: `19647 caracteres (~4912 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -239,7 +239,7 @@ Cuando el género es "reportar un estado" (`WRITING-EFFICIENCY-6.2`), el Modo Ge
 
 **Filtro de verificación:** `WRITING-EFFICIENCY-FV-6`.
 
-**Documento extendido:** [[.agents/knowledge/write-like-gemini.md]] — los tres modos de verbosidad (Claude / Gemini Relajado / Gemini Relajado + Listas), con los tres casos reales medidos (`wc -w -m`, no estimado).
+**Lectura bajo demanda:** [[.agents/knowledge/write-like-gemini.md]] — siempre que actives o repases un modo Gemini; los tres modos de verbosidad (Claude / Gemini Relajado / Gemini Relajado + Listas), con los tres casos reales medidos (`wc -w -m`, no estimado).
 
 ---
 

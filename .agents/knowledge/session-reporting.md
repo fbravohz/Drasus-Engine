@@ -4,7 +4,7 @@ Cómo redirigir a un archivo el texto que un agente escribiría en el chat, deja
 
 Slug ID: `SESSION-REPORTING`.
 
-Tamaño: `13924 caracteres (~3481 tokens aprox., ratio 4:1)`.
+Tamaño: `13906 caracteres (~3477 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -15,7 +15,6 @@ Tamaño: `13924 caracteres (~3481 tokens aprox., ratio 4:1)`.
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[.agents/knowledge/writing-efficiency.md]] | Economía de redacción, traducción de términos, formato visual de bloques. | `SIEMPRE` al escribir una entrada del reporte — el reporte es texto dirigido al usuario. | Todos los agentes |
 | [[.agents/knowledge/write-like-gemini.md]] | El Modo Gemini Relajado + Listas, activo por defecto en toda entrada (`WRITING-EFFICIENCY-7`) — el hecho solo, desde la primera palabra. | `SIEMPRE` al redactar una entrada — es el estilo por defecto del reporte, no una pasada de limpieza posterior. | Todos los agentes |
-| `.agents/templates/session-report.md` | Plantilla copiable del archivo de sesión y de cada entrada. | Al abrir un archivo de sesión nuevo o añadir una entrada. | Todos los agentes |
 
 ---
 
@@ -140,7 +139,7 @@ Cada turno del usuario produce exactamente una entrada, con secciones en orden f
 
 **Filtro de verificación:** `SESSION-REPORTING-FV-3`.
 
-**Documento extendido:** `.agents/templates/session-report.md`.
+**Lectura bajo demanda:** [[.agents/templates/template-session-report.md]] — siempre que abras un archivo de sesión nuevo o añadas una entrada; plantilla copiable del archivo y de cada entrada.
 
 ---
 
@@ -254,7 +253,7 @@ Una entrada se escribe en estilo Gemini desde la primera palabra: el hecho prime
 
 **Filtro de verificación:** `SESSION-REPORTING-FV-7`.
 
-**Documento extendido:** [[.agents/knowledge/write-like-gemini.md]] — el Modo Gemini Relajado + Listas y sus 3 casos medidos; este bloque (`SESSION-REPORTING-8`) cubre lo específico del reporte de sesión, no repite el modo en sí.
+**Lectura bajo demanda:** [[.agents/knowledge/write-like-gemini.md]] — siempre que redactes una entrada; el Modo Gemini Relajado + Listas y sus 3 casos medidos — este bloque (`SESSION-REPORTING-8`) cubre lo específico del reporte de sesión, no repite el modo en sí.
 
 ---
 

@@ -4,7 +4,7 @@ Tres reglas obligatorias al cerrar cualquier unidad de trabajo — un TTR, una F
 
 Slug ID: `CLOSING-WORK`.
 
-Tamaño: `2676 caracteres (~669 tokens aprox., ratio 4:1)`.
+Tamaño: `2746 caracteres (~687 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -32,7 +32,7 @@ Tamaño: `2676 caracteres (~669 tokens aprox., ratio 4:1)`.
 
 **Filtro de verificación:** `CLOSING-WORK-2.1`.
 
-**Documento extendido:** `.agents/knowledge/debt-management.md`.
+**Lectura bajo demanda:** [[.agents/knowledge/debt-management.md]] — al registrar deuda técnica granular deliberada (`DEBT-XXX`).
 
 ---
 
