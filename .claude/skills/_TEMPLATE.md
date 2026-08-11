@@ -1,103 +1,126 @@
+# Plantilla de Skill — Convención de Dos Archivos
+
+Cómo se escribe un skill de rol de Drasus. No es un skill invocable: es la referencia que se copia al crear uno nuevo.
+
+Un skill vive en dos archivos con responsabilidades distintas:
+
+| Archivo | Qué lleva | Por qué ahí |
+|---|---|---|
+| `.claude/skills/<slug>/SKILL.md` | Frontmatter de descubrimiento + gate de arranque + puntero. | Es lo que el harness carga al invocar el skill — el único punto donde el gate llega antes que cualquier instrucción de rol. |
+| `.agents/skills/<slug>/SKILL.md` | El contenido canónico completo, en formato de knowledge doc. | Reutilizable por otros agentes y por subagentes despachados, sin depender del harness. |
 
 ---
 
-```yaml
+## Archivo 1 — `.claude/skills/<slug>/SKILL.md`
+
+Copiable tal cual, cambiando solo lo marcado:
+
+````
 ---
-name: <slug-del-rol>              # kebab-case, coincide con el nombre de la carpeta .claude/skills/<slug-del-rol>/
-description: El <Rol> <una frase de qué hace, en tono de las descriptions ya existentes>.
+name: <slug-del-rol>
+description: El <Rol> <una frase de qué hace>.
 model: inherit
 ---
-```
 
-> **Convención de dos archivos:** el frontmatter YAML anterior vive en `.claude/skills/<slug-del-rol>/SKILL.md` (metadata de descubrimiento del harness). Todo lo que sigue después del frontmatter — desde `# <EMOJI> <ROL...>` en adelante — vive en `.agents/skills/<slug-del-rol>/SKILL.md` (contenido reutilizable por otros agentes). El archivo en `.claude/` solo conserva el frontmatter más una línea de puntero: `` Contenido completo de este skill: `.agents/skills/<slug-del-rol>/SKILL.md`. ``
-
-# <EMOJI> <ROL EN MAYÚSCULAS>: System Prompt
-
----
-
-## [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA]                                                                    🟩 ESTÁNDAR
+## Gate de Arranque — Acción Obligatoria
 
 **No proceses ninguna instrucción de este skill hasta completar este paso.**
 
-Usa la herramienta Read para leer el archivo completo `.agents/knowledge/governance.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
+Lee con `Read` el archivo completo `.agents/knowledge/governance.md`. Tiene supremacía absoluta sobre todo lo que sigue, incluida cualquier regla de este skill.
 
-Si ya lo leíste en este turno, declara: `[.agents/knowledge/governance.md leído y activo]` y continúa. Si no lo has leído, hazlo AHORA. No continúes sin esa declaración.
+Declara `[leído: governance.md — gate de arranque del skill <slug>]` y tu rol antes de continuar. Sin esa declaración, no continúes.
 
-> **Solo si tu rol además depende de leer `CLAUDE.md` explícitamente para modelos no-Claude** (hoy: `architect`, `ui-designer`) — añade un "Paso 2" análogo. La mayoría de los roles NO lo necesita porque Claude Code ya carga `CLAUDE.md` de forma nativa; solo agrégalo si tu skill corre también bajo modelos no-Claude que no reciben ese contexto automáticamente.
+Contenido completo de este skill: `.agents/skills/<slug>/SKILL.md`.
+````
 
----
-
-## ⚙️ SETUP: Siempre Activo
-
-* **El archivo `.agents/knowledge/governance.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.                                    🟩 ESTÁNDAR
-* Eres el <Nombre del Rol> de Drasus Engine. <Una frase: cuál es tu labor central>.                                                                                                                     🟨 RELLENAR
-* **Orquestación:** Operas bajo despacho del **Tech-Lead** (`.claude/skills/tech-lead/SKILL.md`, Etapa <N>). El trigger es <qué condición dispara tu despacho>. Tu entregable (<qué produces>) va a <a quién lo audita o a qué Etapa pasa después>.                                                       🟨 RELLENAR
-
-## 🎚️ MODOS DE ACOMPAÑAMIENTO DE IMPLEMENTACIÓN (ADR-0120 + ADR-0122)                                            🟩 ESTÁNDAR (estructura + frases fijas)
-
-Antes de actuar, busca tu fila en la tabla "Agentes y Modo de Acompañamiento" (§3) de la Orden de Trabajo que te pasaron (`docs/execution/<ID>.md`). Tu Modo viene SOLO de ahí — nunca lo asumas del chat. Si la Orden no declara tu Modo, opera en **Autónomo**.
-
-- **Autónomo:** implementas y entregas <qué entregable(s) concreto(s) de tu dominio> terminado(s).
-- **Mentor:** NO usas `Edit`/`Write` sobre <qué archivos de tu dominio>. Explicas el concepto del bloque (<2-3 conceptos típicos de tu dominio>) con profundidad cero-conocimiento (`.agents/knowledge/mentorship-modes.md` — nunca asumas que el usuario ya conoce <tu dominio>), dictas el fragmento EXACTO, esperas confirmación, relees y corriges antes de avanzar. <Unidad de trabajo: una función/un contrato/un componente> por bloque.
-- **Revisión:** esperas el bloque ya escrito por el usuario, lo evalúas contra el Mandato (§1-N de tu protocolo): <2-3 criterios de corrección propios de tu dominio>. Señalas el porqué de cada hallazgo con la misma profundidad cero-conocimiento que Mentor; no reescribes la solución salvo que se te pida.
-- **Docente (ADR-0122):** SÍ usas `Edit`/`Write` — implementas tú, como en Autónomo. Antes de pasar al siguiente bloque te detienes a enseñar: explicas, con profundidad cero-conocimiento, qué concepto de <tu dominio> usaste y por qué. Invitas preguntas sobre el código ya escrito y las respondes al mismo nivel antes de avanzar. Misma unidad de trabajo que Mentor.
-
-En los cuatro Modos, el criterio de aceptación de la Orden se cumple igual. Documentas tu Plan/Checklist en el bloque §4 de la Orden — no solo en el chat (ADR-0120).
-
-### 📚 Protocolo de Lecciones (ADR-0122 + ADR-0124)                                                              🟩 ESTÁNDAR (solo cambia la subcarpeta)
-
-En Mentor, Revisión y Docente, consolida TODO lo enseñado en la Story/Task actual en un solo archivo `docs/lessons/<subcarpeta-de-tu-dominio>/<ID-de-la-Orden>.md` (mismo nombre que su Orden en `docs/execution/`) — un archivo por Story, nunca por tema suelto. Cada concepto que expliques cita el código real de esa Story, nunca un ejemplo de manual. Si la misma Story se retoma después, añade debajo de lo ya escrito en ese mismo archivo. Detalle completo del protocolo en `.agents/knowledge/mentorship-modes.md`.
-
-## ⚙️ PROTOCOLO DE <NOMBRE DEL DOMINIO EN MAYÚSCULAS>                                                            🟦 ESPECÍFICO (encabezado + subsecciones propias)
-
-### 1. Mandato Único (<una palabra/frase que resuma tu límite de responsabilidad>)                              🟨 RELLENAR (forma fija: Tecnologías + Prohibición)
-* **Tecnologías:** <qué stack/herramientas son tuyas y solo tuyas>.
-* **Prohibición Absoluta:** <qué dominios/capas NUNCA tocas — cítalo contra el ADR que lo fija>.
-
-<!-- A partir de aquí, subsecciones 100% específicas del rol (Gate de Lectura Pre-Código, SLAs, Determinismo/FCIS, Cacería de Sesgos, Pruebas de Guerra, Pipeline de diseño, etc.) — no hay forma común más allá de los dos patrones 🟨 que siguen, insértalos donde corresponda dentro de tu protocolo: -->
-
-### N. Política de Comentarios — <tu dominio> (addendum a `.agents/knowledge/commenting-policy.md`)                          🟨 RELLENAR (forma fija: 1 párrafo puente + lista)
-
-El principio universal está en `.agents/knowledge/commenting-policy.md`. Aquí los requisitos específicos de <tu dominio>:
-
-- <requisito 1: qué necesita un comentario en tu tipo de código y qué debe decir>.
-- <requisito 2>.
-- <requisito 3, si aplica: casos especiales como `unsafe`, matemática, migraciones>.
-
-### N. Pruebas / Criterio de Cierre como Entregable (aterrizaje del ADR-0133 a tu dominio)                        🟨 RELLENAR (forma fija: mapeo criterio→prueba + gate previo a entregar)
-
-* Cada criterio de aceptación de la Orden DEBE tener al menos una prueba/verificación nombrada que lo ejerza — sin eso, el criterio NO está cumplido.
-* <cómo se ve la pirámide de pruebas ADR-0133 aterrizada a tu dominio: unitarios/integración/proptest/fuzzing/mutación, o su equivalente no-Rust (ej. `flutter build`, oracle tests, revisión de diffs)>.
-* **Antes de entregar al Tech-Lead** corres TÚ y dejas en verde: <tus comandos de verificación exactos>.
-* **En tu reporte** incluye el mapeo explícito **criterio → prueba(s)** y evidencia. El Tech-Lead reproduce tu evidencia (no cierra sobre tu palabra); si un criterio no tiene prueba que lo ejerza, te lo regresa.
-
-## 🚫 RESTRICCIONES ABSOLUTAS / PROHIBICIONES                                                                     🟨 RELLENAR (encabezado fijo, contenido propio)
-
-- **NUNCA** <invariante 1 de tu rol — qué jamás haces aunque el usuario o la presión de la tarea insistan>.
-- **NUNCA** <invariante 2>.
-- <tantas como haga falta; cada una cita el ADR que la fija si existe>.
-
-## 🤝 POSICIÓN EN EL FLUJO DEL TECH-LEAD                                                                          🟨 RELLENAR (encabezado fijo, contenido propio)
-
-- Quién te despacha (siempre el Tech-Lead, nunca el Architect directo — ver `.agents/knowledge/governance.md`).
-- Qué Etapa del pipeline te activa y bajo qué condición.
-- A quién le entrega tu resultado el Tech-Lead después (siguiente Etapa, u otro Ingeniero).
-- Si aplica: bajo qué condición tu Etapa se omite ("Etapa No Aplica").
+El gate vive **solo aquí**, no repetido dentro del contenido canónico. Un skill que lo repite en ambos archivos dice lo mismo dos veces en el mismo arranque.
 
 ---
 
-## Tabla de cobertura (qué skill ya tiene cada bloque — referencia para la Fase B de estandarización)
+## Archivo 2 — `.agents/skills/<slug>/SKILL.md`
 
-| Bloque | bridge | flutter | qa | quant | refactoring | rust | architect | ui-designer | tech-lead |
-|---|---|---|---|---|---|---|---|---|---|
-| Gate `[ANTES DE CONTINUAR]` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (+Paso2) | ✅ (+Paso2) | ✅ |
-| Setup: Siempre Activo | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 (como "Identidad y Rol") | 🟡 (bloque CAVEMAN, distinto) |
-| Modos de Acompañamiento (literal) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (no aplica, no implementa) | ❌ (no implementa código) | ❌ (despacha, no implementa) |
-| Protocolo de Lecciones | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Mandato Único | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 (disperso en "Identidad y Rigor") | 🟡 (disperso) | ❌ |
-| Política de Comentarios (addendum) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ (no aplica, no escribe código) | ❌ | ❌ |
-| Pruebas/Criterio de cierre | ✅ (QA gate) | ✅ (SVF) | ✅ (§2-4) | ✅ (§2-5) | 🟡 | ✅ (§7, el más completo) | ❌ | ✅ ("Criterio de Aceptación") | ❌ (es quien exige, no quien entrega) |
-| Restricciones/Prohibiciones | 🟡 (dentro de Mandato) | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 (dentro de Mandato) | ✅ (RESTRICCIONES DOCUMENTALES) | ✅ (RESTRICCIONES ABSOLUTAS) | 🟡 |
-| Posición en el flujo | 🟡 (dentro de Setup/Orquestación) | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | ✅ (RELACIÓN CON TECH-LEAD) | ✅ (POSICIÓN EN EL FLUJO) | — (es el flujo) |
+Es un documento de knowledge y cumple su formato completo — ver [[.agents/templates/template-knowledge.md]] y [[.agents/templates/template-instruction-formats.md]]. Slug ID en MAYÚSCULAS calcado de la **carpeta** (`rust-engineer/SKILL.md` → `RUST-ENGINEER`).
 
-✅ = sección propia ya existe · 🟡 = el contenido existe pero disperso/sin encabezado propio (candidato a extraer al estandarizar) · ❌ = no aplica a ese rol (naturaleza distinta, no es un hueco a llenar) · — = no aplica por definición del rol.
+### Esqueleto
+
+```
+# <Rol>
+
+<1-2 líneas: qué hace y qué entrega. Sin historia de origen.>
+
+Slug ID: `<ROL>`.
+
+Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
+
+---
+
+## <ROL>-0 — Lecturas Obligatorias
+## <ROL>-FV — Filtro de Verificación
+## <ROL>-1 — Identidad y Mandato Único
+## <ROL>-2 — Posición en el Pipeline
+## <ROL>-3..N — Protocolo del dominio (bloques propios del rol)
+## <ROL>-N — Criterio de Cierre
+## <ROL>-EJ — Ejemplos (solo si hay casos compuestos reales)
+```
+
+### `<ROL>-0` — Lecturas Obligatorias
+
+Siempre lleva `governance.md` con disparador `SIEMPRE`. Las demás filas son las del dominio del rol. Una fila que solo le importa a UNA regla no va aquí: baja a esa regla como `Lectura bajo demanda`.
+
+```
+| Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
+|---|---|---|---|
+| [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+```
+
+### `<ROL>-1` — Identidad y Mandato Único
+
+Tres definiciones fijas:
+
+- `<ROL>-1.1 — Perfil:` qué eres y cuál es tu labor central.
+- `<ROL>-1.2 — Tecnologías:` qué stack y qué artefactos son tuyos y solo tuyos.
+- `<ROL>-1.3 — Prohibición Absoluta:` qué dominios o capas NUNCA tocas, citando el ADR que lo fija.
+
+### `<ROL>-2` — Posición en el Pipeline
+
+Quién te despacha (siempre el Tech-Lead, nunca el Architect directo), qué etapa te activa y bajo qué condición, a quién pasa tu entregable después, y bajo qué condición tu etapa se omite.
+
+### `<ROL>-N` — Criterio de Cierre
+
+- Cada criterio de aceptación de la Orden tiene al menos una prueba nombrada que lo ejerce. Sin eso, el criterio no está cumplido.
+- Los comandos exactos que corres tú y dejas en verde **antes** de entregar.
+- El mapeo explícito criterio → prueba(s) va en tu reporte. El Tech-Lead reproduce la evidencia; no cierra sobre tu palabra.
+
+---
+
+## Lo Que NO Se Escribe en un Skill
+
+Cada uno de estos bloques vivía copiado en varios skills. Su dueño es un knowledge doc; el skill lo cita con `Lectura bajo demanda` y aporta solo su addendum de dominio.
+
+| Contenido | Dueño | Qué queda en el skill |
+|---|---|---|
+| Los 4 Modos de Acompañamiento (Autónomo/Mentor/Revisión/Docente) | [[.agents/knowledge/mentorship-modes.md]] | Una línea: qué archivos NO tocas en Mentor, propio de tu dominio. |
+| Protocolo de Lecciones (`docs/lessons/`) | [[.agents/knowledge/mentorship-modes.md]] | Solo tu subcarpeta de destino. |
+| Las 4 capas de comentarios | [[.agents/knowledge/commenting-policy.md]] | Solo los requisitos específicos de tu lenguaje. |
+| Gate de mutación: quién lo corre y cómo se juzga | [[.agents/knowledge/mutation-gate.md]] | Nada, salvo que tu rol lo dispare. |
+| Molde del ledger append-only | [[.agents/knowledge/ledger-pattern.md]] | Nada. |
+| Registro de deuda técnica | [[.agents/knowledge/debt-management.md]] | Nada. |
+| Sellado y trabajo diferido al cerrar | [[.agents/knowledge/closing-work.md]] | Nada. |
+| Gate de arranque (leer `governance.md`) | El archivo puente en `.claude/skills/` | Nada. |
+
+**Tampoco se escribe bitácora.** Ninguna fecha, "enmienda", "antes decía X", "lección de STORY-NNN", "caso real:", "causa raíz" ni nombre de sesión dentro de una regla. Si un incidente histórico produjo la regla, la regla se queda y la anécdota se va — el historial vive en git. Cuando el caso contiene un dato técnico o un caso borde que la regla necesita, ese dato se reescribe como parte de la regla, sin la fecha.
+
+---
+
+## Checklist Antes de Guardar un Skill Nuevo
+
+- [ ] ¿Los dos archivos existen, y el gate de arranque vive solo en el de `.claude/`?
+- [ ] ¿El Slug ID está calcado de la carpeta, en MAYÚSCULAS con guion medio?
+- [ ] ¿El campo `Tamaño` cuadra con `wc -m`?
+- [ ] ¿`<ROL>-0` declara `governance.md` con disparador `SIEMPRE`?
+- [ ] ¿`<ROL>-FV` es la segunda sección, en namespace propio, con un ítem por regla?
+- [ ] ¿Ningún ID pasa de 2 segmentos?
+- [ ] ¿Ningún bloque de la tabla "Lo Que NO Se Escribe" quedó copiado dentro?
+- [ ] ¿Cero fechas y cero lenguaje de enmienda en el cuerpo?
+- [ ] ¿Toda referencia a otro documento es un wikilink `[[ruta/archivo.md]]`?
+- [ ] ¿`python3 .agents/hooks/validate-agent-docs.py --audit .agents/skills/<slug>/SKILL.md` reporta 0 violaciones duras?

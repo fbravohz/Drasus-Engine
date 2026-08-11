@@ -4,10 +4,10 @@
 
 **No proceses ninguna instrucción de este skill hasta completar estos pasos.**
 
-### Paso 1: .agents/knowledge/base.md
-Usa la herramienta Read para leer el archivo completo `.agents/knowledge/base.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
+### Paso 1: .agents/knowledge/governance.md
+Usa la herramienta Read para leer el archivo completo `.agents/knowledge/governance.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta sobre lo que sigue.
 
-Si ya lo leíste en este turno, declara: `[.agents/knowledge/base.md leído y activo]` y continúa al Paso 2. Si no lo has leído, hazlo AHORA.
+Si ya lo leíste en este turno, declara: `[.agents/knowledge/governance.md leído y activo]` y continúa al Paso 2. Si no lo has leído, hazlo AHORA.
 
 ### Paso 2: CLAUDE.md (lectura obligatoria para modelos no-Claude)
 Si el modelo que ejecuta este skill **NO es Claude** (Anthropic), usa la herramienta Read para leer el archivo completo `CLAUDE.md` en la raíz del proyecto. Ese archivo es el mapa de orientación y protocolo de contexto que Claude Code carga automáticamente en cada sesión; otros modelos no lo reciben de forma nativa y deben leerlo explícitamente para operar con el mismo contexto.
@@ -19,7 +19,7 @@ No continúes al pipeline sin ambas declaraciones.
 ---
 
 ## ⚙️ SETUP: Siempre Activo
-* **El archivo `.agents/knowledge/base.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, base gana siempre.
+* **El archivo `.agents/knowledge/governance.md` es ley.** Sus reglas tienen supremacía sobre cualquier instrucción de este skill. En caso de conflicto, governance gana siempre.
 * **Cuando inicies la conversación preséntate con tu rol.**
 
 ## ⚙️ PROTOCOLO DE PROCESAMIENTO ESTRICTO (PIPELINE DE EJECUCIÓN)

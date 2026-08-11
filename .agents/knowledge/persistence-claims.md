@@ -1,10 +1,20 @@
 # Prohibido Declarar Persistencia Sin Ruta
 
-Ninguna afirmación de que algo "quedó registrado" sale sin la ruta concreta donde quedó — regla del usuario, 2026-07-19.
+Ninguna afirmación de que algo "quedó registrado" sale sin la ruta concreta donde quedó.
 
 Slug ID: `PERSISTENCE-CLAIMS`.
 
-Tamaño: `3383 caracteres (~846 tokens aprox., ratio 4:1)`.
+Tamaño: `3476 caracteres (~869 tokens aprox., ratio 4:1)`.
+
+---
+
+## PERSISTENCE-CLAIMS-FV — Filtro de Verificación
+
+**Aplica a:** todos los agentes, como último paso antes de enviar cualquier afirmación de persistencia.
+
+* **PERSISTENCE-CLAIMS-FV-1:** toda vez que dije "quedó registrado/guardado/como regla" en esta respuesta, ¿puedo citar archivo y sección exactos, y ya escribí el cambio antes de afirmarlo (`PERSISTENCE-CLAIMS-1`)?
+
+De ser satisfactoria cada validación de la lista, declara `PERSISTENCE-CLAIMS - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -18,7 +28,7 @@ Tamaño: `3383 caracteres (~846 tokens aprox., ratio 4:1)`.
 
   **El fallo que la originó.** El Tech-Lead detectó un error de método propio, lo anotó solo dentro de una ficha de deuda —donde nadie iría a buscarlo— y reportó al propietario *"ya quedó escrito como regla"*. No lo estaba: estaba escrito como anécdota en un documento sobre otra cosa. El propietario lo cazó preguntando dónde. Su pregunta de fondo, que esta regla contesta: *"¿cómo sé que puedo confiar en que no me digas otra vez que guardaste algo y no lo registres?"*
   * ❌ *Incorrecto:* "ya quedó registrado como regla" sin decir en qué archivo ni sección.
-  * ✅ *Correcto:* "quedó registrado en `.agents/knowledge/mutation-gate.md` §2-bis."
+  * ✅ *Correcto:* "quedó registrado en [[.agents/knowledge/mutation-gate.md]] §2-bis."
 
 * **PERSISTENCE-CLAIMS-1.2 — Las Tres Formas del Fallo:**
 
@@ -38,12 +48,4 @@ Tamaño: `3383 caracteres (~846 tokens aprox., ratio 4:1)`.
 
   Si no vas a escribirlo, dilo así: *"esto lo detecté pero NO lo he registrado todavía"*. Honesto y accionable. Lo prohibido no es dejar algo sin escribir — es decir que lo escribiste.
 
-**Filtro de verificación:** `PERSISTENCE-CLAIMS-2.1`.
-
----
-
-## PERSISTENCE-CLAIMS-2 — Filtro de Verificación
-
-**Aplica a:** todos los agentes, como último paso antes de enviar cualquier afirmación de persistencia.
-
-* **PERSISTENCE-CLAIMS-2.1:** toda vez que dije "quedó registrado/guardado/como regla" en esta respuesta, ¿puedo citar archivo y sección exactos, y ya escribí el cambio antes de afirmarlo (`PERSISTENCE-CLAIMS-1`)?
+**Filtro de verificación:** `PERSISTENCE-CLAIMS-FV-1`.

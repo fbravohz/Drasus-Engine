@@ -4,7 +4,19 @@ Cómo enseñar durante el desarrollo cuando un Ingeniero opera en Modo Mentor, R
 
 Slug ID: `MENTORSHIP-MODES`.
 
-Tamaño: `3797 caracteres (~949 tokens aprox., ratio 4:1)`.
+Tamaño: `3922 caracteres (~980 tokens aprox., ratio 4:1)`.
+
+---
+
+## MENTORSHIP-MODES-FV — Filtro de Verificación
+
+**Aplica a:** los seis Ingenieros, como último paso en Modo Mentor/Revisión/Docente.
+
+* **MENTORSHIP-MODES-FV-1:** ¿expliqué desde cero-conocimiento, sin asumir nada previo (`MENTORSHIP-MODES-1`)?
+* **MENTORSHIP-MODES-FV-2:** en Modo Docente, ¿pausé a enseñar antes de avanzar de bloque y agoté las dudas (`MENTORSHIP-MODES-2`)?
+* **MENTORSHIP-MODES-FV-3:** ¿consolidé la lección en el archivo de la Story, citando código real y con enlace bidireccional (`MENTORSHIP-MODES-3`)?
+
+De ser satisfactoria cada validación de la lista, declara `MENTORSHIP-MODES - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -18,7 +30,7 @@ Tamaño: `3797 caracteres (~949 tokens aprox., ratio 4:1)`.
   * ❌ *Incorrecto:* aplicar un patrón sin explicar qué problema resuelve.
   * ✅ *Correcto:* explicar el problema, luego el patrón, luego el código.
 
-**Filtro de verificación:** `MENTORSHIP-MODES-4.1`.
+**Filtro de verificación:** `MENTORSHIP-MODES-FV-1`.
 
 ---
 
@@ -32,7 +44,7 @@ Tamaño: `3797 caracteres (~949 tokens aprox., ratio 4:1)`.
   * ❌ *Incorrecto:* avanzar al siguiente bloque con una duda del usuario sin resolver.
   * ✅ *Correcto:* agotar las dudas del bloque actual antes de escribir el siguiente.
 
-**Filtro de verificación:** `MENTORSHIP-MODES-4.2`.
+**Filtro de verificación:** `MENTORSHIP-MODES-FV-2`.
 
 ---
 
@@ -52,14 +64,4 @@ Tamaño: `3797 caracteres (~949 tokens aprox., ratio 4:1)`.
   * ❌ *Incorrecto:* explicar un concepto con un ejemplo de manual en vez del código real de la Story.
   * ✅ *Correcto:* citar archivo y fragmento exacto que la Story produjo.
 
-**Filtro de verificación:** `MENTORSHIP-MODES-4.3`.
-
----
-
-## MENTORSHIP-MODES-4 — Filtro de Verificación
-
-**Aplica a:** los seis Ingenieros, como último paso en Modo Mentor/Revisión/Docente.
-
-* **MENTORSHIP-MODES-4.1:** ¿expliqué desde cero-conocimiento, sin asumir nada previo (`MENTORSHIP-MODES-1`)?
-* **MENTORSHIP-MODES-4.2:** en Modo Docente, ¿pausé a enseñar antes de avanzar de bloque y agoté las dudas (`MENTORSHIP-MODES-2`)?
-* **MENTORSHIP-MODES-4.3:** ¿consolidé la lección en el archivo de la Story, citando código real y con enlace bidireccional (`MENTORSHIP-MODES-3`)?
+**Filtro de verificación:** `MENTORSHIP-MODES-FV-3`.

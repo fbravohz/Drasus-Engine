@@ -1,239 +1,304 @@
 # Política de Comentarios — Las 4 Capas
 
-**Declara explicitamente que leiste este archivo para la tarea en cuestion**
+El propietario del proyecto debe poder leer cualquier archivo de código y entender cada sección sin ser experto en el tema o lenguaje. Prioriza el contexto sobre las convenciones de "clean code" restrictivas.
 
-El propietario del proyecto debe poder leer cualquier archivo de código y entender cada sección sin ser experto en el tema/lenguaje. Esta política prioriza el contexto sobre las convenciones de "clean code" restrictivas.
+Slug ID: `COMMENTING-POLICY`.
 
-Los comentarios operan en **4 capas jerárquicas**, cada una con su lugar, regla y precedencia. **Todas coexisten** — Ponytail (que minimiza complejidad/líneas) NO invalida las capas 1–2 de esta política.
-
----
-
-## Jerarquía de Capas (Orden de Precedencia)
-
-| Capa | Qué | Obligatorio | Dónde | Ejemplo | Líneas | Referencia |
-|---|---|---|---|---|---|---|
-| **1. Contrato** | Qué hace la función, qué devuelve | ✅ Siempre | Antes de `fn`/`struct`/`impl` | `// Valida permisos; devuelve `Error` si denegado.` | 1–2 | este archivo |
-| **2. Lógica No Obvia** | Por qué es seguro un `unwrap`, qué pasa en borde, por qué esa condición | ✅ Si aplica | Inline en la línea/bloque | `// Pool ya inicializó; imposible ser None.` | 1 | este archivo |
-| **3. Simplificación Deliberada** | Qué se simplificó, cuándo cambiar | 🟡 Recomendado si hay techo | Comentario `ponytail:` | `// ponytail: sin caché. Escalar si >1000 req/s.` | 1 | ponytail.md |
-| **4. Deuda Técnica** | Aplazamiento con disparador externo | ✅ Si aplica | `docs/DEBT.md`, **NO en código** | `DEBT-003: falta paginación cuando >1000 registros` | En DEBT.md | debt-management.md |
-
-**Regla de Oro:** Capas 1–2 (este archivo) **siempre ganan**. Ponytail (Capa 3) añade metaannotación, no reemplaza. Deuda (Capa 4) va en archivo canónico, no en código.
+Tamaño: `12900 caracteres (~3225 tokens aprox., ratio 4:1)`.
 
 ---
 
-## Reglas de Aplicación (Capas 1–2)
+## COMMENTING-POLICY-FV — Filtro de Verificación
 
-### 1. Comentario de Bloque Antes de Cada Función/Método
-Describe en **una frase** qué hace la función y qué devuelve.
+**Aplica a:** todo código o comentario que el agente produce, como último paso.
 
-**✅ Ejemplo:**
-```rust
-/// Registra un evento de auditoría atómicamente en el ledger append-only.
-/// Retorna el evento con event_sequence_id y audit_hash asignados.
-pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
-```
+* **COMMENTING-POLICY-FV-1:** ¿declaraste que leíste este archivo? (`COMMENTING-POLICY-1`)
+* **COMMENTING-POLICY-FV-2:** ¿cada función/método público tiene su comentario de contrato? (`COMMENTING-POLICY-3`)
+* **COMMENTING-POLICY-FV-3:** ¿la lógica borde o peligrosa tiene su comentario de línea? (`COMMENTING-POLICY-4`)
+* **COMMENTING-POLICY-FV-4:** ¿cada comentario describe el resultado, sin historial, sin IDs sin explicar, sin abstracciones sin anclaje? (`COMMENTING-POLICY-5`)
+* **COMMENTING-POLICY-FV-5:** ¿cada `unwrap`/`expect`/equivalente tiene su justificación de imposibilidad de fallo? (`COMMENTING-POLICY-6`)
+* **COMMENTING-POLICY-FV-6:** ¿si hay simplificación deliberada con techo, tiene su comentario `ponytail:`? (`COMMENTING-POLICY-7`)
+* **COMMENTING-POLICY-FV-7:** ¿si hay aplazamiento con disparador externo, está registrado en [[docs/DEBT.md]] y no como comentario en el código? (`COMMENTING-POLICY-8`)
+* **COMMENTING-POLICY-FV-8:** ¿ningún comentario es prosa defensiva? (`COMMENTING-POLICY-9`)
+* **COMMENTING-POLICY-FV-9:** ¿ningún comentario repite lo que el código ya dice? (`COMMENTING-POLICY-10`)
 
-**❌ Malo:**
-```rust
-/// Registra un evento.
-pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
-```
-
-### 2. Comentario de Línea en Lógica No Obvia
-Guardas de error, condiciones de borde, cálculos complicados, `match`/`switch` multirrama. **Una línea** que explique el **por qué**.
-
-**✅ Ejemplo:**
-```rust
-// Pool ya inicializó en main(); imposible ser None.
-let pool = POOL.get().expect("pool initialized");
-
-// Derivar sequence_id como MAX+1 dentro de transacción.
-// Si colisionan dos escritores, uno recibe UNIQUE y debe reintentar.
-let seq_id = txn.query_scalar::<_, i64>(
-    "SELECT MAX(event_sequence_id) + 1 FROM audit_events"
-).await? as u64;
-```
-
-**❌ Malo:**
-```rust
-let pool = POOL.get().expect("pool initialized"); // get pool
-
-// La secuencia es importante
-let seq_id = ...
-```
-
-### 3. Contenido del Comentario
-Describe el **RESULTADO** de la operación y los casos que maneja. **NO incluyas:**
-- Por qué histórico ("cuando arreglamos el bug de X") → eso va en Git.
-- Referencias a documentos externos sin explicar ("ver ADR-0003", "STORY-009") → explica inline.
-- Abstracciones sin anclaje ("Append-only") → describe qué hace ("solo permite insertar; borrar lanzará error").
-
-**✅ Ejemplo:**
-```rust
-// Calcula el hash de auditoría sobre los campos de dominio (scope + outcome + override).
-// Excluye Grupo I para evitar circularidad.
-fn compute_audit_hash(entry: &AuditEntry) -> String {
-```
-
-**❌ Malo:**
-```rust
-// ADR-0020 requiere hash encadenado (ver issue #234)
-fn compute_audit_hash(entry: &AuditEntry) -> String {
-```
-
-### 4. Gestión de Pánicos (`unwrap()`, `expect()` o Equivalentes)
-Cada uno requiere un comentario justificando por qué es **matemáticamente o lógicamente imposible** que falle.
-
-**✅ Ejemplo:**
-```rust
-// Pool ya inicializó antes de llamar a esta función; no puede ser None.
-let pool = POOL.get().expect("pool initialized");
-
-// Tabla siempre tiene al menos 1 fila (bootstrap); unwrap es seguro.
-let prev_hash = txn.query_scalar::<_, String>(
-    "SELECT audit_hash FROM audit_events ORDER BY event_sequence_id DESC LIMIT 1"
-).await.unwrap();
-```
-
-**❌ Malo:**
-```rust
-let pool = POOL.get().unwrap(); // sin comentario
-
-let prev_hash = ...).await.unwrap(); // "puede ser None"
-```
+De ser satisfactoria cada validación de la lista, declara `COMMENTING-POLICY - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
-## Regla Ponytail (Capa 3 — Si Aplica)
+## COMMENTING-POLICY-1 — Declaración de Lectura
 
-📖 **Documento completo:** `ponytail.md`
+* **COMMENTING-POLICY-1 — Declaración de Lectura:** declara explícitamente que leíste este archivo antes de aplicar sus reglas a la tarea en curso.
 
-Usa `// ponytail: [qué se simplificó]. [Cuándo cambiar, umbral medible].` Máximo 1 línea.
-
-- Aplica **SOLO si hay un techo conocido** o tradeoff claro.
-- NO es una justificación defensiva. Es **metaannotación** de decisión deliberada.
-- Si el simplificación es triviál, omítelo.
-
-**✅ Ejemplo:**
-```rust
-// ponytail: sin caché. Escalar a Redis si >1000 checks/s.
-let row = db.query_scalar("SELECT accepted FROM consents WHERE user_id = ?")
-    .bind(user_id)
-    .fetch_optional()
-    .await?;
-```
-
-**❌ Malo:**
-```rust
-// Idealmente usaríamos Redis, pero no tenemos presupuesto aún...
-let row = db.query_scalar(...).await?;
-```
+**Filtro de verificación:** `COMMENTING-POLICY-FV-1`.
 
 ---
 
-## Regla DEBT (Capa 4 — Si Aplica)
+## COMMENTING-POLICY-2 — Jerarquía de Capas y Precedencia
 
-📖 **Documento completo:** `debt-management.md`
+Cuatro capas jerárquicas para comentarios de código, cada una con su lugar y regla propia. Todas coexisten: Ponytail (Capa 3, que minimiza complejidad/líneas) no invalida las Capas 1–2.
 
-Un aplazamiento **con disparador externo o dependencia** (otra EPIC, módulo aún no existente, estadística de producción) va a `docs/DEBT.md`, **NO en código como comentario**.
+**Aplica a:** todos los roles, al escribir o revisar comentarios de código.
 
-Un aplazamiento **acotado al módulo actual** con umbral medible va a `ponytail:` (Capa 3).
+* **COMMENTING-POLICY-2.1 — Capa 1, Contrato:**
 
-**Nunca dejes un aplazamiento solo en código comentado sin registrarlo en `DEBT.md` si tiene causa raíz externa.**
+  qué hace la función y qué devuelve. Obligatorio siempre. Va antes de `fn`/`struct`/`impl`, 1–2 líneas. Ejemplo: `// Valida permisos; devuelve Error si denegado.`
 
----
+* **COMMENTING-POLICY-2.2 — Capa 2, Lógica No Obvia:**
 
-## Prohibiciones Absolutas
+  por qué es seguro un `unwrap`, qué pasa en un caso borde, por qué esa condición. Obligatorio si aplica. Inline en la línea o bloque, 1 línea. Ejemplo: `// Pool ya inicializó; imposible ser None.`
 
-### 🚫 NO referenciar IDs de tickets sin explicación
-```rust
-// ❌ // STORY-009
-// ❌ // ADR-0003
-// ✅ // Auditoría de permisos implementada en STORY-009 (ver docs/execution/STORY-009.md)
-```
+* **COMMENTING-POLICY-2.3 — Capa 3, Simplificación Deliberada:**
 
-### 🚫 NO usar términos técnicos abstractos sin definir
-```rust
-// ❌ // Append-only
-// ✅ // Solo permite insertar; borrar o modificar lanzará error de base de datos
-```
+  qué se simplificó y cuándo cambiarlo. Recomendado si hay techo conocido. Va en un comentario `ponytail:`, 1 línea. Ejemplo: `// ponytail: sin caché. Escalar si >1000 req/s.`
 
-### 🚫 NO escribir prosa defensiva
-```rust
-// ❌ // Idealmente usaríamos X, pero por ahora Y es suficiente...
-// ✅ // ponytail: Y sin overhead. Cambiar a X si Z ocurre.
-```
+* **COMMENTING-POLICY-2.4 — Capa 4, Deuda Técnica:**
 
-### 🚫 NO comentarios que repiten el código
-```rust
-// ❌ fn validate_input(x: i32) {
-//   // Valida la entrada x
-//   if x < 0 { ... }
+  aplazamiento con disparador externo. Obligatorio si aplica. Va en [[docs/DEBT.md]] como `DEBT-XXX`, nunca en el código.
 
-// ✅ fn validate_input(x: i32) {
-//   // Rechaza valores negativos; el negocio requiere x >= 0.
-//   if x < 0 { ... }
-```
+**Precedencia:** Capas 1–2 (`COMMENTING-POLICY-3`, `COMMENTING-POLICY-4`) siempre ganan. Ponytail (Capa 3, `COMMENTING-POLICY-7`) añade metaanotación, no reemplaza. Deuda (Capa 4, `COMMENTING-POLICY-8`) va en su archivo canónico, no en el código.
 
 ---
 
-## Ejemplo Completo: Reconciliación de Capas
+## COMMENTING-POLICY-3 — Comentario de Contrato Antes de Cada Función
 
-```rust
-/// Registra un evento de auditoría atómicamente en el ledger append-only.
-/// Retorna el evento con event_sequence_id y audit_hash asignados.
-pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
-    // ponytail: BEGIN IMMEDIATE sin reintento (greenfield, monoproceso).
-    // Escalar a reintento con busy_timeout si jobs concurrentes.
-    let txn = db.begin_immediate()?;
-    
-    // Derivar sequence_id como MAX(event_sequence_id)+1 dentro de transacción.
-    // Si colisionan dos escritores, uno recibe error UNIQUE y debe reintentar.
+Describe en una frase qué hace la función y qué devuelve.
+
+**Aplica a:** todos los roles, al escribir o revisar funciones y métodos públicos.
+
+* **COMMENTING-POLICY-3.1 — Una Frase, Qué y Qué Devuelve:**
+
+  el comentario de bloque antes de cada función/método describe qué hace y qué devuelve, no una paráfrasis del nombre.
+  * ❌ *Incorrecto:*
+    ```rust
+    /// Registra un evento.
+    pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
+    ```
+  * ✅ *Correcto:*
+    ```rust
+    /// Registra un evento de auditoría atómicamente en el ledger append-only.
+    /// Retorna el evento con event_sequence_id y audit_hash asignados.
+    pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
+    ```
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-2`.
+
+---
+
+## COMMENTING-POLICY-4 — Comentario de Línea en Lógica No Obvia
+
+Guardas de error, condiciones de borde, cálculos complicados, `match`/`switch` multirrama: una línea que explica el por qué.
+
+**Aplica a:** todos los roles, al escribir o revisar lógica no obvia.
+
+* **COMMENTING-POLICY-4.1 — Una Línea, el Por Qué:**
+
+  el comentario inline explica por qué la línea es segura o necesaria, no qué hace literalmente — eso ya lo dice el código.
+  * ❌ *Incorrecto:*
+    ```rust
+    let pool = POOL.get().expect("pool initialized"); // get pool
+
+    // La secuencia es importante
+    let seq_id = ...
+    ```
+  * ✅ *Correcto:*
+    ```rust
+    // Pool ya inicializó en main(); imposible ser None.
+    let pool = POOL.get().expect("pool initialized");
+
+    // Derivar sequence_id como MAX+1 dentro de transacción.
+    // Si colisionan dos escritores, uno recibe UNIQUE y debe reintentar.
     let seq_id = txn.query_scalar::<_, i64>(
         "SELECT MAX(event_sequence_id) + 1 FROM audit_events"
     ).await? as u64;
-    
-    // El hash previo encadena esta fila a la anterior; garantiza trazabilidad.
-    // Pool ya inicializó; ok devolver default si tabla vacía al inicio.
+    ```
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-3`.
+
+---
+
+## COMMENTING-POLICY-5 — Contenido del Comentario: Resultado, No Proceso
+
+El comentario describe el resultado de la operación y los casos que maneja, no el proceso que llevó a escribirla.
+
+**Aplica a:** todos los roles, al redactar el texto de cualquier comentario.
+
+* **COMMENTING-POLICY-5.1 — Resultado, No Historial:**
+
+  nunca el por qué histórico ("cuando arreglamos el bug de X") — eso vive en Git, no en el comentario.
+  * ✅ *Correcto:*
+    ```rust
+    // Calcula el hash de auditoría sobre los campos de dominio (scope + outcome + override).
+    // Excluye Grupo I para evitar circularidad.
+    fn compute_audit_hash(entry: &AuditEntry) -> String {
+    ```
+
+* **COMMENTING-POLICY-5.2 — Prohibido Referenciar IDs Sin Explicar:**
+
+  una referencia a un documento externo (ADR, Story, ticket) siempre va acompañada de la explicación inline — el ID solo, sin contexto, no le sirve a quien lee el código sin abrir otro documento.
+  * ❌ *Incorrecto:* `// STORY-009` — `// ADR-0003`
+  * ✅ *Correcto:* `// Auditoría de permisos implementada en STORY-009 (ver [[docs/execution/STORY-009.md]])`
+
+* **COMMENTING-POLICY-5.3 — Prohibido Abstracciones Sin Anclaje:**
+
+  un término técnico abstracto se describe por lo que hace, no se nombra dándolo por entendido.
+  * ❌ *Incorrecto:* `// Append-only`
+  * ✅ *Correcto:* `// Solo permite insertar; borrar o modificar lanzará error de base de datos`
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-4`.
+
+---
+
+## COMMENTING-POLICY-6 — Gestión de Pánicos: unwrap, expect y Equivalentes
+
+Cada `unwrap()`, `expect()` o equivalente requiere un comentario que justifique por qué es matemática o lógicamente imposible que falle.
+
+**Aplica a:** todos los roles, en cualquier código que use `unwrap`/`expect`/equivalentes.
+
+* **COMMENTING-POLICY-6.1 — Justificación de Imposibilidad de Fallo:**
+
+  el comentario prueba, no afirma, por qué el panic es inalcanzable.
+  * ❌ *Incorrecto:*
+    ```rust
+    let pool = POOL.get().unwrap(); // sin comentario
+
+    let prev_hash = ...).await.unwrap(); // "puede ser None"
+    ```
+  * ✅ *Correcto:*
+    ```rust
+    // Pool ya inicializó antes de llamar a esta función; no puede ser None.
+    let pool = POOL.get().expect("pool initialized");
+
+    // Tabla siempre tiene al menos 1 fila (bootstrap); unwrap es seguro.
     let prev_hash = txn.query_scalar::<_, String>(
         "SELECT audit_hash FROM audit_events ORDER BY event_sequence_id DESC LIMIT 1"
-    ).await.unwrap_or_default();
-    
-    let audit_hash = compute_hash(&entry, &prev_hash);
-    txn.execute(
-        "INSERT INTO audit_events (event_sequence_id, audit_hash, ...) VALUES (?, ?, ...)",
-        params![seq_id, audit_hash],
-    ).await?;
-    
-    txn.commit().await?;
-    Ok(AuditEvent { seq_id, audit_hash, ...*entry })
-}
-```
+    ).await.unwrap();
+    ```
 
-**Análisis:**
-- **Doc-comment (líneas 1–2):** Capa 1 (contrato).
-- **`ponytail:` (líneas 4–5):** Capa 3 (simplificación deliberada).
-- **Líneas 7–8, 11–13:** Capa 2 (lógica no obvia).
-- **Total:** ~4 líneas de comentario legible, sin prosa.
+**Filtro de verificación:** `COMMENTING-POLICY-FV-5`.
 
 ---
 
-## Checklist al Entregar
+## COMMENTING-POLICY-7 — Regla Ponytail
 
-- ✅ Cada función pública tiene Capa 1 (contrato).
-- ✅ Lógica borde/peligrosa tiene Capa 2 (lógica no obvia).
-- ✅ Si hay simplificación con techo, tiene Capa 3 (`ponytail:`).
-- ✅ Si hay aplazamiento externo, está en `DEBT.md` (Capa 4).
-- ✅ Sin referencias a tickets/ADRs sin explicar.
-- ✅ Sin prosa defensiva.
-- ✅ Sin comentarios que repiten el código.
+Metaanotación de una simplificación deliberada, con techo conocido y umbral medible para cuándo escalarla.
+
+**Aplica a:** todos los roles, cuando una simplificación tiene un tradeoff claro.
+
+* **COMMENTING-POLICY-7.1 — Formato y Condición de Uso:**
+
+  usa `// ponytail: [qué se simplificó]. [Cuándo cambiar, umbral medible].`, máximo 1 línea. Aplica solo si hay un techo conocido o tradeoff claro — no es una justificación defensiva. Si la simplificación es trivial, omítelo.
+  * ❌ *Incorrecto:* `// Idealmente usaríamos Redis, pero no tenemos presupuesto aún...`
+  * ✅ *Correcto:*
+    ```rust
+    // ponytail: sin caché. Escalar a Redis si >1000 checks/s.
+    let row = db.query_scalar("SELECT accepted FROM consents WHERE user_id = ?")
+        .bind(user_id)
+        .fetch_optional()
+        .await?;
+    ```
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-6`.
+
+**Lectura bajo demanda:** [[.agents/knowledge/ponytail.md]] — siempre que quieras el detalle completo de la Capa 3.
 
 ---
 
-## Relación con Otros Archivos
+## COMMENTING-POLICY-8 — Regla DEBT
 
-- **`.agents/knowledge/governance.md`** — Gobernanza meta, núcleo siempre activo.
-- **`.agents/knowledge/ponytail.md`** — Skill de simplificación (Capa 3).
-- **`.agents/knowledge/debt-management.md`** — Gestión de deuda (Capa 4).
-- **`docs/DEBT.md`** — Registro canónico de deuda técnica rastreada.
-- **`.agents/memory/comentarios-ponytail-reconciliacion.md`** — Decisión histó­rica de esta reconciliación.
+Un aplazamiento con disparador externo o dependencia (otra épica, módulo aún no existente, estadística de producción) va a [[docs/DEBT.md]], nunca como comentario en el código.
+
+**Aplica a:** todos los roles, al detectar un aplazamiento con disparador externo.
+
+* **COMMENTING-POLICY-8.1 — Externo va a DEBT, Acotado va a Ponytail:**
+
+  un aplazamiento acotado al módulo actual con umbral medible va a `ponytail:` (`COMMENTING-POLICY-7`), no a `DEBT.md`. Nunca dejes un aplazamiento con disparador externo solo en código comentado sin registrarlo en [[docs/DEBT.md]].
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-7`.
+
+**Lectura bajo demanda:** [[.agents/knowledge/debt-management.md]] — siempre que quieras el detalle completo de la Capa 4.
+
+---
+
+## COMMENTING-POLICY-9 — Prohibido Prosa Defensiva
+
+**Aplica a:** todos los roles.
+
+* **COMMENTING-POLICY-9.1 — Sin Justificaciones ni Excusas:**
+
+  el comentario no narra la duda o la limitación de presupuesto/tiempo; usa `ponytail:` (`COMMENTING-POLICY-7`) si es una simplificación deliberada.
+  * ❌ *Incorrecto:* `// Idealmente usaríamos X, pero por ahora Y es suficiente...`
+  * ✅ *Correcto:* `// ponytail: Y sin overhead. Cambiar a X si Z ocurre.`
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-8`.
+
+---
+
+## COMMENTING-POLICY-10 — Prohibido Comentarios que Repiten el Código
+
+**Aplica a:** todos los roles.
+
+* **COMMENTING-POLICY-10.1 — El Comentario Aporta Información Nueva:**
+
+  un comentario que solo parafrasea la línea siguiente no aporta nada; debe explicar el por qué, no repetir el qué.
+  * ❌ *Incorrecto:*
+    ```rust
+    fn validate_input(x: i32) {
+      // Valida la entrada x
+      if x < 0 { ... }
+    ```
+  * ✅ *Correcto:*
+    ```rust
+    fn validate_input(x: i32) {
+      // Rechaza valores negativos; el negocio requiere x >= 0.
+      if x < 0 { ... }
+    ```
+
+**Filtro de verificación:** `COMMENTING-POLICY-FV-9`.
+
+---
+
+## COMMENTING-POLICY-EJ — Ejemplos
+
+### COMMENTING-POLICY-EJ-1 — Reconciliación de las Cuatro Capas en una Función Real
+
+Caso compuesto: una sola función real donde 2+ reglas de este documento actúan juntas — no reemplaza los ❌/✅ atómicos de cada regla.
+
+**Caso: `record_audit_event` — demuestra `COMMENTING-POLICY-3.1`, `COMMENTING-POLICY-4.1`, `COMMENTING-POLICY-7.1`.**
+
+* **Aplicando las tres reglas:**
+  ```rust
+  /// Registra un evento de auditoría atómicamente en el ledger append-only.
+  /// Retorna el evento con event_sequence_id y audit_hash asignados.
+  pub fn record_audit_event(entry: &AuditEntry) -> Result<AuditEvent, DbError> {
+      // ponytail: BEGIN IMMEDIATE sin reintento (greenfield, monoproceso).
+      // Escalar a reintento con busy_timeout si jobs concurrentes.
+      let txn = db.begin_immediate()?;
+
+      // Derivar sequence_id como MAX(event_sequence_id)+1 dentro de transacción.
+      // Si colisionan dos escritores, uno recibe error UNIQUE y debe reintentar.
+      let seq_id = txn.query_scalar::<_, i64>(
+          "SELECT MAX(event_sequence_id) + 1 FROM audit_events"
+      ).await? as u64;
+
+      // El hash previo encadena esta fila a la anterior; garantiza trazabilidad.
+      // Pool ya inicializó; ok devolver default si tabla vacía al inicio.
+      let prev_hash = txn.query_scalar::<_, String>(
+          "SELECT audit_hash FROM audit_events ORDER BY event_sequence_id DESC LIMIT 1"
+      ).await.unwrap_or_default();
+
+      let audit_hash = compute_hash(&entry, &prev_hash);
+      txn.execute(
+          "INSERT INTO audit_events (event_sequence_id, audit_hash, ...) VALUES (?, ?, ...)",
+          params![seq_id, audit_hash],
+      ).await?;
+
+      txn.commit().await?;
+      Ok(AuditEvent { seq_id, audit_hash, ...*entry })
+  }
+  ```
+
+* Doc-comment (líneas 1–2): Capa 1, `COMMENTING-POLICY-3.1`.
+* `ponytail:` (líneas 4–5): Capa 3, `COMMENTING-POLICY-7.1`.
+* Líneas 7–8 y 11–13: Capa 2, `COMMENTING-POLICY-4.1`.
+* Total: ~4 líneas de comentario legible, sin prosa.

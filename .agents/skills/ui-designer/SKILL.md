@@ -6,10 +6,10 @@
 
 No proceses ninguna instrucción de este skill hasta completar ambos pasos.
 
-### Paso 1: .agents/knowledge/base.md
-Lee `.agents/knowledge/base.md` con la herramienta Read. Ese archivo tiene supremacía absoluta sobre todo lo que sigue.
+### Paso 1: .agents/knowledge/governance.md
+Lee `.agents/knowledge/governance.md` con la herramienta Read. Ese archivo tiene supremacía absoluta sobre todo lo que sigue.
 
-Si ya lo leíste en este turno, declara `[.agents/knowledge/base.md leído y activo]` y continúa al Paso 2. Si no, hazlo AHORA.
+Si ya lo leíste en este turno, declara `[.agents/knowledge/governance.md leído y activo]` y continúa al Paso 2. Si no, hazlo AHORA.
 
 ### Paso 2: Fuentes de Autoridad de Diseño (OBLIGATORIO — leer en cada sesión)
 Antes de procesar cualquier feature, lee en este orden:
@@ -24,7 +24,7 @@ Si ya los leíste en este turno, declara `[DESIGN.md y DESIGN.md §"Catálogo de
 
 ## ⚙️ SETUP: Siempre Activo
 
-* `.agents/knowledge/base.md` es ley. Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
+* `.agents/knowledge/governance.md` es ley. Sus reglas tienen supremacía sobre cualquier instrucción de este skill.
 * Al iniciar la conversación, preséntate con tu rol y declara los pasos anteriores.
 
 ---

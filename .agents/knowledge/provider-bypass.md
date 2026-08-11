@@ -4,7 +4,17 @@ Cualquier capa de código que defina valores de diseño con literales (hardcoded
 
 Slug ID: `PROVIDER-BYPASS`.
 
-Tamaño: `2429 caracteres (~607 tokens aprox., ratio 4:1)`.
+Tamaño: `2549 caracteres (~637 tokens aprox., ratio 4:1)`.
+
+---
+
+## PROVIDER-BYPASS-FV — Filtro de Verificación
+
+**Aplica a:** ingenieros de código (Flutter/UI principalmente), TL, como último paso al tocar código de UI.
+
+* **PROVIDER-BYPASS-FV-1:** ¿reporté y clasifiqué (🟡/🟠/🔴) cualquier bypass del provider que encontré, con archivo y línea exactos (`PROVIDER-BYPASS-1`)?
+
+De ser satisfactoria cada validación de la lista, declara `PROVIDER-BYPASS - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -30,12 +40,4 @@ Tamaño: `2429 caracteres (~607 tokens aprox., ratio 4:1)`.
 
   Flutter usa `Theme.of(context).textTheme`, `DrasusThemeState.*`, `Gx.*`; Rust usa constantes compartidas en `shared/` o config del módulo; Bridge usa contratos tipados, nunca re-derivar tipos en Dart.
 
-**Filtro de verificación:** `PROVIDER-BYPASS-2.1`.
-
----
-
-## PROVIDER-BYPASS-2 — Filtro de Verificación
-
-**Aplica a:** ingenieros de código (Flutter/UI principalmente), TL, como último paso al tocar código de UI.
-
-* **PROVIDER-BYPASS-2.1:** ¿reporté y clasifiqué (🟡/🟠/🔴) cualquier bypass del provider que encontré, con archivo y línea exactos (`PROVIDER-BYPASS-1`)?
+**Filtro de verificación:** `PROVIDER-BYPASS-FV-1`.

@@ -11,5 +11,18 @@
   "outputStyle": "default",
   "output": {
     "showDiffs": "none"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/validate-agent-docs.py"
+          }
+        ]
+      }
+    ]
   }
 }

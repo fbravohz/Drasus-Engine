@@ -4,7 +4,18 @@ Dos limitaciones mecánicas de las herramientas de lectura que solo importan en 
 
 Slug ID: `TOOL-USAGE`.
 
-Tamaño: `2593 caracteres (~648 tokens aprox., ratio 4:1)`.
+Tamaño: `2710 caracteres (~678 tokens aprox., ratio 4:1)`.
+
+---
+
+## TOOL-USAGE-FV — Filtro de Verificación
+
+**Aplica a:** todos los agentes, al terminar de usar `glob`/`Read` sobre dot-directories o archivos extensos.
+
+* **TOOL-USAGE-FV-1:** si busqué dentro de una carpeta con punto, ¿evité `glob` y usé `find`/`grep`/`Read` directo (`TOOL-USAGE-1`)?
+* **TOOL-USAGE-FV-2:** si leí un archivo extenso, ¿encadené los offsets sin repetir ni saltar rangos (`TOOL-USAGE-2`)?
+
+De ser satisfactoria cada validación de la lista, declara `TOOL-USAGE - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -18,7 +29,7 @@ Tamaño: `2593 caracteres (~648 tokens aprox., ratio 4:1)`.
   * ❌ *Incorrecto:* usar `glob` para buscar un archivo dentro de `.agents/skills/`.
   * ✅ *Correcto:* `find .agents -name "patrón"` o `grep` sobre la ruta conocida.
 
-**Filtro de verificación:** `TOOL-USAGE-3.1`.
+**Filtro de verificación:** `TOOL-USAGE-FV-1`.
 
 ---
 
@@ -32,13 +43,4 @@ Tamaño: `2593 caracteres (~648 tokens aprox., ratio 4:1)`.
   * ❌ *Incorrecto:* volver a leer desde `offset=0` en la segunda llamada, o saltar un rango sin cubrirlo.
   * ✅ *Correcto:* `Read offset=0` (líneas 1-515) → `Read offset=516` (líneas 516-1050) → `Read offset=1051` (líneas 1051-1546), encadenado sin huecos.
 
-**Filtro de verificación:** `TOOL-USAGE-3.2`.
-
----
-
-## TOOL-USAGE-3 — Filtro de Verificación
-
-**Aplica a:** todos los agentes, al terminar de usar `glob`/`Read` sobre dot-directories o archivos extensos.
-
-* **TOOL-USAGE-3.1:** si busqué dentro de una carpeta con punto, ¿evité `glob` y usé `find`/`grep`/`Read` directo (`TOOL-USAGE-1`)?
-* **TOOL-USAGE-3.2:** si leí un archivo extenso, ¿encadené los offsets sin repetir ni saltar rangos (`TOOL-USAGE-2`)?
+**Filtro de verificación:** `TOOL-USAGE-FV-2`.

@@ -4,7 +4,7 @@ Tres registros para escribir el mismo contenido, mismo 100% de información, dis
 
 Slug ID: `WRITE-LIKE-GEMINI`.
 
-Tamaño: `12976 caracteres (~3244 tokens aprox., ratio 4:1)`.
+Tamaño: `13026 caracteres (~3257 tokens aprox., ratio 4:1)`.
 
 ---
 

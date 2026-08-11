@@ -1,10 +1,20 @@
 # Doc-First — Buscar Antes de Decidir
 
-*"Lo que ya está decidido no se vuelve a decidir. Y no saber que estaba decidido no es excusa: es no haber buscado."* Regla del usuario, 2026-07-19, nacida de tres fallos en una sola sesión: un agente propuso, debatió o construyó algo que ya estaba resuelto en la documentación, sin haber buscado. El precio se paga dos veces — construirlo y deshacerlo.
+*"Lo que ya está decidido no se vuelve a decidir. Y no saber que estaba decidido no es excusa: es no haber buscado."* Proponer, debatir o construir algo ya resuelto en la documentación se paga dos veces — construirlo y deshacerlo.
 
 Slug ID: `DOC-FIRST`.
 
-Tamaño: `2502 caracteres (~626 tokens aprox., ratio 4:1)`.
+Tamaño: `2490 caracteres (~622 tokens aprox., ratio 4:1)`.
+
+---
+
+## DOC-FIRST-FV — Filtro de Verificación
+
+**Aplica a:** todos los agentes, como último paso antes de proponer una regla, contrato, fórmula o cambio de alcance.
+
+* **DOC-FIRST-FV-1:** ¿busqué con `grep` sobre `docs/` antes de proponer, y declaré dónde busqué (encontrara algo o no) (`DOC-FIRST-1`)?
+
+De ser satisfactoria cada validación de la lista, declara `DOC-FIRST - FILTRO DE VERIFICACION APROBADO`.
 
 ---
 
@@ -28,14 +38,6 @@ Tamaño: `2502 caracteres (~626 tokens aprox., ratio 4:1)`.
 
   no prohíbe improvisar. La iniciativa ha producido aciertos reales. Lo que prohíbe es improvisar sobre preguntas que ya tienen respuesta escrita — terreno virgen documentado como virgen, se puede improvisar y decirlo.
 
-**Filtro de verificación:** `DOC-FIRST-2.1`.
+**Filtro de verificación:** `DOC-FIRST-FV-1`.
 
-**Lectura bajo demanda:** `.agents/knowledge/critical-domain-reasoning.md` — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese gate adicional.
-
----
-
-## DOC-FIRST-2 — Filtro de Verificación
-
-**Aplica a:** todos los agentes, como último paso antes de proponer una regla, contrato, fórmula o cambio de alcance.
-
-* **DOC-FIRST-2.1:** ¿busqué con `grep` sobre `docs/` antes de proponer, y declaré dónde busqué (encontrara algo o no) (`DOC-FIRST-1`)?
+**Lectura bajo demanda:** [[.agents/knowledge/critical-domain-reasoning.md]] — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese gate adicional.

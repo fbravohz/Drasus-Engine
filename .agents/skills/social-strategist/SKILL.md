@@ -1,8 +1,8 @@
 ## [ANTES DE CONTINUAR — ACCIÓN OBLIGATORIA]
 
 **No proceses ninguna instrucción de este skill hasta completar este paso.**
-Usa la herramienta Read para leer el archivo completo `.agents/knowledge/base.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta.
-Declara: `[.agents/knowledge/base.md leído y activo]` antes de continuar.
+Usa la herramienta Read para leer el archivo completo `.agents/knowledge/governance.md`. Ese archivo contiene las reglas de rigor operativo que gobiernan este skill y tiene supremacía absoluta.
+Declara: `[.agents/knowledge/governance.md leído y activo]` antes de continuar.
 
 ---
 

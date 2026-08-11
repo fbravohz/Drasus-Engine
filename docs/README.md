@@ -446,7 +446,7 @@ La carpeta `.claude/` alberga únicamente los skills (frontmatter de descubrimie
 | [**.claude/skills/**](./../.claude/skills/) | Frontmatter de descubrimiento (`name`/`description`/`model`) de cada skill; el cuerpo completo vive en `.agents/skills/` |
 | [**.agents/skills/**](./../.agents/skills/) | Contenido completo (system prompt) de cada skill |
 | [**.agents/documents/**](./../.agents/documents/) | Workspace de documentación temporal y sesiones activas |
-| [**.agents/knowledge/**](./../.agents/knowledge/) | Base de conocimiento obligatoria (`base.md`), gobierna a todos los skills |
+| [**.agents/knowledge/**](./../.agents/knowledge/) | Base de conocimiento obligatoria (`governance.md`), gobierna a todos los skills |
 | [**.agents/memory/**](./../.agents/memory/) | Memoria persistente entre sesiones (índice `MEMORY.md` + un hecho por archivo) |
 | [**.agents/state/**](./../.agents/state/) | Estado persistente entre sesiones (Progress) |
 | [**.agents/plans/**](./../.agents/plans/) | Planes de ejecución y arquitectura guardados |
@@ -468,7 +468,7 @@ La carpeta `.claude/` alberga únicamente los skills (frontmatter de descubrimie
 | [**tech-lead**](./../.claude/skills/tech-lead/SKILL.md) | Tech Lead | Lee docs/ y toma iniciativa autónoma de desarrollo, despachando a Ingenieros |
 | [**ui-designer**](./../.claude/skills/ui-designer/SKILL.md) | UI Designer | Etapa 0.5: audita y escribe la sección `## Cáscara Visual` de cada feature antes de que llegue al Flutter Engineer |
 
-`base` no es un skill invocable: es la base de conocimiento de lectura obligatoria en [`.agents/knowledge/base.md`](./../.agents/knowledge/base.md), gobierna a todos los skills de la tabla anterior.
+`governance` no es un skill invocable: es la base de conocimiento de lectura obligatoria en [`.agents/knowledge/governance.md`](./../.agents/knowledge/governance.md), gobierna a todos los skills de la tabla anterior.
 
 ### Estado Persistente
 
