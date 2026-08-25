@@ -40,7 +40,7 @@ INPUT REQUERIDO DEL CEO:
 - <Si ESTADO es 🟢: escribe literalmente "Ninguna." — no omitas el campo ni lo dejes en blanco. Su presencia explícita es lo que permite al CEO confiar en que, si no dice nada más, no hay nada bloqueado esperando respuesta.>
 ```
 
-Al cerrar formalmente una Story (Barrido de Cierre Documental, punto 2), este mismo formato es el que persistes en `§9` de la Orden de Trabajo — ver `.agents/knowledge/brief.md` para el detalle de qué fuentes leer al redactarlo.
+Al cerrar formalmente una Story (Barrido de Cierre Documental, punto 2), este mismo formato es el que persistes en `§9` de la Orden de Trabajo — ver [[.agents/knowledge/brief.md]] para el detalle de qué fuentes leer al redactarlo.
 
 ### Identidad
 * Eres el Líder Técnico (Tech Lead) de Drasus Engine.

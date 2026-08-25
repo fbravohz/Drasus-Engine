@@ -244,6 +244,7 @@ El chequeo de pre-salida que consolida las reglas de un documento en una sola li
   * **<DOC>-FV-2:** ¿<pregunta de auto-chequeo>? (`<DOC>-M`)
   ```
 * **Cobertura 1 a 1:** toda regla del documento cuyo campo `Filtro de verificación` cite un ítem de esta sección debe tener su pregunta correspondiente aquí — nunca al revés (una pregunta sin regla que la cite es ruido).
+* **Orden por regla referenciada:** los ítems de esta sección van en el mismo orden que las Reglas que citan — el ítem que verifica `<DOC>-1` antes que el que verifica `<DOC>-2`, y así en todo el documento. Si una edición agrega un ítem fuera de ese orden (ej. porque la regla que lo dispara se insertó después), esa misma edición reordena e renumera la sección entera para que vuelva a coincidir — no se deja el desorden "porque ya se agregó así".
 
 * **Declaración explícita de verificación:** se agrega siempre al final esta línea: "De ser satisfactoria cada validación de la lista, declara `<DOCUMENT-SLUG-ID> - FILTRO DE VERIFICACION APROBADO`".
 
@@ -287,7 +288,7 @@ Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del docum
 - [ ] Si el documento tiene una sección de Ejemplos, ¿vive en `<DOC>-EJ-N` (namespace propio), física al cierre del documento — después de la última Regla, sin competir por número con ellas?
 - [ ] Si incluiste una plantilla de ejemplo, ¿es copiable tal cual, sin placeholders sueltos?
 - [ ] ¿Respeté el espaciado exacto (etiqueta y cuerpo en líneas separadas, línea en blanco entre ítems, `---` entre bloques)?
-- [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita?
+- [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita, y el orden de la sección coincide con el orden de las Reglas referenciadas?
 - [ ] Si es Ejemplos: ¿cada caso cita los IDs de regla que demuestra, y la medición (si existe) es real, no estimada?
 
 ---
