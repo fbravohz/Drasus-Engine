@@ -1,0 +1,10 @@
+### DEBT-046 · Cáscaras Visuales huérfanas tras el reset del sistema de diseño
+
+- **Severidad:** 🟡 Baja
+- **Origen:** reset del sistema de diseño Flutter (Architect, 2026-08-14) — `ui/` archivado completo a `ui-old/`, `DESIGN.md` y las skills `ui-designer`/`flutter-engineer` reescritos desde cero con vocabulario, tokens y componentes nuevos.
+- **Descripción:** 7 features tienen su sección `## Cáscara Visual` escrita contra el `DESIGN.md` y el catálogo de componentes anteriores, ahora archivados en `ui-old/_docs-archive/` (`DESIGN.md`, `ui-designer-SKILL.md`, `flutter-engineer-SKILL.md`): [`run-replay`](../features/run-replay.md), [`live-strategy-view`](../features/live-strategy-view.md), [`sovereign-data-fetcher`](../features/sovereign-data-fetcher.md), [`instrument-catalog`](../features/instrument-catalog.md), [`verification-bench`](../features/verification-bench.md), [`data-import-wizard`](../features/data-import-wizard.md), [`hybrid-data-transformer`](../features/hybrid-data-transformer.md). Sus tablas de componentes citan IDs, tokens hex y nombres de widget (ej. `GlowDropdown`, `Gx.surfacePanel`) que no existen en el `DESIGN.md` vigente.
+- **Impacto actual:** nulo — ninguna de esas Cáscaras Visuales tiene implementación viva en el `ui/` nuevo (arrancó vacío). No bloquea nada hoy.
+- **Causa raíz:** decisión de arquitectura del propietario — el sistema de diseño anterior no pasaba el filtro de gusto/sobriedad; se decidió reset completo en vez de migración incremental.
+- **Disparador de pago:** cuando el Tech-Lead retome cualquiera de estas 7 features para reconstruir su superficie en el `ui/` nuevo — el UI-Designer reescribe su `## Cáscara Visual` contra el `DESIGN.md` vigente antes de que el Flutter-Engineer implemente.
+- **Plan:** al tocar la feature, el UI-Designer ejecuta su pipeline normal (`.agents/skills/ui-designer/SKILL.md`) como si la sección no existiera — no migra los valores viejos, los deriva de cero contra el `DESIGN.md` actual.
+- **Estado:** Abierta.

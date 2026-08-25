@@ -64,6 +64,7 @@
 | DEBT-043 | 🟡 Baja | Los mensajes de rechazo de la importación conservan jerga de programador ("parsear", `{:?}`, "ledger") donde ADR-0156 R1 exige lenguaje del usuario | Abierta | [detalle](./debt/DEBT-043.md) |
 | DEBT-044 | 🟡 Baja | La zona de carga del asistente parece aceptar archivos soltados y no los acepta: no hay arrastre real cableado (el texto ya dejó de prometerlo) | Abierta | [detalle](./debt/DEBT-044.md) |
 | DEBT-045 | 🟠 Media | Los nodos del lienzo son nombres pelados: no dicen qué consume ni qué produce cada feature — costó una sesión de prueba completa del propietario, que abrió la feature vecina | ✅ Pagada (2026-08-02) | [detalle](./debt/DEBT-045.md) |
+| DEBT-046 | 🟡 Baja | 7 features (`run-replay`, `live-strategy-view`, `sovereign-data-fetcher`, `instrument-catalog`, `verification-bench`, `data-import-wizard`, `hybrid-data-transformer`) tienen `## Cáscara Visual` escrita contra el `DESIGN.md`/catálogo archivados en `ui-old/_docs-archive/` — vocabulario y tokens ya no existen en el `DESIGN.md` vigente | Abierta | [detalle](./debt/DEBT-046.md) |
 
 ---
 
