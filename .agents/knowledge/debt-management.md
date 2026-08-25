@@ -6,7 +6,7 @@ Registro canónico: [[docs/DEBT.md]] es el índice (una fila por deuda) y [[docs
 
 Slug ID: `DEBT-MANAGEMENT`.
 
-Tamaño: `17369 caracteres (~4342 tokens aprox., ratio 4:1)`.
+Tamaño: `19060 caracteres (~4765 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -20,6 +20,7 @@ Tamaño: `17369 caracteres (~4342 tokens aprox., ratio 4:1)`.
 * **DEBT-MANAGEMENT-FV-4:** ¿está registrada en [[docs/DEBT.md]] y su ficha en `docs/debt/`, no solo en código o chat (`DEBT-MANAGEMENT-8`)?
 * **DEBT-MANAGEMENT-FV-5:** ¿la severidad es realista, no minimizada (`DEBT-MANAGEMENT-7`)?
 * **DEBT-MANAGEMENT-FV-6:** ¿el impacto actual es honesto — "nulo" solo si es verdad, "limitación" si es verdad (`DEBT-MANAGEMENT-6`)?
+* **DEBT-MANAGEMENT-FV-7:** ¿elegí el registro correcto — `DEBT-NNN` para código/producto, `AGENT-DEBT-NNN` para agentes/documentación (`DEBT-MANAGEMENT-11`)?
 
 De ser satisfactoria cada validación de la lista, declara `DEBT-MANAGEMENT - FILTRO DE VERIFICACION APROBADO`.
 
@@ -327,3 +328,28 @@ Demuestra `DEBT-MANAGEMENT-5.2`, `DEBT-MANAGEMENT-6.1` y `DEBT-MANAGEMENT-7.1` (
 ```
 
 Por qué va a [[docs/DEBT.md]]: el disparador es externo ("antes de que S3 exista"); hoy es cosmético.
+
+---
+
+## DEBT-MANAGEMENT-11 — Dos Registros Según Dominio: Código vs. Agentes/Documentación
+
+Deuda de código/producto y deuda de gobernanza de agentes no se mezclan — cada una tiene su propio índice, con el mismo patrón y la misma estructura de ficha (`DEBT-MANAGEMENT-6`).
+
+**Aplica a:** todos los roles, al decidir dónde registrar una deuda detectada.
+
+* **DEBT-MANAGEMENT-11.1 — Criterio de Enrutamiento:**
+
+  | | **DEBT-NNN** ([[docs/DEBT.md]] / `docs/debt/`) | **AGENT-DEBT-NNN** ([[.agents/DEBT.md]] / `.agents/debt/`) |
+  |---|---|---|
+  | Dominio | Código, features, ADRs — producto ya construido | Skills, knowledge docs, hooks, plantillas — gobernanza de agentes |
+  | Ejemplo | Falta paginación en un endpoint | Un knowledge doc nuevo sin ningún skill que lo cite |
+  | Cierra con | Una Story | Una edición quirúrgica del documento afectado, o una Story si toca herramienta/hook |
+
+  * ❌ *Incorrecto:* registrar un skill con formato legacy en [[docs/DEBT.md]] junto a huecos de una feature.
+  * ✅ *Correcto:* `AGENT-DEBT-NNN` en [[.agents/DEBT.md]] para el mismo hallazgo.
+
+* **DEBT-MANAGEMENT-11.2 — Mismo Protocolo, Prefijo Distinto:**
+
+  `AGENT-DEBT-NNN` sigue exactamente `DEBT-MANAGEMENT-1` a `DEBT-MANAGEMENT-10` (Regla de Oro, promoción, DEBT vs. TASK, `ponytail:` vs. DEBT, estructura de 8 campos, severidad, registro, cierre) — solo cambia dónde vive el índice y la ficha, y el prefijo, para que citarlo suelto en prosa nunca se confunda con deuda de código.
+
+**Filtro de verificación:** `DEBT-MANAGEMENT-FV-7`.

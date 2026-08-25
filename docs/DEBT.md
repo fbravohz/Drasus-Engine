@@ -4,6 +4,7 @@
 > **Estructura (patrón ADR):** este archivo es el **índice**; la ficha completa de cada deuda vive en `docs/debt/DEBT-XXX.md`. Para leer una deuda concreta, abre su archivo (≈10–30 líneas) — no hace falta cargar todo el registro.
 > **Relación con `PROGRESS.md`:** la bitácora del Tech-Lead (`.agents/state/tech-lead/PROGRESS.md`) *narra* cuándo se halló una deuda; **este registro es el canónico**. Las entradas de PROGRESS apuntan a los `DEBT-XXX` de aquí. Si una deuda no está aquí, no está rastreada.
 > **Mantenimiento:** el Tech-Lead crea/cierra la ficha en `docs/debt/` al abrir o pagar una deuda y actualiza la fila del índice. Estado: `Abierta` · `En pago` · `Pagada` (con enlace a la Story que la saldó). Al cerrar un hito se **barre** el índice y se promueve toda deuda cuyo disparador se cumplió (ver `.agents/knowledge/debt-management.md` §Regla de Promoción).
+> **Alcance:** deuda de código y producto — features, ADRs, código ya construido. Deuda de gobernanza de agentes (skills, knowledge docs, hooks, contradicciones entre reglas) vive en `.agents/DEBT.md`, registro hermano con el mismo patrón (`DEBT-MANAGEMENT-11`).
 
 ## Convención de severidad
 

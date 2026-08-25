@@ -1,0 +1,10 @@
+### AGENT-DEBT-001 · 6 skills conservan el formato legacy pese a que el commit declara "armonización de 13"
+
+- **Severidad:** 🔴 Alta
+- **Origen:** Auditoría ad hoc del commit `972bab5f31d64cbdd28e70aee8962cd0198cd36b`, 2026-08-20.
+- **Descripción:** `architect/SKILL.md`, `bridge-engineer/SKILL.md`, `quant-engineer/SKILL.md`, `rust-engineer/SKILL.md`, `social-strategist/SKILL.md` y `tech-lead/SKILL.md` conservan el encabezado legacy (ej. `# 🏗️ ARCHITECT: System Prompt`) — sin `Slug ID`, sin `Tamaño`, sin bloque `-FV`, sin reglas `<DOC>-N.M`. El diff real del commit en estos 6 archivos es solo un reemplazo `base.md` → `governance.md` (8-20 líneas), nunca la reestructuración que sí recibieron `general-counsel`, `partner` y `refactoring-engineer`. Corriendo `python3 .agents/hooks/validate-agent-docs.py --audit` contra ellos: **BLOQUEA, 12 violaciones duras**. Además, `.agents/plans/refactor-masiva-agents.md` (L188-196) y `.agents/sessions/2026-08-07-refactor-masiva-agents.md` (L401) reportan mal su propio estado ("9 skills sin refactorizar / 18 violaciones duras"); el número real es 6 archivos / 12 violaciones — `flutter-engineer` y `ui-designer` ya estaban en formato canónico de un commit anterior.
+- **Impacto actual:** el hook `PostToolUse` (introducido en este mismo commit) bloqueará la primera edición futura sobre cualquiera de estos 6 archivos hasta que se reformateen — hoy quedan "congelados" en un estado que el propio sistema de gobernanza recién creado rechaza.
+- **Causa raíz:** el commit de refactorización masiva priorizó los skills de mayor volumen (`general-counsel`, `partner`, `refactoring-engineer`) y no completó el resto antes de comitear.
+- **Disparador de pago:** antes de la siguiente edición de cualquiera de los 6 archivos (el hook lo forzará), o en un pase dedicado de `context-engineer`.
+- **Plan:** `context-engineer` reestructura cada uno de los 6 al formato canónico (`<DOC>-0/-FV/reglas/-EJ`, Slug ID, Tamaño) siguiendo `.claude/rules/agents-docs-format.md`; corrige el conteo en `plans/` y `sessions/` si se re-audita esa cifra.
+- **Estado:** Abierta.
