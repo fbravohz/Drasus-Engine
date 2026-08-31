@@ -22,6 +22,34 @@ Descripción COMPLETA:
 - Comportamiento observable (qué hace el usuario)
 - Por qué la necesitamos
 
+## Narrativa de Producto (OBLIGATORIA — nivel bajo del mapeo 1:1)
+
+Es el **nivel bajo** de la definición de producto ([`PRODUCT.md`](../PRODUCT.md) §0.1). Vive aquí, en el mismo archivo que la especificación, para que no pueda desincronizarse de ella. Dueño: el Architect.
+
+```
+## Narrativa de Producto
+
+**Capacidad:** `CAP-NN` — [nombre de la capacidad en PRODUCT.md §2]
+
+**Historia de usuario:** Como [rol], quiero [capacidad] para [resultado].
+
+**El problema (técnico):** qué duele hoy sin esta feature. Concreto, con el caso
+real que lo provoca — nunca "mejora la experiencia".
+
+**La solución (técnica):** qué hace, en comportamiento observable. Todo concepto
+que un lector externo no reconoce se explica en la misma línea.
+
+**Explicado sin tecnicismos:** el mismo problema y la misma solución, para quien
+terminó la preparatoria y nunca oyó del tema. Una analogía, sostenida hasta el
+final de este bloque.
+```
+
+**Reglas:**
+- `CAP-NN` debe existir en [`PRODUCT.md`](../PRODUCT.md) §2. Una Feature sin capacidad asignada es un hueco de producto, no un pendiente de formato.
+- Cero promesas de rentabilidad o de resultado esperado.
+- Cero nombres de funciones, tipos o rutas — aplica la prohibición de pseudocódigo de [`TEMPLATES.md`](./TEMPLATES.md).
+- Los moonshots llevan la misma sección, pero se comunican como exploración, nunca como plan comprometido.
+
 ## Comportamientos Observables
 
 Lo que se ve/prueba:

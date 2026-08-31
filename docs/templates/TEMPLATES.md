@@ -92,6 +92,7 @@ Hay un parámetro configurable que define el Sharpe mínimo para aprobar
 - [ ] ¿Es funcionalidad? → `./features/[feature-name].md`
 
 **Dentro de una Feature o TTR:**
+- [ ] ¿La Feature tiene su sección `## Narrativa de Producto` con un `CAP-NN` que existe en [`PRODUCT.md`](../PRODUCT.md)?
 - [ ] ¿Un niño de 10 años entiende qué se necesita?
 - [ ] ¿Hay ejemplos concretos (números, casos reales)?
 - [ ] ¿Las pruebas son cosas que puedo MEDIR o VER?
