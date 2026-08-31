@@ -4,7 +4,7 @@
 **Estado:** Moonshot (diferido — post-rentabilidad, ADR-0103)
 **Última actualización:** 2026-06-11 (reescrito por ADR-0113: erradicación de PySR; motor simbólico nativo + `egg`)
 
-> **Nota de gobernanza (ADR-0113):** este moonshot es la **minería simbólica de forma libre** (descubrir ecuaciones matemáticas arbitrarias sin esqueleto humano). NO usa PySR (Python+Julia, viola ADR-0104). Se implementa con un motor de **regresión simbólica nativa en Rust** —programación genética sobre árboles de expresión con frente de Pareto precisión/complejidad, reutilizando el `nsga2-optimizer` nativo—, y se designa **`egg` (e-graphs, Rust puro)** como tecnología recomendada para la saturación de equivalencias algebraicas y el control de *bloat*. La regresión simbólica **acotada** (sobre el catálogo cerrado del AST) ya vive en el MVP como modo del motor genético; este moonshot es la variante de búsqueda libre.
+> **Nota de gobernanza (ADR-0113):** este moonshot es la **minería simbólica de forma libre** (descubrir ecuaciones matemáticas arbitrarias sin esqueleto humano). NO usa PySR (Python+Julia, viola ADR-0104). Se implementa con un motor de **regresión simbólica nativa en Rust** —programación genética sobre árboles de expresión con frente de Pareto precisión/complejidad, reutilizando el `nsga2-optimizer` nativo—, y se designa **`egg` (e-graphs, Rust puro)** como tecnología recomendada para la saturación de equivalencias algebraicas y el control de *bloat*. La regresión simbólica **acotada** (sobre el catálogo cerrado del AST) ya vive en el MVP como implementación par del Puerto de Estrategia de Búsqueda; este moonshot es la variante de búsqueda libre.
 
 ---
 

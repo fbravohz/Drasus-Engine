@@ -116,7 +116,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0110](./adr/ADR-0110.md) | Generador Genómico de Régimen y Filtro de Entorno (Fase B) — Máscaras de Permiso/Prohibición por Estructura de Mercado |
 | [ADR-0111](./adr/ADR-0111.md) | Generador Genómico de Portafolio y Correlación (Fase C) — Co-evolución de Cartera y Monte Carlo de Desfase Temporal |
 | [ADR-0112](./adr/ADR-0112.md) | Veredicto SPIKE-002 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`) |
-| [ADR-0113](./adr/ADR-0113.md) | Veredicto SPIKE-003 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`) |
+| [ADR-0113](./adr/ADR-0113.md) | Veredicto SPIKE-003 — Puerto Abierto de Estrategia de Búsqueda (Catálogo Multi-Método) y Erradicación de PySR |
 | [ADR-0114](./adr/ADR-0114.md) | Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora · enmendado 2026-07-19 (regla Bid/Ask Exclusivo) |
 | [ADR-0115](./adr/ADR-0115.md) | Veredicto SPIKE-005 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito |
 | [ADR-0116](./adr/ADR-0116.md) | Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas |
@@ -137,7 +137,7 @@ Cada ADR vive en su propio archivo bajo [`adr/`](./adr/). Para leer un ADR concr
 | [ADR-0131](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
 | [ADR-0132](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
 | [ADR-0133](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
-| [ADR-0134](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo Windows/Linux/macOS + Mobile/Web Cliente Delgado) y Detección de Muerte del Padre Portátil |
+| [ADR-0134](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo + Mobile/Web Cliente Delgado) y Detección de Terminación del Padre Portátil |
 | [ADR-0135](./adr/ADR-0135.md) | Sección `## Cáscara Visual` Obligatoria en Features con Superficie — Skill UI-Designer como Etapa 0.5 del Tech Lead |
 | [ADR-0136](./adr/ADR-0136.md) | Arquitectura Visual Unificada — Dashboard + Canvas [Forge/Reactor — TBD] · supersede ADR-0028 (ZUI 3 niveles nominados) |
 | [ADR-0137](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset · enmienda ADR-0002 + ADR-0118 |

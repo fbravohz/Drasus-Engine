@@ -139,7 +139,7 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**regime-guard**](./features/regime-guard.md) | Componente de coherencia de mercado encargado de imponer la compatibilidad entre el modelo y el entorno. Su misión es la **Prevención de Mismatch**:... | validate |
 | [**remote-portfolio-access-protocol**](./features/remote-portfolio-access-protocol.md) | Protocolo de acceso remoto autenticado con seguridad a nivel de campo (Field-Level Security). Expone una interfaz analítica de solo lectura... | execute, manage |
 | [**robust-reporting**](./features/robust-reporting.md) | Genera reportes estáticos (JSON/HTML) hiper-detallados de una estrategia o portafolio, incluyendo curvas de equity hiper-resolución, distribuciones... | validate, feedback |
-| [**robustness-score-aggregator**](./features/robustness-score-aggregator.md) | El agregador de score de robustez es el motor de consolidación que reemplaza el viejo enfoque binario de "Muerte Súbita". Toma los 5 resultados... | validate, execute, feedback |
+| [**robustness-score-aggregator**](./features/robustness-score-aggregator.md) | El agregador de score de robustez es el motor de consolidación que reemplaza el viejo enfoque binario de "Descarte Inmediato". Toma los 5 resultados... | validate, execute, feedback |
 | [**robustness-verdict-engine**](./features/robustness-verdict-engine.md) | El Robustness Verdict Engine es un motor de interpretación semántica que convierte los resultados crudos del guantelete de robustez en un veredicto... | validate, feedback |
 | [**rule-ablation**](./features/rule-ablation.md) | La Ablación de Reglas es una técnica de simplificación y validación de robustez que consiste en desactivar sistemáticamente componentes lógicos de... | validate |
 | [**secure-updater**](./features/secure-updater.md) | El actualizador seguro gestiona el ciclo de vida de las actualizaciones de software del núcleo binario de Rust y la interfaz gráfica de Flutter,... | Todos |
@@ -193,6 +193,8 @@ Las features son **unidades hexagonales autónomas** (ADR-0137): cada una expone
 | [**master-account-hierarchy**](./features/master-account-hierarchy.md) | Cuenta maestra raíz (fondo) con autoridad de auditoría/override sobre cuentas maestras hijas autónomas (cada una con su propio Plano de Control); comandos cifrados sobre el relé genérico, doble atestación del override (ADR-0147, cimiento #12). | Cabina de Mando / substrato |
 | [**data-portability**](./features/data-portability.md) | Catálogo declarativo de tablas con `owner_id` + registro de solicitudes de exportación/olvido; derecho de acceso/portabilidad/supresión (GDPR Art. 15/17/20), obligación legal transversal (ADR-0148, cimiento #13). | Cabina de Mando / substrato |
 | [**operator-roles**](./features/operator-roles.md) | Roles de operador a la carta dentro de una cuenta maestra: matriz de capacidades gateada por puerto de Feature (no por módulo), asignable a humanos o agentes LLM vía MCP; cascada de autoridad del fondo sobre cuentas hijas (ADR-0149, cimiento #14). | Cabina de Mando / substrato |
+| [**instrument-catalog**](./features/instrument-catalog.md) | Catálogo canónico de instrumentos y sus términos de trading: identidad general del símbolo (pip/tick size, monedas) declarada una vez, y los términos que varían por bróker (spread, comisión, swap) como override que hereda del canónico (ADR-0162). | ingest |
+| [**session-catalog**](./features/session-catalog.md) | Catálogo de plantillas de calendario de mercado: una forma de mercado (`FOREX_245`, `NYSE_REGULAR`…) se declara una vez con su zona horaria IANA y se referencia desde cuantos instrumentos la compartan (ADR-0162). | ingest |
 | [**verification-bench**](./features/verification-bench.md) | Banco de Pruebas: harness genérico de verificación en el Panel Operativo Fundacional — selector de feature, input JSON editable, envío real por FFI y validación visual de forma del input (Válido/Inválido); realización canónica de la SVF y gate permanente de Definición de Terminado (ADR-0117/ADR-0152). | Todos |
 
 ---
@@ -380,7 +382,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0110**](./adr/ADR-0110.md) | Generador Genómico de Régimen y Filtro de Entorno (Fase B) — Máscaras de Permiso/Prohibición por Estructura de Mercado |
 | [**ADR-0111**](./adr/ADR-0111.md) | Generador Genómico de Portafolio y Correlación (Fase C) — Co-evolución de Cartera y Monte Carlo de Desfase Temporal |
 | [**ADR-0112**](./adr/ADR-0112.md) | Veredicto SPIKE-002 — Erradicación de `tch-rs`/libtorch; Escalera de Cómputo Numérico Soberano (`ndarray`/Rayon → `candle` → `burn`) |
-| [**ADR-0113**](./adr/ADR-0113.md) | Veredicto SPIKE-003 — Erradicación de PySR; Regresión Simbólica como Modo del Motor Genético Nativo y Diferimiento de la Minería Simbólica Libre a Moonshot (`egg`) |
+| [**ADR-0113**](./adr/ADR-0113.md) | Veredicto SPIKE-003 — Puerto Abierto de Estrategia de Búsqueda (Catálogo Multi-Método) y Erradicación de PySR |
 | [**ADR-0114**](./adr/ADR-0114.md) | Veredicto SPIKE-004 — Motor de Backtest Dual con Ruta Express Híbrida (Vectorizada + Secuencial), Modo de Motor Elegido por el Usuario y Contrato de Consistencia Conservadora |
 | [**ADR-0115**](./adr/ADR-0115.md) | Veredicto SPIKE-005 — Verdict Engine Determinista sin LLM; Erradicación de Ollama como Requisito |
 | [**ADR-0116**](./adr/ADR-0116.md) | Veredicto SPIKE-006 — Downsampling Obligatorio en Backend como Condición de la Frontera FFI; `ZeroCopyBuffer` solo para Cargas Masivas |
@@ -401,7 +403,7 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0131**](./adr/ADR-0131.md) | Flutter como Framework de Frontend — Rechazo Razonado de Qt, iced, slint y egui |
 | [**ADR-0132**](./adr/ADR-0132.md) | Rust como Lenguaje del Núcleo — Rechazo Razonado de C++/Qt Total |
 | [**ADR-0133**](./adr/ADR-0133.md) | Pirámide de Pruebas Canónica + Fuzzing Obligatorio en Fronteras Externas |
-| [**ADR-0134**](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo + Mobile/Web Cliente Delgado) y Detección de Muerte del Padre Portátil |
+| [**ADR-0134**](./adr/ADR-0134.md) | Matriz de Plataformas de Despliegue (Desktop Nativo + Mobile/Web Cliente Delgado) y Detección de Terminación del Padre Portátil |
 | [**ADR-0135**](./adr/ADR-0135.md) | Sección `## Cáscara Visual` Obligatoria en Features con Superficie — UI-Designer como Etapa 0.5 |
 | [**ADR-0136**](./adr/ADR-0136.md) | Arquitectura Visual Unificada — Dashboard + Canvas [Forge/Reactor] · supersede ADR-0028 |
 | [**ADR-0137**](./adr/ADR-0137.md) | Feature como Unidad Hexagonal Autónoma con Puertos Tipados — Módulos como Composiciones Preset |
@@ -424,6 +426,30 @@ Registro ordenado de las decisiones de diseño clave que gobiernan la arquitectu
 | [**ADR-0154**](./adr/ADR-0154.md) | Drasus Provee Conectores, No Datos de Mercado — Tres Vías de Ingesta, Tabla de Capacidades por Bróker y Frontera de Responsabilidad sobre el Dato |
 | [**ADR-0155**](./adr/ADR-0155.md) | Esquema Canónico de Tick y Barra de Mercado — Cotización/Ejecución como Tipos Físicos Distintos, Volumen en Cuatro Magnitudes, Profundidad de Libro y Opciones Esquema-Listo |
 | [**ADR-0156**](./adr/ADR-0156.md) | Formato Estándar de Ingesta por Archivo — Rechazo por Defecto, Plantillas de Plataforma como Responsabilidad de Drasus, Mapeo Declarado como Evidencia Inmutable |
+
+---
+
+## 📣 Definición de Producto
+
+Fuente única de verdad para explicar qué es Drasus Engine, para quién y por qué. De aquí salen infografías, presentaciones, sitio web, roadmap público y elevator pitch — ningún material de difusión inventa contenido, lo deriva de aquí. Dueño: el Architect.
+
+| Documento | Nivel | Para quién |
+|---|---|---|
+| [**PRODUCT.md**](./PRODUCT.md) | General y medio, con vocabulario técnico. Diez capacidades `CAP-01`…`CAP-10` como historia de usuario → problema → solución → por qué | Inversionista técnico, ingeniero, socio |
+| [**PRODUCT-SIMPLE.md**](./PRODUCT-SIMPLE.md) | Los mismos `CAP-NN`, sin jerga, más un guión hablado único | Quien nunca ha oído del tema |
+| Sección `## Narrativa de Producto` en cada [`features/*.md`](./features/) | Bajo — problema→solución de esa pieza, en registro técnico y llano | Quien pregunta por una feature concreta |
+
+Los tres niveles están mapeados 1:1 por el identificador `CAP-NN`, estable y de solo-añadir. Los dos primeros documentos se editan **siempre en pareja**.
+
+---
+
+## 🤝 Estrategia de Negocio
+
+Documentos de estrategia societaria del propietario — no son arquitectura técnica ni cambian lo que el producto promete al usuario. Viven fuera del pipeline ADR/SAD/Feature.
+
+| Documento | Qué contiene |
+|---|---|
+| [**PARTNERSHIP-PROGRAM.md**](./business/PARTNERSHIP-PROGRAM.md) | Catálogo de mecanismos de sociedad/comisión/equity para que personas del círculo cercano del propietario colaboren con el proyecto, organizado por tipo de aporte, con salvaguardas de control y salida sin fricción |
 
 ---
 

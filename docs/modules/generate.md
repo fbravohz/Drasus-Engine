@@ -10,9 +10,13 @@
 
 ## ¿Qué es?
 
-El módulo de generación es el **Arquitecto de Candidatas** y el núcleo del **Hybrid Genesis Engine**. Su función es orquestar los motores evolutivos (GA/NSGA-II), simbólicos (regresión simbólica nativa sobre el AST, ADR-0113 — no PySR) y, en fase moonshot, de aprendizaje por refuerzo (DRL) para producir una población de estrategias diversas mediante el descubrimiento autónomo (No-Template).
+El módulo de generación es el **Arquitecto de Candidatas**. Su función es orquestar el **Puerto de Estrategia de Búsqueda (ADR-0113)** para producir una población de estrategias diversas mediante descubrimiento autónomo (No-Template).
 
-Coordina la sinergia donde el **DRL Genesis** propone la "Tesis de Alpha" y el **NSGA-II** realiza el micro-ajuste funcional, entregando candidatos validados por el **Compilador AST** listos para validación institucional.
+El puerto es **abierto**: toda estrategia de búsqueda que pase su gate de admisión entra como implementación par, sin subordinarse a ninguna otra. Sus primeras implementaciones especificadas son el motor evolutivo multiobjetivo (NSGA-II), la regresión simbólica nativa sobre el AST (par del evolutivo, con el que comparte maquinaria — ADR-0113, no PySR), la optimización bayesiana, la búsqueda exhaustiva y la jerárquica secuencial; el aprendizaje por refuerzo profundo llega en fase moonshot. El catálogo completo de métodos admitidos vive en ADR-0113.
+
+Las estrategias pueden **encadenarse** — por ejemplo, una propone la tesis macro y otra afina umbrales y topologías. Ese encadenamiento es una composición elegible, **no una jerarquía fija**: cómo se coordinan entre sí es punto abierto declarado en ADR-0113. Todo candidato sale validado por el **Compilador AST**, listo para validación institucional.
+
+> **Invariante de admisión (ADR-0113 + ADR-0151):** ninguna estrategia de búsqueda entra al puerto si no sabe reportar cuántas evaluaciones consumió. La corrección por pruebas múltiples reconstruye el N desde el linaje de la Expedition; un método que explora sin declarar su presupuesto consumido invalida esa corrección río abajo.
 
 También es posible que el usuario cree una estrategia manualmente y la inyecte aquí para que pase al proceso de validación sin pasar por la generación automática.
 
