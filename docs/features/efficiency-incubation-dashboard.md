@@ -13,6 +13,20 @@ El `Efficiency & Incubation Dashboard` es la interfaz de visualización y contro
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-05` — Cuarentena antes del dinero real
+
+**Historia de usuario:** Como operador, quiero ver en una sola pantalla si mi estrategia en cuarentena se está comportando como se esperaba, para decidir con evidencia visual y no adivinando.
+
+**El problema (técnico):** las cifras de consistencia —caída de Sharpe, desviación de excursión máxima— no bastan por sí solas si el operador tiene que interpretarlas sin contexto visual. Y si el panel permitiera forzar la promoción de una estrategia mientras está fuera de rango, se rompería la disciplina misma que la cuarentena existe para imponer.
+
+**La solución (técnica):** superpone la curva de equidad en vivo sobre las bandas de confianza ya calculadas en el backtest, cambia el estado visual de la estrategia a alerta en cuanto la curva cruza el límite inferior del Cono de Silencio, y muestra a diario los indicadores clave de consistencia. Ninguna banda se recalcula en pantalla — llegan ya calculadas desde el motor y no son negociables desde la interfaz.
+
+**Explicado sin tecnicismos:** es el tablero de instrumentos del piloto de pruebas de un avión nuevo. El tablero no maneja el avión, pero reúne cada indicador en un solo panel, y si algo se sale del rango seguro, la aguja se pone roja sola. El piloto no tiene que hacer cuentas mentales a media prueba de vuelo — el tablero ya se las hizo, y si algo anda mal, no lo deja fingir que no lo vio.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario visualiza la curva de equidad (equity curve) de la estrategia incubada en tiempo real superpuesta sobre las bandas de confianza de Monte Carlo generadas en el backtest.

@@ -11,6 +11,14 @@ El **Compilador de Árbol de Sintaxis Abstracta (AST)** es el primer filtro del 
 
 A partir de ADR-0108, cada nodo `wildcard_group` queda etiquetado con su **dominio genómico de origen** (Señal, Riesgo y Gestión de Posición, Régimen y Filtro de Entorno, o Portafolio y Correlación). Esto permite que el motor genético resuelva el genoma de UN dominio activo mientras los nodos `wildcard_group` de los demás dominios permanecen congelados con su última resolución dentro del mismo Strategy Manifest — el patrón **"Wildcard Invertido"**.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Infraestructura.** Traduce el diseño visual de la estrategia —el grafo de nodos que el usuario arma en el lienzo— a una estructura de datos verificada que el motor de búsqueda y el simulador pueden ejecutar sin ambigüedad, rechazando de entrada cualquier conexión inconsistente o ciclo imposible.
+
+El usuario nunca la ve directamente. La nota como que **el mismo diseño visual siempre se ejecuta igual, y un diseño roto se rechaza antes de perder tiempo simulándolo**.
+
 ## Comportamientos Observables
 
 - [ ] Generación de un `run_id` tras la validación exitosa del esquema Serde.
@@ -124,5 +132,5 @@ Cada genoma de estrategia compilado por este motor debe portar el set filtrado d
 
 ## Gobernanza y Estándares (Fijos)
 - **Inundación de Fundaciones (ADR-0020):** El JSON generado incluye `logic_hash` y `manifest_id` mandatorios.
-- **IA Híbrida (ADR-0031/0113):** El esquema AST es la base de la regresión simbólica nativa (modo del motor NSGA-II); exportable a fórmulas matemáticas legibles.
+- **IA Híbrida (ADR-0031/0113):** El esquema AST es la representación común sobre la que opera **cualquier** estrategia de búsqueda conectada al puerto (ADR-0113), incluida la regresión simbólica nativa; exportable a fórmulas matemáticas legibles.
 - **Genomas Modulares por Dominio (ADR-0108):** El AST_VERSION 4.0 etiqueta cada `wildcard_group` con su dominio genómico de origen (Señal, Riesgo y Gestión de Posición — ADR-0109, Régimen y Filtro de Entorno — ADR-0110, Portafolio y Correlación — ADR-0111). Ver Registro de Dominios Genómicos en [`SAD.md`](../SAD.md) §2.3.

@@ -10,7 +10,21 @@
 Es el sistema puente que elimina el "código espagueti" y las "cajas negras" propias de las redes neuronales usadas en trading. Transforma la inteligencia oculta de agentes Deep Reinforcement Learning (DRL) y ecuaciones complejas en flujos visuales que un humano puede leer, auditar y modificar.
 
 **Problema:** Una IA puede encontrar un Alpha espectacular, pero como su salida es un set de miles de pesos neuronales, un banco institucional o un trader prudente nunca le daría dinero real ("Falta de Lógica").
-**Solución:** Sistema de traducción tri-etapa: Extracción matemática (regresión simbólica nativa sobre el AST, modo NSGA-II — ADR-0113, no PySR) -> Traducción de nodos (AST Visual) -> Explicación semántica por **reporte estructurado determinista** (ADR-0115; LLM local soberano opcional, nunca Ollama requerido).
+**Solución:** Sistema de traducción tri-etapa: Extracción matemática (regresión simbólica nativa sobre el AST, par del Puerto de Búsqueda — ADR-0113, no PySR) -> Traducción de nodos (AST Visual) -> Explicación semántica por **reporte estructurado determinista** (ADR-0115; LLM local soberano opcional, nunca Ollama requerido).
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema traduzca la lógica interna de un modelo generado automáticamente a una explicación matemática y visual que pueda auditar, para no tener que confiar a ciegas en algo que ni el propio sistema puede explicar.
+
+**El problema (técnico):** cuando un modelo complejo de aprendizaje encuentra una combinación rentable, su salida es un conjunto de números sin forma legible — no hay manera de saber si encontró una relación real del mercado o memorizó ruido. Ninguna persona, institucional o retail, debería arriesgar capital en algo que no puede explicarse a sí mismo.
+
+**La solución (técnica):** un traductor de tres etapas — extrae la fórmula matemática subyacente del modelo, la convierte en un diagrama de bloques donde cada pieza es un operador o indicador reconocible, y genera un reporte en español a partir de esa estructura, determinista y por plantilla en su forma base. El usuario puede además arrastrar un bloque del diagrama, ajustar un umbral, y devolver la estrategia modificada al sistema sin romper su lógica.
+
+**Explicado sin tecnicismos:** imagina que le pides a alguien que te explique por qué ganó una partida, y en vez de contarte su plan, te entrega un montón de números sin sentido. Eso es lo que hace un modelo de estos por defecto.
+
+Esta pieza es el traductor entre ese montón de números y una explicación real: convierte la maraña en un diagrama de piezas conectadas que puedes seguir con la vista, y le pone palabras en español — algo como "compra cuando el pánico del mercado supera tres veces lo normal". Y si algo del diagrama no te convence, lo puedes tocar tú mismo, ajustar un número, y regresarlo al sistema ya corregido.
 
 ## 2. Comportamientos Observables
 
@@ -33,7 +47,7 @@ Es el sistema puente que elimina el "código espagueti" y las "cajas negras" pro
 
 ## 5. Estructura Interna (FCIS — ADR-0002)
 
-- **Core (Lógica Pura):** Algoritmos de Regresión Simbólica nativa (modo del motor NSGA-II sobre el AST, ADR-0113) acoplados al generador de Árbol de Sintaxis Abstracta (AST Translator), y generador de reporte determinista por plantilla.
+- **Core (Lógica Pura):** Algoritmos de Regresión Simbólica nativa (implementación par del Puerto de Estrategia de Búsqueda sobre el AST, ADR-0113) acoplados al generador de Árbol de Sintaxis Abstracta (AST Translator), y generador de reporte determinista por plantilla.
 - **Shell (Infraestructura):** Orquestación de colas; inferencia de LLM local soberano (`candle`) solo si el realce opcional está habilitado, sin runtimes externos.
 - **Frontera Pública:** Generador de JSON AST y Prompts estructurados pre-cargados.
 
@@ -44,7 +58,7 @@ Es el sistema puente que elimina el "código espagueti" y las "cajas negras" pro
 - Historial de acciones exitosas del agente en la simulación temporal.
 
 ### Proceso
-- La regresión simbólica nativa (modo NSGA-II sobre el AST) destila la complejidad del DRL en una ecuación fundamental que imita el comportamiento de compra/venta.
+- La regresión simbólica nativa (par del Puerto de Búsqueda sobre el AST) destila la complejidad del DRL en una ecuación fundamental que imita el comportamiento de compra/venta.
 - El traductor transforma esta ecuación en componentes atómicos de un DAG (operadores, indicadores).
 - El generador determinista por plantilla recorre el diagrama y produce una narrativa en lenguaje natural explicando el razonamiento de la entrada (LLM local opcional para prosa más rica).
 
@@ -65,7 +79,7 @@ Es el sistema puente que elimina el "código espagueti" y las "cajas negras" pro
 
 ### **TTR-001: Extractor de Tesis (DRL a Regresión Simbólica Nativa)**
 * **Problema:** Un modelo de Deep Learning no es auditable.
-* **Comportamiento:** Se extraen las reglas de acción imitando al agente en un espacio de ecuaciones controladas mediante el motor de regresión simbólica nativa (modo NSGA-II sobre el AST, ADR-0113).
+* **Comportamiento:** Se extraen las reglas de acción imitando al agente en un espacio de ecuaciones controladas mediante el motor de regresión simbólica nativa (par del Puerto de Búsqueda sobre el AST, ADR-0113).
 * **Criterio de Éxito:** La ecuación extraída alcanza al menos 90% de paridad operativa con el DRL opaco.
 
 ### **TTR-002: AST Translator (Ecuación a DAG Visual)**

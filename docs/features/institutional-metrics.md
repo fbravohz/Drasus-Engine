@@ -16,6 +16,22 @@ También usa un **Selector Dinámico (ADR-0023)**: si solo pides 2 métricas, no
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero un conjunto de métricas de nivel institucional —no solo cuánto gané, sino cuánto riesgo corrí para ganarlo— calculadas sin que el cómputo pesado retrase la búsqueda de nuevas estrategias, para poder comparar candidatas con el mismo rigor que usaría un fondo profesional.
+
+**El problema (técnico):** "gané dinero" no dice si la estrategia es buena. Dos estrategias con la misma ganancia final pueden tener perfiles de riesgo completamente distintos: una avanza en línea casi recta, la otra sube a trompicones con caídas violentas de por medio. Medir solo el resultado final y no el camino que tomó para llegar ahí esconde justo la información que decide si una estrategia es operable con dinero real. Y calcular decenas de métricas pesadas —simulaciones, probabilidades— en el mismo instante en que el motor evolutivo genera miles de candidatas por segundo frenaría la búsqueda a paso de tortuga.
+
+**La solución (técnica):** dos motores separados. Uno veloz calcula en el mismo instante de la operación las métricas básicas (cuánto se ganó, cuántas operaciones ganadoras). Otro, más pesado, calcula después y en paralelo las métricas que exigen más cómputo (el ratio que mide retorno contra riesgo, el que solo penaliza las caídas, cuánto tiempo tardó la curva en recuperarse de su peor momento). Y un selector inteligente solo calcula las métricas que realmente se piden, en vez de las treinta completas cada vez.
+
+**Explicado sin tecnicismos:** imagina que evalúas a dos corredores que terminaron una maratón en el mismo tiempo exacto. Uno mantuvo un ritmo parejo de principio a fin. El otro salió disparado, se quedó sin fuerzas a la mitad, casi se retira, y remontó al final con el último aliento. Llegaron igual, pero como apuesta para la próxima carrera, no son lo mismo ni de cerca.
+
+Esta pieza es el cronómetro completo de la carrera, no solo el tiempo final: cuánto sufrió el corredor en el peor tramo, qué tan parejo fue su ritmo, cuánto tardó en recuperar el aliento después de un bajón. Con esa información completa puedes elegir de verdad a quién apostarle, en vez de fiarte solo del resultado final que, por sí solo, no cuenta la historia completa.
+
+---
+
 ## El Muestrario de Métricas
 
 Para evitar la "sobreingeniería", organizamos las métricas en capas lógicas:

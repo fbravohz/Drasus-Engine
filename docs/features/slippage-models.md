@@ -13,6 +13,22 @@ Es el componente que inyecta "realismo institucional" a las ejecuciones. Se apal
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el backtest me cobre el mismo deslizamiento, las mismas comisiones y el mismo costo de rollover que pagaría en una cuenta real, para que el resultado que veo no sea una fantasía sin fricción.
+
+**El problema (técnico):** un backtest que asume que toda orden se llena exactamente al precio deseado, sin comisión ni deslizamiento, sobreestima sistemáticamente el desempeño. El error se agrava con el tamaño de la orden frente al volumen disponible en ese instante: una orden grande sobre poco volumen mueve el precio en su contra, y un backtest ingenuo nunca lo refleja. Tampoco cobra el costo de mantener una posición abierta durante los días de ajuste de tasas (el "triple swap" en el mercado de divisas).
+
+**La solución (técnica):** el motor estima el deslizamiento según la volatilidad del momento y el tamaño de la orden frente al volumen de la vela, aplica un límite de penetración de volumen (una orden nunca se llena más allá de un porcentaje configurado del volumen total de la vela), exige que el precio atraviese el nivel límite una cantidad de puntos mínima antes de considerar la orden ejecutada, y cobra el costo de mantener posiciones abiertas en los días de ajuste de tasas.
+
+**Explicado sin tecnicismos:** imagina que quieres vender diez mil acciones de una empresa pequeña, pero en ese momento solo hay compradores para cien. No vas a vender las diez mil al mismo precio bueno — vas a tener que bajar el precio poco a poco hasta encontrar suficientes compradores, y el precio promedio que consigues es peor que el que viste en pantalla.
+
+Un backtest ingenuo finge que esa venta ocurrió toda al precio bueno, de un solo golpe, gratis. Esta pieza corrige esa mentira: calcula cuánto se hubiera movido el precio en tu contra según el tamaño real de tu orden y el volumen disponible en ese instante, y te cobra además la comisión y el costo de mantener la posición abierta durante la noche. El resultado es un número más feo, pero es el número real.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Estima el **Slippage** basado en la volatilidad del momento y el tamaño de la orden (Market Impact).

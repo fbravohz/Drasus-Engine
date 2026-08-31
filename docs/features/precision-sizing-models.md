@@ -21,6 +21,22 @@ Proporciona un framework unificado y determinista para el cálculo del tamaño d
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el tamaño de cada operación se calcule con la misma fórmula exacta en el backtest y en la cuenta real, para que el número de contratos que veo probado en la simulación sea el mismo que realmente se enviaría al mercado.
+
+**El problema (técnico):** el tamaño de una posición no es un detalle menor — decide cuánto se gana o se pierde por cada movimiento del mercado, y una fórmula de dimensionamiento mal replicada entre el backtest y la operación en vivo es una de las formas más comunes en que "funcionó en la simulación" y "falló en la cuenta real" terminan siendo la misma frase. Si el backtest calcula el lote con una lógica y el bot en vivo con otra ligeramente distinta, cualquier comparación entre lo simulado y lo real queda contaminada desde la raíz.
+
+**La solución (técnica):** un único motor de cálculo de tamaño, consumido por igual en investigación, en gestión de portafolio y en ejecución en vivo, con varios modelos disponibles —desde un porcentaje fijo de riesgo por operación hasta un ajuste dinámico que reduce el tamaño cuando el mercado se pone más volátil y lo aumenta cuando se calma, manteniendo constante el riesgo real en dinero—. El mismo cálculo, exactamente, corre en ambos lados.
+
+**Explicado sin tecnicismos:** imagina una receta de cocina que dice "una pizca de sal". Si el cocinero de la prueba usa una pizca grande y el de la noche del evento usa una pizca chica, el platillo de la noche real no va a saber igual que el que probaste, aunque la receta en papel sea idéntica.
+
+Esta pieza es la báscula exacta que usa la misma medida siempre, sin importar quién cocine ni cuándo. Decide cuánto dinero poner en cada operación —más cuando el mercado está tranquilo, menos cuando está agitado— con una fórmula única que corre igual en la prueba y en la cocina real. Así lo que probaste que funcionaba es exactamente lo que se sirve cuando hay dinero de verdad en la mesa.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Paridad Bit-a-Bit:** El cálculo realizado en un backtest sobre 2 años de datos debe ser idéntico al cálculo realizado por el bot en vivo ante las mismas condiciones de equidad e indicadores.

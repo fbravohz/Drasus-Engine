@@ -19,6 +19,22 @@ El Strategy Versioning implementa un sistema de historial completo similar a Git
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero un historial completo de cada cambio que le hago a una estrategia, con la posibilidad de comparar dos versiones y regresar a una anterior sin perder nada, para poder experimentar con libertad sin el miedo de arruinar algo que ya funcionaba.
+
+**El problema (técnico):** si cada ajuste a una estrategia sobrescribe la configuración anterior, el historial desaparece. No se puede comparar la versión de la semana pasada contra la de hoy, no se puede saber qué cambio exacto provocó una mejora o un desastre, y no hay forma de revertir a una configuración que funcionaba bien sin reconstruirla de memoria. Y cuando un algoritmo de optimización automática ajusta parámetros por su cuenta, el humano necesita poder ver exactamente qué tocó la máquina.
+
+**La solución (técnica):** cada cambio de configuración crea un registro nuevo e inalterable, encadenado al anterior, formando un historial completo tipo árbol genealógico que nunca se borra ni se sobrescribe. El sistema permite ramas paralelas (probar una variante experimental sin tocar la versión que ya opera), comparar dos versiones señalando exactamente qué cambió, y revertir a una configuración anterior — lo que crea una versión nueva idéntica a la vieja, en vez de borrar el camino recorrido.
+
+**Explicado sin tecnicismos:** imagina un documento con "Control de Cambios" activado, donde cada edición queda guardada por separado y puedes ver exactamente qué palabra cambió alguien, cuándo, y regresar a cualquier versión anterior con un clic — sin que la versión de ayer desaparezca jamás.
+
+Esta pieza hace exactamente eso, pero con tus estrategias de trading. Cada ajuste que haces —o que hace el propio sistema al optimizar automáticamente— queda guardado como una fotografía completa e inalterable, encadenada a la anterior. Puedes crear una rama para probar una idea arriesgada sin tocar la versión que ya usas, comparar dos fotografías para ver exactamente qué cambió entre ellas, y si algo salió mal, regresar a la que funcionaba con un clic — sin perder ni un solo paso del camino que recorriste para llegar ahí.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario crea una estrategia nueva

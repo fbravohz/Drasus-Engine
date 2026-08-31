@@ -21,6 +21,16 @@ Async Job Executor implementa un patrón de tres fases para ejecutar operaciones
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Encola las operaciones pesadas (un backtest, una generación masiva) para que corran en segundo plano, con progreso consultable y recuperación automática si el sistema se reinicia a medio camino.
+
+El usuario nunca la ve. La nota como que **la interfaz nunca se congela mientras corre algo pesado**, y que un backtest que iba a la mitad sobrevive a un reinicio inesperado.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario solicita backtest de estrategia (operación costosa):

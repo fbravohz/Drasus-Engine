@@ -17,6 +17,22 @@ Para evitar la explosión de RAM que causaría mantener millones de barras y var
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador que quiere entender por qué una corrida terminada hizo lo que hizo, quiero rebobinarla hasta cualquier instante exacto y ver el estado completo reconstruido —indicadores, posición, barra— para auditar una decisión pasada sin tener que confiar en un resumen.
+
+**El problema (técnico):** una corrida terminada —un backtest, una sesión de incubación— deja atrás un resultado final, pero el camino que llevó ahí se pierde en cuanto termina la ejecución. Si algo se ve raro en el resultado, o si el operador simplemente quiere entender la lógica de una estrategia paso a paso, no hay forma de volver a ese instante exacto sin reconstruirlo todo a mano. Y guardar cada barra y cada variable de toda la historia en memoria, por si acaso, es inviable: se acabaría la memoria de la máquina antes de terminar de cargar.
+
+**La solución (técnica):** un motor de reproducción que, al posicionar el cabezal en cualquier instante de una corrida ya terminada, recupera el registro de eventos guardado y reconstruye el estado exacto de ese momento bajo demanda, sin mantener el histórico completo cargado. El operador ve una línea de tiempo con marcadores por tipo de evento, puede arrastrar el cabezal o darle reproducir a velocidad controlada, y al pasar el cursor sobre cualquier barra ve sus valores y el cálculo exacto de cada indicador de la estrategia en ese punto — funciona sobre cualquier tipo de barra, no solo las de vela clásica.
+
+**Explicado sin tecnicismos:** es como la repetición de una jugada en un partido de fútbol. El partido ya terminó, pero puedes rebobinar hasta el segundo exacto de la jugada dudosa y ver, cuadro por cuadro, dónde estaba cada jugador y por qué el árbitro decidió lo que decidió.
+
+Esta pieza hace lo mismo con una corrida de tu estrategia ya terminada: la rebobinas hasta el instante exacto que te interesa y ves, con precisión de milisegundo, qué estaba viendo el sistema y qué calculó en ese momento. No carga el partido completo en memoria de una sola vez — solo reconstruye la jugada que pediste, cuando la pediste, así que puedes revisar una corrida de años de historia sin que la aplicación se atore.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario abre un nodo **Repetición de Corrida** sobre una corrida terminada y ve una línea de tiempo con marcadores de color por tipo de evento (compra, venta, cambio de régimen).

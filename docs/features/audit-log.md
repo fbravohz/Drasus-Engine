@@ -20,6 +20,16 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Es la bitácora inmutable donde queda registrado cada cambio de estado, cada orden y cada anomalía del sistema — nunca se borra ni se modifica un registro ya escrito.
+
+El usuario nunca la ve directamente. La nota como que **siempre puede reconstruir qué pasó con una estrategia en una fecha exacta**, con la certeza de que ese historial no pudo alterarse después.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Se ejecuta una orden en Execute
@@ -162,4 +172,4 @@ El Audit Log es el registro histórico inmutable de todos los eventos significat
 
 **Consumido por:**
 - **Todos los Módulos del Pipeline:** Para registro de transiciones de estado y decisiones críticas.
-- [`feedback`](../modules/feedback.md) — para análisis de causalidad y autopsias.
+- [`feedback`](../modules/feedback.md) — para análisis de causalidad y de causa raíz.

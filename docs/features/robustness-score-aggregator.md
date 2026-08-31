@@ -11,11 +11,25 @@
 
 ## ¿Qué es?
 
-El agregador de score de robustez es el motor de consolidación que reemplaza el viejo enfoque binario de "Muerte Súbita". Toma los 5 resultados individuales del guantelete de robustez y los consolida en un único score ponderado de 0 a 100.
+El agregador de score de robustez es el motor de consolidación que reemplaza el viejo enfoque binario de "Descarte Inmediato". Toma los 5 resultados individuales del guantelete de robustez y los consolida en un único score ponderado de 0 a 100.
 
 **Problema que resuelve:** Descartar estrategias por fallar un solo test genera parálisis por análisis. Una estrategia con WFA excelente pero Monte Carlo mediocre no debería ser rechazada automáticamente — debería obtener un score que refleje su perfil completo de robustez.
 
 ---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero un solo número que resuma el desempeño de mi estrategia en todo el guantelete de pruebas, ponderado según qué tan importante es cada una, para no descartar una estrategia sólida solo porque tropezó en una sola prueba de menor peso.
+
+**El problema (técnico):** rechazar una estrategia automáticamente por reprobar una sola prueba del guantelete —el enfoque de "Descarte Inmediato"— castiga por igual un defecto grave que uno menor, y puede descartar una estrategia con un perfil de robustez excelente en general por un tropiezo aislado en la prueba de menor peso. Sin un criterio de consolidación, cada resultado individual queda suelto y el investigador tiene que decidir a ojo cómo ponderarlos.
+
+**La solución (técnica):** recibe el resultado de cada prueba del guantelete, le aplica un peso configurable a cada una —los pesos siempre deben sumar exactamente cien por ciento, o el sistema rechaza la configuración— y calcula un único puntaje ponderado. Las pruebas marcadas como filtro de entrada obligatorio siguen pudiendo rechazar de inmediato sin gastar cómputo en las siguientes, pero el resto se consolida en un perfil, no en un veredicto de todo o nada.
+
+**Explicado sin tecnicismos:** imagina una calificación escolar que no dependiera de un solo examen, sino de un promedio ponderado entre tareas, participación y exámenes, donde cada rubro pesa distinto según su importancia real. Reprobar la participación de un día no debería tirar por la borda un semestre sobresaliente en los exámenes.
+
+Esta pieza hace esa boleta de calificaciones para tu estrategia: junta el resultado de cada prueba del guantelete, le da el peso que corresponde a su importancia, y entrega una sola calificación final. Una estrategia con un tropiezo menor en una prueba de bajo peso sigue pudiendo aprobar con una buena calificación general — igual que un estudiante que se equivocó una vez en participación, pero domina la materia.
 
 ## Comportamientos Observables
 

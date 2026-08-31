@@ -14,6 +14,22 @@ Componente estadístico que valida la consistencia entre dos series de resultado
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-05` — Cuarentena antes del dinero real
+
+**Historia de usuario:** Como investigador, quiero un juicio estadístico objetivo —no una opinión— que me diga si mi estrategia en vivo sigue siendo la misma que aprobé en el backtest, para no promoverla, ni dejarla operar, por intuición.
+
+**El problema (técnico):** una curva de equidad que cae un poco en vivo puede ser ruido normal o el primer síntoma de que la estrategia ya dejó de ser la que fue validada. Decidir a ojo cuál de las dos cosas está pasando es exactamente el tipo de error humano que un proceso de validación disciplinado existe para eliminar.
+
+**La solución (técnica):** contrasta la serie de resultados del backtest original contra la serie de resultados de la incubación o de la operación en vivo, calcula la caída de Sharpe y su significancia estadística, y emite un veredicto binario — consistente o degradado. Ese veredicto, no la impresión de nadie, decide si la estrategia pasa a operar con dinero real o si se retira.
+
+**Explicado sin tecnicismos:** es un árbitro, no un comentarista. Un comentarista opina si el partido va bien o mal según cómo se ve. Un árbitro aplica una regla fija y dice "falta" o "no falta", siempre con la misma vara, se vea como se vea el partido.
+
+Aquí la vara es una prueba matemática: compara lo que la estrategia prometió con lo que de verdad hizo, y solo puede decir dos cosas — "sigue siendo la misma" o "algo cambió" — sin dejarse impresionar por si el día se vio espectacular o mediocre.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Compara métricas (Sharpe, DD, Profit Factor) de la sesión actual contra el baseline inmutable.
@@ -80,7 +96,7 @@ Toda comparación Pardo registra el set de relevancia técnica para AI/R&D:
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la autopsia |
+| **I. Identidad** | `id` | Identificador único del análisis de causa raíz |
 | | `created_at` | Timestamp del veredicto |
 | | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del veredicto de consistencia |

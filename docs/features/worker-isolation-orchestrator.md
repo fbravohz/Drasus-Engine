@@ -11,6 +11,14 @@
 
 El **Orquestador de Aislamiento de Trabajadores** gestiona la ejecución de tareas pesadas (simulaciones, entrenamientos de IA) en procesos independientes del sistema operativo. Su objetivo es evitar que el bucle de eventos del API (Orquestador Rust) se bloquee y permitir el paralelismo masivo utilizando todos los núcleos del CPU/GPU disponibles en la máquina host.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Reparte las tareas pesadas (simulaciones, entrenamientos) en procesos separados del sistema operativo, comparte los datos de mercado en memoria sin duplicarlos, y reinicia automáticamente cualquier proceso que se cae.
+
+El usuario nunca la ve. La nota como que **puede cancelar un backtest a medias y el sistema entero sigue respondiendo**, sin que un proceso colgado se quede consumiendo la máquina.
+
 ## Comportamientos Observables
 
 - [ ] Lanzamiento de un job de generación con 1024 individuos → el orquestador reparte la carga en 8 workers paralelos.

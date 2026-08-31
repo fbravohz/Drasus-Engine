@@ -19,6 +19,20 @@ El registro que unifica bajo una identidad Drasus (`central-identity`, #1) las *
 - **Comportamiento observable:** el usuario ve todas sus cuentas bajo una identidad; cada una con su curva de equidad, gain%, drawdown y estadística; puede publicar (opt-in) las que elija.
 - **Por qué:** es prueba social verificada — un motor de distribución que ni SQX ni el resto del mercado ofrecen con atestación soberana.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario, quiero poder mostrar el historial verificado de mis cuentas de trading —la propia y las que administro para otros— con una prueba de que fue el motor de Drasus quien realmente lo ejecutó, para construir reputación sin depender de la palabra de nadie.
+
+**El problema (técnico):** los sitios de historial verificado existentes confían en una conexión de solo lectura al bróker, que prueba que las operaciones existieron, pero no prueba quién las decidió ni si el registro se alteró después. Mezclar sin etiqueta una cuenta de fondeo con capital de práctica y una cuenta de capital real invalida cualquier comparación entre historiales.
+
+**La solución (técnica):** cada cuenta queda agrupada bajo la identidad del usuario, con su curva de resultados calculada de forma que excluye los depósitos y retiros —así el porcentaje de ganancia refleja desempeño, no dinero que entró o salió—, y cada historial queda atestiguado con una cadena de firmas que se rompe visiblemente si alguien intenta alterar una entrada pasada. Toda cuenta lleva además la etiqueta de si opera con capital real, de práctica, de una prueba de fondeo o demostrativo — nunca se presenta sin ella. Publicar cualquier historial es una decisión del usuario, nunca el estado por defecto.
+
+**Explicado sin tecnicismos:** es la diferencia entre que un amigo te diga "gané tal cantidad este mes" y que un notario certifique, con folio y firma, cada movimiento desde el primer día. Aquí el "notario" es el propio motor: como fue él quien ejecutó cada operación, puede firmar su propio historial de forma que cualquier alteración posterior se note de inmediato.
+
+Y cada historial trae de fábrica una etiqueta que dice si el dinero detrás es real, de práctica o de una prueba de fondeo — para que nadie confunda una cosa con la otra al comparar resultados.
+
 ## Comportamientos Observables
 
 - Cuando el usuario registra una cuenta de trading → queda vinculada a su `owner_id` con bróker, apalancamiento, divisa y tipo (fondeo/prop/propio).

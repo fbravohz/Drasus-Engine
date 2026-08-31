@@ -14,6 +14,24 @@ QuantOps Daemon es la evolución de la automatización manual de flujos de traba
 **Problema:** La investigación cuantitativa requiere ejecutar repetitivamente el mismo flujo de validación, generación y filtrado, lo que consume tiempo del analista. 
 **Solución:** Múltiple perfiles de automatización (desde control manual vía GUI hasta Daemons Headless 24/7) que implementan un **Flujo Autónomo Múltiple**: `Generate → Metric Filtering → Robustness Retest (WFA/MC) → Approve → Export/Portfolio/Databank`.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador que no puede estar frente a la pantalla veinticuatro horas, quiero que el sistema ejecute solo, en el horario que yo defina, el ciclo completo de generar, validar y promover estrategias, encadenando pipelines y avisándome solo cuando de verdad importa, para tener una fábrica que trabaja mientras yo hago otra cosa.
+
+**El problema (técnico):** el ciclo de investigación cuantitativa —generar candidatas, filtrarlas, someterlas a pruebas de robustez, aprobar las que sobreviven— es repetitivo por naturaleza y no debería depender de que alguien lo dispare a mano cada vez. Sin un mecanismo de automatización real, cada corrida nueva consume tiempo del investigador solo para arrancarla, y la fábrica se detiene cada vez que el usuario se desconecta.
+
+**La solución (técnica):** un proceso en segundo plano que despierta según un horario programado (por ejemplo, minar y validar cada domingo de madrugada), ejecuta el flujo completo generar→filtrar→revalidar→aprobar sin intervención, encadena un pipeline con el siguiente cuando el primero termina con éxito, y puede pausarse a mitad de camino para invocar un script externo (por ejemplo, un modelo de aprendizaje automático propio) y esperar su respuesta antes de continuar. Nunca salta un filtro de calidad por estar automatizado: lo que reprueba se archiva igual que si un humano lo hubiera revisado.
+
+**Explicado sin tecnicismos:** imagina una fábrica con turno nocturno. Tú programas qué se produce y a qué hora arranca la línea, y a la mañana siguiente encuentras el trabajo hecho — sin que nadie haya tenido que quedarse despierto vigilando la maquinaria.
+
+Esta pieza es ese turno nocturno. Le dices "cada domingo a las dos de la mañana, genera y prueba diez mil estrategias nuevas", y el sistema lo hace solo: arranca, produce, examina, y si algo no pasa el examen, lo aparta — igual que lo haría un supervisor despierto. Y si tienes un experimento propio corriendo en otra computadora, la fábrica puede pausar la línea, mandarle los datos, esperar su respuesta, y seguir. Tú llegas por la mañana a revisar resultados, no a operar la maquinaria a mano.
+
+---
+
 ## 2. Comportamientos Observables
 
 - [ ] **Trabajo Programado (Cron):** El usuario programa tareas recurrentes (ej. "Generar y validar 10,000 estrategias cada domingo a las 02:00").

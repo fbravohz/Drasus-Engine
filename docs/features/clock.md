@@ -21,6 +21,16 @@ El Clock es un puerto inyectado que proporciona el tiempo actual a cualquier mó
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Es la única fuente de la hora que cualquier parte del sistema puede consultar — real en producción, congelada o acelerada a voluntad en pruebas y simulaciones — para que dos corridas con el mismo reloj produzcan siempre el mismo resultado.
+
+El usuario nunca la ve. La nota como que **un mismo backtest, corrido dos veces, arroja exactamente el mismo resultado**.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Un módulo necesita saber la hora actual

@@ -14,6 +14,22 @@ Componente de alta velocidad encargado de validar cada orden contra **11 filtros
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader que opera con dinero real, quiero que cada orden pase por una revisión automática de seguridad antes de salir al mercado, para que un error de cálculo, de tamaño o de estado del portafolio no se convierta en una pérdida real.
+
+**El problema (técnico):** una orden que sale sin revisión puede llevar un tamaño mal calculado (el clásico "dedo gordo"), exceder el margen disponible, ignorar el límite de exposición por símbolo, o dispararse pese a que la estrategia que la generó ya quedó catalogada como frágil por el guantelete de robustez. A diferencia de un error de oficina, cada uno de esos fallos se ejecuta en el mercado real en milisegundos, sin margen para deshacerlo.
+
+**La solución (técnica):** un pipeline de once verificaciones secuenciales que corre en menos de un milisegundo antes de que cualquier orden salga — tamaño, exposición, correlación, margen, caída máxima, frecuencia de ráfagas, y un veto final que consulta el veredicto de robustez de la estrategia: si quedó marcada como frágil o tóxica, la orden se bloquea sin importar lo demás. Basta que una sola verificación falle para que la orden se rechace, con el motivo exacto registrado.
+
+**Explicado sin tecnicismos:** piensa en el checklist que un piloto revisa antes de despegar. No es una sola pregunta ("¿el avión enciende?"), son once, y basta que una falle para que el avión se quede en tierra.
+
+Aquí pasa lo mismo con cada orden que el sistema quiere mandar al mercado: revisa el tamaño, si ya tienes demasiado dinero comprometido en ese instrumento, si te queda margen suficiente, si esa estrategia ya demostró ser inestable. Once preguntas, en menos de lo que tardas en parpadear. Si una sola respuesta es mala, la orden nunca sale, y tú te enteras exactamente cuál fue la que falló.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Valida 11 condiciones críticas en secuencia antes de la ejecución.

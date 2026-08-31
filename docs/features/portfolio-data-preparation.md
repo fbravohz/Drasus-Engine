@@ -12,6 +12,14 @@ Es el sistema encargado de preparar las fundaciones matemáticas y de datos para
 **Problema:** Combinar estrategias basándose únicamente en Sharpe o PnL ignorando la correlación o el régimen del mercado lleva a un sobreajuste del portafolio (Curve Fitting) y vulnerabilidad en cambios de régimen.
 **Solución:** Estandarizar las curvas de rendimiento, calcular la matriz de correlación temporal y asignar etiquetas de régimen de mercado para permitir una asignación jerárquica de riesgo (HRP) adaptativa.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Infraestructura.** Antes de que el optimizador pueda repartir capital por parecido de comportamiento, alguien tiene que calcular ese parecido: etiqueta cada tramo de mercado con su régimen (tendencia, rango, caída), pone todas las curvas de rendimiento en la misma escala para que sean comparables entre sí sin importar cuánto ganó cada una en términos absolutos, y calcula la matriz de qué tan correlacionada está cada estrategia con cada otra.
+
+El usuario nunca la ve directamente. La nota como que **el reparto de capital por parecido de comportamiento (`portfolio-optimizer`) refleja la correlación real entre estrategias, y no una cifra a medias por falta de datos comparables**.
+
 ## 2. Comportamientos Observables
 
 - [ ] Durante la limpieza de datos, el sistema clasifica automáticamente cada barra histórica con una etiqueta de régimen de mercado (Trending, Ranging, Crash).

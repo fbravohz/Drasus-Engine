@@ -18,6 +18,24 @@ Valida que los datos históricos son "Point-In-Time" (PIT-real): información qu
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema rechace por sí solo cualquier conjunto de datos contaminado con información del futuro, para que ningún resultado que vea después sea una fantasía que yo mismo fabriqué sin darme cuenta.
+
+**El problema (técnico):** el sesgo de anticipación —usar en el instante *t* un dato que en *t* todavía no existía— es el error más caro del backtesting y el más difícil de ver, porque no produce ningún síntoma: produce resultados excelentes. Aparece por vías silenciosas: una cifra macro revisada meses después usada con su valor corregido, un máximo semanal aplicado a decisiones del lunes, un cierre de vela consultado antes de que la vela terminara. El backtest no falla — miente con una gráfica hermosa.
+
+**La solución (técnica):** un validador que recorre el conjunto barra por barra y comprueba que cada dato consumido en un instante estuvo realmente disponible en ese instante. No es una revisión opcional al final del proceso: es un filtro de admisión, y un conjunto que no lo pase no entra al motor. Su propia prueba de que funciona es inyectarle fuga a propósito y verificar que la rechaza.
+
+**Explicado sin tecnicismos:** imagina que aplicas un examen y, sin querer, le diste al alumno la hoja de respuestas. Va a sacar diez. Y tú vas a creer que es brillante.
+
+Eso es exactamente lo que pasa cuando una prueba sobre el pasado usa datos que en ese momento nadie tenía. El caso típico: usar la cifra de desempleo **corregida** —la que publicaron tres meses después— para decidir qué habrías hecho aquel martes. La estrategia se ve genial, pero solo porque hizo trampa sin proponérselo.
+
+Esta pieza es el vigilante que revisa que nadie tenga la hoja de respuestas antes del examen. Y no da opinión: si detecta la trampa, el examen no se aplica.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario importa datos OHLCV (Open, High, Low, Close, Volume)

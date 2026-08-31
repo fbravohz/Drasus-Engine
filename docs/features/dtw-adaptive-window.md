@@ -18,6 +18,20 @@ Es un componente **reutilizable**: cualquier motor que necesite cortar historia 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que las ventanas de prueba se ajusten al ritmo real del mercado en vez de cortarse en bloques de calendario fijos, para que un periodo de calma no se mezcle con una crisis dentro de la misma ventana y contamine el veredicto.
+
+**El problema (técnico):** cortar el historial en bloques de tamaño fijo —por ejemplo, siempre dos años— asume que el mercado cambia a un ritmo constante, y eso es falso: en una tendencia larga los parámetros aguantan meses, en una crisis se rompen en días. Un bloque fijo puede mezclar sin darse cuenta un tramo estable con uno de pánico, y el resultado combinado no refleja honestamente ninguno de los dos — esconde la ruptura dentro de un promedio que parece razonable.
+
+**La solución (técnica):** mide qué tan parecidos son entre sí los tramos consecutivos de historia usando una técnica que tolera que el mercado avance a distinta velocidad (comparación de series temporales elásticas), y agrupa en una sola ventana los tramos que se parecen, cortando donde la similitud se rompe bruscamente. El resultado es una segmentación que se expande en periodos estables y se contrae en periodos de crisis, siempre dentro de un mínimo y un máximo configurables, y siempre de forma reproducible: la misma historia con la misma configuración produce siempre los mismos cortes.
+
+**Explicado sin tecnicismos:** imagina medir el tiempo de un viaje en carretera siempre en bloques fijos de una hora, sin importar si vas por autopista despejada o atrapado en un embotellamiento. Un bloque de una hora en autopista cubre mucha distancia sin sobresaltos; el mismo bloque de una hora en el embotellamiento puede esconder tres frenones bruscos que nunca se distinguen en el promedio.
+
+Esta pieza corta el viaje donde el ritmo real cambia, no donde marca el reloj: ventanas largas cuando el camino está despejado, ventanas cortas y frecuentes cuando el tráfico se pone denso. Así ningún frenón se queda escondido dentro de un tramo que, en promedio, se veía tranquilo.
+
 ## Comportamientos Observables
 
 - [ ] Usuario corre validación sobre 10 años de historia con segmentación adaptativa activada

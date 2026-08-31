@@ -14,6 +14,20 @@ El modelo neural se implementa con una arquitectura de perceptrón multicapa (ML
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema detecte si mi resultado depende de un puñado de operaciones atípicas en varias dimensiones a la vez, para no confundir una racha de suerte compuesta con una ventaja consistente.
+
+**El problema (técnico):** una estrategia puede parecer sólida en su métrica principal y aun así depender de un puñado de operaciones que fueron atípicas no solo en ganancia, sino en la combinación de duración, hora del día, y qué tan lejos llegó el precio en contra o a favor antes de cerrarse. Buscar operaciones atípicas mirando una sola métrica a la vez —solo la ganancia, por ejemplo— deja pasar exactamente ese tipo de anomalía compuesta, porque ninguna dimensión individual se ve extrema por sí sola.
+
+**La solución (técnica):** entrena un modelo que aprende el perfil "normal" de las operaciones de la estrategia a partir de varias características a la vez (ganancia, duración, hora, día, y qué tan lejos se movió el precio en contra y a favor), comprimiéndolas y reconstruyéndolas; las operaciones que el modelo reconstruye peor —porque no encajan con el patrón aprendido en ninguna combinación de esas dimensiones— se marcan como atípicas. El sistema recalcula entonces las métricas de la estrategia excluyendo esas operaciones, para ver si el resultado se sostiene sin ellas.
+
+**Explicado sin tecnicismos:** imagina revisar el desempeño de un vendedor y notar que su cifra total se ve bien, pero al fijarte en el detalle descubres que una sola venta gigantesca, cerrada a una hora rarísima con un cliente atípico, explica casi todo el resultado del mes. Mirando solo el monto de la venta, nada parecía raro; mirando el patrón completo, sí.
+
+Esta pieza revisa el patrón completo de cada operación —no solo cuánto ganó, sino cómo, cuándo y en qué circunstancia— para encontrar esas ventas gigantescas y raras que están inflando el resultado general. Y luego te muestra qué tan buena sigue viéndose la estrategia si esas operaciones nunca hubieran ocurrido.
+
 ## Comportamientos Observables
 
 - [ ] El sistema extrae características clave por cada transacción de la estrategia (PnL, MAE, MFE, duración, hora, día).

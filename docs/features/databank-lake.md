@@ -10,6 +10,14 @@ El Databank masivo ultra-rápido soluciona la degradación de rendimiento extrem
 
 En lugar de almacenar objetos de estrategia gigantes (JSON AST) en cada iteración, almacena únicamente "Semillas de ADN" efímeras (pares clave-valor de parámetros y métricas) en tablas columnares Parquet de altísima velocidad. Cuando el usuario decide utilizar una estrategia y la promueve, el sistema la "rehidrata" desde la semilla construyendo su forma AST completa para producción y la inyecta en la BD relacional.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Infraestructura.** Separa el almacén de investigación —donde nacen y mueren millones de candidatas efímeras— del almacén de producción, donde vive lo que ya se ganó su lugar. En vez de guardar cada estrategia completa, guarda su "semilla": los pocos datos con los que se puede reconstruir entera cuando alguien la promueva. Guardar todo completo haría que el disco y la velocidad se derrumbaran en la primera noche de búsqueda masiva.
+
+El usuario nunca lo ve. Lo nota como que **el sistema aguanta generar millones de candidatas sin atascarse**.
+
 ## 2. Comportamientos Observables
 - [ ] Finalizada una generación, el motor guarda resultados y semillas paramétricas en `strategies.parquet` sin tocar SQLite.
 - [ ] Flutter renderiza gráficas complejas (coordenadas paralelas, nube UMAP) de decenas de miles de estrategias conectándose localmente a DuckDB sin latencia (Arrow Data).

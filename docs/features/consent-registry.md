@@ -21,6 +21,20 @@ El registro **versionado y fechado** de aceptación de Términos y Condiciones. 
 >
 > El campo `optout_map` de este registro (ver Persistencia) modela **solo la categoría 2**. La categoría 1 se resuelve en `licensing-system`/`plan-tier-quota` (qué tier tiene el usuario), no aquí.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario, quiero que quede constancia de qué términos acepté y cuándo, y poder retirar mi consentimiento en lo que sí es opcional, para tener control real sobre lo que hago con mis datos, no una promesa verbal.
+
+**El problema (técnico):** usar o vender datos de un usuario sin una base legal probable —un registro fechado de qué aceptó y con qué versión de los términos— es ilegal en las jurisdicciones que regulan protección de datos. Mezclar "aceptar el trato del plan gratuito" con "consentimiento revocable" es un error legal común: lo primero es la condición del servicio, lo segundo debe poder apagarse sin perder el servicio.
+
+**La solución (técnica):** el sistema registra la aceptación de una versión concreta de los términos, con fecha, en un libro que solo se agrega, nunca se corrige. El plan gratuito entrega el trabajo del usuario al proveedor como parte del trato aceptado, sin interruptor — es la contraprestación del nivel gratuito. Aparte existen categorías genuinamente opcionales, como publicar el historial verificado, donde sí hay un interruptor real que el usuario prende o apaga cuando quiera, sin que eso condicione el acceso al servicio.
+
+**Explicado sin tecnicismos:** hay dos tipos de "sí acepto". El primero es como aceptar los términos de un club de descuento: si entras gratis, aceptas que el club se quede con tu historial de compras — es el precio de la membresía gratis, y no hay botón para apagarlo sin dejar de ser gratis. El segundo es como decidir si tu nombre aparece en el pizarrón de "socios del mes": eso sí lo prendes y apagas cuando quieras, y nunca te cuesta la membresía.
+
+Este registro anota con fecha exacta cuál "sí acepto" diste, de qué versión de las reglas, y guarda cada cambio como una entrada nueva — nunca borra la anterior, para que quede el rastro completo de qué autorizaste y cuándo.
+
 ## Comportamientos Observables
 
 - Cuando el usuario acepta el ToS → se registra la versión aceptada con fecha; sin ello, no opera en ningún tier (gate obligatorio, no granular).

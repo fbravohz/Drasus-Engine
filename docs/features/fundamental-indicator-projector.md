@@ -17,6 +17,22 @@ Es la pieza que convierte eventos puntuados en una **serie numérica de indicado
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero poder usar la información fundamental de una empresa o del macro exactamente igual que uso un indicador técnico común, para no tener que programar lógica especial cada vez que quiero incluirla en mi búsqueda.
+
+**El problema (técnico):** un coeficiente de impacto suelto, calculado para un evento puntual, no es algo que una estrategia pueda consumir directamente: necesita llegar en el mismo formato que cualquier indicador técnico, alineado a la rejilla temporal del activo, y ser relativo a cada instrumento, porque el mismo evento no impacta igual a dos activos distintos.
+
+**La solución (técnica):** esta pieza combina el coeficiente de impacto de un evento con la relevancia calculada para cada activo, aplica un perfil de decaimiento en el tiempo y agrega varios eventos simultáneos, y entrega el resultado como una serie numérica acotada, normalizada por instrumento, en el mismo contrato que cualquier indicador técnico. El motor de búsqueda la trata igual que un RSI o un ATR: una serie más entre las que puede elegir. Y en cada barra del pasado, el indicador solo refleja los eventos que ya se habían publicado en ese momento.
+
+**Explicado sin tecnicismos:** es como convertir un chisme de barrio complicado en un solo número en un tablero, para que cualquiera lo lea de un vistazo sin tener que investigar la historia completa detrás.
+
+Esta pieza toma toda la complejidad de un evento del mundo real y la convierte en un número que tu estrategia puede leer exactamente igual que lee cualquier otro dato técnico —sin lógica especial, sin trabajo extra—, y ese número es distinto para cada activo porque la misma noticia no le pesa igual a todos.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Una estrategia referencia el "indicador fundamental" igual que referencia un RSI → lo recibe como serie numérica estándar.

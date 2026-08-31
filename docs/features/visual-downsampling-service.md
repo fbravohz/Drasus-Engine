@@ -13,6 +13,14 @@ Es un servicio de procesamiento en el backend que reduce el número de puntos de
 
 **Problema que resuelve:** El navegador no puede renderizar un millón de puntos en un gráfico sin colapsar. Enviar todos los datos es un desperdicio de ancho de banda local y CPU. Este servicio asegura que la UI sea fluida en cualquier nivel de zoom.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Reduce una serie con millones de puntos a un puñado que se ve visualmente idéntica antes de mandarla a la pantalla, conservando siempre los picos y valles reales — nunca un promedio que los borre.
+
+El usuario nunca la ve. La nota como que **puede hacer zoom en años de historia sin que la gráfica se trabe**, sin notar jamás que detrás se descartaron casi todos los puntos.
+
 ## Comportamientos Observables
 
 - [ ] El usuario hace zoom out en un gráfico de 2 años y el sistema responde instantáneamente mostrando la forma general de la curva sin perder los picos de precio máximos y mínimos.

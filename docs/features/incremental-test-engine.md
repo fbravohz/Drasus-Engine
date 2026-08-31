@@ -17,6 +17,16 @@ El **Incremental Test Engine** es un motor transversal de optimización computac
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Infraestructura.** Evita recalcular desde cero pruebas de robustez costosas cuando los parámetros de una nueva versión de la estrategia no cambiaron respecto a la anterior; hereda el resultado ya verificado y solo calcula lo nuevo.
+
+El usuario no la ve por dentro. La nota como que **refinar una estrategia y volver a probarla es mucho más rápido**, y como la etiqueta "heredado" que marca qué resultados vienen de una corrida anterior en vez de haberse recalculado.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Hashing Transversal:** Genera un `params_hash` único para cualquier tipo de test (WFA, Monte Carlo, Ockham, etc.) basado en su configuración.

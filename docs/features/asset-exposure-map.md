@@ -17,6 +17,22 @@ Es la pieza que decide, de forma **determinista**, **qué evento fundamental apl
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias que opera varios activos a la vez, quiero que el sistema decida por sí solo qué noticias le importan a cada activo y cuánto, para no tener que programar a mano una regla distinta por cada símbolo que sigo.
+
+**El problema (técnico):** cuando la misma estrategia corre sobre muchos activos, decidir a mano qué evento aplica a cuál sería arbitrario e imposible de mantener. Una declaración de pandemia afecta casi a todo; los resultados trimestrales de una empresa afectan sobre todo a esa empresa y de forma mucho menor a sus proveedores. Sin una regla explícita, esa diferencia se pierde o se inventa caso por caso.
+
+**La solución (técnica):** cada instrumento lleva un vector de exposición —a qué emisor, sector, país, divisa y cadena de suministro pertenece— y cada evento lleva sus propias etiquetas de alcance. La relevancia entre ambos sale de una fórmula de solape, modulada por qué tan amplio es el alcance del evento (global, país, sector, emisor), nunca de un criterio discrecional caso por caso. Dos activos distintos reciben, para el mismo evento, coeficientes de relevancia distintos y coherentes con su propia exposición.
+
+**Explicado sin tecnicismos:** piensa en cómo una noticia del clima le importa distinto a un agricultor que a un oficinista de otra ciudad: al agricultor le afecta directo, al oficinista casi nada, y a alguien que vende semillas al agricultor, un poco. Nadie decide esto a capricho: depende de qué tan conectada está cada persona con lo que pasó.
+
+Esta pieza calcula esa misma conexión para cada par de evento y activo, de forma automática y siempre con la misma fórmula, para que ningún activo reciba una noticia que no le corresponde ni se quede sin la que sí le importa.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Un evento de alcance global (pandemia) → relevancia alta en casi todos los activos de riesgo.

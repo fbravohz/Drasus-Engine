@@ -16,6 +16,22 @@ El motor de detección de regímenes utiliza **Modelos Ocultos de Markov (HMM)**
 
 **Gen de Condición de Estado del Genoma de Régimen y Filtro de Entorno (ADR-0108/ADR-0110):** el `regime_label` (estado dominante HMM) es uno de los cuatro Genes de Condición de Estado del Dominio de Régimen y Filtro de Entorno (junto con el exponente de Hurst, la entropía de Shannon del volumen y las pendientes multinivel de Hull MA, descritos en ADR-0110). Cuando ese genoma está activo, el motor evolutivo puede condicionar la máscara binaria Permitido/Prohibido sobre el Genoma de Señal congelado al valor de `regime_label` de la barra actual.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el motor reconozca en qué tipo de mercado está operando —tendencia, rango, volátil, calmo— y ajuste o vete la señal en consecuencia, para no dejar que una estrategia de tendencia opere ciegamente en un mercado plano donde está condenada a perder por comisiones.
+
+**El problema (técnico):** una estrategia diseñada para un tipo de mercado suele operar igual sin importar el entorno real: sigue buscando tendencia en un mercado lateral, o mide con indicadores retrasados un cambio que ya ocurrió en el flujo de órdenes crudo. El costo no es solo una mala operación: es seguir intentando entrar en un mercado sin liquidez ni dirección, pagando comisión tras comisión sin ninguna ventaja real.
+
+**La solución (técnica):** un clasificador —Modelos Ocultos de Markov y un modelo de series de tiempo ARIMA— que etiqueta cada barra con el régimen dominante del mercado (tendencia, rango, volátil, calmo), decodifica el flujo crudo de compra/venta sin depender de indicadores retrasados, y veta nuevas entradas cuando detecta escasez de liquidez o un rango que no va a ningún lado. La etiqueta de régimen también queda disponible como una condición más que el motor de búsqueda puede usar al construir estrategias, no solo como enrutador automático.
+
+**Explicado sin tecnicismos:** es como un instructor de manejo que reconoce si vas por autopista o por un terreno lleno de baches, y te avisa a tiempo cuál de las dos formas de manejar te conviene ahora, en vez de dejarte usar siempre el mismo estilo sin importar el camino.
+
+Un mercado en tendencia se maneja distinto de un mercado sin dirección. Manejar igual en los dos es la forma más común de perder dinero en comisiones persiguiendo un movimiento que nunca llega. Esta pieza detecta en qué "camino" está el mercado ahora mismo y ajusta el comportamiento de la estrategia, o de plano le dice que se detenga si el terreno se puso imposible de cruzar con ventaja.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Validación L1:** Si el vector de flujo de órdenes L1 no coincide con el régimen entrenado, la señal se cancela incluso si el indicador técnico es positivo.

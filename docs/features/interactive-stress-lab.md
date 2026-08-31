@@ -11,9 +11,25 @@
 
 Panel de control **táctil y reactivo** que permite al analista deformar la curva de capital de una estrategia **en tiempo real** moviendo deslizadores de fricción y de shock macro. El motor matemático ya existe (`monte-carlo-simulator`, `slippage-models`, `adversarial-noise-agent`); esta feature aporta la **capa de interacción humana inmediata**: el humano "siente" con la mano dónde se rompe el sistema, sin esperar simulaciones por lotes.
 
-**Problema que resuelve:** En la herramienta competidora (SQX), el estrés es pasivo y post-mortem — configuras 250 simulaciones, esperas una hora y miras un gráfico de espaguetis o un veredicto de confianza al 95%. Aquí el feedback es instantáneo: muevo un slider y veo la curva deformarse al momento.
+**Problema que resuelve:** En la herramienta competidora (SQX), el estrés es pasivo y solo se revisa al final — configuras 250 simulaciones, esperas una hora y miras un gráfico de espaguetis o un veredicto de confianza al 95%. Aquí el feedback es instantáneo: muevo un slider y veo la curva deformarse al momento.
 
 **Por qué la necesitamos:** Devuelve el control táctil al analista (filosofía Caja de Cristal). No hay magia de IA opaca; es matemática interactiva que el humano dirige.
+
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como analista que quiere sentir en tiempo real dónde se rompe una estrategia, quiero mover deslizadores de fricción y de shock de mercado y ver la curva de capital deformarse al instante, para encontrar el punto de quiebre con mi propia mano en vez de esperar horas de simulaciones por lotes.
+
+**El problema (técnico):** las pruebas de estrés tradicionales son un proceso por lotes: se configuran cientos de escenarios, se espera a que terminen de correr, y se revisa el resultado horas después como un veredicto ya cerrado. Ese ciclo es correcto para la certificación final, pero es demasiado lento para la exploración —para la pregunta rápida de "¿qué tanto aguanta esto si el spread se duplica?"— y el analista termina sin intuición táctil sobre dónde está el límite real de la estrategia.
+
+**La solución (técnica):** un panel donde mover un deslizador de deslizamiento, spread o ruido de precio recalcula y redibuja la curva de capital deformada en el mismo instante, reutilizando los motores de fricción y de Monte Carlo ya existentes en vez de duplicar lógica. Incluye deslizadores de shock macro (por ejemplo, un shock de tasas de interés o una crisis de liquidez) que reevalúan el drawdown en segundos, y permite fijar un escenario como fotografía comparable contra el caso base. Nunca reemplaza a la simulación completa por lotes: es exploración táctil, no el veredicto estadístico final.
+
+**Explicado sin tecnicismos:** es como probar qué tan resistente es un puente moviendo una perilla que aumenta el peso del tráfico poco a poco, y viendo en la pantalla, en vivo, en qué punto exacto empieza a ceder — en vez de esperar el reporte de un ingeniero una semana después.
+
+Con esta pieza, el analista mueve un control y ve, al instante, cómo se deforma la curva de resultados de su estrategia: cuánto tarda en quebrarse si el costo de operar sube, o qué le pasa si simula una crisis de liquidez repentina. No es el examen final —ese sigue corriendo por lotes y con todo el rigor estadístico— pero es la manera de encontrar rápido, con la mano en el control, hacia dónde apuntar el examen final.
 
 ---
 

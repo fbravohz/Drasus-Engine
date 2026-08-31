@@ -15,6 +15,22 @@ La feature también implementa el **Motor de Invalidación Reactiva**: cualquier
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como investigador de estrategias, quiero construir y modificar la lógica de mis estrategias arrastrando y conectando bloques en un lienzo visual, para ver la estructura completa de mi estrategia en vez de imaginarla en código.
+
+**El problema (técnico):** construir una estrategia como texto o configuración oculta la topología real de la lógica —qué depende de qué, qué se ejecuta antes de qué—. Un editor de texto no distingue entre coherente y roto hasta que se ejecuta, y cuando un motor genético produce un árbol de reglas de decenas de nodos encadenados, revisarlo como código plano es prácticamente inauditable.
+
+**La solución (técnica):** un lienzo de nodos-tarjeta con puertos tipados, donde arrastrar una conexión entre dos tipos incompatibles se rechaza en el acto en vez de fallar después. Cada nivel de la jerarquía (módulo, estrategia, bloque de lógica) se abre haciendo zoom hacia adentro en el mismo lienzo, nunca en una pantalla aparte, y cualquier edición de un parámetro invalida visualmente los resultados de validación que dependían de él — el sistema nunca deja avanzar a producción una estrategia con un veredicto obsoleto sin decirlo.
+
+**Explicado sin tecnicismos:** imagina armar un circuito eléctrico con piezas de plástico que solo encajan si son compatibles, en vez de soldar cables a ciegas. Si intentas meter la pieza equivocada en el hueco equivocado, simplemente no entra — no esperas a que truene el circuito para enterarte.
+
+Este lienzo funciona igual con la lógica de una estrategia. Cada pieza es un bloque que se conecta con otros bloques, y el sistema no deja conectar dos piezas que no son compatibles. Si cambias algo en una pieza y eso invalida una prueba que ya se había hecho, el sistema pinta esa prueba de un color de alerta para avisarte, en vez de dejarte creer que sigue siendo válida.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario arrastra un nodo de Módulo al canvas y lo conecta a otro mediante su puerto de salida — el canvas valida que los tipos de puerto sean compatibles (ADR-0137) antes de aceptar la conexión.

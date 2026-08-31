@@ -11,6 +11,20 @@ El motor de **Institutional Friction Modeling** inyecta realismo probabilístico
 
 **Problema que resuelve:** Los backtests retail asumen que si el precio toca el Bid/Ask, la orden se llena. Esto genera falsos beneficios en estrategias de Mean-Reversion que "viven" del spread. En la realidad, si el mercado toca tu orden y rebota a tu favor, es probable que NO te hayan llenado.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el simulador reconozca que mis órdenes límite ganadoras a veces simplemente no se llenan, para que una estrategia que "vive del rebote" no se vea rentable solo porque el backtest le regaló ejecuciones que en la vida real nunca hubiera tenido.
+
+**El problema (técnico):** los backtests retail asumen que si el precio toca el nivel de una orden límite, la orden se llena. En la realidad ocurre lo contrario con frecuencia: si el precio toca tu nivel y rebota a tu favor, es señal de que había más demanda que oferta en ese punto — y esa misma demanda es la razón por la que probablemente no alcanzaron a llenarte antes de que el precio se fuera. Esto se llama selección adversa, y es el error silencioso que infla las estrategias de reversión a la media que "viven" del spread.
+
+**La solución (técnica):** el simulador aplica una probabilidad de llenado al tocar el precio en vez de asumir un cien por ciento, exige que el precio atraviese el nivel una cantidad configurable de puntos antes de dar el llenado por seguro, y ofrece un escenario de estrés donde solo el sesenta por ciento de las órdenes ganadoras se ejecutan mientras el cien por ciento de las perdedoras sí lo hacen — el peor caso posible, evaluable dentro del guantelete de robustez.
+
+**Explicado sin tecnicismos:** imagina que pones el precio más bajo de la fila para comprar un boleto agotado. Si el precio sube y te quedas sin boleto, es porque había más gente queriendo comprar que boletos disponibles — la misma razón por la que te ganaron la fila. Si en cambio consigues el boleto justo antes de que el precio suba, sospecha: quizás fuiste de los últimos en la fila y solo tuviste suerte.
+
+En trading pasa lo mismo con las órdenes que compran barato esperando que el precio rebote: si el precio te toca y sube, lo más probable es que no alcanzaste a comprar — había demasiada gente queriendo lo mismo. Un backtest que ignora esto te regala compras que en la vida real nunca hubieras conseguido, y la estrategia se ve mucho mejor de lo que es. Esta pieza corrige esa trampa silenciosa.
+
 ## Comportamientos Observables
 
 - [ ] **Probabilistic Fill Rate:** El simulador aplica una probabilidad de éxito al tocar el precio. Si el mercado no atraviesa tu nivel por $X$ ticks, el trade puede ser descartado.

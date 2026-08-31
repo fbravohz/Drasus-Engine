@@ -20,6 +20,20 @@ El sistema de disparadores de pipelines automatiza la ejecución de flujos de de
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero definir las condiciones bajo las cuales el sistema busca y valida nuevas estrategias por su cuenta, y que me pida aprobación explícita antes de mover cualquier resultado a producción, para tener un sistema proactivo sin cederle la decisión final de arriesgar mi capital.
+
+**El problema (técnico):** sin automatización, cada ronda de búsqueda y validación exige que el investigador la dispare manualmente una y otra vez, perdiendo la oportunidad de reaccionar rápido cuando cambian las condiciones del mercado. Pero automatizar el disparo sin ningún control humano en la salida es igual de peligroso: un sistema que descubre, valida y despliega solo, sin que nadie revise el resultado, traslada toda la confianza a un proceso que nadie supervisó antes de que tocara dinero real.
+
+**La solución (técnica):** un vigilante en segundo plano que dispara secuencias completas de búsqueda y validación cuando se cumplen condiciones definidas por el usuario (un salto de volatilidad, un cambio de régimen) o de forma recurrente en un horario fijo (una corrida cada noche), y que se detiene justo antes de la línea que importa: al terminar, si los candidatos superan los criterios mínimos, notifica al usuario con un resumen y espera su aprobación explícita antes de promover nada — nunca se autodespliega, sin excepción.
+
+**Explicado sin tecnicismos:** imagina un asistente de investigación incansable que trabaja toda la noche explorando ideas, las prueba, descarta las malas, y a la mañana siguiente te deja sobre el escritorio solo las que sí valieron la pena, con un resumen claro. Nunca firma nada en tu nombre — pone el resultado frente a ti y espera tu decisión.
+
+Esta pieza es ese asistente: trabaja de forma continua o programada, sin que tengas que estar presionando el botón cada vez, y llega hasta la puerta de arriesgar dinero real, pero nunca la cruza sin tu firma. Tú sigues siendo quien decide qué entra a producción.
+
 ## Comportamientos Observables
 
 - [ ] **Daemon de Escucha de Eventos:** Un proceso persistente en segundo plano monitorea las métricas del mercado (volatilidad, spreads) y el estado del portafolio (drawdown diario, desviación de pesos).

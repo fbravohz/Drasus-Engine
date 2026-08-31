@@ -9,6 +9,20 @@
 
 El **Ruteador por Perfil de Volumen** es una capa de seguridad en la ejecución que suspende automáticamente las órdenes ante caídas de liquidez detectadas mediante el análisis del perfil de volumen (Volume at Price). Su objetivo es evitar deslizamientos (*slippage*) excesivos al intentar operar en "huecos" de liquidez o durante periodos de pre-volumen anómalo.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que el sistema no envíe una orden hacia un precio donde no hay suficiente liquidez real esperando, para no terminar con un deslizamiento mucho peor del que la estrategia calculó.
+
+**El problema (técnico):** el libro de órdenes no siempre tiene profundidad uniforme — existen huecos de liquidez donde muy pocas órdenes esperan a cierto precio. Enviar una orden hacia uno de esos huecos produce un llenado muy alejado del precio esperado, un costo que ninguna simulación anticipó porque asumía liquidez pareja.
+
+**La solución (técnica):** el sistema construye en tiempo real un mapa de volumen por nivel de precio y calcula, antes de dejar salir una orden, si la profundidad disponible alcanza para absorberla sin mover el precio más allá del umbral configurado. Si no alcanza, suspende la orden hasta que la liquidez regrese a niveles saludables — nunca la envía a ciegas.
+
+**Explicado sin tecnicismos:** es como no cruzar un puente colgante sin antes revisar si el tramo de enfrente todavía tiene tablas. Un puente se ve completo desde lejos, pero puede tener huecos que solo se notan al estar encima.
+
+Esta pieza revisa el tramo de enfrente del mercado antes de dejarte cruzar: mide cuánta gente está realmente dispuesta a comprar o vender en el precio al que quieres operar. Si el tramo tiene un hueco, te detiene antes de que pongas el pie ahí, en vez de dejar que caigas y te enteres del costo después.
+
 ## Comportamientos Observables
 
 - [ ] Monitoreo en tiempo real del mapa de liquidez (Order Book + Trades).

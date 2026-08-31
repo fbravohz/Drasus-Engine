@@ -15,6 +15,20 @@ El puerto que toma datos crudos de ejecución (de usuarios cuyo tier o consentim
 - **Comportamiento observable:** el sistema convierte miles de ejecuciones individuales en índices agregados donde ningún usuario es reconocible.
 - **Por qué:** es la base de todos los productos de datos alternativos.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario, quiero que si mi actividad contribuye a un producto de datos que Drasus vende a terceros, nadie pueda identificarme a partir de ese producto, para beneficiarme del efecto de red sin exponer lo que hago.
+
+**El problema (técnico):** los datos de miles de operaciones solo valen dinero cuando se combinan en volumen —sentimiento del mercado, régimen, fricción típica de un bróker—, pero combinarlos sin cuidado permite reconstruir, cifra por cifra, lo que hizo un usuario específico. Y si la captura no empieza desde el primer usuario, se pierden meses de historia que no se pueden recuperar después.
+
+**La solución (técnica):** antes de agregar cualquier dato, el sistema revisa si el usuario dueño dio su consentimiento — si no, ese dato queda fuera del cálculo. Los datos que sí entran se mezclan con ruido estadístico calibrado y se exige que cada cifra resultante agrupe a un número mínimo de usuarios distintos; si un grupo es demasiado pequeño para proteger a sus integrantes, esa cifra se suprime en vez de publicarse.
+
+**Explicado sin tecnicismos:** piensa en una encuesta de salario promedio por colonia. Si la colonia tiene mil casas, el promedio no delata a nadie. Si la colonia tiene dos casas, publicar el promedio es casi lo mismo que publicar el sueldo de esas dos personas — así que una encuesta seria no publica el dato de una colonia tan chica.
+
+Aquí pasa lo mismo con tus operaciones: solo entran al promedio si tú lo autorizaste, se les mezcla ruido estadístico a propósito, y si el grupo donde caerías es demasiado pequeño para protegerte, ese número simplemente no se publica.
+
 ## Comportamientos Observables
 
 - Cuando llega un evento de ejecución de un usuario con consentimiento → se anonimiza (ruido + hash) antes de entrar a cualquier agregado.

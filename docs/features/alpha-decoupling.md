@@ -9,6 +9,20 @@
 Aisla el rendimiento puro de la estrategia (Alpha) eliminando el efecto inercial del mercado general (Beta). 
 Resuelve el problema de falsos positivos donde una estrategia parece ser brillante, pero sus ganancias solo provienen de estar comprada en un mercado alcista masivo.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber qué porcentaje de mis ganancias viene solo de estar comprado en un mercado que sube, y cuál viene de mi propia lógica, para no confundir un "comprar y mantener" disfrazado de algoritmo con una ventaja real.
+
+**El problema (técnico):** una estrategia puede parecer brillante porque durante todo el periodo probado el activo subyacente estuvo en tendencia alcista sostenida, y la estrategia simplemente pasó la mayor parte del tiempo comprada — su "mérito" es en realidad la marea del mercado, no ninguna decisión inteligente. Sin separar ese efecto, es imposible saber si el algoritmo aporta algo que un simple "comprar y mantener" ya no daba gratis.
+
+**La solución (técnica):** calcula la sensibilidad de la estrategia frente al activo de referencia (cuánto se mueve la estrategia cuando se mueve el mercado) y resta esa contribución del resultado total, dejando expuesto el porcentaje de ganancia que de verdad proviene de la lógica propia de la estrategia, separado del retorno que hubiera dado simplemente mantener el activo.
+
+**Explicado sin tecnicismos:** imagina a alguien que presume haber ganado dinero en la bolsa este año, y resulta que simplemente compró un fondo índice y no tocó nada más. Ganó porque el mercado entero subió, no porque supiera elegir nada.
+
+Esta pieza separa esas dos cosas en tu estrategia: cuánto de tu ganancia es "comprar el mercado entero y esperar", y cuánto es mérito genuino de tus reglas. Si casi todo tu resultado es la primera parte, no tienes un algoritmo — tienes un fondo índice con pasos extra.
+
 ## 2. Comportamientos Observables
 - [ ] Al validar una estrategia, el sistema calcula qué porcentaje de su rendimiento proviene de seguir pasivamente el mercado.
 - [ ] La interfaz expone el "Alpha Puro" separado del "Retorno de Benchmark".

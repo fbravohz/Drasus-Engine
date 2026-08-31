@@ -12,6 +12,24 @@ Es el motor analítico que permite crear temporalidades personalizadas (ej. 7m, 
 **Problema:** Guardar archivos separados para cada temporalidad (1m, 5m, 15m, 1h) duplica o triplica el uso de disco.
 **Solución:** Guardar solo 1m y generar cualquier temporalidad superior en tiempo real mediante SQL.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero probar cualquier temporalidad que se me ocurra sin descargarla ni almacenarla antes, para que explorar una idea nueva no dependa de haber previsto que la iba a necesitar.
+
+**El problema (técnico):** guardar un archivo físico por cada temporalidad multiplica el disco y, peor, **fija de antemano qué se puede investigar**. Si solo guardaste cinco minutos, quince minutos y una hora, esas son las únicas preguntas que puedes hacerte. Explorar una periodicidad no estándar exige un ciclo de descarga y almacenamiento que rompe el ritmo de la investigación — y en la práctica significa que nunca se explora.
+
+**La solución (técnica):** guardar únicamente la granularidad base y **derivar cualquier temporalidad superior en el momento de la consulta**, con agregación vectorizada. El disco no crece, la coherencia está garantizada por construcción —todas las vistas salen de la misma fuente— y el espacio de exploración deja de estar limitado por lo que alguien decidió guardar meses atrás.
+
+**Explicado sin tecnicismos:** puedes guardar en el refrigerador el jugo ya exprimido en cinco tamaños de vaso, o guardar las naranjas y exprimir el vaso que quieras cuando lo quieras.
+
+Guardar los vasos ocupa cinco veces más espacio, y solo puedes tomar los tamaños que alguien decidió preparar. Si un día se te ocurre uno distinto, no lo tienes.
+
+Drasus guarda las naranjas. Guarda el dato más fino, y arma en el momento la temporalidad que le pidas: siete minutos, veintiuno, una hora y treinta y cuatro. Ocupa menos, y sobre todo **no te limita las preguntas que puedes hacerte** a las que alguien previó hace meses.
+
 ## Comportamientos Observables
 
 - [ ] El usuario solicita un gráfico de 17 minutos; el sistema lanza una consulta DuckDB sobre el Parquet de 1m y devuelve las velas en milisegundos.

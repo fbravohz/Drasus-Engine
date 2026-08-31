@@ -13,6 +13,24 @@ Es el catálogo canónico de instrumentos y sus términos de trading. Activa el 
 
 **Solución:** Jerarquía de dos niveles con herencia explícita por `NULL`. `instrument_master` es la identidad canónica (una fila por símbolo, sin bróker). `broker_instrument_terms` es el override — una fila solo cuando un bróker concreto ofrece ese instrumento, y cada campo es opcional: `NULL` significa "usa el valor canónico", nunca "dato faltante por error".
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como usuario, quiero declarar una sola vez lo que es cada instrumento y anotar aparte solo lo que mi bróker cobra distinto, para no repetir la misma ficha veinte veces ni acabar con veinte versiones que se contradicen.
+
+**El problema (técnico):** las condiciones de negociación tienen dos naturalezas mezcladas. Unas pertenecen al instrumento y son iguales en todas partes: cuánto vale su unidad mínima de precio, en qué moneda cotiza. Otras dependen del bróker: el diferencial de compraventa, la comisión, el costo de mantener la posición abierta de un día para otro. Las herramientas del sector repiten la ficha completa por cada bróker, sin herencia — y el resultado es que actualizar un dato canónico obliga a tocar N filas, con la garantía estadística de que alguna quedará desincronizada. Peor: hoy Drasus trata algunos de esos costos como parámetro global, cuando en la realidad varían por bróker y por activo.
+
+**La solución (técnica):** dos niveles con herencia explícita. La ficha canónica se declara una vez por instrumento, sin bróker. La ficha de bróker existe solo cuando ese bróker ofrece ese instrumento, y **cada campo suyo es opcional**: dejarlo vacío significa "usa el valor canónico", nunca "falta el dato por error". La distinción importa: un hueco deliberado y un hueco por descuido no pueden verse igual.
+
+**Explicado sin tecnicismos:** un mismo instrumento tiene dos clases de datos. Los que son suyos de nacimiento —en qué moneda cotiza, cuál es su unidad mínima de precio— y los que dependen de con quién operes: lo que cada casa de bolsa te cobra de comisión, de diferencial y por dejar la posición abierta a la noche.
+
+Las herramientas del mercado repiten la ficha entera por cada casa de bolsa. Es como tener veinte copias del acta de nacimiento de una persona, una por cada banco donde tiene cuenta: el día que corrijas un dato, tienes veinte lugares que actualizar y vas a olvidar alguno.
+
+Aquí el dato de nacimiento se escribe **una vez**, y de cada casa de bolsa solo se anota lo que cobra distinto. Y hay un detalle que parece nimio y no lo es: dejar un campo vacío significa "aquí cobra lo mismo que todos", no "se me olvidó llenarlo". Confundir esas dos cosas es cómo se cuelan errores que nadie encuentra.
+
 ## Comportamientos Observables
 
 - [ ] El usuario da de alta un instrumento nuevo (ej. `XAUUSD`); declara su clase de activo, moneda base/cotización, pip size y tick size canónicos → el sistema crea la fila en `instrument_master`.

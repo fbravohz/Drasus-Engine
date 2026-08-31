@@ -17,6 +17,22 @@ Es la puerta de entrada y el almacén de los **eventos del mundo**: publicacione
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber exactamente qué se sabía del mundo en cada instante del pasado —y no lo que sabemos hoy de ese instante— para poder medir el efecto real de una noticia sin hacer trampa con el diario de mañana.
+
+**El problema (técnico):** los datos económicos se revisan. La cifra de empleo que se publica un viernes cambia semanas después, a veces sustancialmente. Casi todas las fuentes guardan **solo la versión final**, sobrescribiendo la original. Un estudio hecho sobre esa fuente usa, sin saberlo, una cifra que en su momento nadie tuvo — y produce un resultado excelente e irreproducible. El problema tiene dos caras: el **instante** de publicación (ver la noticia antes de que existiera) y la **versión** del dato (ver la corrección antes de que se corrigiera).
+
+**La solución (técnica):** un almacén que guarda el hecho crudo con su linaje de proveedor y lo versiona: la primera publicación y cada revisión posterior conviven como registros separados, ninguna sobrescribe a la anterior, y cada una lleva sellado su instante exacto de publicación. Una consulta por una fecha del pasado devuelve lo que existía entonces. El sistema **no puntúa ni interpreta el evento aquí** — eso vive aparte, por fórmula declarada, para que el hecho crudo permanezca separado de la opinión sobre el hecho.
+
+**Explicado sin tecnicismos:** los datos económicos se corrigen. El gobierno publica una cifra de empleo un viernes, y tres meses después dice "en realidad era otra".
+
+Casi todas las bases de datos guardan **solo la corregida** y borran la original. Y ahí está la trampa: si estudias qué habrías hecho aquel viernes usando la cifra corregida, estás usando información que ese viernes no existía. Tu estrategia parece adivina. No adivinaba: leyó el periódico de tres meses después.
+
+Esta pieza guarda **todas las versiones, con la fecha exacta en que cada una se publicó**. Cuando el sistema pregunta "¿qué se sabía aquel viernes?", recibe lo que se sabía aquel viernes. Ni más.
+
 ## Comportamientos Observables
 
 - [ ] El usuario conecta una fuente estructurada (calendario macro / resultados) → el sistema descarga el hecho crudo y lo guarda con su linaje (proveedor, instante de publicación, licencia, latencia declarada).

@@ -15,6 +15,20 @@ La capa gRPC **pública** que permite a sistemas externos consumir Drasus: certi
 - **Comportamiento observable:** un tercero autenticado invoca un endpoint y recibe la respuesta del motor, con su uso medido y limitado.
 - **Por qué:** convierte cada capacidad interna en un producto vendible por API sin reabrir el core.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como negocio que construye un producto sobre Drasus —un feed de datos, un servicio de certificación, un enrutador de órdenes—, quiero conectarme por una puerta autenticada con mi propio uso medido y limitado, para no tener que inventar mi propio sistema de acceso ni exponer el motor sin control.
+
+**El problema (técnico):** cada producto que se vende a terceros necesita una puerta de entrada con identidad propia y control de abuso. Sin un contrato común para todos, cada integración externa termina inventando su propia autenticación, su propio límite de tasa y su propia manera de medir consumo — tres veces el trabajo, y tres formas distintas de fallar.
+
+**La solución (técnica):** una capa de acceso público donde cada tercero se autentica con su propia credencial, su tasa de uso está limitada, y cada llamada se mide y se atribuye a esa credencial. Antes de entregar cualquier dato, la puerta revisa el registro de consentimiento del usuario dueño de esos datos: si no hay consentimiento vigente, la respuesta se niega por defecto.
+
+**Explicado sin tecnicismos:** es la recepción de un edificio de oficinas con muchas empresas adentro. Cada visitante muestra su propia credencial, el guardia anota cuántas veces entra, y a nadie se le deja pasar más rápido de lo que el edificio permite. Y antes de dejarlo subir a ver un expediente de alguien, la recepción revisa si esa persona dio permiso para que se lo enseñen.
+
+Así, cada capacidad que Drasus construye para sí mismo se puede vender también a otros negocios, sin tener que abrir las puertas del motor de par en par.
+
 ## Comportamientos Observables
 
 - Cuando un tercero se autentica con su credencial de API → obtiene acceso a los endpoints de su plan.

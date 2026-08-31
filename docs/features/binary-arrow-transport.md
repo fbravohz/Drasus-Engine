@@ -9,6 +9,14 @@
 
 El **Transporte Binario Arrow** permite la transmisión de alta velocidad de grandes conjuntos de datos (series temporales, curvas de equidad) entre el backend (Rust) y el frontend (Flutter/Arrow JS) a través de los canales de **FFI/gRPC**. Utiliza el formato de memoria de Apache Arrow para evitar la costosa serialización/deserialización a JSON, permitiendo el streaming de millones de registros con latencia mínima.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Es el canal por el que viajan los bloques grandes de datos (precios, curvas de equity) entre el motor en Rust y la interfaz, en un formato binario que no necesita traducirse a texto en el camino.
+
+El usuario nunca lo ve. La nota como que **los gráficos de alta densidad se mueven y hacen zoom sin demora perceptible**, aunque detrás viajen millones de puntos.
+
 ## Comportamientos Observables
 
 - [ ] Envío de datos de mercado en vivo via gRPC/WebSocket (Puerto 8001).

@@ -15,6 +15,18 @@ El puerto que, dado un `owner_id` autenticado, permite (1) **exportar** en forma
 - **Comportamiento observable:** el usuario pide desde su panel de cuenta "dame mis datos" o "olvídame"; recibe un archivo estructurado o la confirmación de que su identidad fue pseudonimizada (con el detalle de qué se retuvo por ley y por qué).
 - **Por qué:** es barato de cimentar ahora porque `owner_id` (Grupo II, ADR-0020) ya es universal en cualquier tabla relevante; el catálogo es, en esencia, un índice de lo que ya existe — y carísimo de reinstrumentar bajo presión regulatoria con plazo legal encima.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario, quiero poder pedir una copia de todos mis datos o pedir que se me olvide, y recibir una respuesta clara en vez de un trámite eterno, para tener control real sobre la información que Drasus guarda de mí.
+
+**El problema (técnico):** desde el primer día, Drasus guarda en la Cabina de Mando Central datos de trabajo del usuario del nivel gratuito. El día que llegue la primera solicitud real de alguien bajo una ley de protección de datos —que suele dar treinta días de plazo—, auditar a mano todo el esquema para encontrar dónde vive cada dato de esa persona es una carrera contra el reloj que se pierde fácil.
+
+**La solución (técnica):** el sistema mantiene un catálogo de qué información se guarda y de quién es cada pieza, así que cuando llega una solicitud de exportar o de olvidar, no hay que buscar manualmente — el catálogo ya sabe dónde mirar. Exportar entrega un archivo con todo lo asociado a esa identidad. Olvidar convierte la identidad en algo que no se puede rastrear de vuelta a la persona, salvo lo que una obligación legal distinta exija conservar, y esa excepción se explica al usuario, no se esconde.
+
+**Explicado sin tecnicismos:** es como un archivo con un índice completo de todo lo que existe sobre ti en un lugar. Cuando pides "dame todo lo mío", no hay que buscar carpeta por carpeta: el índice ya dice dónde está cada cosa, y se te entrega junto. Cuando pides "bórrame", se hace lo mismo salvo por lo poco que la ley obliga a guardar de todos modos —como un banco que no puede borrar un comprobante de una operación por exigencia fiscal— y eso se te dice de frente, no se te oculta.
+
 ## Comportamientos Observables
 
 - Cuando una feature nueva declara una tabla con `owner_id` → se auto-registra en el catálogo de datos exportables (mismo mecanismo de propagación que ADR-0020).

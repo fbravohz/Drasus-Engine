@@ -12,6 +12,16 @@ Abstrae canales de notificación (email, webhook, Slack, SMS). El Core dispara e
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Enruta cada alerta que el sistema dispara —un corte de emergencia, una anomalía detectada, un reporte— hacia el canal que el usuario configuró (correo, Slack, mensaje de texto), sin que el resto del sistema sepa ni le importe por cuál salió.
+
+El usuario nunca la ve como pieza aparte. La nota como que **sus alertas siempre llegan por el canal que eligió**, sin importar qué parte del sistema las disparó, y que agregar un canal nuevo no exige tocar el resto del sistema.
+
+---
+
 ## Comportamientos Observables
 
 - 1. Execute dispara evento "KILL_SWITCH_ACTIVATED"

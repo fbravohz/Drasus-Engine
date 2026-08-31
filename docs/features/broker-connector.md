@@ -12,6 +12,16 @@ Abstrae la comunicación con brokers externos (Binance, IBKR, Oanda). Se apalanc
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Infraestructura.** Traduce las órdenes genéricas de Drasus al formato exacto que cada bróker exige, y de vuelta al revés con sus respuestas, y nunca envía una orden sin haber confirmado primero que la conexión está viva. Es la capa que permite cambiar de bróker sin reescribir el resto del sistema.
+
+El usuario nunca la ve directamente. La nota como que **puede operar con brókers distintos sin que nada más cambie, y que ninguna orden se pierde en silencio por mandarse a una conexión que ya se había caído.**
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Execute envía orden a Broker Connector

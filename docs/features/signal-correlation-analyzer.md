@@ -18,6 +18,22 @@ Calcula matrices de correlación entre señales (señal vs señal) y entre seña
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Historia de usuario:** Como investigador con varias señales generadas, quiero ver si de verdad son distintas entre sí o si en el fondo son la misma señal disfrazada de varias, para no confundir "tengo diez señales" con "tengo diez señales útiles".
+
+**El problema (técnico):** si de diez señales generadas ocho tienen una correlación de 0.99 entre sí, en la práctica hay solo dos señales verdaderamente distintas — y nadie lo nota si no existe una herramienta que lo mida directamente. Lo mismo aplica a la contaminación con factores de mercado conocidos: una señal puede parecer sofisticada y en realidad solo estar replicando el movimiento general del mercado.
+
+**La solución (técnica):** calcula la matriz de correlación entre cada par de señales y entre cada señal y los factores de mercado conocidos, resume el resultado en un único número —la razón de diversificación: cuántas señales verdaderamente independientes hay detrás de las N generadas— y marca con bandera roja cualquier señal cuya correlación con un factor conocido supere el umbral de contaminación.
+
+**Explicado sin tecnicismos:** imagina que contratas a diez asesores para que te den opiniones independientes, y resulta que ocho de ellos en realidad se copian entre sí y solo repiten la opinión de dos. Pagaste por diez opiniones y tienes dos.
+
+Esta pieza es la auditoría que revisa las respuestas de tus diez asesores y te dice, con un número, cuántos de ellos realmente piensan distinto — y cuáles nada más están repitiendo lo que ya sabe todo el mundo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario visualiza matriz de correlación de 10 señales

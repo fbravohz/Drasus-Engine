@@ -44,6 +44,24 @@ Permite capturar la estructura micro del mercado que se pierde en las barras est
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero cortar el mercado por actividad —número de operaciones, volumen, movimiento de precio— y no solo por reloj, para que cada unidad de análisis contenga una cantidad comparable de información.
+
+**El problema (técnico):** cortar el mercado en intervalos de tiempo fijos es una convención heredada, no una propiedad del mercado. Produce un defecto estadístico concreto: una unidad de la madrugada, con tres operaciones, pesa lo mismo que una del momento de máxima actividad, con miles. Las propiedades estadísticas de la serie resultante son peores —más lejos de la normalidad, con autocorrelación espuria— justo donde los métodos de validación posteriores suponen lo contrario.
+
+**La solución (técnica):** un procesador que agrupa el flujo por evento en vez de por reloj: cerrar la unidad cada N operaciones, cada N unidades de volumen, cada movimiento de precio de tamaño fijo, o por valor negociado. Cada tipo es un ciudadano de primera clase del resto del sistema — no una vista alternativa. El catálogo es deliberadamente acotado: se admite lo que encaja en el esquema y tiene caso de uso; lo que no, se documenta como no admitido en vez de construirse por completitud.
+
+**Explicado sin tecnicismos:** casi todo el mundo estudia el mercado partiéndolo en pedazos de tiempo igual: una vela cada minuto, cada hora, cada día.
+
+Suena razonable hasta que lo piensas dos veces. A las tres de la mañana casi no pasa nada; en la apertura pasa todo. Con cortes por reloj, **ambos pedazos valen lo mismo** en tus cuentas — y uno de los dos está prácticamente vacío.
+
+La alternativa es cortar por actividad: una vela cada mil operaciones, o cada vez que el precio se mueve cierta cantidad. Así cada pedazo contiene una cantidad parecida de cosas que pasaron.
+
+Es la diferencia entre medir un viaje en horas o en kilómetros. Depende de qué quieras saber, y para muchas preguntas el reloj es la peor de las dos.
+
 ## Comportamientos Observables
 
 - [ ] Genera barras **Renko** basadas en un tamaño de ladrillo (brick size) fijo.

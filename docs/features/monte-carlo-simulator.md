@@ -23,6 +23,20 @@ Es un analizador estadístico de permutación y remuestreo que opera en **tres m
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber si mi curva de resultados depende del orden exacto en que ocurrieron las operaciones y si mi estrategia sobrevive a los peores días que un mercado real puede producir, para no confiar en una racha de suerte disfrazada de método.
+
+**El problema (técnico):** una curva de capital ascendente es solo una de las muchas secuencias posibles en las que pudieron haber ocurrido esas mismas operaciones. Si el orden real fue, por casualidad, el más favorable, la curva se ve espectacular sin que la lógica tenga ningún mérito extra. Y hay un problema aparte, más letal: una estrategia puede verse rentable en promedio y aun así reventar en un solo día donde el mercado se comporta peor de lo que cualquier operación individual del historial sugiere — el tipo de día que revoca de inmediato una cuenta de fondeo.
+
+**La solución (técnica):** reordena y perturba miles de veces la secuencia de operaciones —barajando el orden, alterando ligeramente el deslizamiento, los precios y hasta el tamaño de la posición en cada variante— para dibujar el abanico completo de resultados que esa misma estrategia pudo haber producido. Aparte, aísla días individuales y los somete a eventos deliberadamente catastróficos (saltos de precio, spreads duplicados, ejecución lenta) para medir en qué porcentaje de esos días la estrategia habría violado un límite de pérdida diaria letal.
+
+**Explicado sin tecnicismos:** imagina que grabas cada una de tus cien apuestas de una noche de póker, y una computadora las reproduce en diez mil órdenes distintos, manteniendo las mismas cartas pero cambiando en qué momento te tocaron. Si casi siempre terminas ganando sin importar el orden, jugabas bien. Si solo ganaste esa noche particular porque las buenas cartas llegaron primero y te dieron confianza para apostar fuerte después, tuviste suerte de calendario, no de habilidad.
+
+Esta pieza hace eso con tus operaciones: las reordena y las perturba miles de veces para ver si tu resultado depende del orden en que llegaron. Y aparte, agarra tus peores días posibles y los empeora a propósito —como simular la noche en que se va la luz del casino a media mano— para ver si sobrevives al peor escenario, no solo al promedio.
+
 ## Ciclo de Vida de la Feature — Monte Carlo
 
 ### Entrada
@@ -50,7 +64,7 @@ Es un analizador estadístico de permutación y remuestreo que opera en **tres m
   Simulación condicional severísima orientada a supervivencia institucional (FTMO/Darwinex):
   - **Aislamiento por Cohortes Diarias:** Aísla días individuales de la curva de equidad original.
   - **Inyección de Eventos Letales:** Sintetiza gaps de 10x ATR, spreads duplicados instantáneamente y latencias de ejecución > 5 segundos.
-  - **Muerte Súbita (Compliance):** Destruye la mutación completa si atraviesa límites diarios absolutos (Drawdown > 4.5% Intradiario). Ignora drawdowns relativos temporales macro.
+  - **Descarte Inmediato (Compliance):** Destruye la mutación completa si atraviesa límites diarios absolutos (Drawdown > 4.5% Intradiario). Ignora drawdowns relativos temporales macro.
   - **Tasa de Supervivencia:** Calcula en qué porcentaje de días/mutaciones la estrategia violó los límites, vinculado al `PropFirmComplianceConfig` (ADR-0045).
 
 - **Capa de Fricción: Física de Broker (Broker Physics):**

@@ -14,6 +14,22 @@ A diferencia de los agregadores estándar que se limitan a potencias de tiempo f
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero agrupar el mercado en intervalos arbitrarios y no solo en los redondos de siempre, para buscar donde la mayoría no está mirando.
+
+**El problema (técnico):** las temporalidades convencionales —cinco minutos, quince, una hora, un día— no tienen nada de especial salvo que son cómodas para un reloj humano. Todo el mundo las usa, todo el mundo optimiza sobre ellas, y cualquier patrón que sobreviva ahí ya fue encontrado y explotado por muchos. Además, la coincidencia masiva sobre los mismos cortes introduce artefactos: efectos de apertura y cierre que son consecuencia de la convención, no del mercado.
+
+**La solución (técnica):** un agregador que acepta cualquier intervalo, incluidos los que no dividen la hora en partes enteras — diecisiete minutos, tres horas veintiuno, cuarenta y cinco segundos. Amplía el espacio de búsqueda a una región que la convención dejó sin explorar, no porque no sirviera, sino porque a nadie le resultaba cómoda.
+
+**Explicado sin tecnicismos:** todos miran el mercado en pedazos redondos: cinco minutos, quince, una hora. No porque tengan nada de especial, sino porque son cómodos para el reloj.
+
+Es como buscar setas: todo el mundo camina por el sendero marcado, y en el sendero ya no queda nada, porque pasaron cien personas antes que tú.
+
+Esta pieza te deja mirar en pedazos de diecisiete minutos, o de tres horas y veintiuno. Sitios raros donde probablemente nadie ha buscado — no porque no haya nada, sino porque a nadie se le ocurrió que fueran un lugar donde mirar.
+
 ## Comportamientos Observables
 
 - [ ] Genera barras OHLCV a partir de ticks usando un intervalo de tiempo configurable en segundos/minutos.

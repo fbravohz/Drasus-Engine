@@ -12,6 +12,24 @@ Es el componente responsable de auditar la integridad de los datos históricos y
 **Problema:** Una serie temporal de un año puede parecer buena, pero tener micro-gaps invisibles que alteran el resultado de la estrategia.
 **Solución:** Un escáner que calcula un score de calidad por cada bloque de tiempo y lo envía al frontend para su visualización cromática.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver de un vistazo qué tramos de mi historia son confiables y cuáles están dañados, para saber sobre qué terreno estoy construyendo antes de sacar conclusiones.
+
+**El problema (técnico):** un conjunto de datos de varios años puede tener microdefectos localizados —una semana con huecos, un mes con valores interpolados, un tramo con volatilidad anómala por un error del proveedor— que son invisibles al abrir el archivo y decisivos para el resultado. Peor aún: una estrategia puede resultar rentable **precisamente** por explotar el tramo dañado, y su curva de capital no mostrará ninguna señal de alarma.
+
+**La solución (técnica):** un escáner que calcula un indicador de calidad por bloque de tiempo y lo presenta como mapa cromático. La calidad deja de ser un dato oculto en un registro que nadie lee y pasa a ser una superficie visual: el investigador ve las zonas dañadas antes de confiar en un resultado, no después de defenderlo.
+
+**Explicado sin tecnicismos:** imagina que compras una casa y solo ves la fachada. Se ve perfecta. Lo que no ves es que hay humedad en dos habitaciones y una viga podrida en el techo.
+
+Con los datos pasa igual: diez años de historia pueden parecer impecables y tener semanas dañadas, tramos rellenados a mano, o un mes entero con valores que el proveedor calculó mal. Y aquí está lo cruel: **tu mejor estrategia puede ser rentable justo por aprovechar la parte podrida** — y su gráfica se verá preciosa, sin ninguna señal de alarma.
+
+Esta pieza es el estudio con cámara térmica: te pinta la historia por colores, y las zonas malas se ven de inmediato. No te dice qué hacer; te deja ver sobre qué estás parado antes de construir encima.
+
 ## Comportamientos Observables
 
 - [ ] El usuario ve un calendario o línea de tiempo de un activo:

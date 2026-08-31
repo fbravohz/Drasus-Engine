@@ -15,6 +15,20 @@ La Auditoría de Gradiente de Fragilidad Descendente es la evolución (New Era) 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema examine toda la red de parámetros y condene por completo cualquier estrategia donde un cambio mínimo en un solo parámetro destruya el resultado, para no operar algo que depende de un ajuste milimétrico y accidental.
+
+**El problema (técnico):** un histograma que compara el valor óptimo contra la mediana puede pasar por alto una inestabilidad que solo aparece al cruzar varios parámetros a la vez — una estrategia puede verse estable mirando un parámetro solo, y desplomarse en cuanto dos de ellos se mueven juntos apenas un poco. Esa clase de fragilidad cruzada es invisible en un gráfico plano y letal en el mercado real, donde ningún parámetro se queda fijo para siempre.
+
+**La solución (técnica):** calcula, para toda la red de parámetros a la vez, cuánto cambia el resultado ante un desplazamiento mínimo en cualquier combinación de ellos. Si detecta que ese cambio milimétrico destruye más de un umbral configurable del rendimiento total, no marca solo ese parámetro como sospechoso: condena a la estrategia completa, sin excepción y sin apelación, sin importar qué tan bueno se vea el resultado principal.
+
+**Explicado sin tecnicismos:** imagina un edificio que se ve perfecto en la inspección, pero un ingeniero estructural decide algo más agresivo: empuja cada columna, una por una y también combinadas, con la fuerza mínima de un empujón de mano. Si con ese empujón mínimo el edificio entero cruje, no importa que la fachada se vea impecable — el edificio no es seguro para vivir, y se condena entero, no solo la columna que crujió.
+
+Esta pieza es ese ingeniero implacable. Empuja cada combinación de parámetros con la fuerza más pequeña posible y, si algo se derrumba, no repara esa esquina: rechaza la estructura completa. Prefiere perder una estrategia que se veía bien a arriesgarse a operar algo que un empujón de la vida real puede tirar abajo.
+
 ## Comportamientos Observables
 
 - [ ] **[OLD-SCHOOL] Evaluador Básico:** Muta cada parámetro de forma aislada para generar histogramas de desplazamiento rojo/verde. Compara el `Valor Original` vs `Valor de Mediana`.

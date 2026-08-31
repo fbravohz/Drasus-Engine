@@ -19,6 +19,22 @@ Este componente provee:
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que mover mi stop de protección, escalar una posición ganadora o cubrir una posición con otra opuesta ocurra de forma mecánica en cada vela, para que un movimiento rápido del mercado no me gane la mano mientras decido a mano qué hacer.
+
+**El problema (técnico):** ajustar un trailing stop, calcular el lotaje correcto de una entrada escalonada, o abrir una cobertura, son operaciones que un humano ejecuta con retraso e inconsistencia, sobre todo bajo presión, cuando el precio ya se movió mientras se decidía. Un cálculo de lotaje equivocado en una posición escalonada puede además disparar la exposición total sin que nadie lo note hasta que ya es tarde.
+
+**La solución (técnica):** el trailing stop se recalcula al cierre de cada vela según la volatilidad y se transmite al bróker sin intervención; el escalamiento de entradas inyecta lotaje adicional en niveles predefinidos sin exceder el riesgo global configurado; y cada entrada nueva de la misma estrategia abre una posición independiente con su propio ticket, en vez de bloquear o mezclar el riesgo con la posición existente.
+
+**Explicado sin tecnicismos:** es como un cinturón de seguridad con pretensor automático, en vez de uno que tienes que ajustar tú mismo cada vez que el coche frena. El pretensor actúa en el instante exacto, cada vez, sin que nadie tenga que acordarse de hacerlo.
+
+Esta pieza es ese ajuste automático para tus operaciones: mueve el stop de protección exactamente cuando toca, sin que dependa de que tú estés viendo la pantalla en ese segundo, y agrega o cubre posiciones siguiendo una regla fija, nunca una corazonada de último minuto.
+
+---
+
 ## Comportamientos Observables
 
 - **Modificación Dinámica de Niveles:** El sistema recalcula la distancia del Trailing Stop al cierre de cada barra y transmite la actualización al broker.

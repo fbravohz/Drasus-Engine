@@ -17,6 +17,20 @@ Motor de **fitness contextual multi-régimen**. En lugar de un único número es
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como analista, quiero ver el desempeño de mi estrategia desglosado por tipo de mercado en vez de un solo número promedio, para descubrir en qué condición específica es frágil antes de que esa condición aparezca en vivo.
+
+**El problema (técnico):** un solo número de calidad —un promedio de todo el historial— puede esconder que la estrategia es excelente en mercados alcistas y catastrófica en crisis, porque los buenos resultados de un régimen compensan matemáticamente los malos del otro. Juzgar con la misma vara un mercado en calma y uno en pánico borra justo la información que más importa: dónde está la debilidad real.
+
+**La solución (técnica):** parte la curva de resultados según el régimen de mercado de cada tramo, calcula las métricas por separado en cada uno, y las presenta como un puntaje multidimensional en vez de uno solo — el investigador define qué métrica le importa más en cada tipo de régimen (por ejemplo, priorizar la estabilidad en alta volatilidad y el beneficio neto en calma). El resultado se ve como un mapa con un eje por régimen, señalando de un vistazo en cuál la estrategia se hunde.
+
+**Explicado sin tecnicismos:** imagina evaluar a un estudiante solo por su promedio general, sin ver las materias por separado. Un promedio de ocho puede esconder que saca dieces en historia y reprueba matemáticas — información que necesitas antes de ponerlo a resolver un examen de matemáticas.
+
+Esta pieza le hace a tu estrategia lo que la boleta de calificaciones por materia le hace al estudiante: en vez de un solo promedio, te muestra cómo le va en cada tipo de mercado por separado, para que veas exactamente dónde está la materia que reprueba antes de que ese tipo de mercado llegue de verdad.
+
 ## Comportamientos Observables
 
 - [ ] El usuario define en la UI reglas de prioridad por régimen (ej: "si la volatilidad es alta, priorizar el ratio de Sharpe; si es baja, priorizar el beneficio neto").

@@ -15,6 +15,22 @@ El Databank Manager es el almacén centralizado de Alpha de Drasus Engine. Utili
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero que todo lo que el sistema ha probado quede guardado y consultable, para poder preguntarle a mi propio historial en vez de repetir búsquedas que ya hice.
+
+**El problema (técnico):** una fábrica de estrategias produce cientos de miles de candidatas evaluadas. Sin un almacén consultable, ese trabajo se pierde: no se puede filtrar el mejor uno por ciento, no se puede detectar que trescientas candidatas son variaciones de la misma idea, y sobre todo **no se puede reconstruir cuántas veces se buscó** — que es el número exacto del que depende la corrección estadística posterior. Perder ese conteo invalida el rigor de todo lo que venga después.
+
+**La solución (técnica):** un almacén columnar centralizado, consultable a alta velocidad, que guarda cada candidata con sus métricas. Sobre él se apoyan el filtrado masivo, el etiquetado de familias tóxicas —grupos de estrategias que comparten el mismo defecto estructural, para purgarlas en bloque en vez de una por una— y el agrupamiento por similitud de comportamiento.
+
+**Explicado sin tecnicismos:** la fábrica produce cientos de miles de estrategias. Sin un archivero, todo ese trabajo se evapora.
+
+Y no solo se pierden las estrategias: se pierde **la cuenta de cuántas veces buscaste**. Ese número es el de las mil monedas — el que después permite decir si tu mejor resultado fue mérito o fue el afortunado del montón. Sin él, ninguna evaluación posterior vale nada.
+
+Este archivero guarda todo y lo deja consultable al instante: sacar el mejor uno por ciento, o descubrir que trescientas de tus candidatas son en realidad la misma idea con distinto disfraz — para tirar el grupo entero de una vez en lugar de irlas descartando de una en una.
+
 ## Comportamientos Observables
 
 - [ ] **Almacenamiento Masivo:** Soporta 100K+ estrategias comprimidas en Parquet local.

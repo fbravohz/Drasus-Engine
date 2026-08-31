@@ -12,6 +12,22 @@ Es el componente encargado de la integridad estructural de los datos de mercado.
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema detenga en la frontera de entrada cualquier dato estructuralmente imposible, para que un error del proveedor no se propague silenciosamente por todo lo que venga después.
+
+**El problema (técnico):** un archivo de mercado puede contener valores que son físicamente imposibles y aun así perfectamente legibles: precios negativos, un mínimo mayor que el máximo, saltos de precio que ningún mercado real produjo, huecos de tiempo sin explicación. Nada de eso hace fallar la lectura del archivo — se procesa sin quejarse y contamina cada cálculo posterior. El costo de detectarlo tarde crece con cada etapa que atraviesa.
+
+**La solución (técnica):** una comprobación de integridad estructural en la frontera de entrada, antes de que el dato entre al sistema, más la conversión a una representación numérica exacta. Los precios se guardan como enteros escalados en vez de como decimales de punto flotante, porque el redondeo acumulado de estos últimos produce diferencias que rompen la reproducibilidad exacta que exige la auditoría.
+
+**Explicado sin tecnicismos:** es el inspector de la puerta de entrada, y solo busca cosas imposibles: un precio negativo, un "más bajo del día" que resulta ser mayor que el "más alto del día", un salto que ningún mercado dio jamás.
+
+Lo importante es que revisa **antes** de dejar pasar. Un dato imposible que entra no hace ruido: se cuela sin protestar y ensucia todos los cálculos que vengan después, hasta que meses más tarde alguien no entiende por qué los números no cuadran.
+
+Y guarda los precios como números enteros, no con decimales. Suena a detalle menor y no lo es: con decimales, la computadora redondea un poquito en cada operación, y esos redondeos acumulados hacen que la misma prueba dé resultados distintos dos veces. Con enteros, dos corridas iguales dan **exactamente** lo mismo — que es la única forma de auditar algo.
+
 ## Comportamientos Observables
 
 - [ ] Valida que **High >= Low** y que **Open/Close** estén dentro de ese rango.

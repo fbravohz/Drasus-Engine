@@ -15,6 +15,20 @@ El Perfect Profit Benchmark es un filtro de eficiencia del modelo (ME). Su misi�
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber qué porcentaje del beneficio que el mercado realmente ofreció logré capturar, para no confundir "ganó dinero" con "aprovechó la oportunidad que tenía enfrente".
+
+**El problema (técnico):** una estrategia puede reportar una ganancia positiva y aun así ser profundamente ineficiente: si en el mismo periodo el mercado ofreció movimientos mucho mayores que los capturados, un resultado que se ve bien en aislamiento puede esconder una lógica que desperdicia casi toda la oportunidad disponible. Sin un techo de referencia, no hay forma de distinguir una estrategia genuinamente buena de una apenas mejor que no operar.
+
+**La solución (técnica):** calcula el beneficio teórico máximo que el mercado ofreció en el periodo —la suma de todos los movimientos de precio capturables sin fricción ni deslizamiento— y divide la ganancia real de la estrategia entre ese techo para obtener un porcentaje de eficiencia. Si ese porcentaje cae por debajo de un mínimo configurable, la estrategia se rechaza sin importar que su ganancia absoluta sea positiva.
+
+**Explicado sin tecnicismos:** imagina un vendedor que presume haber cerrado diez ventas en un centro comercial. Suena bien, hasta que te enteras de que ese día pasaron diez mil clientes dispuestos a comprar. Diez ventas de diez mil oportunidades no habla de un buen vendedor, habla de alguien que apenas se asomó a la puerta.
+
+Esta pieza calcula cuántos "clientes" pasaron frente a tu estrategia —todo el movimiento de precio que el mercado ofreció— y lo compara contra lo que realmente capturaste. Una ganancia positiva ya no basta por sí sola: si dejaste pasar casi toda la oportunidad, la estrategia se marca como ineficiente, sin importar que técnicamente haya ganado dinero.
+
 ## Comportamientos Observables
 
 - [ ] El sistema calcula la suma de todos los movimientos de precio direccionales (beneficio teórico máximo o "Perfect Profit").

@@ -11,6 +11,20 @@ En un entorno de trading institucional, la latencia y la estabilidad son crític
 
 Esta feature implementa hilos de ejecución de larga duración en Rust (Tokio tasks) dedicados exclusivamente al **LiveNode** de NautilusTrader. Estos procesos se mantienen vivos durante toda la sesión de trading y cuentan con aislamiento de hardware mediante **Core Pinning** (afinidad de CPU) para garantizar que la ejecución de órdenes reales nunca se vea afectada por el ruido o la carga de otros módulos del sistema.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que el proceso que ejecuta mis órdenes en vivo nunca compita por recursos de cómputo con las tareas pesadas de investigación (backtests masivos, búsqueda evolutiva), para que una orden de salida no llegue tarde justo cuando la computadora está ocupada haciendo otra cosa.
+
+**El problema (técnico):** si el mismo procesador que ejecuta órdenes en tiempo real también corre una optimización genética que satura el CPU, el sistema operativo puede robarle ciclos al proceso de ejecución en el peor momento — el segundo exacto en que había que mover un stop o cerrar una posición.
+
+**La solución (técnica):** el proceso de ejecución en vivo corre en un núcleo de CPU reservado exclusivamente para él (afinidad de núcleo), aislado de cualquier otra carga del sistema. Un vigilante externo revisa cada segundo que este proceso sigue respondiendo, y si falla, intenta un reinicio controlado y avisa de inmediato.
+
+**Explicado sin tecnicismos:** es como tener un carril exclusivo para ambulancias en una avenida congestionada. No importa qué tan trabado esté el resto del tráfico — la ambulancia tiene su propio espacio garantizado y nunca se queda atorada detrás de un camión de carga.
+
+Esta pieza le da al proceso que ejecuta tus órdenes ese carril exclusivo dentro de tu propia computadora: sin importar qué tan ocupado esté el resto del sistema buscando nuevas estrategias, tu operación en vivo nunca se queda esperando turno.
+
 ## Comportamientos Observables
 
 - [ ] Cuando el usuario activa el modo "Live Trading", el sistema inicia un hilo persistente que no se detiene hasta que el usuario lo solicita explícitamente o el sistema detecta un error crítico.

@@ -15,6 +15,22 @@ Vista en Vivo permite **observar una estrategia operando mientras se simula**, e
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-05` — Cuarentena antes del dinero real
+
+**Historia de usuario:** Como trader que no confía a ciegas en un algoritmo, quiero ver a la estrategia operar en cámara —con sus indicadores, señales y niveles de stop dibujados sobre el precio— para confirmar con mis propios ojos que hace exactamente lo que dice que hace.
+
+**El problema (técnico):** un árbol de reglas generado automáticamente puede tener docenas de condiciones encadenadas, y ninguna cifra de rendimiento por sí sola convence a un humano de que la lógica es correcta. Un reporte estático tampoco muestra el instante exacto en que la estrategia decidió entrar o salir — solo el resultado final.
+
+**La solución (técnica):** un observador que se engancha a una corrida en curso —sin frenarla ni alterar su resultado en absoluto— y dibuja sobre el gráfico, en cualquier tipo de vela que la estrategia use, los indicadores, las señales de entrada/salida y los niveles de stop y de toma de ganancia. El usuario controla la velocidad de reproducción, y al pasar el cursor sobre una barra ve una tabla con el cálculo exacto de cada indicador en ese instante.
+
+**Explicado sin tecnicismos:** es la diferencia entre leer el reporte de una cirugía y ver la cirugía en video. El reporte dice que salió bien; el video te deja comprobarlo tú mismo, paso a paso, y en cámara lenta si hace falta.
+
+Aquí puedes ver a la estrategia "operar" frente a tus ojos, pausar el momento exacto de una entrada, y revisar por qué compró o vendió justo ahí — sin que el hecho de estar mirando cambie en nada lo que en realidad sucede por dentro del motor.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario arrastra al canvas un nodo **Vista en Vivo** y lo conecta a una corrida en curso; ve la estrategia operar en tiempo controlable.

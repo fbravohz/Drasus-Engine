@@ -12,6 +12,16 @@ Es el componente encargado de organizar físicamente los archivos Parquet en el 
 **Problema:** Un solo archivo Parquet con 10 años de datos es inmanejable y lento de leer si solo quieres un mes.
 **Solución:** Fragmentar los datos en carpetas `year=YYYY/month=MM/` para acceso instantáneo.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Infraestructura.** Organiza físicamente los archivos de datos en carpetas por año y mes, de modo que una consulta sobre marzo lea solo la carpeta de marzo en vez de recorrer diez años de historia. Es la diferencia entre un archivero con separadores y una caja con todo revuelto dentro.
+
+El usuario nunca la ve. La nota como que **filtrar por fechas responde al instante** en vez de tardar minutos.
+
 ## Comportamientos Observables
 
 - [ ] Los datos se guardan en rutas predecibles: `{data_root}/market_data/exchange=binance/symbol=BTCUSDT/timeframe=1m/year=2024/...`

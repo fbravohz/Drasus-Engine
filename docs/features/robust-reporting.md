@@ -10,6 +10,24 @@
 Genera reportes estáticos (JSON/HTML) hiper-detallados de una estrategia o portafolio, incluyendo curvas de equity hiper-resolución, distribuciones de Montecarlo completas y un manifiesto de parámetros del backtest.
 Es una exportación offline y soberana que no depende de interfaces web pesadas.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador que necesita mostrar evidencia de una estrategia o pedir capital a un inversionista, quiero exportar un reporte completo y auditable —o un documento de presentación profesional— sin depender de ningún servicio externo, para tener en mis manos algo que se pueda compartir y verificar fuera del sistema.
+
+**El problema (técnico):** un resultado que solo existe dentro de la aplicación es difícil de compartir, archivar o presentar. Y cuando el destinatario es un inversionista, un reporte crudo de métricas técnicas no convence a nadie de aportar capital — pero redactar a mano una narrativa profesional cada vez que se quiere levantar dinero es trabajo repetitivo que nadie quiere hacer, y que además invita a exagerar o inventar cifras que no están en los datos certificados.
+
+**La solución (técnica):** un exportador que genera un archivo HTML autocontenido (sin dependencias externas, abre offline) y un JSON puro con las métricas exactas, ambos con hash de auditoría. Sobre esa base, un generador de documento de presentación institucional que, a partir de las métricas ya certificadas de un portafolio, redacta con un modelo de lenguaje local una narrativa financiera profesional —tesis de la estrategia, comportamiento en regímenes de estrés, descorrelación frente a un referente— citando exclusivamente cifras reales, nunca inventadas; si el modelo local no está disponible, el documento se genera igual, solo sin la capa narrativa.
+
+**Explicado sin tecnicismos:** imagina que después de un semestre de trabajo tuvieras que armar, cada vez a mano, la carpeta que le muestras a un posible socio: gráficas, números, y un texto que explique por qué el proyecto vale la pena. Cansado, además de lento.
+
+Esta pieza es la que arma esa carpeta sola. Con un clic obtienes un reporte técnico completo que se abre en cualquier computadora sin internet, y con otro clic, un documento de presentación con apariencia profesional, redactado automáticamente, que solo habla de números que de verdad están certificados — nunca inventa un resultado para verse mejor.
+
+---
+
 ## 2. Comportamientos Observables
 
 - Cuando se solicita un reporte, el sistema exporta un archivo HTML encapsulado (sin dependencias externas) y un JSON puro de métricas.
@@ -51,8 +69,8 @@ Es una exportación offline y soberana que no depende de interfaces web pesadas.
 **Contexto 1: Veredicto de Validación**
 - Tras certificar en `validate`, se emite su "Certificado de Nacimiento" en HTML.
 
-**Contexto 2: Autopsia de Feedback**
-- Tras detectar anomalía, se emite su "Reporte de Defunción".
+**Contexto 2: Análisis de Causa Raíz de Feedback**
+- Tras detectar anomalía, se emite su "Reporte de Cierre".
 
 ## 7. Tareas (TTRs)
 

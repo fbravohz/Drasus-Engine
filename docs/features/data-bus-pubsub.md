@@ -11,6 +11,14 @@ En sistemas con múltiples agentes operando simultáneamente, la redundancia de 
 
 Esta feature implementa un **Bus de Datos Multiplexado** basado en el patrón Pub/Sub nativo de Rust. El sistema levanta una única conexión física hacia el mercado por cada símbolo y distribuye los eventos (ticks, cambios en el libro de órdenes) a todos los agentes suscritos mediante **paso por referencia en memoria (Zero-Copy)**.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Infraestructura.** Levanta una sola conexión física de datos de mercado por símbolo y la distribuye a todas las estrategias suscritas por referencia en memoria, en vez de abrir una conexión independiente por cada una.
+
+El usuario nunca la ve. La nota como que **puede correr decenas de estrategias sobre el mismo símbolo sin que el exchange bloquee la cuenta por exceso de conexiones, y sin que el consumo de memoria se dispare con cada estrategia nueva.**
+
 ## Comportamientos Observables
 
 - [ ] El sistema levanta una sola conexión gRPC/WebSocket hacia Binance/IBKR para el símbolo "EURUSD", independientemente de cuántas estrategias lo usen.

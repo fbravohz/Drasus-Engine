@@ -20,6 +20,22 @@ Se compone de cuatro mecánicas avanzadas:
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que el sistema asegure ganancias flotantes de forma agresiva y reduzca el tamaño de mis operaciones tras una racha de pérdidas, para no ver cómo una ganancia grande se convierte en pérdida, ni cómo una mala racha se agrava por seguir apostando el mismo tamaño.
+
+**El problema (técnico):** una ganancia flotante no es una ganancia real hasta que se cierra, y el mercado puede revertir tan rápido como avanzó, sobre todo bajo los límites estrictos de drawdown diario que imponen las firmas de fondeo. Del otro lado, seguir operando el mismo tamaño después de varias pérdidas consecutivas multiplica el daño de una racha que ya mostró que algo no está saliendo como se esperaba.
+
+**La solución (técnica):** cuatro mecanismos reactivos. Al alcanzar un beneficio validado, el sistema cierra una porción del volumen y mueve el stop al punto de entrada, eliminando el riesgo de esa operación. Si el beneficio flotante se dispara de forma estadísticamente anómala, cierra todo antes de que la reversión lo borre. Tras una racha de pérdidas consecutivas, reduce el tamaño de las siguientes operaciones hasta que una racha de ganancias confirme que conviene volver al tamaño normal. Y si una posición lleva demasiado tiempo abierta sin alcanzar su objetivo, reduce su volumen progresivamente en vez de dejarla indefinida.
+
+**Explicado sin tecnicismos:** piensa en un apostador disciplinado en una mesa de casino: en cuanto gana una mano importante, retira una parte de las fichas a la bolsa y sigue jugando solo con el resto. Y si pierde varias manos seguidas, reduce la apuesta en vez de subirla para "recuperar rápido" — la trampa que arruina a la mayoría.
+
+Esta pieza obliga a la cuenta a comportarse como ese apostador disciplinado, sin que nadie tenga que acordarse de serlo en el momento: asegura ganancias apenas se confirman, y frena el tamaño de la apuesta apenas la racha se pone en contra.
+
+---
+
 ## Comportamientos Observables
 
 - **Extracción Relámpago:** El sistema cierra una porción configurable de la posición una vez alcanzado el umbral de recompensa sin esperar al Take Profit original.

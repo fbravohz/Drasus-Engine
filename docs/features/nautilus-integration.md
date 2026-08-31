@@ -18,6 +18,14 @@ Es la capa de adaptación que permite a Drasus Engine usar NautilusTrader como m
 - **Proceso:** Traduce la lógica funcional de Drasus Engine a `NautilusTrader` Actors, Resolvers y DataBundles. Implementa el **Core Simulation Loop**: `Ingesta → Warm-up → Indicadores → Sincronización → Señal → Risk Check → Order Server → Matching Engine → Account/Ledger Update`.
 - **Salida:** Flujo de eventos tipados (Orders, Fills, Latencies, Signals) con soporte para **Settlement vs Histórico (Davey)**.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Infraestructura.** Es el puente que conecta la lógica de Drasus con el motor de ejecución externo que reproduce con fidelidad institucional cómo se llenan las órdenes en un mercado real, sin que el resto del sistema dependa directamente de esa pieza externa ni de su forma de trabajar.
+
+El usuario nunca la ve. La nota como que **el motor puede cambiar de bróker o de mecanismo de ejecución por dentro sin que ninguna estrategia deje de funcionar igual**.
+
 ## Comportamientos Observables
 - **Abstracción de Broker:** Permite cambiar el backend de ejecución (Binance, IBKR, Oanda) sin modificar la lógica de la estrategia.
 - **Determinismo Bit-a-Bit:** Garantiza que el mismo input de datos y semillas genere el mismo resultado exacto de ejecución en backtesting.

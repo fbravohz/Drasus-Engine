@@ -13,6 +13,22 @@ El `Trade Analysis BI Suite` es una colección integrada de gráficos estadísti
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como investigador que necesita entender por qué una estrategia gana o pierde, quiero un conjunto de gráficos que desglose el desempeño por hora, día, mes y dirección, para encontrar el patrón detrás del número agregado en vez de quedarme solo con el resultado final.
+
+**El problema (técnico):** una métrica agregada —el Sharpe, la ganancia total— esconde la estructura interna del comportamiento. Una estrategia puede ganar en promedio y aun así perder sistemáticamente los lunes, o solo funcionar del lado corto, o depender de operaciones que se mantienen abiertas más tiempo del que parece razonable. Sin desagregar el resultado por estas dimensiones, esos patrones quedan invisibles hasta que el investigador tropieza con ellos por accidente, si es que lo hace.
+
+**La solución (técnica):** una colección de visualizaciones pre-calculadas en el backend —cascada de ganancias y pérdidas acumuladas, distribución por hora/día/mes, comparación de aciertos por día de la semana, desempeño largo contra corto, y un mapa de dispersión que cruza duración de la operación contra su resultado— con filtrado dinámico por símbolo y rango de fechas. Todo el cálculo estadístico pesado ocurre en el motor nativo; la interfaz solo pinta lo que ya viene resuelto.
+
+**Explicado sin tecnicismos:** imagina que un doctor solo te dijera "tu salud general está bien" sin nunca mostrarte los resultados de cada análisis por separado. No sabrías si el problema está en el colesterol, en la presión o en ningún lado.
+
+Esta pieza es el desglose completo de análisis: te muestra si tu estrategia gana los martes y pierde los viernes, si las operaciones largas son las que sostienen el resultado mientras las cortas lo drenan, o si las posiciones que se quedan abiertas más tiempo son justamente las que más pierden. No te dice qué hacer con esa información — te la entrega desglosada para que tú, o el propio sistema en etapas posteriores, decidan qué corregir.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario interactúa con los siguientes gráficos integrados:

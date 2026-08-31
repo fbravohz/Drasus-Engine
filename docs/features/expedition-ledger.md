@@ -17,6 +17,16 @@ El Expedition Ledger es la **columna vertebral de procedencia** del sistema: reg
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Infraestructura.** Registra cada corrida del sistema como una entidad inmutable, atada a los artefactos que tocó y a la naturaleza exacta de ese toque —si creó una estrategia, si la mutó, si la promovió, si la degradó—, de modo que cuántas veces se buscó y qué corrida produjo cada resultado queda escrito desde el primer intento y no se puede reconstruir después.
+
+El usuario nunca la ve directamente. La nota como que **las estadísticas de sobreajuste que corrigen sus resultados (el descuento por haber intentado mucho) son confiables**, y como que puede rastrear de dónde salió exactamente cualquier estrategia que tiene guardada.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Al lanzar una corrida se crea una Expedition: UUIDv7, snapshot de configuración inmutable, `pipeline_version_hash` de la ruta, ventana de datos/universo/semilla, estado `PENDING`.

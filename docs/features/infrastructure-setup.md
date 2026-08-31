@@ -15,6 +15,16 @@ Es como construir la cimentación de una casa antes de levantar las paredes.
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Es la cimentación técnica del sistema: estructura de carpetas, base de datos local, bitácora estructurada y herramientas de prueba, lista antes de que exista cualquier módulo de negocio.
+
+El usuario nunca la ve. La nota como que **el sistema arranca, persiste y se puede auditar desde el primer día**, sin que nadie tenga que reconstruir esos cimientos después.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Puedo clonar el repositorio y con un solo comando instalar todo

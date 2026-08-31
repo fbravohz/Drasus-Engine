@@ -14,6 +14,22 @@ El protector de última instancia del sistema. Su misión es la **Prevención de
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero un vigilante independiente que corte toda la operación si el sistema principal se congela o si las pérdidas superan lo que el historial jamás mostró, para que un fallo técnico no se convierta en una cuenta vacía mientras nadie está mirando.
+
+**El problema (técnico):** un proceso que vigila su propia salud desde dentro no sirve — si el motor de ejecución se congela, el código que debería detectarlo se congela con él. Y una pérdida que supera el peor drawdown histórico es la señal de que algo dejó de comportarse como se esperaba, no una mala racha más.
+
+**La solución (técnica):** un proceso separado, en su propio hilo, que revisa el latido del motor de ejecución cada pocos milisegundos y activa un cierre de emergencia si el latido cesa más de cinco segundos, o si el drawdown en vivo cruza el máximo histórico multiplicado por un factor de seguridad. El cierre liquida todas las posiciones abiertas y limpia el libro de órdenes pendientes, y el sistema queda bloqueado hasta que un humano lo reautorice — nunca se reabren posiciones por sí solo.
+
+**Explicado sin tecnicismos:** es el botón de parada de emergencia de una fábrica, y vive fuera de la máquina que vigila, no dentro. Si vigilara desde dentro, se apagaría junto con la máquina el día que de verdad hiciera falta.
+
+Este vigilante está aparte: si el motor principal deja de responder, o si las pérdidas llegan a un punto que nunca se había visto ni en el peor escenario de prueba, aprieta el botón por su cuenta — cierra todo y apaga el sistema. Y no se vuelve a encender solo: alguien tiene que revisar qué pasó primero.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Heartbeat Monitoring:** Detecta desconexión o congelamiento del daemon de ejecución en < 5s.

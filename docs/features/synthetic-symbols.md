@@ -15,7 +15,29 @@ Un **símbolo sintético** es un instrumento derivado **determinista** definido 
 
 **Dos modos de creación:**
 - **Declarado:** el usuario teclea la fórmula sobre el lienzo matemático libre (ADR-0161), desde nodos del canvas. Él es dueño del sentido — una fórmula mala produce un instrumento basura que ve en la gráfica.
-- **Evolucionado:** el motor genético descubre combinaciones de símbolos por sí mismo (programación genética sobre árboles de expresión, promovida de moonshot a motor activo). Exige guardas anti-sobreajuste que el declarado no.
+- **Evolucionado:** el motor de búsqueda descubre combinaciones de símbolos por sí mismo (programación genética sobre árboles de expresión, promovida de moonshot a motor activo). Exige guardas anti-sobreajuste que el declarado no.
+
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero construir instrumentos propios combinando por fórmula los que ya existen, para buscar señales en relaciones que ningún mercado cotiza por separado.
+
+**El problema (técnico):** el catálogo de instrumentos negociables está dado, y todo el mundo mira los mismos. Pero muchas relaciones económicas reales no cotizan como instrumento: el precio de un activo relativo a otro, la diferencia entre dos vencimientos, una cesta ponderada a medida. Quien solo puede analizar lo que ya está listado compite en el terreno más concurrido que existe, donde cualquier ventaja se agota rápido porque todos la ven.
+
+**La solución (técnica):** instrumentos derivados **deterministas**, definidos por fórmula sobre varios símbolos y temporalidades reales. El resultado se comporta como un instrumento más: se grafica, se analiza y se opera igual. Dos modos con responsabilidad distinta. En el **declarado**, el usuario escribe la fórmula y es dueño de su sentido: una fórmula mala produce un instrumento basura que él verá en la gráfica. En el **evolucionado**, el motor de búsqueda descubre combinaciones por sí mismo, y por eso exige guardas anti-sobreajuste que el declarado no necesita — buscar entre millones de combinaciones posibles es, otra vez, el problema de las pruebas múltiples.
+
+Es distinto de generar datos artificiales: aquí no se inventa nada. Es una transformación determinista de series reales.
+
+**Explicado sin tecnicismos:** solo puedes comprar lo que está en la lista. Pero muchas de las relaciones interesantes no están en ninguna lista.
+
+Un ejemplo cotidiano: el precio del café te dice poco por sí solo. El precio del café **dividido entre** el precio del azúcar te dice algo distinto, sobre cuál conviene más ahora mismo. Esa segunda cosa no cotiza en ningún lado — pero se puede calcular.
+
+Drasus te deja construir esos instrumentos propios con una fórmula, y a partir de ahí se comportan como cualquier otro: los ves en la gráfica y buscas señales en ellos. Es un foso defensivo: si tu instrumento solo existe en tu máquina, la ventaja que encuentres ahí no la está mirando nadie más.
+
+Con una advertencia honesta: si dejas que la máquina invente las combinaciones por sí sola, vuelve el problema de las mil monedas — probando millones de fórmulas, alguna se verá espectacular por pura casualidad. Por eso ese modo lleva frenos que el modo manual no necesita.
 
 ---
 

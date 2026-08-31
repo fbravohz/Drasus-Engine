@@ -15,6 +15,20 @@ La Ablación de Reglas es una técnica de simplificación y validación de robus
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema apague cada regla de mi estrategia una por una para ver cuáles de verdad aportan, para quedarme con la versión más simple que sostiene el mismo resultado.
+
+**El problema (técnico):** un motor de búsqueda evolutivo tiende a acumular condiciones adicionales que, por casualidad, mejoraron el ajuste al historial durante la búsqueda pero no representan ninguna ventaja real — ruido estadístico disfrazado de sofisticación. Cuantas más reglas tiene una estrategia, más frágil es en la práctica: cada condición extra es una oportunidad más de que algo se rompa en un mercado que no se comportó exactamente como el historial de entrenamiento.
+
+**La solución (técnica):** genera una variante de la estrategia por cada regla, con esa única regla desactivada, y compara el rendimiento de cada variante simplificada contra el original. Si desactivar una regla no empeora el resultado más allá de una tolerancia configurable, esa regla se marca como redundante y se recomienda eliminarla — de forma recursiva, hasta que ya no se puede simplificar más sin perder rendimiento real.
+
+**Explicado sin tecnicismos:** imagina una receta de cocina con veinte ingredientes, heredada de generación en generación, donde nadie recuerda para qué sirve cada uno. Un cocinero curioso empieza a quitar ingredientes uno por uno: sin el perejil, sabe exactamente igual. Sin la pizca de canela, también. Resulta que solo seis ingredientes realmente construían el sabor; los otros catorce eran superstición de cocina, agregados alguna vez "porque sí" y nunca cuestionados.
+
+Esta pieza es ese cocinero curioso aplicado a tu estrategia: apaga cada regla, una a la vez, y mide si el resultado cambia. Las reglas que se pueden quitar sin que nada empeore no eran ingrediente — eran decoración que solo encajaba con el pasado que ya se cocinó. Al final te quedas con la receta real, más simple y más fácil de confiar.
+
 ## Comportamientos Observables
 
 - [ ] El sistema identifica todos los nodos de decisión (reglas) en el AST de la estrategia.

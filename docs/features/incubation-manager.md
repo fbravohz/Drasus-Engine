@@ -15,8 +15,24 @@ El Incubation Manager es el componente transversal responsable de orquestar el p
 
 El sistema implementa tres paradigmas de validación (perfiles configurables, ADR-0088):
 1. **Modo Legacy (Paper Trading Convencional / Incubación Prolongada, 3-6 meses):** Evaluación asintótica tradicional durante periodos de 3 a 6 meses demo para certificar el factor Pardo en tiempo largo y verificar la robustez global del modelo.
-2. **Modo Extended (Sandbox Extendido, 21 días):** Modo intermedio que aplica el mismo motor de Eutanasia Predictiva y Cono de Silencio del Modo Quarantine, pero sobre una ventana de 21 días, para estrategias que requieren mayor confirmación estadística antes de promoción a capital real.
-3. **Modo Quarantine (Sandbox 7-Day Live Quarantine con Eutanasia Predictiva):** Cuarentena virtual ultra-abreviada de 7 días. El motor contrasta en tiempo real el desempeño de la estrategia frente a una Matriz de Avance Progresivo (WFM) retroactiva estática. Si el comportamiento de las operaciones se desvía del comportamiento fuera de muestra (OOS) esperado, excediendo subrutinas predictivas de letargología o un incremento flotante de riesgo (Excursión Máxima Adversa extra de +15% o detención asimilada), se ejecuta una **Purga Sintética** que elimina por completo el genoma de la estrategia del catálogo operativo para evitar que cause drawdowns colaterales en la cuenta de capital real master del Commodity Pool Operator (CPO).
+2. **Modo Extended (Sandbox Extendido, 21 días):** Modo intermedio que aplica el mismo motor de retiro predictivo y Cono de Silencio del Modo Quarantine, pero sobre una ventana de 21 días, para estrategias que requieren mayor confirmación estadística antes de promoción a capital real.
+3. **Modo Quarantine (Sandbox 7-Day Live Quarantine con retiro predictivo):** Cuarentena virtual ultra-abreviada de 7 días. El motor contrasta en tiempo real el desempeño de la estrategia frente a una Matriz de Avance Progresivo (WFM) retroactiva estática. Si el comportamiento de las operaciones se desvía del comportamiento fuera de muestra (OOS) esperado, excediendo subrutinas predictivas de letargología o un incremento flotante de riesgo (Excursión Máxima Adversa extra de +15% o detención asimilada), se ejecuta un **retiro inmediato del catálogo operativo** que descarta por completo el genoma de la estrategia para evitar que cause drawdowns colaterales en la cuenta de capital real master del Commodity Pool Operator (CPO).
+
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-05` — Cuarentena antes del dinero real
+
+**Historia de usuario:** Como operador (de cuenta propia o de cuenta fondeada), quiero que el sistema vigile en caliente a la estrategia durante su periodo de prueba y la retire por sí solo si se desvía, para no descubrir el problema con mi cuenta real ya comprometida.
+
+**El problema (técnico):** una racha perdedora al inicio de la cuarentena puede ser una fluctuación normal o el primer síntoma de una falla estructural, y a simple vista un humano no puede distinguirlas. Esperar cortésmente a que termine el periodo completo para decidir cuesta tiempo — y en cuentas fondeadas, el riesgo de un drawdown catastrófico corre mientras tanto.
+
+**La solución (técnica):** tres perfiles de duración configurables (7, 21 o hasta 180 días) según cuánta confirmación estadística exige el caso de uso. Durante la ventana, el sistema proyecta bandas de confianza (1, 2 y 3 sigmas) a partir de las simulaciones Monte Carlo del backtest original — el **Cono de Silencio** — y compara la curva de equidad en vivo contra esas bandas todos los días. Si la curva cruza el borde inferior de una sigma, el sistema detiene la sesión, cierra las posiciones virtuales y retira la estrategia de inmediato, sin esperar a que el periodo termine.
+
+**Explicado sin tecnicismos:** imagina que le prestas el coche a alguien para un viaje de prueba de una semana, pero le pones un rastreador que compara su ruta en tiempo real contra la ruta que dijo que iba a seguir. Si se desvía demasiado del plan, el sistema no espera a que se cumpla la semana para preocuparse — te avisa y detiene el préstamo ese mismo día.
+
+Aquí la "ruta esperada" no es una corazonada: es una banda calculada de antemano con miles de simulaciones. Y salirse de ella activa la alarma sola, sin que nadie tenga que estar viendo la pantalla el día entero.
 
 ---
 
@@ -24,7 +40,7 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 
 - [ ] **Selección de Perfil del Pipeline:** El operador puede inicializar una estrategia en `Status::Incubating` eligiendo entre Quarantine (7 días), Extended (21 días) o Legacy (3-6 meses).
 - [ ] **Ejecución en Sandbox Quarantine:** Durante el Sandbox de 7 días, la estrategia es inyectada en un entorno de ejecución virtual de alta fidelidad, simulando la fricción de órdenes sin arriesgar capital real.
-- [ ] **Eutanasia Predictiva Activa:** Si el riesgo flotante acumulado de la estrategia durante las transacciones virtuales supera el límite establecido (+15% de Excursión Máxima Adversa con respecto al óptimo OOS del WFM), el orquestador aborta la sesión inmediatamente, eliminando el genoma de la estrategia.
+- [ ] **Retiro Anticipado Activa:** Si el riesgo flotante acumulado de la estrategia durante las transacciones virtuales supera el límite establecido (+15% de Excursión Máxima Adversa con respecto al óptimo OOS del WFM), el orquestador aborta la sesión inmediatamente, eliminando el genoma de la estrategia.
 - [ ] **Proyección del Cono de Silencio:** El sistema dibuja bandas de confianza basadas en percentiles dinámicos (1, 2 y 3 sigmas) proyectadas a partir del backtest original y las simulaciones Monte Carlo previas.
 - [ ] **Broken Strategy Flag:** Si la equidad en caliente de la sesión cruza la banda inferior del Cono de Silencio (-1 sigma), la estrategia es catalogada automáticamente como degradada (`drifted`). El sistema la detiene, liquida las posiciones y reasigna los recursos de capital simulado.
 
@@ -46,7 +62,7 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 | SANDBOX_DURATION_DAYS | 7 | 3 - 30 días | Duración del periodo de cuarentena acelerado en días. | CONFIG |
 | LEGACY_DURATION_MONTHS | 3 | 1 - 12 meses | Duración del paper trading tradicional en meses. | CONFIG |
 | MAX_SHARPE_DRIFT | -20% | -50% a 0% | Desviación máxima aceptable del Sharpe en vivo vs backtest. | CONFIG |
-| EXTRA_MAE_LIMIT | 15% | 5% - 50% | Porcentaje extra de Excursión Máxima Adversa flotante tolerable antes de eutanasia. | CONFIG |
+| EXTRA_MAE_LIMIT | 15% | 5% - 50% | Porcentaje extra de Excursión Máxima Adversa flotante tolerable antes del retiro anticipado. | CONFIG |
 | CONE_SIGMA_LIMIT | -1.0 | -3.0 a -0.5 | Desviación en sigmas de la banda inferior del cono para activar la Broken Strategy Flag. | CONFIG |
 
 ---
@@ -54,7 +70,7 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 ## Estructura Interna (FCIS — ADR-0002)
 
 - **Core (Lógica Pura):** Algoritmos de cálculo de bandas de confianza, evaluación del rebasamiento MAE y veredictos de deriva en `drift.rs`.
-- **Shell (Infraestructura):** Orquestador de la sesión de sandbox, listener de ticks en caliente y gestor de eventos de eutanasia/suspensión.
+- **Shell (Infraestructura):** Orquestador de la sesión de sandbox, listener de ticks en caliente y gestor de eventos de retiro anticipado/suspensión.
 - **Frontera Pública:** Interfaz asíncrona de orquestación `start_incubation_session()` y puertos de consulta de estado del cono.
 
 ---
@@ -88,18 +104,18 @@ El sistema implementa tres paradigmas de validación (perfiles configurables, AD
 
 ## Tareas (TTRs)
 
-### **TTR-001: Monitor de Cuarentena y Eutanasia Predictiva (MAE Tracker)**
+### **TTR-001: Monitor de Cuarentena y Retiro Anticipado (MAE Tracker)**
 *   **¿Cuál es el problema?**
-    Las estrategias sobreajustadas en backtesting a menudo colapsan rápidamente al operar en vivo, pero detectarlo con paper trading tradicional cuesta de 3 a 6 meses de tiempo muerto.
+    Las estrategias sobreajustadas en backtesting a menudo colapsan rápidamente al operar en vivo, pero detectarlo con paper trading tradicional cuesta de 3 a 6 meses de tiempo perdido.
 *   **¿Qué tiene que pasar?**
     El sistema realiza un rastreo barra a barra de la MAE flotante de la sesión virtual durante un lapso estricto de 7 días. Si la excursión se desfasa más de un 15% del límite OOS con respecto a la matriz WFM retroactiva, la sesión se aborta instantáneamente, eliminando el genoma de la base de datos de producción para evitar el drawdown del gestor (CPO).
 *   **¿Cómo sé que está hecho?**
     - [ ] Puedo forzar una simulación con deslizamientos y spreads ampliados en el Sandbox de 7 días y observar la purga automática por rebasamiento de MAE.
-    - [ ] La base de datos del hall de la fama elimina el genoma completo de la estrategia al dispararse la eutanasia.
+    - [ ] La base de datos del banco de estrategias promovidas elimina el genoma completo de la estrategia al dispararse el retiro anticipado.
     - [ ] El log del sistema registra la alerta de purga con la latencia exacta del disparo.
 *   **¿Qué no puede pasar?**
     - No se permite la manipulación de los parámetros del modelo durante las fases de cuarentena.
-    - La eutanasia no debe dejar posiciones huérfanas en el motor simulado; debe cerrarlas inmediatamente.
+    - El retiro anticipado no debe dejar posiciones huérfanas en el motor simulado; debe cerrarlas inmediatamente.
 
 ### **TTR-002: Proyector del Cono de Silencio (Statistical Confidencer)**
 *   **¿Cuál es el problema?**

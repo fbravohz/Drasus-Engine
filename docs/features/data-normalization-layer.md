@@ -18,6 +18,24 @@ Es la capa encargada de unificar el caos de diferentes formatos de exchanges y b
 **Problema:** Cada fuente de datos habla su propio "idioma" (símbolos, decimales, nombres de columnas).
 **Solución:** Un traductor universal que estructura todo bajo un objeto `Symbol { base, quote, broker_symbol, tick_size }`.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el mismo instrumento se llame igual venga de donde venga, para poder comparar y combinar fuentes sin traducir a mano ni equivocarme al hacerlo.
+
+**El problema (técnico):** cada fuente nombra y escala las cosas a su manera. El mismo par de divisas lleva un nombre distinto en cada bróker, los decimales de precio no coinciden, el volumen se reporta en unidades diferentes y hasta los nombres de las columnas cambian. Sin una capa de traducción, esa diversidad se filtra al resto del sistema y cada componente posterior tiene que conocer las particularidades de cada proveedor — que es exactamente la clase de acoplamiento que vuelve imposible añadir una fuente nueva.
+
+**La solución (técnica):** un traductor en la frontera que convierte cualquier formato de origen a una única representación interna: identidad del instrumento, escala de precio y unidad de volumen, todo declarado. A partir de esa frontera, ningún componente del sistema vuelve a saber de qué proveedor vino el dato. La particularidad de cada fuente muere en la puerta.
+
+**Explicado sin tecnicismos:** el mismo instrumento se llama distinto en cada casa de bolsa. Como el cilantro, que en un país es cilantro, en otro culantro y en otro perejil chino — y si compras por catálogo sin traducir, acabas con la hierba equivocada.
+
+Además cada uno mide diferente: uno reporta con cinco decimales, otro con tres, y el volumen a veces son unidades y a veces son lotes.
+
+Esta pieza es el traductor de la entrada. Convierte todo a un solo idioma y una sola forma de medir, **una vez**, en la puerta. Después de ahí, nada dentro del sistema necesita saber de dónde vino el dato — que es lo que permite añadir una fuente nueva mañana sin tocar nada de lo que ya funciona.
+
 ## Comportamientos Observables
 
 - [ ] El sistema recibe datos de Binance y Oanda; ambos se guardan en la DB interna con el mismo formato de columnas y nomenclatura.

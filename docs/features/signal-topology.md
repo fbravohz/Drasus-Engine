@@ -18,6 +18,22 @@ Define y resuelve los **dos ejes de una estrategia**: de dónde lee señales y d
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que mi estrategia pueda leer señales de un mercado y operar en otro distinto, o vigilar varios mercados a la vez para decidir una sola entrada, para no quedar encerrado en la vieja regla de que una estrategia solo mira y opera el mismo símbolo.
+
+**El problema (técnico):** las plataformas tradicionales anclan una estrategia a un único símbolo y temporalidad: la señal se busca ahí y la orden se ejecuta ahí. Esto deja fuera una superficie entera de posibilidades —el adelanto de un índice sobre una divisa, la confirmación de una señal en varias temporalidades a la vez, una entrada disparada por un mercado y ejecutada en otro—. Y cuando una estrategia sí opera varios destinos a la vez, medir el riesgo de cada posición por separado esconde que en realidad son la misma apuesta repetida.
+
+**La solución (técnica):** cada estrategia declara explícitamente sus Fuentes de Señal (los mercados y temporalidades de los que lee) y sus Destinos de Ejecución (los mercados donde abre y cierra posición), como dos listas independientes sin símbolo ancla. Ninguna fuente se puede leer antes de que su barra cierre, sin importar la temporalidad; y cuando la estrategia opera varios destinos a la vez, el riesgo se reporta de forma agregada, no como posiciones aisladas que esconden la correlación real entre ellas.
+
+**Explicado sin tecnicismos:** imagina que hasta ahora solo podías cocinar viendo el reloj de tu propia cocina y sirviendo la comida en tu propia mesa. Esta pieza te deja mirar el reloj de otra cocina —quizás uno que se adelanta un poco— y aun así servir la comida donde tú quieras, o en varias mesas a la vez.
+
+Y si sirves en varias mesas al mismo tiempo, la pieza no te deja fingir que son comidas independientes si en realidad cocinaste todo en la misma olla: te muestra el riesgo real conjunto, no la ilusión de que estás repartido en varios lugares distintos cuando en el fondo es la misma apuesta.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Al definir una estrategia, el usuario declara sus Fuentes (N símbolos × N timeframes) y sus Destinos (N símbolos) — cualquier combinación, mínimo uno de cada.

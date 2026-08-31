@@ -13,6 +13,22 @@ El `Visual StockPicker Configurator` es la interfaz gráfica que permite al oper
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias que opera muchos activos, quiero definir con controles visuales qué tipo de acciones entran a mi universo de búsqueda —por tamaño, por volumen, por precio— para no tener que escribir consultas técnicas cada vez que quiero acotar dónde busca el motor.
+
+**El problema (técnico):** antes de que el motor de búsqueda pueda operar sobre un conjunto de acciones, alguien tiene que decidir cuáles entran: ¿acciones pequeñas o grandes?, ¿con suficiente volumen para operar sin problema?, ¿en qué rango de precio? Definir eso escribiendo consultas técnicas a mano, sobre un catálogo de miles de activos, es lento y propenso a error.
+
+**La solución (técnica):** controles deslizantes e interruptores con los que el usuario ajusta los umbrales —capitalización de mercado, volumen promedio diario, rango de precio— y ve de inmediato, sin esperar, cuántos activos del catálogo cumplen esa combinación. Las combinaciones que funcionan bien se guardan como plantillas reutilizables (por ejemplo, "acciones líquidas del índice principal") para no reconfigurar todo cada vez.
+
+**Explicado sin tecnicismos:** es como ajustar los filtros de búsqueda en un sitio de bienes raíces —precio, tamaño, zona— y ver actualizarse al instante cuántas propiedades cumplen, en vez de tener que revisar cada anuncio uno por uno.
+
+Esta pieza hace lo mismo con las acciones: mueves un control y ves de inmediato cuántas quedan dentro de tu definición de "universo que vale la pena buscar", sin tener que escribir ni una línea de consulta técnica ni revisar el catálogo activo por activo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario interactúa con los sliders en la UI para ajustar umbrales del universo:

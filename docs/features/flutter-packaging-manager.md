@@ -9,6 +9,14 @@
 
 El **Manejador de Empaquetado de Flutter FFI** orquesta el ciclo de vida del binario congelado de Rust (backend + assets frontend) utilizando Flutter FFI para renderizar la interfaz de usuario. Permite que Drasus Engine se distribuya como una única aplicación ejecutable sin requerir que el usuario instale Rust, CUDA o dependencias de sistema manualmente, con un instalador profesional por sistema operativo.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Empaqueta el motor de Rust y la interfaz en un solo instalador por sistema operativo, detecta la GPU disponible al arrancar y cierra el proceso limpiamente al cerrar la ventana.
+
+El usuario nunca la ve. La nota como que **puede instalar y abrir Drasus con un doble clic**, sin instalar compiladores ni dependencias por su cuenta.
+
 ## Comportamientos Observables
 
 - [ ] Al abrir Drasus Engine.exe/.app/AppImage, Flutter FFI inicia el loop del backend y el visor UI.

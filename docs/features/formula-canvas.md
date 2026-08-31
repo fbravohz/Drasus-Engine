@@ -20,6 +20,22 @@ Un **motor de expresiones único** que permite al usuario crear artefactos media
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero escribir mi propia fórmula matemática libre —no solo elegir entre indicadores ya hechos— para inventar el indicador, la señal o la regla de riesgo que a nadie más se le ha ocurrido.
+
+**El problema (técnico):** un catálogo cerrado de indicadores predefinidos limita al investigador a combinar piezas que ya existen. Pero la parte más difícil y valiosa del oficio es inventar la matemática propia: una relación entre varios símbolos, una transformada, una fórmula de econometría que no está en ningún catálogo. Construir un motor separado para cada tipo de fórmula —una para símbolos, otra para indicadores, otra para señales— triplicaría el trabajo sin necesidad.
+
+**La solución (técnica):** un único motor de fórmulas libres que el usuario teclea desde nodos del lienzo, capaz de producir cuatro tipos de resultado según el contexto: un símbolo sintético, un indicador con una o varias series (como un MACD, que produce tres), una señal de entrada/salida, o una regla de gestión de riesgo. El sistema no juzga si la fórmula tiene sentido económico —una fórmula sin sentido simplemente produce un resultado visible en la gráfica que el usuario descarta—, pero sí garantiza que ninguna operación de la fórmula pueda usar un dato que todavía no existía en el instante de la decisión.
+
+**Explicado sin tecnicismos:** es como si en vez de elegir entre las recetas de un libro de cocina fijo, te dieran una alacena completa de ingredientes y la libertad de inventar tu propio platillo desde cero, combinándolos como se te ocurra.
+
+Esta pieza te da esa alacena para las matemáticas del mercado: en vez de conformarte con los indicadores de siempre, escribes tu propia fórmula y el sistema la convierte en un instrumento real que puedes ver graficado. Si la fórmula no tiene sentido, simplemente verás un resultado sin utilidad —la libertad es tuya, y también la responsabilidad de que la fórmula diga algo real—. Lo único que el sistema nunca permite es que la fórmula, sin que te des cuenta, haga trampa mirando información del futuro.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Desde nodos de canvas, el usuario teclea una fórmula y obtiene un símbolo sintético, un indicador multi-serie, una señal o una regla de riesgo — con la misma herramienta.

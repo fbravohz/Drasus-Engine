@@ -16,6 +16,22 @@ Filtra señales de trading para detectar aquellas que son ortogonales (independi
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema descarte por sí solo cualquier señal que en realidad solo esté copiando al mercado en general, para no confundir "seguir la corriente" con haber encontrado una ventaja real.
+
+**El problema (técnico):** una señal que se mueve casi idéntica al mercado general —una correlación de 0.95 con su retorno— no es una señal propia: es el mercado disfrazado de descubrimiento. Si se acepta sin filtro, la estrategia parece tener una ventaja cuando en realidad solo está expuesta al mismo riesgo que cualquiera que compró el índice.
+
+**La solución (técnica):** un filtro que compara cada señal candidata contra los factores de mercado conocidos (mercado general, tamaño, valor, rentabilidad, inversión) y la rechaza si su correlación con cualquiera de ellos supera un umbral. Solo las señales que se comportan de forma independiente —ortogonales— se marcan como aprobadas y pasan a formar parte de estrategias candidatas.
+
+**Explicado sin tecnicismos:** imagina que alguien te presume que "descubrió" cómo predecir si va a llover con un instrumento carísimo, pero resulta que su instrumento solo copia el pronóstico del noticiero de siempre. No inventó nada: solo repitió lo que cualquiera ya sabía.
+
+Esta pieza revisa cada señal nueva que el motor de búsqueda encuentra y le pregunta: "¿esto es tuyo, o solo estás repitiendo lo que hace el mercado en general?". Si la señal se mueve casi igual que el mercado, la rechaza, no porque esté mal, sino porque no aporta nada que no tuvieras ya con solo comprar el índice.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario proporciona una señal generada (ej: media móvil adaptativa)

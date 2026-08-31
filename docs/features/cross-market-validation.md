@@ -11,6 +11,20 @@ Resuelve el problema del sobreajuste (Curve Fitting). Si una ineficiencia es rea
 
 **Validación Cruzada de la Máscara del Genoma de Régimen y Filtro de Entorno (ADR-0108/ADR-0110):** cuando ese genoma está activo, la máscara binaria Permitido/Prohibido resuelta sobre el mercado principal se aplica también a la(s) cesta(s) correlacionada(s) de `CORRELATION_BASKET`. Si la máscara produce una distribución de Permitido/Prohibido sustancialmente distinta entre el mercado principal y el correlacionado, se interpreta como evidencia de sobreajuste del genoma de régimen al mercado principal.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero correr mi estrategia, sin tocarle ni un parámetro, en un mercado correlacionado distinto al que la descubrí, para distinguir una ventaja real del comportamiento humano de una que solo memorizó la idiosincrasia de un gráfico particular.
+
+**El problema (técnico):** el motor de búsqueda evolutivo es experto en encontrar patrones que encajan perfecto con el historial de un símbolo concreto — y esa habilidad es indistinguible, desde adentro, de haber encontrado una ineficiencia real del mercado. La única forma de diferenciarlas es exponer la estrategia a un ecosistema distinto que comparte los mismos impulsores macroeconómicos, sin darle la oportunidad de volver a ajustarse.
+
+**La solución (técnica):** toma la estrategia ya validada preliminarmente y la ejecuta, con las mismas reglas exactas, en uno o más mercados de una cesta declarada como correlacionada (por ejemplo, un par de divisas hermano). Si el rendimiento se degrada más allá de un umbral tolerable frente al mercado original, la estrategia se descarta antes de llegar a incubación — nunca se le permite reoptimizar para "arreglar" su desempeño en el mercado nuevo, porque eso destruiría el propósito de la prueba.
+
+**Explicado sin tecnicismos:** imagina que entrevistas a un traductor y le pides traducir un párrafo del francés. Lo hace perfecto. Pero resulta que se aprendió esa traducción de memoria de un libro, palabra por palabra, sin entender francés en absoluto. Le das un párrafo distinto, nunca visto, y no puede traducir ni una frase.
+
+Esta prueba le da a tu estrategia un párrafo distinto: un mercado hermano, con dinámicas parecidas pero no idéntico. Si tu estrategia de verdad entendió algo del comportamiento humano detrás de los precios —no solo memorizó las curvas específicas de un gráfico— debería seguir funcionando, aunque sea un poco peor. Si se derrumba, memorizó el libro, no aprendió el idioma.
+
 ## 2. Comportamientos Observables
 - [ ] El motor ejecuta la estrategia en cada uno de sus Destinos de Ejecución (ADR-0158 — ya no existe un único "mercado principal") y en una o más cestas correlacionadas, como **simulaciones independientes** (correcto para una prueba de robustez: el edge debe sobrevivir por sí solo en el mercado hermano).
 - [ ] Si la curva de rendimiento colapsa (excede degradación máxima) en el mercado correlacionado, la estrategia se descarta antes de llegar a la incubación.

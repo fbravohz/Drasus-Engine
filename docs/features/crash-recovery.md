@@ -13,6 +13,22 @@ Módulo de contingencia ante fallos físicos de infraestructura (cortes de luz, 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que si se va la luz o el sistema se reinicia a media operación, al volver a encenderse reconstruya exactamente lo que tenía abierto en vez de adivinar, para no terminar con posiciones huérfanas o duplicadas que nadie está vigilando.
+
+**El problema (técnico):** si el estado de las posiciones solo vive en memoria RAM, un apagón o un reinicio inesperado lo borra. Arrancar de nuevo y asumir que todo sigue como antes es la forma más rápida de duplicar una posición, dejar un stop desprotegido, o violar un límite de riesgo sin saberlo.
+
+**La solución (técnica):** cada cambio de estado de orden se persiste de forma inmutable en el momento en que ocurre, no después. Al arrancar, el sistema entra en un modo de recuperación que bloquea el envío de nuevas órdenes, descarga el inventario real de posiciones y órdenes directamente del bróker, y lo compara contra su propio registro local. Solo si coinciden exactamente, y tras recalcular los indicadores de salida dinámicos (como los stops que siguen al precio), el sistema vuelve a operar — en menos de diez segundos. Si hay una discrepancia que no se puede conciliar, el sistema se bloquea y pide intervención humana en vez de adivinar.
+
+**Explicado sin tecnicismos:** imagina que te desmayas a media conversación telefónica importante y, al despertar, en vez de asumir que te acuerdas de todo, llamas de vuelta y preguntas "¿en qué quedamos exactamente?" antes de seguir hablando.
+
+Eso hace esta pieza: nunca asume que recuerda bien lo que tenía pendiente. Le pregunta al bróker qué es real, lo compara con lo que tenía anotado, y solo cuando los dos coinciden, sigue operando. Si algo no cuadra, prefiere detenerse por completo y avisar, antes que seguir adelante sobre un recuerdo que podría estar mal.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Persistencia Transaccional:** Guarda inmutablemente cada fill y cambio de estado de orden en el SQLite Event Store en el hot path.

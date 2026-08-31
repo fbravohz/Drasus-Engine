@@ -17,6 +17,22 @@ El **Portfolio Backtest** es el componente de simulación avanzada encargado de 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador con varias estrategias que quiero operar juntas en una sola cuenta, quiero simular esa combinación completa con el margen, los horarios de mercado y la capitalización compartidos entre todas, para no descubrir en vivo un problema de cuenta que la simulación nunca me pudo mostrar.
+
+**El problema (técnico):** sumar las curvas de ganancia de varias estrategias por separado, como si cada una tuviera su propia cuenta con dinero infinito, esconde riesgos que solo aparecen cuando comparten una cuenta real: una estrategia puede consumir el margen que otra necesitaba en ese mismo instante, provocando una llamada de margen que ninguna estrategia individual habría sufrido por su cuenta. Y una estrategia que reinvierte ganancias, o que opera en un mercado con horario distinto al de las demás, distorsiona el resultado combinado si el backtest no lo respeta con exactitud.
+
+**La solución (técnica):** una simulación conjunta donde todas las estrategias comparten un único balance y un único cálculo de margen, de modo que si el margen libre llega a cero se dispara una llamada de margen simulada igual que ocurriría en la cuenta real. La capitalización de ganancias, si está activada, se ajusta solo en los cortes de periodo definidos, nunca a mitad de una operación abierta. Y cada estrategia respeta el horario real de su propio mercado, sin operar en momentos en que ese mercado estaría cerrado.
+
+**Explicado sin tecnicismos:** imagina a varias personas compartiendo una sola tarjeta de crédito con un límite fijo. Si evalúas los gastos de cada quien por separado, como si cada una tuviera su propia tarjeta sin límite, nunca vas a ver el momento en que la tarjeta se rechaza porque dos personas gastaron al mismo tiempo y juntas superaron el límite.
+
+Esta pieza simula la tarjeta compartida de verdad: junta a todas las estrategias en una sola cuenta con un límite real de margen, y si entre todas lo agotan al mismo tiempo, la cuenta se frena exactamente como se frenaría en la vida real. También respeta que cada estrategia opera en su propio horario de mercado, y que las ganancias reinvertidas solo se suman al capital disponible en los cortes de fecha acordados, nunca a mitad de una jugada. Así, el resultado de operar varias estrategias juntas se parece de verdad a lo que pasaría con dinero real compartido.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Simulación de Margen Cruzado:** El sistema calcula el margen requerido por cada estrategia activa y lo descuenta del balance común. Si el margen libre cae a cero, detona una llamada de margen (Margin Call) simulada y detiene/liquida la operativa del portafolio.

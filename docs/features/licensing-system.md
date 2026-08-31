@@ -23,6 +23,20 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario, quiero que mi nivel de suscripción decida, sin que yo tenga que configurar nada, si mi trabajo se queda en mi máquina o si alimenta al proveedor, para saber sin ambigüedad qué pasa con lo que hago.
+
+**El problema (técnico):** cobrar y prevenir el abuso multi-instancia, en el diseño ingenuo, obligaría a una llamada de red antes de cada operación — inviable en el camino crítico de ejecución, y una condena a quedarse sin motor la primera vez que el usuario honesto pierde conexión.
+
+**La solución (técnica):** el sistema valida la licencia de forma asíncrona, con un período de gracia mientras está sin conexión, y según el tier, enciende o apaga en el origen la emisión de telemetría de trabajo. En pago al corriente, la telemetría de trabajo se suprime antes de salir de la máquina. En pago vencido, se reactiva, sin borrar nada del entorno del usuario. En el nivel gratuito, el trabajo fluye al proveedor como contraprestación del servicio.
+
+**Explicado sin tecnicismos:** imagina un semáforo que revisa tu boleto de entrada, pero no te detiene en la puerta cada vez: te deja pasar con un boleto de cortesía mientras confirma el tuyo por atrás, y solo te avisa si algo no cuadra después de un tiempo razonable.
+
+Ese semáforo también decide qué tanto de lo que haces adentro se reporta hacia afuera. Si pagaste y estás al corriente, lo que haces adentro se queda adentro: nada sale. Si no pagaste, la entrada sí lleva un registro de tu actividad — es el trato, y aquí se dice de frente. Y si dejaste de pagar, el registro se reactiva, pero nunca te quitan lo que ya construiste adentro.
+
 ## 2. Comportamientos Observables
 
 * **Validación de Huella de Hardware:**
@@ -38,7 +52,7 @@ El sistema de licenciamiento regula los niveles de acceso del usuario al ecosist
   * El usuario puede **desvincular** una máquina (huella de hardware) desde su Plano de Control para liberar un cupo de activación y reclamarlo en otra máquina (self-service, sin intervención del proveedor).
   * La invalidación de la máquina desvinculada es autoritativa en la Cabina de Mando (adaptador de red diferido); localmente, la máquina liberada degrada su gate en el siguiente heartbeat.
   * Un cupo liberado no se puede reclamar hasta pasado `TRANSFER_COOLDOWN`, evitando la rotación de una licencia por muchas máquinas.
-  * **Si la máquina desvinculada está destruida (disco muerto, ADR-0146):** el usuario no puede operar esa máquina para desvincularla — la liberación se hace desde el **panel de cuenta en la Cabina de Mando** (diferido), tras verificación de identidad. [`instance-continuity`](instance-continuity.md) (#11) reutiliza este mismo flujo self-service para liberar, además del cupo de activación, la **titularidad de custodia** de la cadena de auditoría.
+  * **Si la máquina desvinculada está destruida (disco averiado, ADR-0146):** el usuario no puede operar esa máquina para desvincularla — la liberación se hace desde el **panel de cuenta en la Cabina de Mando** (diferido), tras verificación de identidad. [`instance-continuity`](instance-continuity.md) (#11) reutiliza este mismo flujo self-service para liberar, además del cupo de activación, la **titularidad de custodia** de la cadena de auditoría.
 
 * **Cambio de Tier a Mitad de Ciclo (downgrade — garantía reduce-only):**
   * Si el usuario baja de tier a mitad de ciclo, el nuevo límite aplica **hacia adelante**; el contador de nocional del ciclo (`usage-metering`, append-only) **no se reinicia** por el cambio.

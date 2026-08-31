@@ -12,6 +12,24 @@ Es el orquestador visual y técnico que permite gestionar las descargas de datos
 **Problema:** Las descargas masivas pueden tardar minutos y el usuario no sabe si el sistema se ha colgado o sigue trabajando.
 **Solución:** Un gestor de jobs asíncronos que emite señales de progreso constantes hacia la UI.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como usuario, quiero seguir trabajando mientras se descargan años de historia, y ver en todo momento cuánto lleva y cuánto falta, para no tener que elegir entre esperar mirando la pantalla o no saber si el programa se colgó.
+
+**El problema (técnico):** una descarga masiva tarda minutos u horas. Si bloquea la interfaz, el usuario no puede hacer nada más. Si corre sin reportar, el usuario no distingue entre "sigue trabajando" y "se colgó" — y la respuesta humana ante esa duda es cancelar y reintentar, que desperdicia todo lo avanzado.
+
+**La solución (técnica):** las descargas corren como trabajos en segundo plano que emiten progreso real —volumen transferido y tiempo estimado, no una animación decorativa— mientras la interfaz sigue respondiendo. Un trabajo interrumpido por un cierre o un corte se retoma donde iba en vez de empezar de cero.
+
+**Explicado sin tecnicismos:** bajar diez años de historia tarda un rato largo. Dos formas de hacerlo mal: congelar el programa entero hasta que termine, o dejarlo trabajar sin decir nada.
+
+La segunda parece inofensiva y es la peor. Cuando algo tarda y no da señales, uno asume que se trabó, cancela y vuelve a empezar — tirando a la basura todo lo que ya se había bajado.
+
+Así que Drasus te enseña el avance real: cuánto lleva, cuánto falta, cuánto tiempo queda. Mientras tanto sigues usando el programa. Y si se cierra a media descarga, al volver **retoma donde iba**, no desde el principio.
+
 ## Comportamientos Observables
 
 - [ ] El usuario inicia una descarga masiva y puede seguir navegando por otras secciones de la app.

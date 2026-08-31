@@ -15,6 +15,22 @@ Para evitar la latencia y sobrecarga de memoria de los motores WebViews (Plotly/
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver miles de estrategias candidatas como una nube de puntos donde las parecidas quedan cerca entre sí, para encontrar con la vista los grupos que vale la pena investigar en vez de revisarlas una por una.
+
+**El problema (técnico):** una optimización genética produce miles de estrategias candidatas, cada una descrita por decenas de parámetros y métricas. Ese espacio no cabe en una gráfica de dos o tres ejes convencional, y sin una forma de verlo en conjunto, el investigador solo puede mirar candidatas de una en una, a ciegas sobre cómo se agrupan.
+
+**La solución (técnica):** el sistema reduce ese espacio de alta dimensión a una nube de puntos en dos o tres dimensiones donde la cercanía entre puntos refleja similitud real entre estrategias, coloreada por una métrica de robustez a elección del usuario. El usuario dibuja un lazo alrededor de un grupo de puntos y obtiene al instante la lista de esas estrategias, con la posibilidad de abrir cualquiera y ver su estructura completa.
+
+**Explicado sin tecnicismos:** imagina que tomas miles de fotografías de perros de razas distintas y las riegas sobre una mesa de modo que las fotos de razas parecidas queden juntas, sin que nadie las haya ordenado a mano — el patrón aparece solo. Esta pieza hace eso mismo con miles de estrategias: las riega en una nube donde las que se comportan parecido quedan cerca, coloreadas según qué tan sólidas son.
+
+Si ves un grupo de puntos apretados en una esquina, rodeas ese grupo con el cursor y el sistema te entrega la lista exacta de esas estrategias, listas para revisar una por una.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Al cargar los resultados de optimización del Databank, la UI renderiza una nube de puntos (scatter plot 2D/3D) donde cada punto representa una estrategia.

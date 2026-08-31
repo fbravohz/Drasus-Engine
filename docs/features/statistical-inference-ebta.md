@@ -13,6 +13,20 @@ La capa EBTA (Evidence-Based Technical Analysis) es el filtro de rigor estadíst
 
 **Problema que resuelve:** Los motores de minería genética pueden generar miles de estrategias por "fuerza bruta" que parecen rentables en el backtest pero carecen de Alpha real. EBTA deflacta los resultados y ajusta la significancia estadística para proteger el capital institucional.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero un veredicto numérico y riguroso sobre si mi resultado es estadísticamente significativo, en vez de aceptarlo porque la gráfica se ve bien, para poner un número exacto a algo que de otro modo sería solo una impresión visual.
+
+**El problema (técnico):** una gráfica de resultados que se ve bien no es una prueba de significancia estadística — es solo eso, una gráfica que se ve bien. Además, muchas estrategias parecen tener ventaja simplemente porque el mercado subió durante todo el periodo probado, y no porque la lógica de la estrategia tenga mérito propio.
+
+**La solución (técnica):** calcula el Sharpe deflactado —descuenta el número de intentos que se probaron antes de llegar a esta estrategia— y ejecuta una prueba de remuestreo que ajusta el nivel de exigencia estadística cuando se compararon muchas hipótesis a la vez, no solo una. Aparte, construye una versión sintética del mercado sin la tendencia general y comprueba si la estrategia sigue siendo rentable ahí —si solo ganaba porque el mercado subía, en esa versión sin tendencia pierde—. Y por último, invierte la lógica de la estrategia (compra donde antes vendía) y verifica que se degrade de forma simétrica, confirmando que la regla misma es la que genera el resultado, no una casualidad del activo.
+
+**Explicado sin tecnicismos:** imagina un estudiante que presume una calificación perfecta en un examen de opción múltiple. Antes de felicitarlo, alguien pregunta: ¿cuántas veces presentó el examen hasta sacar esa nota? Si presentó una vez, es mérito. Si presentó doscientas veces y solo enseña la nota perfecta, es azar disfrazado de mérito.
+
+Esta pieza hace esa pregunta incómoda, y dos más. Descuenta el resultado según cuántos intentos hubo detrás. Le quita al mercado la marea que sube y comprueba si el estudiante sigue nadando sin esa ayuda. Y le pide que resuelva el examen al revés, para ver si de verdad entendió la materia o solo memorizó las respuestas en un solo sentido.
+
 ## Comportamientos Observables
 
 - [ ] El sistema calcula el **Deflated Sharpe Ratio (DSR)** extrayendo el número de intentos ($N$) del metadato de la estrategia.

@@ -15,6 +15,20 @@ El "Adversarial Noise Agent" o Red Team AI es el gran villano del auditor de rob
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que un atacante deliberado busque los puntos ciegos de mi estrategia e intente romperla a propósito, para descubrir su punto de quiebre antes de que el mercado real lo encuentre por mí.
+
+**El problema (técnico):** una estrategia con órdenes de protección muy ajustadas puede sobrevivir en el backtest por pura casualidad de que el precio nunca tocó ese límite por un margen mínimo. El ruido genérico y aleatorio no encuentra necesariamente esos puntos ciegos porque no busca activamente; el peligro real está concentrado en zonas específicas —momentos de baja liquidez, mechas de vela cercanas a un stop— que un atacante inteligente sí sabe encontrar.
+
+**La solución (técnica):** un agente que examina el historial de operaciones y busca deliberadamente las victorias más ajustadas —las que sobrevivieron por poco margen— y ahí concentra el ataque: ensancha las mechas de las velas según la volatilidad real de ese momento, fuerza el peor deslizamiento y el spread más ancho jamás registrado en esa franja horaria, y recalcula el resultado bajo esas condiciones hostiles. Las perturbaciones nunca inventan precios imposibles: quedan acotadas a la volatilidad histórica real del instrumento.
+
+**Explicado sin tecnicismos:** piensa en un auto que pasa la inspección técnica sin problema, pero nadie lo llevó nunca a un camino con baches de verdad. Un mecánico desconfiado no se conforma con la carretera lisa de la prueba oficial: lo lleva directo a los baches más profundos que existen en esa ciudad, buscando dónde se va a romper primero.
+
+Esta pieza es ese mecánico desconfiado, aplicado a tu estrategia. No le aplica ruido genérico y parejo: busca tus victorias más apretadas —las que ganaron por un pelo— y ahí concentra el peor escenario posible que el mercado real ya ha producido alguna vez. Si tu estrategia sobrevive a ese ataque dirigido, es porque de verdad tiene margen. Si se rompe, ese margen nunca existió: solo tuviste la fortuna de que el mercado no te probó tan duro cuando importaba.
+
 ## Comportamientos Observables
 
 - [ ] **Ataque de Volatilidad (ATR Noise):** Altera sutilmente los High y Low de las barras históricas basándose en la volatilidad dinámica (ATR).

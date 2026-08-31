@@ -11,6 +11,20 @@ Resuelve el problema de generar cientos de algoritmos rentables que terminan hac
 
 **Gen de Condición de Estado del Genoma de Portafolio y Correlación (ADR-0108/ADR-0111):** la correlación de Spearman entre la curva de rendimientos del genoma evaluado y la curva consolidada del portafolio vivo es la instancia FIJA del Gen de Condición "Correlación de Curva de Equidad Rodante" del Dominio de Portafolio y Correlación. Cuando ese genoma está activo (co-evolución de cartera, ADR-0111), `PORTFOLIO_CORRELATION_CAP` y `CORRELATION_PENALTY_WEIGHT` dejan de ser constantes globales y se convierten en nodos `wildcard_group` que el motor evolutivo direcciona por miembro de la cartera, en lugar de aplicar el mismo umbral a todos los candidatos.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Historia de usuario:** Como operador que ya tiene varias estrategias operando, quiero que el criadero de estrategias nuevas sepa qué tengo funcionando y evite generar más de lo mismo, para que cada estrategia nueva sume algo distinto en vez de duplicar el mismo riesgo.
+
+**El problema (técnico):** un motor de búsqueda que genera candidatas sin saber qué ya opera en la cartera puede producir cientos de estrategias rentables que en el fondo hacen exactamente lo mismo — ganan y pierden en los mismos momentos que las que ya tienes. Cada clon nuevo no diversifica nada: solo concentra más el mismo riesgo bajo una etiqueta distinta.
+
+**La solución (técnica):** inyecta la curva de rendimiento consolidada de la cartera viva como una restricción dentro del motor de búsqueda evolutivo; cualquier candidata cuya correlación con esa curva consolidada supere el límite configurado recibe una penalización en su puntaje de aptitud, sin que la rentabilidad deje de contar — la correlación es un factor de castigo, nunca el único criterio.
+
+**Explicado sin tecnicismos:** es contratar personal pensando en el equipo completo, no en el candidato aislado. Si ya tienes tres delanteros estrella y llega un currículum brillante de otro delantero idéntico a los tres, ese fichaje no mejora al equipo aunque el currículum sea excelente — lo que falta es un buen defensa.
+
+Aquí el criadero de estrategias sabe qué "posiciones" ya tienes cubiertas en tu cartera, y premia a los candidatos nuevos que cubren lo que falta, no a los que repiten lo que ya sobra.
+
 ## 2. Comportamientos Observables
 - [ ] El sistema lee la curva de capital consolidada del portafolio actual.
 - [ ] Durante el ciclo genético, cualquier estrategia con alta correlación respecto al portafolio activo es masacrada.

@@ -17,12 +17,26 @@ La penalización por complejidad es la aplicación directa de la Navaja de Ockha
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema castigue matemáticamente a cualquier estrategia con más parámetros de los que su historial de operaciones puede sostener, para que la simplicidad gane por diseño y no solo cuando alguien se toma el trabajo de comprobarlo a mano.
+
+**El problema (técnico):** una estrategia con veinte parámetros ajustables que solo operó cincuenta veces en cinco años tiene, matemáticamente, más grados de libertad que evidencia para sostenerlos — es memorización disfrazada de sofisticación, aunque nadie la haya probado regla por regla todavía. Cuantos más parámetros libres, más fácil es que el proceso de búsqueda encuentre una combinación que encaja con el ruido del pasado en vez de con un patrón real.
+
+**La solución (técnica):** cuenta cada parámetro ajustable de la estrategia —incluyendo los de cualquier capa adicional de riesgo, régimen o portafolio que traiga encima— y lo divide entre el número de operaciones históricas disponibles. Si esa proporción cae por debajo de un mínimo configurable, aplica una penalización directa al puntaje de la estrategia, proporcional al tamaño del exceso. La penalización actúa desde el momento en que se genera la estrategia, no solo al final: entre dos candidatas con el mismo resultado, la más simple siempre gana.
+
+**Explicado sin tecnicismos:** imagina que alguien te presenta una fórmula matemática con veinte variables que predice perfectamente el resultado de cincuenta partidos de fútbol ya jugados. Suena impresionante, hasta que recuerdas que con veinte perillas que puedes girar libremente, es fácil ajustar cualquier fórmula para que encaje con cualquier resultado que ya pasó — eso no es predicción, es sobreajuste con más pasos.
+
+Esta pieza aplica esa sospecha automáticamente: cuenta cuántas perillas tiene tu estrategia y las compara contra cuánta evidencia real respalda cada una. Si tienes más perillas que evidencia, te castiga el puntaje, sin esperar a que nadie lo descubra a mano. Entre dos estrategias que ganan lo mismo, la que usa menos perillas siempre sale mejor calificada.
+
 ## Comportamientos Observables
 
 - [ ] El sistema cuenta el número exacto de parámetros optimizables (nodos lógicos) en la estrategia.
 - [ ] Calcula el "Degrees of Freedom Ratio" dividiendo los trades históricos entre los parámetros.
 - [ ] Se aplica un "Complexity Penalty Score" que resta puntos proporcionales al tamaño de la fórmula lógica.
-- [ ] Estrategias con ratios paupérrimos (ej. 2 trades por parámetro) son penalizadas a muerte y rechazadas en el backtest.
+- [ ] Estrategias con ratios paupérrimos (ej. 2 trades por parámetro) son penalizadas severamente y rechazadas en el backtest.
 - [ ] Cuando el Manifest porta más de un genoma de dominio (ADR-0108), el conteo de parámetros agrega los de **todos** los genomas presentes —activos y congelados— contra el mismo total de trades, y reporta el desglose por dominio.
 - [ ] Cuando el Dominio de Portafolio y Correlación está activo (ADR-0111), el sistema calcula además un ratio independiente de "miembros de cartera por parámetro del genoma de portafolio".
 - [ ] El conteo de parámetros incluye los grados de libertad del **eje de topología** (fuentes de señal y destinos de ejecución, ADR-0158) y de la **estructura de una fórmula sintética** (constituyentes + operadores + coeficientes, ADR-0159) contra el mismo `MIN_TRADES_PER_PARAM`, para que la complejidad no migre a un eje sin penalizar.

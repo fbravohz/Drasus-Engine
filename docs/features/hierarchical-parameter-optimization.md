@@ -15,6 +15,22 @@ La Optimización Jerárquica de Parámetros es un proceso controlado de mapeo se
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero ajustar los parámetros de mi estrategia en un orden lógico —primero lo estructural, después lo fino— para no terminar con una mezcla de números que casualmente cuadra en el pasado pero no significa nada.
+
+**El problema (técnico):** optimizar todos los parámetros de una estrategia a la vez —el filtro de tendencia, el momentum, la volatilidad, el stop— deja que cada uno compense los errores de los demás hasta que el conjunto se ve bien sin que ninguna pieza individual tenga sentido: un "Frankenstein" estadístico donde un indicador cancela al otro.
+
+**La solución (técnica):** una optimización en cascada que respeta una jerarquía declarada de lo macro a lo micro —tendencia primero, luego momentum, luego volatilidad, luego salida—. Fija todos los parámetros excepto los del primer nivel, encuentra su mejor valor, lo bloquea, y avanza al siguiente nivel. El resultado es una ruta de ajuste que un humano puede seguir y entender, no una mezcla opaca de números que cuadraron juntos por casualidad.
+
+**Explicado sin tecnicismos:** imagina que armas un mueble siguiendo el instructivo en orden —primero la base, luego las paredes, después las puertas— en vez de atornillar todo a la vez esperando que encaje.
+
+Si ajustas todos los tornillos de un mueble simultáneamente sin orden, es fácil terminar con una pieza torcida que compensó el error de otra sin que ninguna de las dos esté realmente bien puesta. Esta pieza ajusta tu estrategia en ese mismo orden: primero lo grande, después lo fino, un nivel a la vez.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Identifica automáticamente (o por configuración) la jerarquía paramétrica: 1º Trend, 2º Momentum, 3º Volatilidad, 4º Stop Loss.

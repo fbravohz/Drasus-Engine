@@ -15,6 +15,14 @@ El Banco de Pruebas es el harness genérico de verificación del Panel Operativo
 
 **Resultado observable:** el propietario abre la app, elige una feature de una lista, edita o acepta un JSON de ejemplo, presiona un botón y ve, en tiempo real, la respuesta real del backend — incluyendo si el JSON que escribió era una estructura válida para esa feature antes de que la llamada real siquiera se disparara.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Es el banco de pruebas interno donde una feature nueva se conecta con una sola entrada de registro y queda verificable con el ratón contra el backend real de la máquina — sin datos simulados y sin depender de la terminal.
+
+El usuario nunca la ve — es una herramienta de verificación para quien construye el sistema, no una superficie de producto. La nota como que **ninguna feature nueva le llega sin haberse probado de verdad contra su propio backend**.
+
 ## Comportamientos Observables
 
 - [ ] El usuario abre el Banco de Pruebas y ve una lista lateral de features verificables (una entrada por feature con superficie propia que ya está conectada).

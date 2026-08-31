@@ -14,6 +14,26 @@ Esta feature provee las métricas de alta frecuencia necesarias para detectar la
 - **VWAP (Volume Weighted Average Price):** Precio promedio ponderado por volumen, actuando como el "valor justo" institucional.
 - **OFI (Order Flow Imbalance):** Desequilibrio entre las órdenes limitadas de compra y venta en los niveles superiores del libro de órdenes (L2).
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver quién está empujando el precio y con cuánta fuerza —no solo dónde terminó— para detectar la presión institucional que el gráfico de precio esconde.
+
+**El problema (técnico):** el precio es el resultado, no la causa. Dos movimientos idénticos en el gráfico pueden tener orígenes opuestos: uno sostenido por compras agresivas continuas, otro por ausencia momentánea de vendedores. La primera situación tiene continuidad; la segunda se revierte. Mirando solo la vela, ambas son la misma vela.
+
+**La solución (técnica):** métricas de flujo que miden la batalla directa entre compradores y vendedores en vez de su resultado. El desequilibrio acumulado entre volumen comprador y vendedor agresivo revela quién tiene el control. El precio promedio ponderado por volumen actúa como referencia de valor de la sesión. El desequilibrio del libro de órdenes muestra la presión que aún no se ejecutó.
+
+Se construye en **dos partes por dependencia dura de datos**: la parte histórica vive en la ingesta, porque se reconstruye del registro de operaciones. La parte en vivo necesita el libro de órdenes en tiempo real, que solo existe durante la ejecución.
+
+**Explicado sin tecnicismos:** el gráfico de precios te dice quién ganó el partido. No te dice cómo se jugó.
+
+Dos subidas iguales en la pantalla pueden ser cosas opuestas. En una, alguien grande estuvo comprando sin parar, empujando de verdad. En la otra, simplemente no había vendedores en ese momento y el precio se fue solo, como una puerta que cede porque nadie la sostenía. La primera suele continuar. La segunda se devuelve.
+
+Esta pieza mide el forcejeo, no el marcador: cuánto se compró en serio contra cuánto se vendió en serio, y cuánta presión hay acumulada esperando su turno. Es la diferencia entre leer el resultado del partido y haberlo visto.
+
+---
+
 ## Entrega por Fases (Split por Dependencia Dura — ADR-0118)
 
 Esta feature se construye en **dos partes**, en módulos y fases distintas, por una dependencia dura de datos: la parte en vivo necesita el libro de órdenes en tiempo real, que solo existe en ejecución.

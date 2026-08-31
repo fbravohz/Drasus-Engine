@@ -19,6 +19,22 @@ El **Federated Portfolio** es una arquitectura avanzada que permite la coexisten
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Historia de usuario:** Como operador que maneja varias carteras a la vez —por ejemplo, una para futuros y otra para criptoactivos—, quiero que cada una tenga sus propias reglas y su propio límite de riesgo sin que un problema en una contamine a las demás, para escalar mi operación sin multiplicar el riesgo de una falla en cadena.
+
+**El problema (técnico):** operar carteras heterogéneas en instancias separadas destruye la sinergia de datos e infraestructura compartida (feeds de mercado, conexión al bróker) y complica ver el riesgo del conjunto completo. Pero fusionarlas en una sola cartera sin aislamiento hace que una violación de límite en una arrastre a las demás.
+
+**La solución (técnica):** un contenedor lógico por cartera, cada uno con su propio conjunto de reglas y su propio capital asignado, ejecutados sobre la misma infraestructura compartida (un solo canal de datos por símbolo, los mismos conectores de bróker) pero sin que las reglas de uno puedan influir en otro. Encima, un panel consolidado muestra el rendimiento y la correlación entre carteras del conjunto completo, y un interruptor de emergencia único puede cerrar todas las posiciones de todos los contenedores a la vez.
+
+**Explicado sin tecnicismos:** son departamentos distintos dentro de la misma empresa, cada uno con su propio presupuesto y sus propias reglas, pero compartiendo el mismo edificio, el mismo servicio de internet y el mismo directorio telefónico.
+
+Si el departamento de ventas mete la pata y se queda sin presupuesto, contabilidad sigue trabajando normal — no comparten caja, aunque comparten edificio. Y si hay una emergencia de verdad, hay un botón que evacúa a todos los departamentos a la vez, sin que nadie tenga que ir piso por piso avisando.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Aislamiento de Reglas:** Cuando una estrategia en el Portafolio A viola su límite de correlación local, el sistema interviene únicamente sobre las estrategias del Portafolio A. Las estrategias del Portafolio B continúan operando con normalidad, incluso si contienen las mismas estrategias o activos correlacionados.

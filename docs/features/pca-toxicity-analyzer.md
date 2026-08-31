@@ -11,6 +11,20 @@
 
 Es un módulo de validación avanzada que aplica técnicas de aprendizaje no supervisado para agrupar y purgar familias de estrategias que demuestran comportamientos tóxicos ocultos (bajo número de operaciones, dependencia excesiva de valores atípicos o sobreajustadas). El sistema reduce las métricas de riesgo relevantes a un número menor de componentes y agrupa las estrategias mediante clústeres.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema agrupe automáticamente las estrategias que comparten el mismo defecto oculto, para purgar una familia completa de un jalón en vez de perseguir el mismo problema una por una.
+
+**El problema (técnico):** cuando un motor de búsqueda evolutivo produce miles de candidatas, muchas de ellas no son ideas distintas: son variaciones superficiales del mismo defecto estructural —dependencia de un puñado de operaciones atípicas, un número de operaciones demasiado bajo para ser estadísticamente significativo, o un patrón de sobreajuste que se repite con distintos disfraces—. Revisarlas una por una es inviable a esa escala, y un umbral simple sobre una sola métrica no detecta el defecto cuando está repartido entre varias métricas correlacionadas a la vez.
+
+**La solución (técnica):** reduce las métricas de riesgo relevantes de cada estrategia a un número menor de dimensiones que capturan lo esencial de su comportamiento, y agrupa las estrategias en familias según qué tan parecidas son en ese espacio reducido. Cada familia recibe una puntuación de toxicidad; el investigador ve la nube de puntos coloreada por nivel de toxicidad y puede purgar una familia entera con una sola acción, en vez de mil decisiones individuales.
+
+**Explicado sin tecnicismos:** imagina un lote de mil manzanas que parecen sanas por fuera. En vez de morder una por una, un inspector las agrupa por señales sutiles compartidas —el mismo tono de cáscara ligeramente distinto, la misma textura al tacto— y descubre que doscientas de ellas vienen del mismo árbol enfermo, aunque cada una se vea un poco diferente.
+
+Esta pieza hace ese trabajo de inspector con tus estrategias: encuentra las familias que comparten el mismo defecto de fondo, aunque cada miembro de la familia se disfrace distinto, y te deja desechar el árbol entero de un jalón en vez de sospechar de cada fruta por separado.
+
 ## Comportamientos Observables
 
 - [ ] El usuario selecciona un conjunto de estrategias en la interfaz (Databank).

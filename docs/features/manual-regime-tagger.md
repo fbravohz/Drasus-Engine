@@ -17,6 +17,22 @@ Herramienta de **etiquetado visual manual de regímenes históricos**. Complemen
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero marcar a mano los periodos históricos que reconozco como crisis o eventos especiales —una caída del 2008, un flash crash— y exigirle a mis estrategias un desempeño mínimo específicamente ahí, para que un buen promedio general no esconda un fracaso durante justo los momentos que más me importan.
+
+**El problema (técnico):** dividir el historial en tramos ciegos de entrenamiento y prueba trata todos los años como si pesaran igual. Pero un investigador sabe que no todos los periodos son iguales: una crisis financiera no debe diluirse en el promedio del resto del historial, porque es justo en esos momentos donde una estrategia frágil se revela.
+
+**La solución (técnica):** una herramienta donde el usuario sombrea con el mouse un rango de fechas sobre el gráfico de un activo de referencia, le pone una etiqueta ("Crisis Covid 2020"), y puede exigir una regla dura de desempeño mínimo específicamente dentro de esa zona. Durante la validación, la estrategia se recorta a cada zona etiquetada y se evalúa por separado; el usuario ve exactamente cuál zona la reprobó, no solo un promedio que la esconde.
+
+**Explicado sin tecnicismos:** imagina que evalúas a un piloto solo por su tiempo promedio en la pista, sin fijarte en cómo se comportó justo en la curva peligrosa donde otros se han estrellado. Un promedio decente puede esconder un desastre exacto en el punto que más importaba.
+
+Esta pieza te deja marcar tú mismo, con el dedo sobre la gráfica, cuáles fueron esas curvas peligrosas del mercado —una crisis, un desplome repentino— y exigirle a la estrategia que aguante ahí, específicamente, no solo en promedio. Si falla en la crisis que tú marcaste, te enteras de cuál fue, no de un número general que la disimula.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario sombrea con el ratón un rango de fechas en el gráfico de un activo de referencia y le pone una etiqueta de texto.

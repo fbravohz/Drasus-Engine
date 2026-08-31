@@ -13,6 +13,14 @@ Es el componente encargado de capturar y persistir métricas de **performance t�
 
 Es la fuente primaria de evidencia para que el módulo de `feedback` detecte anomalías de infraestructura (ej: picos de latencia) que podrían estar afectando el rendimiento de las estrategias.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Infraestructura.** Mide el "cómo" del propio sistema en tiempo real —latencias, uso de memoria, señales de vida de los procesos internos— para distinguir un problema de infraestructura de un problema de la estrategia misma.
+
+El usuario nunca la ve. La nota como que **cuando algo se pone lento, el sistema ya sabe si fue la máquina o la lógica**, en vez de dejarlo adivinar.
+
 ## Comportamientos Observables
 
 - [ ] Captura latencias de hot-paths (ej: tiempo de ejecución desde señal hasta orden en el puerto).

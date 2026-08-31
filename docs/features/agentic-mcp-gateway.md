@@ -14,6 +14,20 @@ Es la puerta de control que expone la `public_interface` de los 8 módulos del p
 
 **Por qué la necesitamos:** "Software por resultados": el usuario decide, tarea por tarea, si la hace él desde la interfaz o la delega a un agente. Ninguna de las dos vías sustituye a la otra — es Cabina Dual, no migración a un solo canal.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como usuario, quiero poder delegar el trabajo repetitivo de investigación a un agente automatizado sin que eso le abra la puerta a operar mi dinero real sin mi autorización explícita, para ganar tiempo sin perder control.
+
+**El problema (técnico):** automatizar tareas de descubrimiento —lanzar barridos, iterar diseños, revisar reportes— hoy exige operar la interfaz paso a paso a mano. Conectar un agente automatizado directamente a todo el sistema, sin distinción de riesgo, significaría que ese agente podría tocar dinero real con la misma facilidad con la que revisa un reporte.
+
+**La solución (técnica):** una puerta de control que expone al agente las mismas operaciones que ya usa la interfaz normal, con permisos graduados por el riesgo de lo que pide: las fases de investigación se conceden sin fricción, mientras que tocar una cuenta real exige que el usuario active explícitamente un interruptor de producción —apagado por defecto— desde su propia interfaz, nunca desde el agente mismo. El usuario puede cortar la conexión del agente en cualquier momento sin afectar la aplicación, y cada acción del agente queda marcada en el historial como distinta de una acción humana.
+
+**Explicado sin tecnicismos:** es como darle una llave de la casa a un asistente para que haga las compras y organice el clóset, pero la caja fuerte tiene una segunda llave que solo tú tienes, y que hay que girar a propósito cada vez que quieres que él también pueda tocarla.
+
+El asistente puede investigar, probar y preparar todo lo que quieras sin pedirte permiso a cada rato. Pero si intenta tocar tu dinero real, la puerta no se abre —a menos que tú, y solo tú, hayas girado esa segunda llave—. Y en cualquier momento le puedes quitar la llave de la casa sin que nada se rompa. Además, en la libreta donde queda anotado quién hizo qué, siempre dice claramente si fue el asistente o fuiste tú.
+
 ## 2. Comportamientos Observables
 - [ ] El usuario conecta un agente LLM a Drasus Engine vía MCP. El agente ve disponibles, sin pedir permiso adicional, las herramientas de `ingest`, `generate`, `validate`, `incubate` y `feedback`.
 - [ ] El agente pide a `manage` rebalancear un portafolio con `institutional_tag = Demo`. La operación se ejecuta sin fricción.

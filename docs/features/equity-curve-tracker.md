@@ -16,6 +16,22 @@ Mantiene un registro barra-por-barra (o tick-por-tick) del capital, beneficio/p�
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver mi capital, mi ganancia acumulada y mi peor caída actualizados en cada instante de la simulación, sin huecos ni saltos sin explicación, para poder confiar en cualquier número que el sistema calcule después sobre esa misma serie.
+
+**El problema (técnico):** todo el resto de la evaluación de una estrategia —el Sharpe, el drawdown máximo, la decisión de si sigue viva o se retira— depende de una sola serie: cuánto capital hubo en cada instante. Si esa serie tiene un error de redondeo, un salto sin trazar a una orden concreta, o un drawdown mal calculado desde el pico equivocado, cada cálculo posterior hereda ese error sin que nadie lo note, porque las cifras finales igual se ven razonables.
+
+**La solución (técnica):** un registro continuo, barra por barra o tick por tick, que actualiza el capital exactamente con el resultado de cada orden ejecutada, mantiene el máximo histórico de capital para calcular la caída desde ese pico, y cierra resúmenes periódicos de ganancia y pérdida. El capital nunca puede ser negativo ni la caída negativa, y cada cambio debe rastrearse a una orden real — nunca a un ajuste inexplicado.
+
+**Explicado sin tecnicismos:** imagina llevar la chequera de un negocio a mano, apuntando cada entrada y cada salida de dinero, sin saltarte un solo movimiento y sin redondear "a ojo". Si te saltas un apunte o redondeas mal una sola vez, el saldo final que le muestras al dueño está mal, y él va a tomar decisiones sobre un número que no es real.
+
+Esta pieza es esa chequera, llevada de forma perfecta y automática. Cada vez que la estrategia gana o pierde dinero, se anota. Se guarda también el punto más alto que alcanzó el capital, para poder decir con exactitud "desde tu mejor momento, has caído tanto". Todo lo demás que el sistema te dice sobre una estrategia —qué tan buena es, qué tan riesgosa— se construye sobre esta chequera. Si la chequera está mal, todo lo que se construye encima está mal también.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Estrategia inicia con 100,000 de capital

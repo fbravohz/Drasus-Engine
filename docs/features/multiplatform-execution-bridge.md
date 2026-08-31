@@ -15,6 +15,22 @@ El puente de ejecución multiplataforma es un desacoplador de órdenes y capa de
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader que ejecuta a través de una terminal externa (MetaTrader, NinjaTrader), quiero que mi lógica de estrategia y mis niveles de stop nunca viajen a esa terminal, para que un bróker de mesa de operación no pueda usar esa información para cazar mis stops.
+
+**El problema (técnico):** cuando la lógica de una estrategia y sus parámetros de stop viven en la terminal receptora (identificadores visibles, niveles expuestos), un bróker con incentivo para operar contra su cliente puede leerlos y mover el precio deliberadamente hasta tocarlos — el fenómeno conocido como caza de stops.
+
+**La solución (técnica):** toda la lógica y los stops permanecen en el motor de Rust; la terminal externa solo recibe comandos genéricos de compra, venta, modificación o cierre, sin identificadores ni metadatos que revelen la estrategia. La reconciliación de fills usa un hash interno en vez de números visibles en la terminal.
+
+**Explicado sin tecnicismos:** imagina que le dictas instrucciones a un mensajero que no sabe leer el contenido del sobre que entrega — solo sabe "entrega esto en esta dirección". Aunque alguien intercepte al mensajero, no puede leer nada útil, porque el mensajero mismo no lo sabe.
+
+Esta pieza convierte a la terminal externa en ese mensajero ciego: recibe la orden de comprar o vender, pero nunca ve por qué, ni dónde está tu stop, ni qué estrategia lo generó. Si el dueño de esa terminal tuviera motivos para jugar en tu contra, no tendría información con la cual hacerlo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Execute genera una orden de mercado en el VPS blindado

@@ -15,6 +15,20 @@ Provee un panel con un scatter plot PCA 3D nativo y una tabla analítica que det
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver el impacto exacto de purgar una familia tóxica antes de confirmarlo, y poder deshacer la purga si me equivoco, para no perder trabajo de investigación por un clic apresurado.
+
+**El problema (técnico):** purgar una familia completa de estrategias es una decisión de alto impacto y, sin una forma de revertirla, un error de criterio o un clic accidental puede borrar meses de trabajo de descubrimiento de forma irreversible. Actuar sobre el hallazgo de una familia tóxica sin ver antes el efecto real en el portafolio —o sin una red de seguridad si la decisión resulta equivocada— convierte una herramienta de limpieza en un riesgo nuevo.
+
+**La solución (técnica):** antes de purgar, simula y muestra el impacto exacto en las métricas del portafolio (cuántas estrategias se eliminarían, cuánto cambiaría el Sharpe de la cartera), exige una confirmación de varios pasos, y genera automáticamente una copia de respaldo del estado anterior antes de tocar nada. La purga en sí es una marca lógica, no una destrucción física de los datos, así que un panel de historial permite deshacer cualquier purga anterior con un clic, sin pérdida de información.
+
+**Explicado sin tecnicismos:** piensa en la papelera de reciclaje de una computadora, pero con una vista previa: antes de vaciarla, te muestra exactamente cuánto espacio vas a liberar y qué archivos se van a ir, y aun después de "vaciarla", puedes recuperar todo con un botón durante el tiempo que quieras.
+
+Esta pieza le da esa misma tranquilidad a la limpieza de tu laboratorio de estrategias: antes de purgar una familia tóxica, ves el efecto real que tendría en tu cartera; después de purgarla, la puedes recuperar entera si te arrepientes. Nunca es un borrado sin retorno tomado a la carrera.
+
 ## Comportamientos Observables
 
 - [ ] La UI presenta un scatter plot PCA 3D nativo donde los puntos se agrupan y colorean según la etiqueta del clúster identificada por el backend.

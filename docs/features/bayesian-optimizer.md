@@ -9,6 +9,22 @@
 
 El **Optimizador Bayesiano** es un motor de búsqueda inteligente de parámetros que utiliza modelos probabilísticos (Procesos Gaussianos) para encontrar la combinación óptima de configuración sin tener que probar todas las posibilidades (Grid Search). Su principal ventaja es la eficiencia: requiere un 70-90% menos de iteraciones para converger a un resultado global.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero afinar los parámetros de una estrategia costosa de evaluar sin tener que probar miles de combinaciones a fuerza bruta, para llegar a una configuración sólida gastando una fracción del cómputo.
+
+**El problema (técnico):** cuando cada evaluación es cara —una simulación larga, un dataset pesado— probar todo el espacio de parámetros por fuerza bruta es inviable, y elegir a mano solo veinte combinaciones deja fuera casi con certeza a las mejores.
+
+**La solución (técnica):** un modelo probabilístico —un proceso gaussiano— que aprende de cada evaluación dónde es probable que esté el óptimo, y decide el siguiente punto a probar en función de esa evidencia acumulada, en vez de muestrear al azar o recorrer una rejilla completa. Es una implementación par del puerto de búsqueda: útil cuando el presupuesto de evaluaciones es limitado, no un sustituto del motor evolutivo.
+
+**Explicado sin tecnicismos:** imagina que buscas el punto más alto de una colina cubierta de niebla, y cada vez que das un paso y mides la altura te cuesta caro —tienes que esperar un rato para saber cuánto subiste—.
+
+En vez de caminar al azar o recorrer la colina en cuadrícula, vas anotando cada medición y usas el patrón que se forma para adivinar hacia dónde conviene dar el siguiente paso. Cada intento te acerca más rápido a la cima que probar puntos al azar, porque aprendes de los pasos anteriores en vez de ignorarlos.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario define rangos de parámetros (ej: RSI Period 5-50) y el objetivo (Optimizer Target: Sharpe Ratio).

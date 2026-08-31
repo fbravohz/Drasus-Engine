@@ -11,9 +11,23 @@
 
 Dos comportamientos relacionados bajo un mismo mecanismo: (1) un **respaldo cifrado** de la base de datos local del usuario hacia el almacenamiento de objetos del proveedor, cifrado del lado del cliente de modo que el proveedor jamás puede leerlo; y (2) un **relevo de custodia** que permite que la misma cuenta maestra opere alternadamente desde varias máquinas activadas del usuario (ej. laptop y PC de escritorio), llevando su estado consigo, sin que dos máquinas escriban la cadena de auditoría al mismo tiempo.
 
-- **Problema:** un disco muerto o un robo de laptop borra el trabajo del usuario. El tier de pago (Sovereign) suprime la telemetría de trabajo en origen (ADR-0143) — su historial NO está en los servidores del proveedor, así que un fallo de hardware lo pierde por completo. Además, cambiar de máquina o alternar entre dos máquinas propias hoy no tiene un mecanismo limpio: solo existe la transferencia de licencia (libera un cupo), que no recupera datos.
+- **Problema:** un disco averiado o un robo de laptop borra el trabajo del usuario. El tier de pago (Sovereign) suprime la telemetría de trabajo en origen (ADR-0143) — su historial NO está en los servidores del proveedor, así que un fallo de hardware lo pierde por completo. Además, cambiar de máquina o alternar entre dos máquinas propias hoy no tiene un mecanismo limpio: solo existe la transferencia de licencia (libera un cupo), que no recupera datos.
 - **Comportamiento observable:** el usuario activa "respaldo en la nube"; al cerrar sesión en una máquina, sube un blob cifrado incremental y cede la titularidad de la cadena; al abrir en otra máquina activada, la reclama y continúa exactamente donde quedó.
 - **Por qué:** convierte la garantía de soberanía en un producto vendible ("respaldamos tu trabajo y ni siquiera nosotros podemos verlo") y resuelve, sin construir nada nuevo de licenciamiento, el caso más común de portabilidad — cambiar o alternar de computadora — sin abuso de licencia ni pérdida de historial.
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario en el nivel de pago que ya no envía su trabajo al proveedor, quiero un respaldo de mi historial que ni el proveedor pueda leer, y poder cambiar de computadora sin perder ese historial, para que la privacidad que pago no se convierta en el riesgo de perderlo todo si mi disco falla.
+
+**El problema (técnico):** en el nivel de pago, el trabajo del usuario nunca sale de su máquina — pero eso significa que un disco dañado o un robo de laptop lo borra sin remedio, porque no existe copia en ningún otro lado. Cambiar de computadora, o alternar entre dos propias, tampoco tiene hoy un camino limpio: solo existe transferir la licencia, que libera un cupo pero no mueve ni un solo dato.
+
+**La solución (técnica):** el usuario activa un respaldo que se cifra en su propia máquina antes de subirse — el proveedor guarda el archivo pero nunca puede leerlo. Al cerrar sesión en una máquina, el sistema cede la titularidad de ese historial; al abrirlo en otra máquina activada, la reclama y continúa exactamente donde quedó, sin que dos máquinas puedan escribir al mismo tiempo y corromper el historial.
+
+**Explicado sin tecnicismos:** imagina una caja fuerte que tú cierras con tu propia llave antes de dejarla en la bodega de un tercero. El dueño de la bodega la guarda, la cuida, pero jamás puede abrirla — no tiene la llave. Si tu casa se incendia, la caja sigue intacta en la bodega, lista para que la recojas con tu llave.
+
+Y si un día quieres seguir trabajando desde otra computadora, es como llevarte la llave contigo: abres la misma caja fuerte desde ahí, y todo sigue exactamente donde lo dejaste, sin que dos personas puedan estar abriéndola al mismo tiempo por error.
 
 ## Comportamientos Observables
 
@@ -22,7 +36,7 @@ Dos comportamientos relacionados bajo un mismo mecanismo: (1) un **respaldo cifr
 - Cuando el usuario cierra sesión en una máquina que era titular de la cadena → sube el snapshot y marca esa máquina como **no-titular**.
 - Cuando el usuario abre Drasus en otra máquina activada de la misma cuenta → descarga el último snapshot, lo descifra localmente, y esa máquina **reclama la titularidad** — pasa a ser el único escritor activo de la cadena de auditoría.
 - Cuando el usuario intenta tener dos máquinas titulares a la vez → la segunda queda bloqueada ("Esta cuenta está activa en otra máquina") hasta un reclamo explícito — nunca operan en paralelo silenciosamente.
-- Cuando la máquina anterior está destruida (disco muerto) → el usuario reclama la titularidad desde el panel de cuenta en la Cabina de Mando (diferido), tras verificación de identidad — mismo flujo que desvincular una máquina muerta en `licensing-system`.
+- Cuando la máquina anterior está destruida (disco averiado) → el usuario reclama la titularidad desde el panel de cuenta en la Cabina de Mando (diferido), tras verificación de identidad — mismo flujo que desvincular una máquina inutilizable en `licensing-system`.
 - Cuando el usuario pierde el secreto maestro → el respaldo es irrecuperable **por diseño** (el proveedor no tiene puerta trasera). Se advierte explícitamente en la UI.
 
 ## Restricciones
@@ -92,6 +106,6 @@ Registro local de respaldos con Grupo I + Perfil D; campos propios fuera del cat
 ## Dependencias y Bloqueantes
 
 - **Depende de:** `central-identity` (#1, a qué cuenta pertenece el blob y la titularidad), el almacén de objetos de la Cabina de Mando (adaptador de red diferido).
-- **Comparte flujo con:** `licensing-system` (#2) — el reclamo forzado de titularidad desde el panel central reutiliza el mismo self-service que liberar un cupo de activación de una máquina muerta.
+- **Comparte flujo con:** `licensing-system` (#2) — el reclamo forzado de titularidad desde el panel central reutiliza el mismo self-service que liberar un cupo de activación de una máquina inutilizable.
 - **Bloquea a:** nada — es la garantía de continuidad de todo el resto del trabajo del usuario.
 - **Contrato de Integración UI (ADR-0117) — Superficie propia:** toggle de respaldo + indicador de titularidad en el cajón de ajustes (Inspector de Ajustes).

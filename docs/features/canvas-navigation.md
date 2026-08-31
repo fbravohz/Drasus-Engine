@@ -17,6 +17,22 @@ Sin esta feature el Canvas no tiene memoria de posición ni transiciones suaves 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como usuario, quiero moverme entre la vista general de mi flota de estrategias y el detalle de una sola regla sin perder de vista dónde estoy, para no desorientarme en un lienzo con decenas de nodos.
+
+**El problema (técnico):** un lienzo que solo permite hacer zoom sin memoria de posición ni de jerarquía convierte la navegación en un salto ciego — el usuario pierde el hilo de en qué nivel está (¿un grupo de portafolios o el detalle de una sola regla?) y cada reapertura de la aplicación empieza de cero. Con decenas de nodos, eso es desorientación garantizada.
+
+**La solución (técnica):** un gestor de posición y zoom que anima la transición entre niveles de la jerarquía (agrupación de portafolios → portafolio → estrategia → reglas internas), mantiene una ruta de migas de pan siempre visible y navegable con un clic, agrega visualmente el desempeño de las estrategias activas en cada nivel superior, y restaura la posición exacta de la sesión anterior al reabrir. Un descarte de un nodo nunca lo borra: lo oculta y queda recuperable.
+
+**Explicado sin tecnicismos:** es la diferencia entre un mapa con "usted está aquí" que además recuerda por dónde veniste, y perderte en un edificio enorme sin ninguna señalización. Cada vez que entras a un cuarto más pequeño —de la flota completa a una sola estrategia, y de ahí a una sola regla— una fila de migas de pan en la pantalla te dice exactamente por dónde llegaste, y con un clic regresas a cualquier punto del camino.
+
+Y si cierras la aplicación a media exploración, la vuelves a abrir exactamente donde la dejaste — como retomar un libro en la página marcada, no desde la portada.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Al hacer doble clic en un nodo Cluster → el canvas anima zoom in-place y aparecen sus Portfolios. El breadcrumb flotante muestra `Cluster A`.

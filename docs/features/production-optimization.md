@@ -16,6 +16,16 @@ También incluye preparación final para producción: documentación de arranque
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Infraestructura.** Antes de dar por terminado el motor, se corre un benchmark del sistema completo —de principio a fin del ciclo— contra plataformas de referencia del sector, en el mismo hardware. Si algún módulo no cumple su tiempo de respuesta esperado, se optimiza puntualmente sin tocar la exactitud del resultado; si todos lo cumplen, esta pieza no tiene nada que hacer.
+
+El usuario nunca la ve. La nota como que **el sistema completo responde a la velocidad esperada en vez de arrastrarse en el módulo más lento de la cadena**, incluida la parte que reparte y vigila su capital entre estrategias.
+
+---
+
 ## Comportamientos Observables
 
 **Si TODOS los módulos cumplen SLA:**

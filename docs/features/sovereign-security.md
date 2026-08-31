@@ -13,6 +13,22 @@ Sovereign Security establece el marco de ciberseguridad local e integridad de da
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que las contraseñas de mi bróker nunca salgan de mi computadora, sin importar el plan que tenga contratado, para que ni un error de Drasus ni una decisión de negocio futura puedan exponer el acceso a mi cuenta real.
+
+**El problema (técnico):** una credencial de bróker guardada en texto plano, o transmitida a cualquier servidor externo, es la llave completa a la cuenta de un usuario. Un registro de auditoría que se puede editar después de escrito es, además, inútil como evidencia — cualquier manipulación posterior se vuelve indetectable.
+
+**La solución (técnica):** las credenciales del bróker se cifran localmente con un algoritmo de cifrado fuerte antes de guardarse, usando una llave que nunca sale de la máquina del usuario — invariante fijo, sin excepción por nivel de suscripción ni por estado de pago. El registro de auditoría es de solo-agregado: cada fila lleva el sello de la anterior encadenado por hash, así que alterar un registro pasado rompe visiblemente la cadena.
+
+**Explicado sin tecnicismos:** es como la caja fuerte de tu propia casa, no la de un banco. Nadie más tiene la combinación, ni siquiera Drasus, y no importa si dejas de pagar la mensualidad de un servicio — la caja sigue siendo tuya y sigue en tu casa.
+
+Ninguna contraseña de tu bróker sale nunca de tu computadora, en ningún plan, gratis o de paga. Y cada operación que haces queda anotada en una bitácora que nadie puede corregir después sin que se note — como un cuaderno donde cada página lleva pegado un pedazo de la anterior.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario registra credenciales de un bróker

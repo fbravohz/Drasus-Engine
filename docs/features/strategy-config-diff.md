@@ -13,6 +13,22 @@ El `Strategy Config Diff` es una herramienta visual en la interfaz de usuario qu
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Historia de usuario:** Como operador, quiero saber de un vistazo si los parámetros activos de mi estrategia siguen siendo los mismos que se validaron la última vez, para no promover a cuarentena o a producción una versión que en realidad ya cambió sin volver a probarse.
+
+**El problema (técnico):** una estrategia se ajusta, se retoca un parámetro de gestión de riesgo o de datos, y con el tiempo nadie recuerda con certeza si la configuración activa hoy es exactamente la misma que pasó el último test de robustez. Promover esa versión sin darse cuenta del cambio es, en la práctica, operar algo que nunca se validó.
+
+**La solución (técnica):** compara lado a lado la configuración activa contra la última configuración que pasó un test de robustez, resalta lo que se añadió, se modificó o se eliminó agrupado por categoría (datos, gestión de capital, gestión avanzada de la operación), y emite un estado —sincronizado o desincronizado— que bloquea la promoción si hay una divergencia crítica sin haber vuelto a validar.
+
+**Explicado sin tecnicismos:** es como comparar la receta que un restaurante presentó para su certificación de higiene contra la receta que realmente está usando en la cocina hoy. Si cambiaron un ingrediente clave sin volver a pedir la certificación, ese platillo que ves en el menú ya no es, en estricto sentido, el que fue aprobado.
+
+Esta pieza pone las dos recetas lado a lado, te señala en rojo y verde exactamente qué cambió, y no te deja servir el platillo "certificado" si el cambio es de los que importan, hasta que alguien vuelva a probarlo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario abre la vista de diferencias de una estrategia y visualiza una comparación lado a lado de sus configuraciones.

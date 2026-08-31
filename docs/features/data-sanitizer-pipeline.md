@@ -12,6 +12,24 @@ Es el guardian de la calidad de datos de Drasus Engine y el cerebro del Módulo 
 **Problema:** Los datos crudos de brokers suelen tener huecos temporales o errores de OHLC que arruinan la fidelidad de las pruebas.
 **Solución:** Un pipeline secuencial estricto de 6 capas que valida y repara la data bajo estándares profesionales.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero que los datos crudos de mi proveedor pasen por un protocolo de limpieza declarado y auditable antes de tocar el motor, para no descubrir seis meses después que mi mejor estrategia solo explotaba un defecto del archivo.
+
+**El problema (técnico):** los datos de mercado llegan sucios de forma sistemática, no ocasional: velas faltantes en sesiones que sí operaron, precios que violan la relación entre apertura, máximo, mínimo y cierre, valores atípicos por errores del proveedor, huecos que no distinguen entre "el mercado estaba cerrado" y "el archivo está incompleto". Cada uno de esos defectos es una fuente de rendimiento falso: una estrategia puede volverse rentable explotando un artefacto del archivo que no existe en el mercado real.
+
+**La solución (técnica):** un protocolo secuencial de seis capas de limpieza, cada una con una responsabilidad única y un orden que no se altera. Cada capa declara qué corrigió y por qué, de modo que la limpieza es auditable: el usuario puede ver qué se tocó, no solo confiar en que quedó limpio. Reparar en silencio sería tan peligroso como no reparar.
+
+**Explicado sin tecnicismos:** antes de cocinar, un buen cocinero revisa cada ingrediente. Que la leche no esté cortada, que la fruta no tenga golpes, que no falte la mitad de lo que pidió.
+
+Los datos del mercado llegan así de irregulares: horas que faltan, precios imposibles —como que el precio más bajo del día sea mayor que el más alto—, y huecos donde no se distingue si el mercado estaba cerrado o si simplemente el archivo venía incompleto.
+
+Esta pieza es esa revisión, en seis pasos que siempre van en el mismo orden. Y anota qué arregló en cada paso, porque arreglar a escondidas sería tan malo como no arreglar: si no sabes qué se tocó, no sabes qué estás midiendo.
+
 ## Comportamientos Observables (Pipeline de 6 Capas)
 
 - [ ] **Capa 1: Ingesta Soberana.** Carga Parquet/CSV local con esquema estricto validado mediante schemas tipados nativos en Rust (Serde).

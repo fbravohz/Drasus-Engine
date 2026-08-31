@@ -15,6 +15,20 @@ El "Buscador Topológico de Mesetas" es un analizador del "vecindario" hiperespa
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema mapee el terreno alrededor de mis parámetros y centre automáticamente su valor en la zona más ancha y estable, en vez de dejarlo en el punto exacto que dio el mejor resultado, para no operar sobre un ajuste que solo funciona por casualidad de haber caído justo en la cima.
+
+**El problema (técnico):** el proceso de optimización tiende a elegir el punto matemáticamente óptimo, y ese punto casi siempre está en el borde de un acantilado numérico — un valor donde el resultado es excelente pero se derrumba en cuanto el parámetro se mueve una unidad. Interpretar esto a simple vista en un gráfico tridimensional es poco confiable y depende del ojo de quien lo mira.
+
+**La solución (técnica):** perturba cada parámetro en todas direcciones dentro de un vecindario configurable, mide el resultado en cada punto vecino, y calcula si la zona es plana (una meseta, donde moverse un poco no cambia casi nada) o afilada (un pico, donde moverse un poco lo cambia todo). Cuando encuentra una meseta suficientemente ancha, recentra automáticamente los parámetros en su punto medio geométrico — renunciando, a propósito, a unas décimas de rendimiento en el punto óptimo a cambio de aterrizar en terreno que no se mueve con el primer temblor del mercado real.
+
+**Explicado sin tecnicismos:** imagina que buscas dónde plantar una tienda de campaña en la montaña. Un punto te da la vista más espectacular, pero está justo en el filo de un precipicio — un paso en falso y te caes. Otro punto, unos metros más atrás, tiene una vista casi tan buena y está sobre terreno plano y ancho en todas direcciones.
+
+Esta pieza explora el terreno alrededor de cada punto candidato y, en vez de plantarte en el filo del precipicio porque tiene la mejor vista, te lleva al centro de la planicie más ancha que encuentre. Pierdes algo de vista. Ganas que ningún viento te tire de un empujón.
+
 ## Comportamientos Observables
 
 - [ ] La UI renderiza una malla tridimensional interactiva (Topografía de Parámetros) cuando el usuario optimiza dos parámetros (ej. Periodo SMA vs Multiplicador ATR).

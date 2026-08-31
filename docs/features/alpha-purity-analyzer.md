@@ -15,6 +15,20 @@ Se diferencia de sus features hermanas: `factor-decomposition` reparte el retorn
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber si la ventaja que mi estrategia reporta es estadísticamente distinguible de cero, y no solo un número positivo que podría ser ruido, para no confiar en una ventaja que la estadística no respalda.
+
+**El problema (técnico):** separar el rendimiento en una parte de habilidad y una parte de exposición pasiva al mercado no basta si nadie certifica que la parte de habilidad es real y no solo una fluctuación estadística alrededor de cero. Una estrategia puede reportar una ventaja positiva pequeña que, sometida a una prueba de significancia, resulta indistinguible del azar.
+
+**La solución (técnica):** calcula la ventaja ajustada por riesgo, mide cuánto de esa ventaja está genuinamente separada del comportamiento del mercado de referencia (si la correlación con el mercado es demasiado alta, anula la ventaja por considerarla un clon disfrazado), y emite un veredicto de significancia basado en su nivel de confianza estadístico. Además, cuando una estrategia en vivo empieza a degradarse, distingue si lo que murió fue la ventaja real de la lógica o si simplemente se apagó el impulso general del mercado que la acompañaba — dos causas de fondo completamente distintas que exigen decisiones distintas.
+
+**Explicado sin tecnicismos:** imagina a alguien que dice tener un don para predecir el clima, y acierta el setenta por ciento de las veces. Suena impresionante, hasta que alguien pregunta: ¿y si solo dijiste "va a hacer sol" todos los días, en una ciudad donde hace sol el setenta por ciento del año? No hay ningún don ahí, solo la inercia del clima local.
+
+Esta pieza hace esa pregunta incómoda sobre tu estrategia: ¿la ventaja que reportas es tu don, o es la inercia del mercado hablando por ti? Y cuando esa ventaja empieza a debilitarse en vivo, te dice cuál de las dos cosas se apagó — si perdiste el don, o si simplemente cambió el clima.
+
 ## Comportamientos Observables
 
 - [ ] Calcula el **Alpha Anualizado** ajustado por riesgo tras cada backtest.

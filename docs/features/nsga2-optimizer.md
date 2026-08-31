@@ -13,7 +13,11 @@
 
 NSGA-II es un algoritmo de optimización que busca configuraciones de estrategia que sean buenas en múltiples objetivos simultáneamente (Sharpe, drawdown mínimo, win rate) sin sacrificar uno por otro. Devuelve la Frontera Pareto: todas las configuraciones no-dominadas.
 
-**Contexto de Negocio:** El módulo "generate" automatiza el descubrimiento de estrategias. Sin NSGA-II, la optimización sería mono-objetivo y propensa al overfitting. En el **Hybrid Genesis Engine**, el NSGA-II actúa como el motor de *fine-tuning* (Micro-ajuste), refinando los umbrales y topologías de las "Tesis de Alpha" generadas por el componente de Deep Reinforcement Learning (DRL).
+**Contexto de Negocio:** El módulo "generate" automatiza el descubrimiento de estrategias. Sin NSGA-II, la optimización sería mono-objetivo y propensa al overfitting.
+
+NSGA-II es una **implementación del Puerto de Estrategia de Búsqueda (ADR-0113)** — la primera construida y la mejor entendida, no la única ni el motor del cual las demás son modos. Puede operar sola sobre el espacio completo, o encadenarse con otra estrategia que proponga la tesis macro mientras NSGA-II afina umbrales y topologías (composición elegible, no jerarquía fija).
+
+**Obligación de puerto (ADR-0113 + ADR-0151):** reporta el número de evaluaciones consumidas a la Expedition activa. Es la condición que hace posible la corrección por pruebas múltiples río abajo.
 
 **Problema:** Si optimizas solo para Sharpe máximo, obtienes estrategias de riesgo gigantesco. Si optimizas para drawdown mínimo, pierdes rentabilidad. Necesitas equilibrio.
 
@@ -24,6 +28,22 @@ NSGA-II es un algoritmo de optimización que busca configuraciones de estrategia
 **Impacto:** Bloqueador MVP. Sin NSGA-II, el descubrimiento automático no existe y todo es manual.
 
 **Genoma Agnóstico al Dominio (ADR-0108):** El motor evolutivo es agnóstico al dominio del genoma que recibe. Según el dominio activo declarado en `ACTIVE_GENOME_DOMAINS` (ver [`ast-compiler.md`](./ast-compiler.md)), la misma maquinaria de evolución (Parallel Islands, Blood Renewal, Convergence Detector, Fitness Metamórfico) opera sobre el Genoma de Señal (línea base, ADR-0043), el Genoma de Riesgo y Gestión de Posición (ADR-0109), el Genoma de Régimen y Filtro de Entorno (ADR-0110), o — en su modalidad de co-evolución de cartera — el Genoma de Portafolio y Correlación (ADR-0111). Los genomas de los dominios no activos viajan como entradas fijas a la evaluación de fitness ("Wildcard Invertido").
+
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el motor de búsqueda me entregue un abanico de configuraciones donde ninguna domina a las demás en todos los objetivos a la vez, para elegir yo mismo el equilibrio entre rentabilidad y riesgo en vez de que una fórmula lo decida por mí antes de ver resultados.
+
+**El problema (técnico):** optimizar una estrategia para un solo número —el Sharpe más alto, por ejemplo— produce configuraciones de riesgo desproporcionado, porque el número no distingue entre ganar mucho con sustos enormes y ganar de forma estable. Sumar objetivos con pesos fijos obliga a decidir, antes de buscar, cuánto vale un punto de rentabilidad frente a un punto de caída máxima: una decisión arbitraria que esconde la frontera real de compromisos.
+
+**La solución (técnica):** un algoritmo evolutivo —una población de configuraciones candidatas que compite, se cruza y muta por generaciones— que evalúa cada candidata en varios objetivos a la vez (Sharpe, drawdown, tasa de acierto) y conserva el frente de Pareto: el conjunto de configuraciones donde ninguna es mejor que otra en todos los objetivos simultáneamente. Es la primera implementación construida del puerto abierto de estrategias de búsqueda de Drasus, y la mejor entendida, no el motor único del que las demás dependen. Cada corrida reporta cuántas configuraciones evaluó, insumo obligatorio para la corrección estadística posterior.
+
+**Explicado sin tecnicismos:** en la naturaleza no hay un "mejor" entre el guepardo y la tortuga —uno es rapidísimo y frágil, la otra lentísima y resistente—; cada uno gana en su propia dimensión, y compararlos no tiene sentido.
+
+Con las estrategias pasa igual. Una gana mucho pero da sustos grandes; otra gana poco pero es tranquila. Casi todas las herramientas te obligan a decidir de antemano cuánto vale un punto de ganancia contra un punto de susto, y buscan con esa fórmula fija, eligiendo a ciegas antes de ver nada. Esta pieza no te obliga: cría miles de candidatas por selección natural y te entrega el abanico completo —el guepardo, la tortuga y todo lo que hay en medio— para que elijas tú, viendo las opciones reales.
 
 ---
 

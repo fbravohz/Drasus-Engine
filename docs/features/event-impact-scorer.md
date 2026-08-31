@@ -20,6 +20,22 @@ Es el corazón determinista de la fusión fundamental: convierte un evento ya es
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el impacto de una noticia o un evento fundamental se calcule por fórmula y no por opinión, para poder auditar exactamente por qué el sistema le asignó ese peso y confiar en que el mismo evento siempre produce el mismo número.
+
+**El problema (técnico):** "el impacto de una noticia" suele decidirse por juicio subjetivo —una intuición sobre qué tan importante fue algo— y eso es irreproducible: nadie puede auditar por qué se asignó ese peso, y el mismo evento podría calificarse distinto dos veces.
+
+**La solución (técnica):** dos métodos deterministas, elegidos automáticamente según el tipo de evento. Para eventos con reacción de precio observable (una declaración que sacude al mercado), mide el retorno anormal del activo alrededor del evento contra su comportamiento esperado. Para eventos programados con un consenso previo (un resultado trimestral, un dato macro), calcula la distancia estandarizada entre lo publicado y lo que se esperaba. Un evento sin ninguna de las dos medidas objetivas simplemente no se puntúa. Y siempre usa el primer dato publicado, nunca una cifra revisada después, para no filtrar información que en ese momento no existía.
+
+**Explicado sin tecnicismos:** imagina dos formas de calificar qué tan sorprendente fue una noticia. Una es que un experto la lea y diga "esto se siente importante" —subjetivo, y cada experto diría algo distinto—. La otra es medir cuánto se movió realmente el precio, o qué tan lejos estuvo el resultado real de lo que todos esperaban: un número, no una opinión.
+
+Esta pieza usa siempre la segunda forma. Nunca "esto se siente importante": siempre una fórmula reproducible que cualquiera puede recalcular y obtener el mismo resultado. Es la diferencia entre confiar en una corazonada y confiar en una medición que puedes repetir tú mismo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Recalculo el coeficiente de un evento histórico → obtengo **siempre el mismo número** (determinismo).

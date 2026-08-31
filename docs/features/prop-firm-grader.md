@@ -16,10 +16,24 @@ El **Prop-Firm Grader** opera el **Embudo Tóxico de Estrés (ADR-0061)**. Vigil
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como candidato a una cuenta de fondeo, quiero que mi estrategia se someta a las reglas exactas de la firma que me va a evaluar antes de arriesgar la evaluación que pagué, para no descubrir hasta el examen real que mi estrategia viola un límite que pude haber detectado gratis.
+
+**El problema (técnico):** las firmas de fondeo (empresas que prestan capital a cambio de que el operador pase una evaluación) imponen límites de pérdida diaria y total que, al romperse aunque sea una vez, cancelan la evaluación completa sin excepciones ni promedios que suavicen el golpe. Descubrir que una estrategia viola esos límites después de haber pagado por la evaluación real es la forma más cara y evitable de fracasar.
+
+**La solución (técnica):** vigila la estrategia durante su simulación de estrés y, en el instante en que el drawdown intradiario cruza el límite absoluto configurado para esa firma en particular, la marca como rechazada de inmediato —sin indulgencia estadística ni promedio que disimule el evento—. Las reglas de cada firma (el porcentaje exacto de pérdida diaria y total permitido) viven en una configuración externa, no en el código, así que agregar las reglas de una firma nueva no requiere ni una línea de programación nueva.
+
+**Explicado sin tecnicismos:** imagina un examen de manejo donde una sola infracción grave —pasarte un alto en rojo— te reprueba en el acto, sin importar qué tan bien manejaste el resto del examen. No hay promedio que te salve.
+
+Esta pieza le aplica ese mismo examen a tu estrategia, pero con las reglas exactas de la empresa de fondeo específica a la que planeas presentarte —porque cada una tiene su propio límite de "pasarte el alto". Si tu estrategia se lo salta aunque sea una vez en la simulación, se reprueba ahí mismo, antes de que gastes el dinero de la evaluación real para descubrirlo.
+
 ## Comportamientos Observables (La Regla de Nulidad)
 
 - **Vigilancia al Vuelo:** Mientras la estrategia simulada opera en el motor Monte Carlo, evalúa el Drawdown Diario absoluto.
-- **Muerte Súbita (Regla de Nulidad Intransigente):** Si el drawdown intradiario excede el límite del perfil, el veredicto cambia a `RECHAZADA` de forma inmediata. No hay indulgencias estadísticas ni promedios temporales macro.
+- **Descarte Inmediato (Regla de Nulidad Intransigente):** Si el drawdown intradiario excede el límite del perfil, el veredicto cambia a `RECHAZADA` de forma inmediata. No hay indulgencias estadísticas ni promedios temporales macro.
 - **Filtrado de Cohortes:** En una corrida de 10,000 mutaciones, si el porcentaje de supervivencia diaria es < umbral (ej. 90%), la estrategia falla el test tóxico.
 
 ---

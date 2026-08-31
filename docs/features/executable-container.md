@@ -19,6 +19,16 @@ El Executable Container es un contrato técnico (Interface o Abstract Base Class
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Infraestructura.** Es el contrato que hace que una estrategia individual y un portafolio completo de estrategias se vean idénticos para el resto del sistema, con los mismos campos obligatorios de configuración, reglas e historial de pruebas.
+
+El usuario nunca la ve. La nota como que **el mismo proceso de backtest, validación e incubación funciona igual sin importar si evalúa una estrategia sola o un portafolio entero**, sin que nadie tenga que duplicar la lógica para cada caso.
+
+---
+
 ## Contrato de Datos (Frozen Object)
 
 | Campo | Tipo | Descripción |

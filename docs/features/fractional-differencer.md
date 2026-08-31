@@ -11,6 +11,24 @@ El **Fractional Differencer** es una herramienta de procesamiento de series temp
 
 A diferencia de la diferenciación tradicional (entera, $d=1$), que elimina la tendencia pero también gran parte de la señal predictiva, la diferenciación fraccional ($0 < d < 1$) utiliza una ventana de pesos decrecientes para mantener la correlación histórica necesaria para el Alpha.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero volver estadísticamente tratable una serie de precios sin borrarle la memoria que contenía la señal, para no destruir el patrón en el mismo paso en que preparo los datos para buscarlo.
+
+**El problema (técnico):** casi todos los métodos estadísticos exigen que la serie sea estacionaria — que sus propiedades no cambien con el tiempo. Una serie de precios no lo es. El remedio clásico es restar el valor anterior a cada valor, lo que la vuelve estacionaria de inmediato... y le borra casi toda la memoria de largo plazo. Es un intercambio brutal, y se hace por costumbre sin medirlo: se destruye la señal predictiva en el mismo paso que se ejecuta para poder buscarla.
+
+**La solución (técnica):** una transformación de grado fraccionario que aplica una ventana de pesos decrecientes en vez de una resta simple. Permite recorrer el espectro completo entre "no transformar nada" y "restar el anterior", y quedarse en el punto mínimo que ya alcanza la estacionariedad — conservando toda la memoria que no hacía falta sacrificar. El grado es un parámetro configurable, no una constante.
+
+**Explicado sin tecnicismos:** para poder analizar los precios con herramientas estadísticas hay que "aplanarlos" primero, quitándoles la tendencia. El método de siempre es restarle a cada precio el precio anterior. Funciona, y es como quitar una mancha lavando la camisa con cloro: sale la mancha, y también el color.
+
+Lo que quedaba en el color era la memoria de la serie: el rastro de lo que pasó semanas atrás, que es precisamente donde puede vivir la señal que estás buscando.
+
+Esta pieza permite lavar **con la intensidad justa**. Vas subiendo poquito a poco hasta que la mancha se va, y te detienes ahí, conservando todo el color que no hacía falta sacrificar. La diferencia entre eso y el cloro puede ser la diferencia entre encontrar algo y no encontrar nada.
+
 ## Comportamientos Observables
 
 - [ ] El usuario aplica diferenciación fraccional a una serie de precios de Bitcoin.

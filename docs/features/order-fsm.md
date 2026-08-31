@@ -21,6 +21,22 @@ El Order FSM define los 6 estados posibles de una orden y las transiciones váli
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que cada orden solo pueda moverse entre estados válidos y que el sistema nunca abra dos posiciones por la misma señal, para que un error de sincronización no me deje con una posición duplicada o una orden fantasma.
+
+**El problema (técnico):** sin una máquina de estados explícita, una orden podría "ejecutarse" después de haber sido rechazada, o el sistema podría reaccionar dos veces a la misma señal de entrada y abrir dos posiciones donde solo debía existir una — el duplicado clásico que un corte de red o un reinicio a destiempo produce.
+
+**La solución (técnica):** seis estados fijos y transiciones explícitas; cualquier intento de saltarse una transición no válida se rechaza antes de persistirse. La de-duplicación de señal impone una separación mínima entre dos entradas de la misma estrategia, y el margen de las posiciones concurrentes se valida contra el agregado, nunca posición por posición aislada, así que la concurrencia legítima nunca se convierte en una puerta trasera al límite de riesgo.
+
+**Explicado sin tecnicismos:** imagina un semáforo con solo cinco combinaciones de luces permitidas. No importa qué botón empuje alguien: el semáforo nunca va a poner verde y rojo a la vez, ni va a "saltarse" del rojo al verde sin pasar por el amarillo.
+
+Con las órdenes pasa lo mismo: el sistema tiene una lista fija de movimientos permitidos, y cualquier intento de moverse fuera de esa lista simplemente no ocurre. Y si la misma señal de compra llega dos veces por accidente —un reinicio, un mensaje repetido—, el sistema recuerda que ya la atendió y no abre la posición dos veces.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Execute envía una nueva orden al broker

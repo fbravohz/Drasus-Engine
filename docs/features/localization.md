@@ -15,6 +15,22 @@ La capa de **localización** de la interfaz: toda cadena visible al usuario se r
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como usuario, quiero usar la aplicación completa en mi propio idioma, y que un mensaje de error del motor me llegue traducido en vez de como un código técnico, para entender el sistema sin tener que aprender su lenguaje interno.
+
+**El problema (técnico):** fijar un idioma único desde el principio significa que cada mensaje queda escrito directamente en el código de la interfaz. Deshacer eso más adelante —cuando ya existen cientos de textos incrustados— es un trabajo enorme y propenso a error; y si el motor interno emitiera directamente prosa en un idioma, ese idioma quedaría cocinado dentro de la lógica misma, imposible de cambiar sin tocar el núcleo.
+
+**La solución (técnica):** toda cadena visible se resuelve por una clave, nunca se escribe directa en la pantalla, y el motor interno solo emite códigos de estado estables — la traducción a prosa ocurre siempre en la capa de interfaz. Cambiar el idioma en los ajustes reescribe toda la pantalla al instante, y agregar un idioma nuevo es soltar un archivo de traducción, sin tocar una sola línea de código.
+
+**Explicado sin tecnicismos:** es como un restaurante que en vez de imprimir el menú directo sobre el papel en un solo idioma, numera cada plato y tiene un libro de traducciones aparte para cada idioma. Cambiar el idioma del comensal es solo entregarle el libro correcto — nunca hay que reimprimir el menú entero.
+
+Aquí pasa igual: cuando el motor dice "ocurrió el error número 47", la interfaz busca ese número en el libro de tu idioma y te lo entrega ya traducido, con palabras que entiendes. Y si mañana alguien quiere sumar el libro en portugués, solo agrega ese libro nuevo — el menú original ni se toca.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario cambia el idioma en ajustes y toda la interfaz cambia de inmediato.

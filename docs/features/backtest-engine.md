@@ -20,6 +20,22 @@ El Backtest Engine simula cómo se habría comportado una estrategia en el pasad
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero un motor de backtest que combine velocidad para descartar candidatas malas con fidelidad total para las buenas, para poder examinar miles de estrategias sin sacrificar honestidad en el veredicto final.
+
+**El problema (técnico):** un motor de backtest único enfrenta un dilema irresoluble: si es rápido, sacrifica fidelidad (asume ejecución perfecta); si es fiel, es demasiado lento para evaluar miles de candidatas por noche. Peor aún, si las dos rutas no están atadas por una regla de consistencia, la ruta rápida puede reportar resultados más optimistas que la realidad, y una estrategia mediocre parece prometedora solo porque se midió con la vara equivocada.
+
+**La solución (técnica):** dos motores con roles distintos. Uno vectorizado, veloz, para eliminar candidatas malas a gran escala. Otro dirigido por eventos, lento y minucioso, que reproduce el mercado paso a paso para las candidatas que sobrevivieron el primer filtro. Un contrato de consistencia conservadora obliga a que el motor rápido nunca reporte mejor que el motor fiel, y una regla fija —la señal calculada al cierre de una vela se ejecuta en la apertura de la siguiente, siempre— elimina el error de operar con información que en la realidad todavía no existía.
+
+**Explicado sin tecnicismos:** imagina que evalúas a mil aspirantes a un puesto. No puedes entrevistar a los mil a fondo — tardarías meses. Así que primero pasas a todos por un filtro rápido y superficial que descarta a los claramente no aptos, y solo a los que sobreviven les haces la entrevista larga y detallada.
+
+Este sistema hace lo mismo con las estrategias de trading: un filtro veloz descarta a las miles que obviamente no sirven, y un examen lento y detallado se reserva para las pocas que pasaron el primer corte. Y hay una regla que nunca se rompe: el filtro rápido jamás puede ser más generoso que el examen detallado — si hay diferencia, siempre gana el juicio más desconfiado. Así nunca terminas poniendo dinero real en algo que solo se veía bien porque lo evaluaste con prisa.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario presiona "Backtest" en una estrategia con 2 años de datos históricos

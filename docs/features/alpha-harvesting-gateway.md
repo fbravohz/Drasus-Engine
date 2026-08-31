@@ -9,6 +9,22 @@
 Es un portal de ingesta (Gateway) que permite recibir, desencriptar y refinar estrategias anonimizadas provenientes de la mente colectiva (o peers) en la máquina local. 
 Permite incorporar "Alpha" descubierto por otros nodos sin revelar su código fuente nativo ni comprometer la seguridad local, re-compilando la estrategia en el `Strategy AST` interno.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero poder incorporar ideas descubiertas por otros investigadores de la red sin ver ni compartir el código fuente de nadie, para arrancar mi búsqueda desde una semilla ajena en vez de empezar siempre de cero.
+
+**El problema (técnico):** descubrir una estrategia desde cero cuesta tiempo de cómputo y de investigación. Si otro investigador de la red ya encontró una estructura prometedora, empezar de nuevo sin aprovechar ese punto de partida es desperdiciar trabajo ya hecho, pero recibir código ajeno directamente abre la puerta a ejecutar algo malicioso sin saberlo.
+
+**La solución (técnica):** un portal que recibe un archivo cifrado con la estructura de una estrategia anonimizada, nunca su código fuente ejecutable, la valida estrictamente contra un esquema conocido —rechazando cualquier contenido que no encaje en el formato esperado— y la inyecta como una candidata más dentro del proceso de generación local, donde el usuario puede afinarla con sus propios datos. En ningún momento se ejecuta código ajeno directamente, y en ningún momento sale información del rendimiento local hacia la red.
+
+**Explicado sin tecnicismos:** es como recibir la receta de un platillo de otro cocinero —los ingredientes y los pasos, no su cocina ni sus manos— y decidir tú mismo si la preparas, la ajustas a tu gusto o la descartas. Nunca dejas entrar a un extraño a tu cocina; solo lees su receta y decides qué hacer con ella.
+
+Esta pieza te deja aprovechar ideas de otros investigadores de esa forma: recibes la estructura de su hallazgo, nunca un programa que corre por su cuenta, la revisas dentro de tu propio sistema, y desde ahí decides si te sirve como punto de partida para tu propia búsqueda.
+
+---
+
 ## 2. Comportamientos Observables
 
 - Usuario importa un archivo encriptado `*.qf_alpha`.

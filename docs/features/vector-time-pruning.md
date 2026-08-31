@@ -20,6 +20,20 @@ Convierte datos estadísticos anómalos (positivos o negativos) en vetos físico
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema detecte y bloquee automáticamente las franjas horarias donde mi estrategia pierde de forma sistemática, y que descuente las ganancias que solo vinieron de un golpe de suerte extremo, para operar sobre la ventaja real y no sobre un promedio inflado por un puñado de eventos.
+
+**El problema (técnico):** dos defectos opuestos pueden esconderse en la misma curva de capital. Uno: una estrategia rentable en general puede perder sistemáticamente en una franja horaria específica —por ejemplo, siempre los viernes durante un anuncio macroeconómico— y ese patrón queda diluido en el promedio general en vez de saltar a la vista. El otro, más traicionero: una sola operación con una ganancia estadísticamente extrema (un golpe de suerte, no una repetición del método) puede inflar toda la curva y hacer ver rentable algo que en realidad no lo es.
+
+**La solución (técnica):** opera en dos frentes. Detecta operaciones cuya ganancia se aleja de forma extrema del comportamiento normal de la estrategia y las extirpa del cálculo, recalculando la curva sobre lo que queda —la ventaja estructural, sin el golpe de suerte. Por separado, identifica franjas horarias con pérdidas sistemáticas y las cruza contra el calendario de eventos macroeconómicos conocidos, generando un veto que bloquea la operación en esas ventanas hacia adelante, sin alterar jamás el historial que ya ocurrió.
+
+**Explicado sin tecnicismos:** imagina un vendedor cuyas cifras del mes se ven espectaculares porque un solo cliente hizo una compra gigantesca por error administrativo, que después canceló. Si cuentas esa venta, el vendedor parece un genio. Si la descuentas, ves su desempeño real. Y por separado, resulta que ese mismo vendedor, sin falta, pierde clientes cada viernes por la tarde — un patrón que nadie notó porque se perdía en el promedio del mes.
+
+Esta pieza hace las dos cosas con tu estrategia: descuenta la venta gigante y accidental para que no maquille el resultado real, y encuentra el patrón del viernes por la tarde para bloquearlo hacia adelante, antes de que te vuelva a costar dinero.
+
 ## El Proceso de 3 Pasos (Pipeline Quirúrgico)
 
 1. **Detección Dual (Rayos X y Radar Macro):** El sistema detecta Z-Scores atípicos (positivos o negativos). Paralelamente, vía una API REST intercepta el calendario fundamental (NFP/FOMC).

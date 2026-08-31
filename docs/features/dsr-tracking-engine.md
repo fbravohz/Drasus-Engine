@@ -13,6 +13,14 @@ El DSR Tracking Engine es el encargado de registrar el volumen de intentos y la 
 
 **Problema que resuelve:** Sin un registro exacto de cuántas combinaciones probó el sistema antes de encontrar una estrategia "ganadora", el Sharpe Ratio es una métrica mentirosa. Esta feature proporciona el denominador $N$ necesario para la deflación institucional.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Infraestructura.** Lleva la cuenta, desde el primer intento, de cuántas configuraciones evaluó el motor de búsqueda y con qué varianza de resultados: el número exacto que la corrección estadística necesita para descontar la suerte de haber buscado mucho. No se puede reconstruir después — si no se cuenta desde el origen, se pierde.
+
+El usuario nunca la ve. La nota como que **los resultados que después ve en el examen de robustez reflejan cuántas veces se buscó de verdad, no una cifra inflada por no haber contado**.
+
 ## Comportamientos Observables
 
 - [ ] El motor inicializa un contador atómico al inicio de cada `SessionID` de generación.

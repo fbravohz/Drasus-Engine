@@ -15,6 +15,20 @@ La cuenta del usuario en la **Cabina de Mando Central** del proveedor (ADR-0143)
 - **Comportamiento observable:** el usuario se registra/inicia sesión; el motor local queda vinculado a esa cuenta.
 - **Por qué:** es la raíz de todo cobro y de toda gobernanza de datos.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario de Drasus, quiero una sola cuenta que identifique mi instancia ante el proveedor, para que licencias, medición de uso y prevención de abuso funcionen sin que tenga que demostrar quién soy en cada paso.
+
+**El problema (técnico):** sin una identidad central que ancle la cuenta a una huella de hardware y a un correo verificado, no hay forma de emitir una licencia, medir consumo por cuenta, ni detectar al mismo usuario abriendo veinte cuentas gratuitas para esquivar el cobro. Resolver esto después, con usuarios reales operando ya, obliga a reconstruir identidad debajo de licencias, cuotas y facturación que ya están en producción.
+
+**La solución (técnica):** el usuario se registra con correo o con una identidad federada (Google/GitHub); el sistema no activa la cuenta hasta confirmar el correo, y cada vez que el motor local arranca, consulta la identidad vinculada en la Cabina de Mando Central y la guarda en caché para poder operar sin conexión. Si el mismo hardware genera muchas identidades, el sistema las marca para revisión, no las bloquea de forma automática.
+
+**Explicado sin tecnicismos:** piensa en tu identidad de Drasus como la credencial que te abre la puerta una sola vez, aunque la oficina tenga muchas ventanillas: licencias, planes, facturación. En vez de mostrar una identificación distinta en cada ventanilla, muestras una sola credencial y cada ventanilla la reconoce.
+
+Si alguien intentara sacar veinte credenciales distintas desde la misma computadora para pasar veinte veces por la ventanilla gratuita, el sistema lo nota. No cierra la puerta de inmediato, pero levanta la mano para que alguien lo revise.
+
 ## Comportamientos Observables
 
 - Cuando el usuario se registra con correo → el sistema envía verificación y no activa la cuenta hasta confirmarla.

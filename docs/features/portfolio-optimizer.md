@@ -27,6 +27,22 @@ Adicionalmente, incorpora el **Auto-Rebalancing Daemon** (scheduler nativo Tokio
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-07` — Gestión de flota y capital
+
+**Historia de usuario:** Como operador con varias estrategias vivas, quiero que el capital se reparta entre ellas según qué tan parecido se comportan entre sí —y no según un porcentaje fijo que yo decidí a ojo—, para que un mal día no golpee a todas al mismo tiempo.
+
+**El problema (técnico):** repartir capital por corazonada, o con un método clásico que necesita invertir una matriz de covarianzas —numéricamente inestable justo cuando hay pocas estrategias y poco historial, que es el caso más común—, deja expuesta la correlación oculta entre estrategias: varias pueden ganar y perder juntas sin que el reparto de capital lo refleje en absoluto.
+
+**La solución (técnica):** un optimizador con paridad de riesgo jerárquica: agrupa las estrategias por parecido de comportamiento en una jerarquía y reparte el capital por niveles, sin necesitar esa matriz inestable. Un rebalanceo automático se dispara por calendario, cambio de régimen de mercado o desviación de los pesos objetivo, protegido por un cortacircuitos que limita cuántas veces al día se puede rebalancear y que se bloquea entero si la volatilidad del conjunto se dispara. El usuario puede fijar manualmente un peso ("ninguna estrategia pasa de 20%") y dejar que el motor recalcule el resto respetando ese límite, o agrupar estrategias en cestas de riesgo (defensiva, agresiva, núcleo) para que el reparto entre grupos sea explícito.
+
+**Explicado sin tecnicismos:** imagina que administras un equipo de vendedores y repartes las zonas de trabajo. Si le das más territorio al que vendió más el mes pasado sin fijarte en nada más, puedes terminar con cinco vendedores cubriendo la misma colonia porque a todos les fue bien ahí — y el día que esa colonia deje de comprar, se cae todo tu negocio a la vez, no solo una quinta parte.
+
+Aquí primero se agrupa a los vendedores por qué tan parecido trabajan —dos que solo venden bien en la misma colonia van juntos—, y el territorio se reparte por grupos, no vendedor por vendedor. Hay un freno: el reparto no se recalcula más de una vez al día, y si el mercado se pone muy loco, ni siquiera se toca — se congela hasta que las cosas se calman. Y tú puedes intervenir a mano: "a este vendedor nunca le doy más del 20% del territorio", y el sistema respeta esa regla y reparte el resto alrededor de ella.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Selección de Motor de Asignación:** Permite configurar y alternar entre los métodos de pesaje clásicos y el Ensamblador Singular D-Score.

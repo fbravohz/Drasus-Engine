@@ -13,6 +13,20 @@ El **CPCV Analyzer** es el motor de validación cruzada de grado institucional d
 
 A diferencia de la validación cruzada tradicional, esta feature aplica técnicas de **Purging** (limpieza de trades solapados) y **Embargo** (eliminación de correlación serial) para garantizar que los datos de entrenamiento y prueba sean verdaderamente independientes. Finalmente, calcula el **PBO (Probability of Backtest Overfitting)** para determinar si la estrategia ha sido sobreajustada.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber si la estrategia que se ve mejor en mi conjunto de entrenamiento sigue siendo la mejor cuando la someto a cientos de particiones distintas del mismo historial, para no confundir "ganó su propio examen" con "es realmente buena".
+
+**El problema (técnico):** dividir una sola vez el historial en entrenamiento y prueba no basta — esa única partición pudo, por azar, favorecer a la estrategia ganadora. Y si los bloques de entrenamiento y prueba quedan pegados en el tiempo, información de uno se filtra al otro a través de trades que cruzan la frontera o por correlación serial, inflando artificialmente el resultado "fuera de muestra". El síntoma es sutil: la estrategia que ganó en entrenamiento pierde su lugar en cuanto cambia la partición — señal de que ganó por casualidad, no por mérito.
+
+**La solución (técnica):** parte el historial en muchos bloques y prueba todas las combinaciones posibles de "estos bloques para entrenar, estos otros para examinar", purgando (eliminando) los datos adyacentes a cada corte para que ningún trade cruce la frontera, y añadiendo un margen de seguridad (embargo) tras cada bloque de prueba para cortar la correlación serial. De cada combinación sale un "camino" de resultados fuera de muestra; el sistema mide cuántas veces la estrategia ganadora en entrenamiento cae por debajo de la mediana en esos caminos, y ese porcentaje es la probabilidad de sobreajuste del backtest.
+
+**Explicado sin tecnicismos:** imagina un maestro que reparte el mismo examen de mil formas distintas: unas veces estudias los capítulos uno a cinco y te examina del seis al diez, otras veces al revés, y así con todas las combinaciones posibles. Un alumno que de verdad entendió la materia saca buena nota casi siempre, sin importar qué combinación le toque. Uno que solo memorizó las respuestas de un examen particular saca dieces ahí y reprueba en cuanto cambia la combinación.
+
+Esta pieza es ese maestro implacable. Toma tu historial, lo corta en pedazos, y te examina con cientos de combinaciones de "con esto entrenaste, con esto te examino" — descartando siempre el material pegado a la frontera del corte, para que no se cuele nada de las respuestas al otro lado. Al final entrega un número: qué tan seguido tu estrategia "ganadora" resultó, en realidad, del montón. Un número bajo dice que tu ventaja es real. Un número alto dice que memorizaste un examen particular, no la materia.
+
 ## Comportamientos Observables
 
 - [ ] El sistema particiona la historia en $N$ bloques y genera $\binom{N}{k}$ combinaciones, reensamblando fragmentos OOS en **Caminos (Paths)** completos para un cálculo de métricas consistente.

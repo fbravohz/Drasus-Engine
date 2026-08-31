@@ -17,6 +17,20 @@ Componente de coherencia de mercado encargado de imponer la compatibilidad entre
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como trader, quiero que el sistema me alerte en cuanto el mercado cambie a un tipo de entorno donde mi estrategia nunca demostró tener ventaja, para no seguir operando algo que dejó de tener sentido solo porque todavía no perdió dinero.
+
+**El problema (técnico):** una estrategia validada bajo ciertas condiciones de mercado —tendencial, lateral, de alta o baja volatilidad— no tiene por qué mantener su ventaja cuando el mercado cambia de naturaleza. El peligro real no es que la estrategia pierda de golpe: es que siga operando, aparentemente normal, en un entorno donde su lógica nunca fue puesta a prueba ni demostró funcionar, y el daño se acumule antes de que las pérdidas hagan evidente el problema.
+
+**La solución (técnica):** compara de forma continua el régimen de mercado actual —detectado estadísticamente y reconfirmado día a día— contra el régimen donde la estrategia demostró tener ventaja, y emite un veredicto de compatibilidad. Antes de actuar sobre un cambio, exige que la nueva clasificación tenga un nivel de confianza suficiente y que persista varias barras, para no reaccionar a un parpadeo temporal del mercado. Si el entorno se vuelve incompatible, bloquea la operativa o recomienda un rebalanceo.
+
+**Explicado sin tecnicismos:** imagina a un guía de montaña que solo tiene experiencia guiando en clima seco. El día que empieza a nevar sin que él lo note, sigue caminando por la misma ruta con la misma confianza de siempre — el peligro no es que haya empezado a nevar, es que él siga actuando como si no hubiera cambiado nada.
+
+Esta pieza es el aviso que ese guía nunca se dio a sí mismo: vigila constantemente qué tipo de clima de mercado hay en este momento, lo compara contra el clima donde tu estrategia demostró saber caminar, y te detiene antes de que sigas adelante en condiciones para las que nunca estuvo preparada.
+
 ## Comportamientos Observables
 
 - [ ] Compara el régimen actual en tiempo real con el "Hábitat Natural" de la estrategia.

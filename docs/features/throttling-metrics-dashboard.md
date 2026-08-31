@@ -13,6 +13,16 @@ El `Throttling Metrics Dashboard` provee visualización en tiempo real y diagnó
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Infraestructura.** Traduce la latencia de red y la ocupación de la cola de prioridad de órdenes en un panel visual, sin intervenir en la ejecución misma.
+
+El usuario la ve como un tablero de salud de conexión, no como una defensa activa. La nota como que **puede anticipar que la conexión se está degradando antes de que le cueste una orden, en vez de enterarse solo cuando ya falló.**
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario ve un panel con la latencia actual medida en milisegundos hacia el servidor del broker (RTT de órdenes).

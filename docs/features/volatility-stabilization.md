@@ -11,6 +11,20 @@ El motor de **Volatility Stabilization** garantiza que las estrategias operen ba
 
 **Problema que resuelve:** Las estrategias suelen romperse o generar drawdowns catastróficos ante picos de volatilidad. El Target Vol normaliza la "presión" estadística sobre el capital, asegurando que 1 trade en baja volatilidad tenga el mismo impacto esperado que 1 trade en alta volatilidad (ajustado por lotaje).
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que mi estrategia demuestre que funciona igual de bien en mercados tranquilos, normales y violentos, y que ajuste automáticamente el tamaño de sus operaciones según qué tan agitado está el mercado en cada momento, para no descubrir que mi estrategia solo funcionaba en la calma cuando ya me tocó la tormenta.
+
+**El problema (técnico):** muchas estrategias se rompen o generan pérdidas catastróficas específicamente cuando la volatilidad del mercado se dispara, porque su tamaño de posición se calculó pensando en condiciones normales. Aprobar una estrategia sin comprobar su comportamiento en los tres regímenes de volatilidad —calmo, normal, violento— deja sin probar exactamente la condición que más dinero puede costar.
+
+**La solución (técnica):** exige que la estrategia certifique estabilidad en los tres regímenes de volatilidad antes de aprobarla, y en operación real recalcula continuamente la volatilidad del mercado para escalar el tamaño de la posición de forma inversamente proporcional —posiciones más pequeñas cuando el mercado se agita, para mantener un riesgo constante—. Si la volatilidad cruza un límite máximo que nunca se certificó, bloquea nuevas entradas por completo en vez de dejar que la estrategia improvise en terreno no probado.
+
+**Explicado sin tecnicismos:** imagina un elevador con un sistema que ajusta automáticamente cuánto peso permite según qué tan fuerte esté temblando el edificio — carga normal en un día tranquilo, carga reducida si hay un temblor leve, y se detiene por completo si el temblor es demasiado fuerte para operar con seguridad.
+
+Esta pieza hace eso con el tamaño de las operaciones de tu estrategia: lo reduce automáticamente cuando el mercado tiembla más de lo normal, y detiene nuevas operaciones por completo si el temblor supera lo que alguna vez se probó como seguro. Nunca deja que el tamaño de tu apuesta ignore qué tan agitado está el terreno en ese momento.
+
 ## Comportamientos Observables
 
 - [ ] **Certificación Pre-Aprobación:** Durante la validación, el sistema evalúa si la volatilidad realizada se desvía > 30% del target. Si no es estable, la estrategia es rechazada.

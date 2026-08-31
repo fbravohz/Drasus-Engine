@@ -12,6 +12,22 @@ El Audit Event Store es el historial inmutable de vida de todas las decisiones, 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero poder revertir una acción automática que el sistema ejecutó y que no debió ejecutar, y que pueda reconstruir exactamente lo que pasó a partir de un historial que nadie puede alterar, para no quedar atrapado en una decisión de máquina que no puedo deshacer ni auditar.
+
+**El problema (técnico):** un sistema que decide solo, sin dejar rastro reconstruible, es una caja negra peligrosa — si el motor de ejecución cierra una posición por error de interpretación, o si el sistema se cae, no hay forma confiable de saber qué pasó ni de deshacerlo sin arriesgarse a duplicar o perder información.
+
+**La solución (técnica):** cada decisión, señal y orden se persiste como un evento inmutable encadenado por hash al anterior — el estado actual nunca es una tabla que se sobrescribe, es el resultado de reproducir toda la historia de eventos. Sobre esa base, el usuario puede emitir una reversión explícita de cualquier acción automática, que genera un evento de compensación (nunca borra ni edita el original) y exige una justificación.
+
+**Explicado sin tecnicismos:** piensa en un libro de contabilidad donde nunca se tacha nada — si te equivocaste, escribes una línea nueva que corrige a la anterior, pero la anterior se queda ahí, visible.
+
+Esta pieza lleva ese libro de cada decisión que el sistema toma por su cuenta. Y si alguna decisión automática no te convenció, no tienes que vivir con ella: puedes escribir la línea que la corrige, con tu razón, y queda junto a la original para que cualquiera vea las dos.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Persistencia Inmutable:** Cada decisión del Autopilot se persiste en SQLite WAL como un evento bit-a-bit único.

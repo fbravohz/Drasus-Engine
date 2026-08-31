@@ -19,6 +19,20 @@ Su propósito principal es el **Out-of-Sample (OOS) Blind Validation**: Validaci
 
 **Compuerta de Robustez del Genoma de Régimen y Filtro de Entorno — WFA Segmentado por Régimen (ADR-0108/ADR-0110):** cuando el Genoma de Régimen y Filtro de Entorno está activo, este analizador opera además en un modo de validación segmentado: en lugar de ventanas de calendario continuas, agrupa el historial en ventanas curadas por régimen (capitulación, rango, tendencia de baja volatilidad) y exige que la máscara Permitido/Prohibido resuelta por el genoma supere el veredicto WFE/PBO de forma independiente en cada tipo de ventana, no solo en el agregado.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero comprobar que mi estrategia sigue funcionando cuando solo puede ver el pasado y avanza en el tiempo igual que operaría en la vida real, para saber si su ventaja sobrevive fuera del laboratorio donde se descubrió.
+
+**El problema (técnico):** una validación por combinaciones de bloques no respeta el orden cronológico; pero la condición real de operación es más estricta — nunca se puede ver el futuro, solo ajustar con lo que ya pasó y operar con lo que viene después. Una estrategia puede aprobar pruebas combinatorias y aun así derrumbarse si sus parámetros dejaron de ser válidos en cuanto el reloj avanzó, porque el mercado cambió de comportamiento entre el momento en que se calibró y el momento en que se puso a operar.
+
+**La solución (técnica):** optimiza los parámetros en una ventana de tiempo, los congela, opera con ellos en la ventana siguiente —que el algoritmo nunca vio— avanza el reloj, y repite el ciclo decenas de veces hasta agotar el historial. Mide la eficiencia walk-forward: cuánto del rendimiento logrado al optimizar sobrevive cuando se opera a ciegas hacia adelante. Y explora una malla de combinaciones de tamaño de ventana, buscando zonas de estabilidad contiguas en vez de un único acierto aislado.
+
+**Explicado sin tecnicismos:** piensa en un pronosticador del clima al que solo se le permite usar los datos de hasta ayer para predecir mañana. No puede consultar tramposamente el reporte de mañana. Predice, se abre el día, se compara su pronóstico contra lo que realmente pasó, y al día siguiente repite el ejercicio con un día más de datos acumulados.
+
+Esta pieza hace lo mismo con tu estrategia: la deja ajustar sus reglas solo con el pasado, la pone a operar en el tramo siguiente que nunca vio, avanza el calendario, y repite el ciclo una y otra vez sobre años de historia. Si el pronosticador acierta seguido, confías en su método. Si acierta solo cuando ya conocía el resultado de antemano —como pasa con la mayoría de los backtests tramposos— esta prueba lo deja en evidencia: la primera vez que de verdad tiene que adivinar hacia adelante, falla.
+
 ### Ciclo de Vida de la Feature — WFA
 
 ### Entrada

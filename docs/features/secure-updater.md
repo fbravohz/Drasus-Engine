@@ -19,6 +19,22 @@ El actualizador seguro gestiona el ciclo de vida de las actualizaciones de softw
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como usuario, quiero que las actualizaciones del sistema lleguen ligeras y verificadas, para no descargar cientos de megabytes cada vez ni arriesgarme a instalar algo que alguien manipuló en el camino.
+
+**El problema (técnico):** las aplicaciones financieras suelen requerir descargas completas de cientos de megabytes en cada actualización, lo que además de costoso en ancho de banda, abre una ventana de ataque: un instalador tradicional es vulnerable a que alguien intercepte el tráfico y sustituya el binario legítimo por uno malicioso antes de que llegue a la máquina del usuario.
+
+**La solución (técnica):** el sistema descarga solo la diferencia de bytes entre la versión actual y la nueva —nunca el paquete completo—, valida la firma criptográfica del binario resultante contra la clave autorizada antes de ejecutar nada, y si la firma no coincide, destruye el archivo descargado y aborta sin tocar la instalación existente. La aplicación guarda su estado antes de reiniciar en la nueva versión.
+
+**Explicado sin tecnicismos:** imagina que en vez de mandarte un mueble armado completo cada vez que cambia una pieza, te mandan solo el tornillo que cambió, con una firma notariada que certifica que ese tornillo salió realmente del fabricante. Si la firma no cuadra, ni siquiera lo desempacas.
+
+Así actualiza Drasus: baja solo lo que cambió, revisa que la firma sea auténtica antes de instalar nada, y si algo no cuadra, se detiene en seco y avisa — nunca deja pasar un archivo sospechoso solo por ahorrar tiempo.
+
+---
+
 ## 2. Comportamientos Observables
 
 * **Detección de Nuevas Versiones:**

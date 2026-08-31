@@ -19,6 +19,14 @@ Feature Router implementa un mecanismo para activar/desactivar features dinámic
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Infraestructura.** Activa o desactiva piezas del sistema —incluidos los distintos métodos del puerto de búsqueda— por configuración, sin tocar código ni recompilar, y detiene el arranque con un error claro si una pieza requerida falta o si una dependencia entre piezas no se cumple.
+
+El usuario nunca la ve. La nota como que **puede tener una instalación con solo los métodos de búsqueda que necesita, y si algo falta, el sistema se lo dice antes de arrancar, no a medio proceso**.
+
 ## Comportamientos Observables
 
 - [ ] Usuario crea archivo `config/features.yaml` especificando qué features activar:

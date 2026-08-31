@@ -15,6 +15,14 @@ La instrumentación temprana: tipos de evento **inmutables y ricos** que el moto
 - **Comportamiento observable:** cada orden ejecutada, backtest completado, régimen detectado, etc., produce un evento estructurado en el bus y en el audit-log.
 - **Por qué:** el leverage arquitectónico entero depende de esta captura.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Infraestructura.** Cada acción significativa del motor —una orden ejecutada, un backtest completado, un régimen detectado— genera un registro estructurado e inmutable en el instante en que ocurre, en vez de reconstruirse después a partir de bitácoras sueltas. Es la fuente única de la que se alimentan la medición de uso, los reportes, la agregación de datos y la telemetría.
+
+El usuario nunca la ve. La nota como que **cualquier producto futuro que dependa de su historial de actividad —desde el contador de uso hasta el reporte institucional— existe sin que el motor tenga que rehacerse para producirlo**.
+
 ## Comportamientos Observables
 
 - Cuando se ejecuta una orden → emite un evento con instrumento, lado, cantidad, precio, slippage, tiempo de fill, bróker, nocional y —refuerzo ADR-0145— `account_id`, PnL realizado, MAE, MFE y duración del trade (para derivar % de trades rentables, tiempo medio de espera y días de trading por cuenta).

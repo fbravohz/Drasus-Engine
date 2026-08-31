@@ -14,6 +14,20 @@ Es el motor analítico encargado de realizar la **"Análisis de Atribución del 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber si mi ventaja depende de que un estilo de mercado completo —no solo el mercado en general— estuvo de moda durante el periodo que probé, para no confundir estar en la corriente correcta con haber encontrado algo propio.
+
+**El problema (técnico):** una estrategia puede no depender de la dirección general del mercado y aun así ganar solo porque, por casualidad, estuvo expuesta a un estilo de inversión particular —empresas pequeñas, acciones de "impulso", activos "de valor"— que tuvo un buen periodo. Ese tipo de suerte es más difícil de detectar que la suerte de mercado simple, porque la estrategia sí parece descorrelacionada del índice general mientras monta una ola distinta pero igual de ajena a su propia lógica.
+
+**La solución (técnica):** descompone el retorno contra varios factores de referencia a la vez —no solo uno— midiendo la sensibilidad de la estrategia a cada estilo de mercado conocido, y aísla lo que sobra después de descontar todos ellos como la ventaja genuina. Si la varianza explicada por esos factores es demasiado alta, la ventaja se marca como técnicamente nula. Y verifica que esa ventaja restante sea estable en el tiempo, no un estallido de un solo mes que se diluye en el promedio anual.
+
+**Explicado sin tecnicismos:** imagina a un inversionista que presume haberle ganado al mercado general comprando puras acciones pequeñas y de moda, justo en el año en que ese tipo de acciones estuvo de moda en todo el mundo. No le ganó al mercado por habilidad — se subió a una ola particular que levantó a todos los que estaban parados en el mismo lugar, no solo a él.
+
+Esta pieza revisa varias olas a la vez —no solo la marea general del mercado, sino las corrientes particulares de cada estilo de inversión— y te dice qué te queda después de descontar todas las que solo te cargaron sin que hicieras nada. Y comprueba que lo que queda no fue un buen mes aislado, sino algo que se sostiene con el tiempo.
+
 ## Comportamientos Observables
 
 - [ ] Calcula la **Sensibilidad (Beta)** respecto a múltiples factores (Mercado, Size, Value, Momentum).
@@ -72,7 +86,7 @@ Toda descomposición registra el set de relevancia técnica para AI/R&D:
 
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
-| **I. Identidad** | `id` | Identificador único de la autopsia |
+| **I. Identidad** | `id` | Identificador único del análisis de causa raíz |
 | | `created_at` | Timestamp de cálculo |
 | | `updated_at` | Timestamp de última actualización del registro |
 | | `audit_hash` | Hash del reporte de pureza |

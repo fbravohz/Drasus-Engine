@@ -16,6 +16,22 @@ El **Visualizador de Coordenadas Paralelas** es un componente de análisis visua
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver de un vistazo cómo interactúan veinte o más parámetros de una optimización masiva, para encontrar la zona de configuraciones estables en vez de revisar tabla por tabla.
+
+**El problema (técnico):** una optimización que prueba miles de combinaciones de más de veinte variables no se puede leer en una tabla ni en un mapa de calor de dos o tres dimensiones — ambos colapsan mucho antes de llegar a esa cantidad de ejes, y esconden precisamente la interacción entre parámetros que importa.
+
+**La solución (técnica):** cada parámetro o métrica se dibuja como un eje vertical, y cada configuración probada es una línea que cruza todos los ejes a la vez. El usuario puede aislar un rango en cualquier eje —por ejemplo, quedarse solo con el diez por ciento superior de una métrica— y las líneas que no cumplen se atenúan al instante, dejando visible el vecindario de configuraciones que se sostiene junto.
+
+**Explicado sin tecnicismos:** imagina una fila de veinte cuerdas paradas, y cada resultado de la optimización es un hilo que las cruza tocando cada una a distinta altura. Con miles de hilos cruzando, verlos todos juntos parece un enredo — pero si agarras una cuerda y sueltas solo los hilos que la tocan arriba, el enredo se aclara y aparece un patrón: un grupo de hilos que se comportan parecido en varias cuerdas a la vez.
+
+Eso es lo que hace esta pieza con los parámetros de una optimización: te deja "peinar" el enredo agarrando un eje a la vez, hasta que la zona de configuraciones que se comportan de forma parecida y estable queda a la vista.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] La interfaz despliega múltiples ejes verticales paralelos que representan el rango completo de cada parámetro y métrica.

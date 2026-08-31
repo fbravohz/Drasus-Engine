@@ -13,6 +13,22 @@ La auto-auditoría de portafolios vivos es un sistema de monitoreo en tiempo rea
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que el sistema detecte cuando los costos reales de operar —spread, comisión, swap— suben lo suficiente para borrar la ventaja de una estrategia, para dejar de operar algo que ya perdió su rentabilidad aunque las señales se sigan viendo "correctas".
+
+**El problema (técnico):** una estrategia validada asume un costo de transacción determinado. Si el bróker ensancha el spread, sube la comisión o penaliza el swap, la misma estrategia con las mismas señales puede pasar de tener una expectativa matemática positiva a una negativa, y nada en la lógica de la estrategia lo detecta, porque ella nunca mira sus propios costos reales.
+
+**La solución (técnica):** el sistema consulta periódicamente los costos vigentes del bróker y recalcula en caliente la expectativa matemática, el Sharpe y el drawdown máximo de cada estrategia activa aplicando esos costos reales. Si la expectativa cae por debajo del umbral configurado, detiene automáticamente la apertura de nuevas operaciones — nunca espera a que el drawdown lo confirme por las malas.
+
+**Explicado sin tecnicismos:** imagina un negocio que sigue vendiendo un producto al mismo precio de siempre, sin darse cuenta de que el costo de la materia prima subió tanto que ahora pierde dinero en cada venta. Las ventas se ven idénticas a antes — el problema está escondido en el costo, no en la demanda.
+
+Esta pieza revisa constantemente el costo real de "fabricar" cada operación —lo que el bróker te cobra en ese momento— y si ese costo ya se comió la ganancia esperada, detiene las ventas antes de que sigas perdiendo dinero en cada una, aunque la estrategia se vea exactamente igual que siempre.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Lector de Costos en Tiempo Real:** Interacción periódica con las APIs de los brokers (Darwinex, FTMO, Interactive Brokers) para leer spreads y comisiones vigentes.

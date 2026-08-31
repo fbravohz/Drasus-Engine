@@ -21,6 +21,16 @@ También posee **Workspace**: una cabecera simple (`id`, `name`, `owner_id`) que
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Infraestructura.** Guarda y versiona la ruta exacta —el flujo de piezas conectadas— que produjo una corrida, con el mismo historial de cambios que las estrategias, de modo que dos corridas puedan compararse sabiendo si usaron exactamente la misma ruta o una versión distinta de ella.
+
+El usuario no la ve más allá de guardar y nombrar sus flujos de trabajo. La nota como que **puede reconstruir con exactitud cómo obtuvo cualquier resultado pasado**, incluso si desde entonces modificó su flujo de trabajo varias veces.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario guarda un flujo armado en el Canvas → se crea el nodo raíz de una definición de Pipeline: `version_hash` determinista por contenido, `parent_hash = NULL`, nombre libre.

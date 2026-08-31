@@ -15,6 +15,18 @@ Dentro de **una sola** cuenta maestra, el mecanismo que permite al dueño crear 
 - **Comportamiento observable:** el dueño crea un rol con nombre libre, marca capacidades permitidas/denegadas feature por feature, y lo asigna a un login humano o a una conexión LLM. Esa asignación es revocable/editable en cualquier momento.
 - **Por qué:** es la palanca de venta a equipos (prop firms, fondos con analistas/risk managers) y la pieza que falta para delegar trabajo a agentes LLM con matices, en vez de un interruptor binario todo-o-nada.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como dueño de una cuenta, quiero dar acceso a otra persona o a un asistente automatizado solo a lo que necesita, con un nombre y un alcance que yo defino, para no tener que compartir mi contraseña completa con nadie.
+
+**El problema (técnico):** hoy, quien tiene la contraseña de una cuenta tiene acceso a todo. No hay forma de dar a un becario acceso a una o dos cosas concretas, ni a un director financiero acceso a casi todo salvo lo que el dueño decida excluir, sin entregarle las llaves completas. Y si conectas dos asistentes automatizados a la misma cuenta, hoy no hay forma de que tengan permisos distintos entre sí.
+
+**La solución (técnica):** el dueño crea roles con el nombre que quiera y decide, capacidad por capacidad, qué se permite y qué se niega. Ese rol se asigna a una persona o a la conexión de un asistente automatizado, y se puede editar o quitar en cualquier momento sin afectar a nadie más.
+
+**Explicado sin tecnicismos:** es como las llaves de una oficina. En vez de darle a todos la llave maestra que abre cualquier puerta, le das a cada quien la llave de los cuartos que realmente necesita: al de intendencia, la de la bodega; a la gerente, casi todas menos la caja fuerte. Y si alguien deja de necesitar esa llave, se la quitas sin tener que cambiar la cerradura de todo el edificio.
+
 ## Comportamientos Observables
 
 - Cuando el dueño (ADMIN-raíz de la cuenta) crea un rol → le da un nombre libre y marca, capacidad por capacidad (puerto de Feature, no módulo), permitido/denegado.

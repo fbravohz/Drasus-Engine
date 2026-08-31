@@ -13,6 +13,24 @@ Es el catálogo de plantillas de calendario de mercado. Una plantilla de sesión
 
 **Solución:** plantillas de sesión compartidas, cada una con sus ventanas semanales (día/hora de inicio y fin) y su zona horaria de mercado declarada mediante un selector de zona mundial con bandera de horario de verano (DST) por zona — patrón que StrategyQuant X ya usa. La zona horaria **nunca se infiere**; el usuario la declara, el sistema adopta la regla estándar de esa zona (base de datos de zonas horarias IANA) sin calcular nada por su cuenta.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero declarar una sola vez cuándo abre y cierra cada mercado y en qué huso horario, para que el sistema sepa distinguir un hueco legítimo de un dato faltante y no me desplace las barras una hora sin avisar.
+
+**El problema (técnico):** sin calendario declarado no hay forma de juzgar un hueco: el validador solo puede comparar el archivo consigo mismo, y no sabe si la ausencia de datos un martes significa "el mercado estaba cerrado" o "falta un pedazo". Y hay un defecto peor: el huso horario de un mercado **no se puede inferir de forma confiable**. Estados Unidos y Europa cambian al horario de verano en fechas distintas, así que un archivo mal etiquetado desplaza todas sus barras una hora completa durante una a tres semanas, dos veces al año. El desplazamiento es silencioso y sobrevive a cualquier revisión superficial.
+
+**La solución (técnica):** plantillas de calendario declaradas una sola vez por *forma de mercado* —no por combinación de bróker y símbolo— y referenciadas desde cuantos instrumentos las compartan. Cada una lleva sus ventanas semanales y su huso horario **declarado explícitamente** contra el estándar internacional de zonas horarias. El sistema adopta la regla de esa zona; **nunca la calcula ni la deduce**.
+
+**Explicado sin tecnicismos:** los mercados tienen horarios. Unos abren de lunes a viernes, otros no cierran nunca. Sin saber ese horario, el sistema no puede distinguir entre "aquí no hay datos porque estaba cerrado" y "aquí faltan datos".
+
+Pero el problema serio es otro, y es de los que arruinan meses de trabajo sin hacer ruido: **el cambio de horario de verano**. Estados Unidos y Europa lo hacen en fechas distintas. Si tu archivo trae mal etiquetada la zona horaria, durante dos o tres semanas al año **todas tus barras quedan corridas una hora completa**. Nada se rompe, nada avisa. Simplemente tus resultados de esas semanas describen un mercado que no existió.
+
+Por eso Drasus **nunca adivina la zona horaria**: te la pregunta. Tú la declaras una vez, y el sistema aplica la regla oficial de esa zona del mundo sin inventarse nada.
+
 ## Comportamientos Observables
 
 - [ ] El usuario crea una plantilla de sesión nueva; declara su código (`FOREX_245`), sus ventanas semanales (ej. domingo 22:00 → viernes 22:00) y elige la zona horaria de mercado de un selector mundial que muestra la bandera de DST de cada zona.

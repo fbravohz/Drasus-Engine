@@ -8,6 +8,20 @@
 ## 1. ¿Qué es esta feature?
 Protocolo de acceso remoto autenticado con seguridad a nivel de campo (Field-Level Security). Expone una interfaz analítica de solo lectura (Read-Only) para que empleados o instancias esclavas (copiers) validen su trabajo remotamente contra un clúster maestro sin que la lógica interna de las estrategias sea nunca expuesta.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como operador que dirige un equipo de sub-traders o empleados, quiero que puedan validar remotamente su portafolio contra el capital principal sin que jamás vean la lógica interna de mis estrategias, para poder delegar sin regalar el activo más valioso del negocio.
+
+**El problema (técnico):** dar acceso a un empleado para que valide su trabajo contra el portafolio maestro normalmente implica exponerle datos operativos completos, y entre esos datos, sin darse cuenta, se filtra la lógica de la estrategia —el árbol de reglas, los parámetros de optimización—, que es la propiedad intelectual real del negocio.
+
+**La solución (técnica):** un protocolo de acceso remoto de solo lectura que enmascara dinámicamente los campos sensibles antes de que salgan del servidor — nunca exporta el árbol de reglas ni los parámetros de optimización, solo resultados agregados (correlación, drawdown cruzado). Cada consulta requiere un token con permisos acotados, se limita en volumen y velocidad, y queda registrada de forma inmutable; revocar el token corta el acceso al instante.
+
+**Explicado sin tecnicismos:** es como dejar entrar a un contador a revisar los números de tu negocio sin darle la fórmula secreta de tu producto. Puede ver cuánto vendiste y compararlo contra el presupuesto, pero nunca ve la receta.
+
+Esta pieza le da a cada persona de tu equipo exactamente esa vista: puede comparar su desempeño contra el portafolio principal y confirmar que su trabajo aporta algo distinto, pero jamás se lleva a casa el secreto que hace funcionar las estrategias.
+
 ## 2. Comportamientos Observables
 - [ ] Empleado conecta su Drasus Engine local al clúster maestro usando un token JWT provisto por el administrador.
 - [ ] Empleado solicita el histórico de trades del portafolio maestro. El sistema retorna los trades enmascarando campos sensibles (`strategy_id`) y omitiendo por completo el AST.

@@ -9,6 +9,14 @@
 
 Esta suite de indicadores avanzados se aleja de los promedios estáticos para adaptarse a la volatilidad y liquidez del mercado. Incluye indicadores de **volatilidad adaptativa** (KAMA, VIDYA) y métricas de **flujo de dinero** y **sentimiento de mercado** (Open Interest, Herrick Payoff Index).
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Infraestructura.** Amplía el catálogo de indicadores que el motor de búsqueda puede usar como ingrediente: medias móviles que se aceleran en tendencias fuertes y se aplanan en mercados sin dirección, y medidas de flujo de dinero e interés abierto que revelan fuerza o divergencia antes que el precio solo.
+
+El usuario nunca la ve directamente. La nota como que **las estrategias que el motor encuentra tienen a su disposición medias que reaccionan al ritmo real del mercado, en vez de moverse siempre a la misma velocidad fija**.
+
 ## Comportamientos Observables
 
 - [ ] Las medias móviles adaptativas se vuelven más rápidas en tendencias fuertes y más lentas (planas) en rangos.

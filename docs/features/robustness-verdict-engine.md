@@ -15,6 +15,20 @@ El Robustness Verdict Engine es un motor de interpretación que convierte los re
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema me explique en español, sin jerga, por qué mi estrategia obtuvo el puntaje que obtuvo y en qué condición específica se rompe, para entender el resultado en vez de solo mirar un número que no dice nada por sí solo.
+
+**El problema (técnico):** un puntaje de robustez de 82 sobre 100, o un intervalo de confianza estadístico, no le dice a nadie qué hacer a continuación. Los resultados crudos de las pruebas —probabilidad de sobreajuste, eficiencia walk-forward, intervalos de Monte Carlo— son precisos pero opacos para quien no vive inmerso en la jerga estadística todos los días.
+
+**La solución (técnica):** traduce los resultados de todas las pruebas del guantelete y el puntaje final a un veredicto en lenguaje natural, generado por una plantilla determinista —el mismo resultado de entrada siempre produce el mismo texto, sin depender de ningún modelo de lenguaje en la ruta crítica—. Identifica el punto de ruptura exacto (la condición específica donde la estrategia colapsa, por ejemplo "falla si el spread supera 2.5 pips") y lo convierte automáticamente en una regla de protección activa que el sistema respeta más adelante, en vez de dejarlo como una nota informativa que nadie vuelve a consultar.
+
+**Explicado sin tecnicismos:** piensa en un doctor que, en vez de entregarte una hoja con solo tus niveles de colesterol y presión en números, se sienta contigo y te dice: "tu presión está alta específicamente cuando comes sal en la noche; evita eso y baja el riesgo". El número solo no cambia tu conducta; la explicación sí.
+
+Esta pieza es ese doctor aplicado a tu estrategia: no te entrega solo un puntaje, te dice en español exactamente qué la hace frágil y en qué condición se rompe. Y no se queda en la conversación — esa condición de ruptura se convierte automáticamente en una alarma activa que el sistema va a respetar cuando la estrategia opere de verdad.
+
 ## Comportamientos Observables
 
 - [ ] Recibe los 5 resultados individuales de tests más el score ponderado final.

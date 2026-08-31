@@ -13,6 +13,16 @@ Es el motor analítico central de Drasus Engine para **Procesamiento Analítico 
 
 **Problema que resuelve:** Analizar 50GB de datos históricos en una laptop de 16GB de RAM es imposible con herramientas tradicionales. DuckDB permite tratar los archivos Parquet como si fueran tablas de una base de datos de alta velocidad en disco.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Infraestructura.** Es el motor que permite consultar decenas de gigabytes de historia en una computadora personal, leyendo del disco solo lo que cada pregunta necesita en vez de cargar todo a memoria. Sin él, la soberanía local sería una promesa vacía: el usuario tendría que subir sus datos a un servidor ajeno para poder analizarlos.
+
+El usuario nunca lo ve. Lo nota como que **su laptop puede con años de datos** sin quedarse sin memoria.
+
 ## Comportamientos Observables
 
 - [ ] El usuario solicita el promedio de volumen de los últimos 5 años de un activo y el sistema responde en menos de un segundo, incluso si el archivo pesa varios Gigabytes.

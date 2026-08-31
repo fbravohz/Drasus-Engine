@@ -14,6 +14,22 @@ Es el componente encargado de ejecutar una estrategia en tiempo real sin riesgo 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-05` — Cuarentena antes del dinero real
+
+**Historia de usuario:** Como trader, quiero que mi estrategia opere contra el mercado en vivo sin arriesgar capital, para ver cómo se comporta con las condiciones de hoy antes de confiarle dinero real.
+
+**El problema (técnico):** un backtest histórico no contiene el presente. No sabe cómo está la liquidez esta semana, ni cómo se está portando el bróker este mes, ni la latencia real del momento. La única forma de descubrir esa brecha revisando el pasado con más cuidado es imposible — se descubre operando, y la única manera de operar sin pagar el precio de estar equivocado es hacerlo sin capital real de por medio.
+
+**La solución (técnica):** un motor que evalúa la lógica de la estrategia contra cada actualización del feed de mercado en vivo, genera órdenes virtuales cuando hay señal, y calcula el precio de llenado capturando el spread dinámico real del instante — no un spread promedio ni idealizado. Lleva un balance virtual inmutable y auditado por sesión, construido para que sus resultados sean estadísticamente indistinguibles de los de una cuenta real.
+
+**Explicado sin tecnicismos:** es un simulador de manejo, pero conectado al tráfico real de la calle en vez de a un circuito grabado de antemano. El alumno no puede chocar el coche de verdad, pero tampoco está practicando contra un video de hace un año — está reaccionando al tráfico de ahora mismo, con sus baches y sus imprevistos de hoy.
+
+Por eso esta pieza no reemplaza al examen histórico (`CAP-04`): lo complementa con la única prueba que el pasado no puede ofrecer, que es el presente.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Genera señales basadas en datos de mercado en tiempo real.

@@ -17,6 +17,20 @@ Asistente visual de **auditoría topológica manual** de parámetros. El motor d
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver el mapa completo de resultados alrededor de mis dos parámetros y elegir yo mismo, con un clic, exactamente dónde fijarlos, para no delegar ciegamente en un algoritmo la decisión que va a arriesgar dinero real.
+
+**El problema (técnico):** dejar que un sistema automatizado elija y fije el parámetro final sin intervención humana traslada toda la confianza a un algoritmo que, por bueno que sea, puede tener criterios que el investigador no comparte para ese caso particular, y elimina la oportunidad de que el ojo humano detecte algo que el algoritmo no está buscando. La alternativa opuesta, un gráfico tridimensional en bruto que el usuario debe interpretar sin ayuda, es tan poco confiable como no tener el gráfico.
+
+**La solución (técnica):** muestra el barrido de dos parámetros como un mapa de calor a color, donde el sistema dibuja un recuadro de sugerencia sobre la zona más plana y estable que encuentra, pero el clic final —el que de verdad fija los parámetros que van a producción— lo da el humano sobre el pixel exacto que elige, con una advertencia visual si intenta elegir un pico aislado sin meseta detrás. Cada elección queda registrada junto a la sugerencia que el sistema hizo, para poder medir después qué tanto se alejó el criterio humano del algorítmico.
+
+**Explicado sin tecnicismos:** piensa en un copiloto de avión con mapas de tormenta en tiempo real. El sistema le señala en la pantalla la ruta más segura, rodeando la zona de menor turbulencia. Pero quien finalmente mueve el timón y decide el rumbo exacto es el piloto humano, no el mapa.
+
+Esta pieza funciona igual: te enseña el terreno completo a colores, te señala con un recuadro dónde está la zona más segura, y te deja a ti —no al algoritmo— dar el clic final que decide exactamente dónde aterrizan los parámetros que van a manejar dinero real. Si el algoritmo se equivocó de zona, tú lo ves antes de confirmarlo. Si tú te desvías del recuadro sugerido, el sistema te avisa, pero nunca te lo impide.
+
 ## Comportamientos Observables
 
 - [ ] El usuario lanza el barrido de dos parámetros (ej: período de media rápida vs lenta, del 10 al 200).

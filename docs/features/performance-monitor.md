@@ -14,6 +14,22 @@ Componente de vigilancia encargado de detectar la degradación del rendimiento e
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como trader con dinero real en juego, quiero que el sistema vigile continuamente si mi estrategia sigue comportándose como en la validación, para enterarme de la degradación antes de que se traduzca en una pérdida grande.
+
+**El problema (técnico):** una estrategia aprobada trae consigo una expectativa estadística —un Sharpe, un drawdown máximo, un rango de confianza— establecida en la validación. Esa expectativa no es una garantía permanente: el régimen de mercado que la sostenía puede desvanecerse sin que ninguna señal visible lo anuncie, hasta que la racha de pérdidas ya es dolorosa. El error común es descubrir la degradación solo cuando la cuenta ya sintió el golpe.
+
+**La solución (técnica):** un vigilante que recalcula los indicadores clave de la estrategia después de cada operación cerrada, contrasta el Sharpe y el drawdown actuales contra la línea base de validación, y aplica una prueba estadística sobre la racha reciente de resultados para distinguir una mala racha normal de una desviación real. Cuando la desviación cruza el umbral, emite una alerta de degradación que dispara el protocolo de retiro, con la evidencia histórica que explica por qué.
+
+**Explicado sin tecnicismos:** piensa en el examen médico anual. No espera a que sientas dolor para avisarte que algo cambió; mide tus números contra tu propio historial y te avisa en cuanto se salen del rango normal, mucho antes de que el síntoma aparezca.
+
+Esta pieza hace eso mismo con cada estrategia que opera dinero real: compara constantemente cómo se está comportando ahora contra cómo se comportó en su examen de validación. En cuanto la diferencia deja de ser ruido normal y empieza a verse como una tendencia real, suena la alarma — antes de que la cuenta pague la factura completa.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Compara el Sharpe actual vs el Baseline de Validación en tiempo real.

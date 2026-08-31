@@ -11,6 +11,20 @@ El **Operational Safety Monitor** es el guardián de la integridad del capital e
 
 **Problema que resuelve:** Las estrategias "mueren" por obsolescencia. Seguir operando una estrategia que ha perdido su ventaja estadística (drift) o que está en un drawdown fuera de lo normal es una negligencia operativa. Esta feature automatiza la desconexión antes de que el daño sea irreversible.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que el sistema detecte cuando una estrategia dejó de comportarse como en sus pruebas, aunque todavía no haya perdido mucho dinero, para retirarla antes de que la degradación se vuelva una pérdida grande.
+
+**El problema (técnico):** una estrategia no deja de funcionar de un día para otro — se degrada. El porcentaje de aciertos cae, el tamaño promedio de ganancia se encoge, y para cuando el drawdown lo refleja con claridad, ya se perdió una parte considerable del capital. Seguir operando algo que perdió su ventaja estadística sin saberlo es la forma silenciosa de la ruina.
+
+**La solución (técnica):** un comparador continuo entre las métricas en vivo y el perfil histórico de la estrategia; si la desviación supera el umbral configurado, la estrategia se suspende. Un segundo mecanismo, el freno de pérdida por estrategia, cierra posiciones de inmediato si el drawdown en vivo supera el máximo histórico escalado por un factor de seguridad, sin esperar a que un humano lo note. Un tercer mecanismo compara la curva de capital en vivo contra el abanico de resultados posibles que Monte Carlo dibujó en las pruebas: si el mercado real resulta más hostil que el peor de los miles de escenarios simulados, dispara el cierre.
+
+**Explicado sin tecnicismos:** piensa en un médico que no espera a que aparezcan los síntomas graves para actuar — revisa los signos vitales todo el tiempo y actúa en cuanto algo se sale de rango.
+
+Esta pieza hace eso con cada estrategia: compara constantemente cómo se está comportando ahora contra cómo se comportó en sus pruebas. Si el pulso cambia demasiado, la aparta antes de que el paciente empeore. Y si de plano las pérdidas llegan a un punto que ni en el peor de los miles de escenarios que se probaron apareció, no espera ni un segundo: cierra todo.
+
 ## Comportamientos Observables
 
 - [ ] **Pardo Profile Monitor:** El sistema compara continuamente las métricas en vivo (Win%, Avg Trade) con el perfil histórico. Si la desviación supera el 50%, se emite una alerta y se suspende la estrategia.

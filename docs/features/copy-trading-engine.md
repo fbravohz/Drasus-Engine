@@ -23,6 +23,22 @@ El copy-trading tradicional peer-to-peer (P2P) directo satura el ancho de banda 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como copier (alguien que replica las operaciones de un trader maestro), quiero que el tamaño de cada orden se ajuste automáticamente a mi propio capital y mis propios límites de riesgo, para no volar mi cuenta por copiar ciegamente el tamaño de alguien con un capital distinto al mío.
+
+**El problema (técnico):** copiar una señal de trading sin ajustar el tamaño es la forma más rápida de sobre-apalancar una cuenta pequeña — si el máster opera con diez veces tu capital y tú replicas su lotaje exacto, una pérdida normal para él es catastrófica para ti. Además, el copy-trading tradicional expone la dirección IP del máster a conexiones entrantes directas, y una señal vieja que llega tarde por congestión de red puede ejecutarse a un precio que ya no tiene nada que ver con la señal original.
+
+**La solución (técnica):** el máster nunca acepta conexiones entrantes — envía señales cifradas por una sola conexión saliente hacia un relé que no puede leer su contenido. Cada copier recalcula el tamaño de la orden según su propio capital, la volatilidad del instrumento y su límite de riesgo por operación configurado, nunca copia el lotaje tal cual. Una señal con más de unos segundos de antigüedad se descarta en vez de ejecutarse tarde, y si el copier pierde la conexión con su bróker, la copia se suspende automáticamente hasta que se reautorice.
+
+**Explicado sin tecnicismos:** imagina que un cocinero profesional publica su receta para una cena de doscientas personas, y tú la quieres cocinar para dos. Si sigues la receta exactamente igual —la misma cantidad de sal, de harina, de todo— arruinas la cena.
+
+Lo que necesitas es la misma receta, pero con las cantidades ajustadas a tu tamaño. Esta pieza hace exactamente eso con cada operación que copias: toma la idea del maestro, pero calcula el tamaño correcto para tu propia cuenta, tu propio riesgo y tu propio bróker. Y si la "receta" te llega tan tarde que ya no tiene sentido cocinarla, simplemente la descarta en vez de servirte algo que ya se echó a perder.
+
+---
+
 ## 2. Comportamientos Observables
 
 *   [ ] **Distribución en un Solo Sentido:** El máster envía una señal de orden ejecutada. El sistema emite un único payload cifrado al relé. Los copiers reciben el mensaje en menos de 50ms.

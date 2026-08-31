@@ -13,6 +13,22 @@ El `Monthly Performance Heatmap` es un componente visual analítico que muestra 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador que revisa el historial de una estrategia o portafolio, quiero ver de un vistazo qué meses y qué años fueron buenos y cuáles fueron malos, para identificar patrones de temporada o rachas sin tener que leer una tabla de números mes por mes.
+
+**El problema (técnico):** una curva de capital muestra la tendencia general, pero esconde la estructura mensual: si el resultado del año lo sostuvo un solo mes excepcional, si hay una temporada recurrente de pérdidas, o si el desempeño cambia según se mire solo el lado largo o solo el corto. Leer esa estructura en una tabla de números obliga a hacer el trabajo mental de comparar celda por celda.
+
+**La solución (técnica):** una matriz de años por meses donde cada celda se colorea según la intensidad y dirección del retorno de ese mes, con una columna de acumulado anual, y selectores para aislar solo muestra dentro o fuera de validación, y solo posiciones largas o cortas. Al pasar el cursor sobre una celda aparece el detalle exacto: retorno neto, porcentaje y número de operaciones. Todo el cálculo ocurre en el motor nativo; la interfaz solo colorea lo que ya viene resuelto.
+
+**Explicado sin tecnicismos:** es como el calendario de calificaciones de la escuela, pero para el dinero: cada mes es una casilla, y el color te dice de inmediato si fue un buen mes o uno malo, sin que tengas que sumar nada tú mismo.
+
+De un vistazo ves si diciembre siempre es flojo, si el año pasado lo salvó un solo mes bueno, o si la estrategia se porta distinto cuando solo compra contra cuando solo vende. Es la diferencia entre leer una lista larga de números y ver el patrón completo pintado en una sola imagen.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario visualiza una tabla matricial donde cada fila es un año de datos y cada columna es un mes del año, más una columna final con el acumulado YTD.

@@ -14,6 +14,16 @@ El Dashboard consume estas métricas dinámicamente según la selección del usu
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Infraestructura.** Recolecta el estado interno del motor de ejecución (PnL, drawdown, posiciones abiertas, cumplimiento de reglas de fondeo) y lo expone como un diccionario de métricas para que el tablero lo consuma, sin bloquear el hilo de órdenes.
+
+El usuario nunca la ve directamente. La nota como que **el tablero siempre muestra cifras actualizadas y coherentes con lo que el motor está haciendo en ese instante, sin que consultar las métricas afecte la velocidad de ejecución.**
+
+---
+
 ## Comportamientos Observables
 
 - **Exposición de Estado en Vivo:** Permite consultar los KPIs críticos de la sesión actual sin bloquear el hilo de ejecución de las órdenes.

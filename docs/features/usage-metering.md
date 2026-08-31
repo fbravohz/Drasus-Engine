@@ -15,6 +15,20 @@ El **contador de valor nocional en USD** por ciclo de facturación. Cada operaci
 - **Comportamiento observable:** al ejecutar una orden, su nocional se acumula; el usuario ve cuánto ha operado en el ciclo y cuánto le queda antes del siguiente tier.
 - **Por qué:** es la base de cualquier modelo de cobro por uso y del gate de cuota del tier gratuito.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario en un plan por uso, quiero ver cuánto he operado en el ciclo actual y cuánto me queda antes de cruzar el límite de mi plan, para no llevarme una sorpresa a mitad de mes.
+
+**El problema (técnico):** medir uso en lotes, contratos o acciones da un número distinto de importancia según el instrumento — cien lotes de un microlote no es lo mismo que cien lotes de un futuro grande. Sin una unidad de medida común, ningún modelo de cobro por volumen es defendible ni comparable entre instrumentos.
+
+**La solución (técnica):** cada operación ejecutada suma su valor nocional en dólares —tamaño por precio— a un libro que solo acumula, nunca se corrige encima de una fila anterior: una corrección se anota como fila nueva. Ese acumulado por cuenta y ciclo de facturación es la métrica única que sirve tanto a un cobro escalonado por volumen como a una tarifa plana.
+
+**Explicado sin tecnicismos:** es el medidor de agua de tu casa. No importa si llenaste la tina, regaste el jardín o lavaste el coche: todo se traduce a la misma unidad, litros, y se suma en un solo contador que nunca retrocede.
+
+Aquí la unidad es dólares operados, no litros. Cada operación que haces, sin importar en qué instrumento, suma a un solo número por ciclo. Y si el medidor se equivocó, no se borra la lectura vieja: se anota la corrección aparte, con fecha, igual que un recibo que dice "ajuste al mes anterior" en vez de tachar el recibo original.
+
 ## Comportamientos Observables
 
 - Cuando se ejecuta una orden → su nocional en USD se registra en el libro del ciclo vigente (append-only).

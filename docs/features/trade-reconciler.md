@@ -14,6 +14,22 @@ Componente encargado de la **Feedback de ejecución de la Operativa**. Su misió
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador con estrategias en cuenta real, quiero que el sistema compare cada operación ejecutada contra lo que el backtest predijo, para saber si la fricción real se parece a la que asumí y corregirla antes de que la brecha crezca sola.
+
+**El problema (técnico):** todo backtest asume un modelo de fricción (deslizamiento, comisión, spread) calibrado con datos pasados o supuestos razonables. Ese modelo empieza a envejecer desde el primer día de operación real: la liquidez cambia, el bróker cambia su ejecución, el spread se comporta distinto en momentos de alta volatilidad. Sin una comparación diaria y sistemática entre lo ejecutado y lo esperado, la brecha entre simulación y realidad crece en silencio y nadie la nota hasta que el resultado en vivo decepciona sin explicación aparente.
+
+**La solución (técnica):** un proceso de reconciliación diaria (fin de sesión) que alinea cada orden solicitada con su ejecución real en el bróker, calcula el deslizamiento real y el spread real promedio incurrido, y compara los costos de transacción reales contra los que el motor de simulación estimó. Cuando la desviación es sistemática, produce sugerencias de calibración concretas —nuevos valores de deslizamiento y spread— que alimentan de vuelta al motor de backtest, para que la próxima simulación sea más honesta que la anterior.
+
+**Explicado sin tecnicismos:** imagina que calculaste el costo de un viaje en taxi usando la tarifa del año pasado. El primer día que subes al taxi real, pagas un poco más — el tráfico cambió, el precio de la gasolina cambió. Si no comparas nunca el recibo real contra tu cálculo, sigues presupuestando mal viaje tras viaje, y con el tiempo la diferencia se hace grande sin que la notes.
+
+Esta pieza es la que revisa el recibo real todas las noches y lo compara contra lo que habías calculado. Si la diferencia se repite, ajusta la calculadora para el día siguiente — así el presupuesto se parece cada vez más a lo que de verdad vas a pagar.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Compara cada precio de ejecución real contra el precio solicitado (slippage real).
@@ -64,7 +80,7 @@ Cada reporte de reconciliación registra el set de relevancia técnica para AI/R
 | Categoría | Campo | Descripción |
 | :--- | :--- | :--- |
 | **I. Identidad** | `id` | Identificador único de la reconciliación |
-| | `created_at` | Timestamp de autopsia (EOD) |
+| | `created_at` | Timestamp del análisis de cierre diario |
 | | `updated_at` | Timestamp de última modificación del registro |
 | | `audit_hash` | Hash del reporte de discrepancias |
 | | `audit_chain_hash` | Hash de la secuencia de auditoría |

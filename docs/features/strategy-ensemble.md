@@ -17,6 +17,22 @@ Orquesta canales (NSGA-II, Simbólico, HMM) en estrategias híbridas mediante **
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero combinar en una sola estrategia lo mejor de varios métodos de búsqueda —evolutivo, simbólico, detección de régimen— para que se complementen en vez de tener que elegir uno solo y perder lo que los otros aportan.
+
+**El problema (técnico):** cada método de búsqueda tiene una fortaleza distinta —el evolutivo encuentra condiciones binarias robustas, el simbólico descubre la forma de una fórmula, la detección de régimen sabe cuándo el entorno cambió— y usarlos por separado deja sobre la mesa la posibilidad de que se refuercen entre sí. Combinarlos a mano, con reglas fijas de cuánto pesa cada uno, no se adapta cuando el mercado cambia de comportamiento.
+
+**La solución (técnica):** un motor que sintetiza los candidatos de varios canales de búsqueda en una sola estrategia híbrida, con pesos que se ajustan según el régimen de mercado detectado (más peso al canal que mejor rinde en tendencia, otro reparto en un mercado lateral), y con lógica independiente para posiciones largas y cortas cuando conviene. Ningún canal puede dominar por completo la decisión final, y ninguno se incluye si su desempeño individual está por debajo de un mínimo.
+
+**Explicado sin tecnicismos:** imagina un equipo de tres expertos —uno bueno leyendo tendencias, otro bueno con fórmulas, otro bueno reconociendo cuándo cambió el ambiente— que en vez de opinar cada uno por su cuenta, votan juntos y ajustan cuánto pesa la opinión de cada uno según qué tan confiable ha sido cada quien en el momento actual.
+
+Esta pieza arma ese comité: toma lo que encontraron los distintos métodos de búsqueda y los combina en una sola voz, dándole más peso al que mejor entiende el mercado de hoy, sin dejar que ninguno mande solo todo el tiempo.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **Desacoplamiento Direccional:** Permite configurar cruces de medias para Largos y Order Flow para Cortos.

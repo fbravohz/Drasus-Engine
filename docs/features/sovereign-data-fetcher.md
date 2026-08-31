@@ -16,6 +16,24 @@ Es el componente encargado de saturar el ancho de banda para la obtención masiv
 **Problema:** Descargar 5 años de datos por API REST puede tomar días y causar bloqueos por Rate Limit.
 **Solución:** Descargar volcados mensuales de S3 en segundos y rellenar los últimos minutos vía API.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como investigador de estrategias, quiero traer años de historia de mi propia fuente en minutos y no en días, para que preparar un experimento no cueste más tiempo que ejecutarlo.
+
+**El problema (técnico):** las interfaces de consulta de los proveedores están diseñadas para pedir datos recientes, no historia masiva. Descargar varios años pieza por pieza tarda días y choca contra los límites de tasa del proveedor, que corta la conexión y obliga a reintentar. El resultado práctico es que el investigador termina trabajando con menos historia de la que necesita, simplemente porque conseguirla es demasiado lento.
+
+**La solución (técnica):** una estrategia híbrida en dos tiempos. El grueso de la historia se trae como archivos comprimidos masivos, que el proveedor sirve a velocidad de disco en vez de a velocidad de consulta. Solo el tramo más reciente —el que ningún volcado alcanza a incluir— se completa por consulta directa. Cada partición resultante declara su procedencia: proveedor y vía. Dos series del mismo símbolo con procedencia distinta **no se funden**; el sistema lo impide, no lo desaconseja.
+
+**Explicado sin tecnicismos:** hay dos formas de mudar una biblioteca. Pedir los libros uno por uno por teléfono, o mandar un camión por las cajas.
+
+Bajar diez años de historia preguntando dato por dato tarda días, y a media descarga el proveedor te corta por insistente. Así que Drasus manda el camión: se trae los paquetes grandes de golpe, en minutos, y solo pide "por teléfono" lo de los últimos días, que todavía no está empaquetado.
+
+Y anota de dónde vino cada caja. Si dos lotes del mismo instrumento vienen de proveedores distintos, **no los mezcla** — porque medir con dos reglas diferentes y creer que es una sola es una forma silenciosa de arruinar todo lo que venga después.
+
 ## Comportamientos Observables
 
 - [ ] Usuario solicita histórico de BTC de 2020 a hoy.

@@ -13,6 +13,20 @@ Es un motor de orquestación de simulaciones diseñado para evaluar una estrateg
 
 **Problema que resuelve:** El sesgo de ajuste de curvas (*curve-fitting*). Una estrategia puede funcionar bien en BTC/USDT por suerte, pero si falla en otros 5 activos similares con los mismos parámetros, es "frágil". Esta feature expone esa fragilidad instantáneamente.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-02` — Un simulador que no miente
+
+**Historia de usuario:** Como investigador de estrategias, quiero probar la misma estrategia sobre una canasta completa de activos parecidos al mismo tiempo, para descubrir si de verdad encontré algo real o solo tuve suerte con uno solo.
+
+**El problema (técnico):** una estrategia puede verse espectacular en un solo activo por pura casualidad —ese activo en particular tuvo un comportamiento que coincidió con la lógica de la estrategia sin que hubiera nada genuino detrás—. Probarla solo ahí no lo revela. El sesgo de ajuste a un caso particular es invisible mientras solo se mire ese caso.
+
+**La solución (técnica):** el sistema ejecuta la misma estrategia, con los mismos parámetros, sobre una canasta completa de activos en paralelo, y agrega los resultados en una sola curva de capital global como si fuera un portafolio. Si la estrategia solo funciona en uno o dos activos de la canasta y falla en el resto, esa fragilidad queda expuesta de inmediato en vez de escondida detrás de un solo resultado bonito.
+
+**Explicado sin tecnicismos:** imagina que un estudiante saca diez de calificación en un examen. ¿Es brillante, o el examen resultó ser justo el tema que se sabía de memoria por casualidad? La única forma de saberlo es ponerle diez exámenes parecidos, no relacionados entre sí más que por ser del mismo curso, y ver si sigue sacando dieces o si el primero fue un golpe de suerte.
+
+Esta pieza le pone a la estrategia esos diez exámenes a la vez: la corre sobre un grupo entero de activos parecidos con la misma configuración exacta, y suma los resultados como si fueran un solo examen grande. Si la estrategia de verdad entendió algo del mercado, sigue funcionando razonablemente en la mayoría. Si solo memorizó las casualidades de un activo, se le nota enseguida porque el resto de la canasta la reprueba.
+
 ## Comportamientos Observables
 
 - [ ] El usuario define una "Canasta" de activos (ej: Top 10 Alts) y presiona "Basket Backtest".

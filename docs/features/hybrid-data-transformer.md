@@ -12,6 +12,16 @@ Es el motor de transformación que aplica la regla **80/20**: utiliza el máximo
 **Problema:** Los intérpretes externos (Python/Pandas) introducen latencia de serialización, GIL y doble ecosistema de dependencias. Polars es rápido pero el consumo estadístico avanzado (regresiones, modelos lineales) requiere matrices densas en memoria contigua.
 **Solución:** Orquestar transformaciones en Polars y convertir a `ndarray` solo en la frontera de consumo estadístico mediante Zero-Copy vía Apache Arrow.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Infraestructura.** Usa la herramienta rápida para mover y limpiar volúmenes grandes, y cambia a la herramienta precisa solo en el punto exacto donde hacen falta cálculos estadísticos. El traspaso entre ambas ocurre sin copiar los datos, que es lo que evita duplicar la memoria justo cuando más escasea.
+
+El usuario nunca lo ve. Lo nota como que **preparar los datos no se come la tarde**.
+
 ## Comportamientos Observables
 
 - [ ] El sistema procesa 5GB de datos en memoria sin colapsar la RAM del usuario gracias al procesamiento columnar de Polars.

@@ -17,6 +17,14 @@ El **catálogo configurable de planes** y sus límites. Un plan es dato, no cód
 - **Comportamiento observable:** existe un catálogo de planes; cada licencia apunta a un plan; los límites del plan alimentan el gate y la medición.
 - **Por qué:** desacopla la política comercial (cambia seguido) de la mecánica de licencia (estable).
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Infraestructura.** Guarda los planes de suscripción y sus límites (cuánto nocional puede operar una cuenta, cuántas activaciones simultáneas, qué funciones incluye) como datos en una tabla, no como reglas fijas en el programa — así cambiar un precio o un límite no exige una nueva versión del programa.
+
+El usuario nunca la ve. La nota como que **los planes y sus límites pueden ajustarse sin que tenga que instalar una actualización para verlos reflejados**.
+
 ## Comportamientos Observables
 
 - Cuando se define un plan → queda disponible con su tier, cuotas y precio.

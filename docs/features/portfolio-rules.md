@@ -17,6 +17,22 @@ Componente de gobernanza encargado de imponer los límites de seguridad globales
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader con varias estrategias activas, o sujeto a las reglas de una firma de fondeo, quiero un límite global que ninguna estrategia individual pueda saltarse, para que ninguna de ellas, por sí sola, pueda costarme la cuenta completa.
+
+**El problema (técnico):** cada estrategia individual conoce sus propios límites, pero ninguna ve el panorama completo del portafolio. Sin una capa que domine sobre todas, la suma de posiciones "razonables" de cada estrategia puede producir una exposición total que ninguna de ellas, vista sola, parecería capaz de causar — y en una cuenta de fondeo, romper una regla de la firma (pérdida diaria, drawdown acumulado) cancela la evaluación completa.
+
+**La solución (técnica):** una capa envolvente que intercepta cada intento de cambio de posición, simula su impacto en el margen y el riesgo total del portafolio antes de aprobarlo, y aplica límites duros (que detienen la operativa por completo) y alertas blandas (que solo avisan). Incluye el perfil de reglas exactas de una firma de fondeo por fase, el rastreo de drawdown contra el balance de cierre del día anterior, bloqueos antes de eventos macro de alto impacto, y el forzado de modo de inventario cuando la cuenta lo exige.
+
+**Explicado sin tecnicismos:** imagina una empresa donde cada empleado puede aprobar gastos pequeños por su cuenta, pero hay un límite total de caja que nadie, ni siquiera el dueño, puede rebasar sin que se bloquee todo el gasto de la empresa.
+
+Esta pieza es ese límite de caja para tu portafolio de estrategias. No le importa que cada estrategia individual esté siguiendo sus propias reglas — antes de dejar pasar cualquier operación, revisa el efecto sobre el conjunto completo. Si romper esa regla te costaría la cuenta o la evaluación de una firma de fondeo, la operación simplemente no sale, sin importar qué tan convencida esté la estrategia que la generó.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Evalúa **Límites Duros** (ej: Max Drawdown Portafolio) que detienen la operativa global.

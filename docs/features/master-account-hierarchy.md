@@ -15,6 +15,20 @@ Una **cuenta maestra raíz** (ej. un fondo de inversión) agrupa **N cuentas mae
 - **Comportamiento observable:** el operador de una cuenta hija ve "esta cuenta reporta a `<Fondo X>`"; el fondo ve un panel consolidado de sus cuentas hijas y puede emitir comandos de override que la hija ejecuta localmente.
 - **Por qué:** generaliza el patrón de mando que ya existe (ADR-0119: un Plano de Control administra N satélites sin estar en la ruta crítica) un nivel arriba, donde el "satélite" ya no es un nodo de ejecución sin criterio propio, sino otra cuenta maestra completa.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como fondo de inversión, quiero supervisar y, si hace falta, intervenir las cuentas de mis traders sin quitarles su autonomía del día a día, para tener control real sin construir mi propio sistema de vigilancia por fuera de Drasus.
+
+**El problema (técnico):** vender Drasus a un fondo exige que ese fondo pueda ver y, en casos justificados, detener o ajustar lo que hacen las cuentas bajo su mando — sin que cada trader pierda el control cotidiano de su propia cuenta, y sin que Drasus tenga que inventar una segunda forma de organizar cuentas paralela a la que ya usa para todo lo demás.
+
+**La solución (técnica):** una cuenta maestra raíz agrupa cuentas maestras hijas completas — cada una sigue siendo una cuenta con todas sus capacidades propias — pero la raíz puede ver todo lo que hace cada hija y puede emitir órdenes de intervención (detener, archivar, mover, ajustar) que la hija ejecuta. Cada intervención queda firmada por ambos lados, el fondo que la ordena y la cuenta que la ejecuta, y solo procede si la hija tiene consentimiento vigente para ser supervisada así.
+
+**Explicado sin tecnicismos:** es como una casa matriz con sucursales. Cada sucursal opera su día a día con su propio equipo, pero la matriz puede ver los números de todas y, si algo va mal en una, puede intervenir directamente: parar una operación, mover un recurso, ajustar una regla. Cada intervención de la matriz queda firmada por los dos lados, para que quede constancia de quién ordenó qué y quién lo ejecutó.
+
+Así, un fondo puede tener veinte traders bajo su nombre sin que eso signifique veinte llaves maestras sueltas ni un sistema de vigilancia aparte.
+
 ## Comportamientos Observables
 
 - Cuando una cuenta hija se vincula a un fondo → registra un consentimiento versionado y fechado que autoriza la autoridad de auditoría/override del fondo (`consent-registry`, #5) — término contractual, no un backdoor impuesto.

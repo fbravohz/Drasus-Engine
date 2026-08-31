@@ -16,6 +16,22 @@ El **Visualizador de Vistas Coordinadas** (Cross-Filtering) es un componente de 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver varias distribuciones de parámetros a la vez y aislar un rango en una para ver cómo reaccionan las demás al instante, para esculpir una configuración robusta en vez de adivinarla.
+
+**El problema (técnico):** entender la relación entre varias variables de una optimización exige ver más de una distribución a la vez, y ver cada una por separado no revela cómo se condicionan entre sí. Sin coordinación entre las vistas, cada gráfica cuenta una historia aislada que no refleja la relación real entre los parámetros.
+
+**La solución (técnica):** una cuadrícula de histogramas sincronizados, uno por parámetro o métrica. Aislar un rango en cualquiera de ellos actualiza de inmediato las distribuciones de todos los demás, mostrando solo el subconjunto de datos que cumple ese filtro — con un botón para reiniciar y volver al conjunto completo.
+
+**Explicado sin tecnicismos:** imagina una fila de básculas, cada una pesando algo distinto de la misma canasta de frutas. Si aprietas el filtro en una báscula ("solo las manzanas de más de 200 gramos"), las demás básculas se reacomodan al instante para mostrarte el peso de esas mismas frutas en las otras categorías.
+
+Con esta pieza haces lo mismo con los parámetros de una optimización: aíslas un rango en un histograma y ves de inmediato cómo se ven todos los demás para ese mismo subconjunto de estrategias. Vas apretando filtro tras filtro hasta que te queda, a la vista, la combinación exacta que buscabas — sin escribir una sola consulta.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] La UI despliega una cuadrícula de histogramas interactivos (uno por parámetro/métrica).

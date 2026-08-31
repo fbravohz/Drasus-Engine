@@ -34,6 +34,8 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 | `docs/SAD.md` | Índice de las 20 secciones | ~26 líneas | Para una sección, abre `docs/sad/SAD-NN.md`. |
 | `docs/sad/SAD-NN.md` | Una sección del SAD por archivo (01–20) | variable | Abre solo la sección relevante. |
 | `docs/ROADMAP.md` | Épicas, sprints, spikes | ~365 líneas | Lee la sección de la fase activa. |
+| `docs/PRODUCT.md` | **Definición de producto (técnica)**: 10 capacidades `CAP-01`…`CAP-10`, historia de usuario → problema → solución, mapeo 1:1 a las 166 features | ~381 líneas | Fuente única de infografías, pitch, web y roadmap público. Dominio del Architect. |
+| `docs/PRODUCT-SIMPLE.md` | Los mismos `CAP-NN` sin jerga + un guión hablado único, válido para cualquier persona | ~360 líneas | Gemelo obligatorio de `PRODUCT.md` — se editan en pareja, nunca por separado. **Dos vías y solo dos:** prohibido bifurcar por profesión o perfil. |
 | `docs/templates/TEMPLATES.md` | Índice + reglas transversales (Lo Prohibido, Regla de Oro, Checklist) | ~100 líneas | Para una plantilla concreta, abre `docs/templates/<NOMBRE>.md`. |
 | `docs/templates/<NOMBRE>.md` | Una plantilla por archivo: `ADR.md`, `SAD.md`, `FEATURE.md`, `TTR.md` | ≈40–150 líneas | Abre solo la plantilla que vas a usar. |
 | `docs/modules/*.md` | 8 orquestadores: ingest, generate, validate, incubate, manage, execute, feedback, withdraw | 280–833 líneas c/u | Abre solo el módulo en juego. |

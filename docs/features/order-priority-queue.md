@@ -17,6 +17,22 @@ Este componente clasifica las órdenes según su urgencia:
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader, quiero que mi orden de stop-loss nunca se quede atorada detrás de órdenes menos urgentes cuando el mercado se congestiona, para que la protección de mi capital no dependa de en qué lugar de la fila cayó.
+
+**El problema (técnico):** en episodios de alta volatilidad, los exchanges rechazan órdenes por exceder el límite de peticiones por segundo. Si todas las órdenes se tratan igual, una orden de cierre de emergencia puede quedar detrás de una entrada de baja prioridad, justo en el peor momento para esperar.
+
+**La solución (técnica):** una cola con niveles de urgencia — los stop-loss van al frente con prioridad absoluta, luego los take-profit, luego el resto. Si el bróker devuelve un error de límite de tasa, el sistema pausa las órdenes de menor prioridad y reintenta las críticas con espera creciente entre intentos, hasta lograr confirmación.
+
+**Explicado sin tecnicismos:** piensa en la sala de urgencias de un hospital. No atienden por orden de llegada — a quien tiene un paro cardiaco lo pasan antes que a quien tiene un esguince, sin importar quién llegó primero.
+
+Esta pieza hace lo mismo con las órdenes: cuando el sistema está saturado de peticiones y algunas se van a rechazar o retrasar, decide primero cuáles son críticas para tu cuenta. Tu orden de stop-loss siempre pasa antes que una entrada nueva, porque una protege capital que ya está en riesgo y la otra apenas lo va a arriesgar.
+
+---
+
 ## Comportamientos Observables
 
 - **Clasificación Automática de Prioridad:** Toda orden emitida por las estrategias es evaluada en memoria y se le asigna un tier de urgencia (P0 a P3).

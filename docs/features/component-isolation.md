@@ -15,6 +15,20 @@ El "Monkey Test" (Aislamiento de Componentes) es una auditoría de sentido comú
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero saber si la parte que decide cuándo entrar y la parte que decide cuándo salir realmente aportan algo, comparándolas contra una versión que decide al azar, para no confundir una estrategia con una moneda al aire con suerte.
+
+**El problema (técnico):** una estrategia puede parecer rentable por el mérito de una sola de sus dos mitades —la lógica de entrada o la de salida— mientras la otra mitad no aporta absolutamente nada y solo viaja de gorra sobre el resultado. Sin aislar cada componente por separado, es imposible saber si el stop loss o el take profit realmente están haciendo un trabajo, o si la estrategia ganaría exactamente lo mismo si sus salidas se decidieran lanzando una moneda.
+
+**La solución (técnica):** corre dos pruebas independientes. En la primera, conserva las entradas originales pero cierra cada operación en un momento aleatorio, cientos de veces, para medir si la lógica de salida programada gana o pierde contra el puro azar. En la segunda, invierte el experimento: entra al mercado al azar pero conserva la lógica de salida original. Si la versión aleatoria iguala o supera a la versión real en cualquiera de los dos experimentos, ese componente se dictamina inútil.
+
+**Explicado sin tecnicismos:** imagina un futbolista al que todos elogian por sus goles, y alguien decide hacer una prueba: lo reemplaza por un jugador que patea al azar, sin apuntar a ningún lado, y anota casi los mismos goles. Eso no dice que el balón sea mágico — dice que la portería estaba tan abierta que hasta un tiro ciego entraba.
+
+Esta pieza le hace esa prueba a las dos mitades de tu estrategia por separado: reemplaza las salidas por un cierre al azar y ve si el resultado cambia; reemplaza las entradas por un tiro a ciegas y ve si el resultado cambia. Si sustituir una parte por pura suerte da el mismo resultado, esa parte de tu estrategia nunca estuvo haciendo nada — estabas viendo goles de cancha abierta y atribuyéndoselos al jugador.
+
 ## Comportamientos Observables
 
 - [ ] **Prueba de Salida Aleatoria:** El sistema ejecuta la estrategia con las entradas originales, pero cierra los trades en momentos 100% aleatorios.

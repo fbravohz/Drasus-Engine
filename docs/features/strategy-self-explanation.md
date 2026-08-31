@@ -9,6 +9,20 @@
 Módulo de auditoría que traduce un Árbol de Sintaxis Abstracta (AST) críptico (típicamente vomitado por el motor evolutivo genético) a un párrafo de texto legible por humanos. 
 Resuelve el problema de la "Caja Negra Evolutiva", permitiendo al gestor auditar lógicamente qué ha descubierto el algoritmo.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-09` — Una interfaz donde se ve el razonamiento
+
+**Historia de usuario:** Como gestor de una estrategia, quiero abrir cualquier estrategia generada automáticamente y leer en un párrafo qué hace y por qué, para auditarla sin tener que descifrar su estructura interna nodo por nodo.
+
+**El problema (técnico):** un motor evolutivo puede producir un árbol de decisión de decenas de condiciones encadenadas. Nadie lo entiende de un vistazo, ni siquiera el propio sistema que lo generó — y sin entenderlo, no hay manera real de confiar en él ni de explicárselo a un tercero que audite el capital.
+
+**La solución (técnica):** el sistema recorre la estructura inmutable de la estrategia y redacta un párrafo en español que describe su lógica ("entra en compra cuando hay una expansión de volatilidad y el sesgo semanal es alcista"). Cada frase del reporte queda enlazada a los nodos exactos del árbol que la producen —un clic en la frase ilumina esos nodos—, y cualquier nodo se puede bloquear para que una optimización posterior lo respete sin tocarlo.
+
+**Explicado sin tecnicismos:** es como pedirle a un traductor que convierta un contrato lleno de cláusulas cruzadas en un resumen de una página que cualquiera entiende, y que además, si señalas una frase del resumen, te marque exactamente qué cláusulas del contrato original la sostienen.
+
+Aquí pasa lo mismo con una estrategia de cuarenta reglas: el sistema te da el resumen en español, y si tocas una frase de ese resumen, ves iluminadas las reglas exactas de las que salió. Si hay una regla que ya revisaste y te gusta como está, la puedes "sellar" para que nadie —ni el propio sistema al mejorar la estrategia después— la vuelva a tocar.
+
 ## 2. Comportamientos Observables
 - [ ] En la inspección del Genoma, el usuario presiona "Auditar Lógica".
 - [ ] El sistema descompone el grafo matemático y redacta un reporte: "La estrategia entra en compras cuando existe una expansión de volatilidad (ATR) y el sesgo semanal es alcista".

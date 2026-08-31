@@ -14,6 +14,22 @@ Además de actuar como filtro, el Design Manifest opera como un **Envoltorio de 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero que ninguna estrategia pueda pasar a incubación o a dinero real sin cumplir de forma estricta las metas que yo mismo definí de antemano, para que la decisión de promoverla no dependa de mi entusiasmo del momento frente a una curva bonita.
+
+**El problema (técnico):** sin un filtro final obligatorio, es fácil que una estrategia con buenas métricas generales pero que no cumple un límite concreto —un drawdown máximo, un mínimo de operaciones, un Sharpe mínimo— avance de todas formas porque "se ve bien en general". La promoción se vuelve una decisión de humor, no de contrato.
+
+**La solución (técnica):** un veredicto automático que combina un puntaje de robustez agregado de varias métricas de estrés con un contrato de metas configurables por el usuario (Sharpe mínimo, drawdown máximo, mínimo de operaciones). Si el puntaje o cualquiera de las metas del contrato no se cumple milimétricamente, la estrategia queda bloqueada para promoción, sin excepción manual. El contrato vive fuera de la lógica matemática de la estrategia, como una capa de riesgo que la envuelve desde antes de que empiece a operar.
+
+**Explicado sin tecnicismos:** es como el examen final que decide si te dan el título, no una opinión de que "en general te fue bien en el semestre". Puedes tener buenas calificaciones en casi todo, pero si reprobaste la materia que el reglamento marca como obligatoria, no te gradúas, sin importar qué tan convincente se vea el resto de tu historial.
+
+Esta pieza es ese reglamento aplicado sin excepciones: define de antemano qué tiene que cumplir una estrategia para merecer dinero real, y cuando llega el momento, compara sin sentimentalismo el resultado contra esa meta. Si no la cumple, no pasa —así de simple, y así de necesario.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] **AI Robustness Verdict Panel:** Calcula métricas de WFE, DSR, PBO, probabilidad de ruina e inversión lógica.

@@ -15,6 +15,22 @@ Para evitar la demora asociada a un pipeline de validación completo (que requie
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero ver de inmediato cómo se comporta un nodo del lienzo apenas lo toco, para poder iterar mi diseño a mano sin esperar minutos a que corra una validación completa cada vez.
+
+**El problema (técnico):** correr el pipeline de validación completo —Monte Carlo, análisis walk-forward, sobre años de historia— cada vez que se cambia un parámetro pequeño de un nodo del diseño haría imposible iterar. El investigador terminaría evitando probar variantes por el costo de esperar, y probaría menos ideas de las que debería.
+
+**La solución (técnica):** al seleccionar un nodo en el lienzo, el sistema muestra de inmediato una curva de equidad simplificada y métricas básicas, calculadas sobre una ventana corta y guardadas en caché para que la próxima consulta sea instantánea. Si el usuario cambia un parámetro, la vista previa del nodo y de todos los nodos que dependen de él se marca como inválida hasta que se recalcula en segundo plano, sin bloquear el resto de la interfaz. Ninguna estrategia con vistas previas invalidadas puede promoverse a incubación.
+
+**Explicado sin tecnicismos:** es como probar un platillo mientras cocinas, en vez de esperar hasta que esté servido en la mesa para saber si le falta sal. Cada ajuste pequeño —un poco más de esto, un poco menos de aquello— se puede sentir de inmediato, sin tener que terminar todo el platillo para descubrir que algo no cuadró.
+
+Esta pieza te deja probar tu estrategia mientras la construyes, con una probadita rápida de cómo se hubiera comportado, en vez de armar todo el diseño a ciegas y enterarte del resultado hasta el final del proceso completo de validación.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Al seleccionar un nodo en el Strategy Inspector del Nivel 3, el inspector contextual muestra un mini-gráfico de equidad (línea simplificada de 50 puntos) y métricas básicas (Sharpe, Profit Factor).

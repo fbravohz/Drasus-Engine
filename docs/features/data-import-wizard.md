@@ -14,6 +14,26 @@ Es el componente que permite al usuario incorporar datos externos (EJ: CSV de Me
 **Problema:** Cada broker exporta CSVs con nombres de columnas y formatos de fecha distintos. Mapearlos a mano es lento y propenso a errores — pero adivinar el mapeo sin que el usuario lo confirme sobre datos reales es, además de un riesgo técnico, un riesgo legal (LDR-0008): Drasus terminaría afirmando una interpretación que nadie validó.
 **Solución (ADR-0156):** dos vías, cada una con su responsable. **Plantilla de plataforma** (NinjaTrader, MetaTrader, Interactive Brokers…) — Drasus la declara, la valida contra exportaciones reales antes de publicarla, y responde si está mal construida. **Mapeo manual declarado** — el asistente puede pre-rellenar una propuesta (conserva el valor de la detección automática como *borrador*), pero el usuario debe confirmarla sobre una vista previa de sus propios datos ya transformados antes de que nada se persista. Sin plantilla y sin confirmación, el archivo se **rechaza** con motivo explícito — nunca se adivina ni se importa a medias.
 
+---
+
+## Narrativa de Producto
+
+**Capacidad:** `CAP-01` — Datos en los que se puede confiar
+
+**Historia de usuario:** Como usuario, quiero traer al sistema el archivo que exporté de mi propia plataforma y ver exactamente cómo quedó interpretado antes de que se guarde nada, para no descubrir después que una columna se leyó al revés.
+
+**El problema (técnico):** cada plataforma exporta con nombres de columna, formatos de fecha y separadores distintos. Mapearlos a mano es lento y propenso a error. Pero la alternativa obvia —que el sistema adivine el mapeo— es peor: adivinar bien el 95% de las veces significa que el 5% restante entra corrompido sin que nadie se entere, y el sistema queda afirmando una interpretación que ninguna persona validó.
+
+**La solución (técnica):** dos vías, cada una con un responsable declarado. La **plantilla de plataforma** la construye y valida Drasus contra exportaciones reales antes de publicarla — si está mal, es responsabilidad de Drasus. El **mapeo manual declarado** lo confirma el usuario sobre una vista previa de sus propios datos ya transformados; el sistema puede proponer un borrador, pero la propuesta no es la decisión. Sin plantilla y sin confirmación, el archivo se **rechaza con motivo explícito**. Nunca se importa a medias.
+
+Esta es además la única vía de ingesta en la que Drasus no toca la red: el usuario exporta desde su terminal y entrega el archivo. Garantiza el precio de su bróker de ejecución real, sin depender de que ese bróker publique volcado alguno.
+
+**Explicado sin tecnicismos:** cada plataforma exporta sus archivos a su manera: unas ponen la fecha como día/mes/año, otras al revés; unas separan con comas, otras con tabuladores.
+
+El sistema **podría** adivinar. Y acertaría casi siempre. El problema es ese "casi": las veces que se equivoque, tus datos entran mal y nadie se entera hasta mucho después, cuando ya construiste todo encima.
+
+Así que Drasus no adivina. O usa una plantilla que ya probó contra archivos reales de esa plataforma —y si está mal, es culpa de Drasus—, o **te enseña cómo quedarían tus datos y espera a que confirmes**. Si no hay ninguna de las dos, rechaza el archivo y te dice por qué. Prefiere decirte que no puede, antes que decirte que sí y estar equivocado.
+
 ## Comportamientos Observables
 
 - [ ] El usuario arrastra un archivo CSV; el sistema previsualiza las primeras filas del archivo crudo.

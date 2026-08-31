@@ -17,6 +17,22 @@ El gestor de múltiples posiciones por estrategia es un componente que rompe la 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-06` — Ejecución real y defensa del capital
+
+**Historia de usuario:** Como trader con varias entradas activas de la misma estrategia, quiero que cada posición se gestione como un objeto independiente, para que cerrar o ajustar una no altere por accidente el riesgo o los niveles de las demás.
+
+**El problema (técnico):** cuando una estrategia divide una posición en varios tramos, o abre entradas adicionales mientras ya tiene una activa, existe el riesgo de que el sistema confunda dos tramos con la misma operación y aplique un cierre o un ajuste al ticket equivocado, o, en el otro extremo, que abra dos posiciones por la misma señal repetida y duplique el riesgo sin que nadie lo pidiera.
+
+**La solución (técnica):** cada posición se identifica por el hash de la señal que la originó y su instante exacto, y se rastrea como un objeto con su propia máquina de estados. Una segunda señal idéntica en la misma vela se bloquea, pero cuando una posición se fragmenta deliberadamente en varias fases, cada fase recibe su propio identificador y su propio nivel de stop y de toma de ganancia, de modo que cerrar una fase por su stop nunca toca el estado de las demás.
+
+**Explicado sin tecnicismos:** es la diferencia entre archivar cada contrato en su propia carpeta con su propio número de expediente, o mezclarlos todos en una sola pila.
+
+Con la pila mezclada, mover un papel de un expediente puede desordenar otro sin que nadie lo note. Con carpetas separadas, tocar el expediente 3 nunca cambia nada del expediente 7, aunque los dos hayan nacido del mismo trámite original. Esta pieza le da a cada posición su propia carpeta, con su propio número, aunque varias hayan nacido de la misma señal.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] La estrategia ya tiene una posición activa y se cumple una nueva condición en una barra posterior

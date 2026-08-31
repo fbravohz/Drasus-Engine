@@ -13,6 +13,16 @@ El `PDF Charts Rendering` es el componente de backend (server-side/headless) enc
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Infraestructura.** Dibuja las gráficas vectoriales —curva de capital, mapa de calidad mensual, histogramas— que se incrustan en los reportes PDF, con un motor de dibujo nativo propio en vez de depender de un navegador pesado de fondo (lo que violaría el compromiso de correr todo en la máquina del usuario sin componentes ajenos).
+
+El usuario nunca la ve directamente. La nota como que **el PDF que exporta se ve nítido al hacer zoom, y que exportarlo no cuelga la aplicación mientras se genera**.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] El usuario presiona "Exportar Reporte PDF" desde el Strategy Inspector o Fleet Command.

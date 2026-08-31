@@ -17,6 +17,20 @@ El puerto que consume resultados del guantelete de validación/ejecución (ya ex
 - **Comportamiento observable:** dado un resultado de validación/ejecución, produce un documento institucional (PDF/HTML/JSON) firmado y trazable.
 - **Por qué:** habilita los productos de 5–6 cifras que son subproductos naturales del guantelete.
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-10` — Soberanía, identidad y modelo de negocio
+
+**Historia de usuario:** Como usuario que administra capital de terceros, quiero pedir un reporte institucional —de validación, de estrés, de desempeño— y recibir un documento con firma verificable, para poder mostrárselo a un inversionista o a un fondo sin que dude de su integridad.
+
+**El problema (técnico):** un fondo no acepta una captura de pantalla como prueba de que una estrategia pasó cierta validación. El día que alguien lo pida, no hay tres meses para construir el generador de reportes — los datos ya existen en el motor, lo que falta es empaquetarlos en un documento verificable.
+
+**La solución (técnica):** el sistema toma el resultado ya calculado de una validación o ejecución y produce un documento con una firma de integridad calculada sobre su contenido exacto: si una sola cifra del reporte cambia, la firma deja de coincidir. Cada reporte queda enlazado a los eventos de origen que lo sustentan, así su procedencia se puede rastrear hasta la operación real que lo generó.
+
+**Explicado sin tecnicismos:** es como un certificado con sello de agua y número de folio. Cualquiera puede fotocopiarlo, pero si alguien altera una sola cifra, el sello deja de coincidir con el documento — y eso es fácil de comprobar sin tener que confiar en la palabra de quien lo entrega.
+
+Cuando un fondo o un inversionista te pida pruebas de que tu estrategia hizo lo que dices, entregas ese certificado, no una captura de pantalla que cualquiera podría haber editado.
+
 ## Comportamientos Observables
 
 - Cuando se le pasa un resultado de validación → genera un reporte con las métricas, su firma de integridad y enlaces al audit-log fuente.

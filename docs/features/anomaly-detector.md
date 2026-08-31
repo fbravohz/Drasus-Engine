@@ -14,6 +14,22 @@ Componente encargado de detectar comportamientos atípicos y fallos de modelo. S
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-08` — El ciclo que se cierra solo
+
+**Historia de usuario:** Como operador de una flota de estrategias, quiero que el sistema detecte por sí mismo comportamientos atípicos —correlaciones que se rompen, familias enteras de estrategias que fallan igual— y traduzca ese fallo en una restricción concreta para el motor de búsqueda, para que la siguiente generación no repita el mismo error.
+
+**El problema (técnico):** un fallo aislado es una anécdota; un patrón de fallos es información. Pero casi ninguna herramienta conecta lo que pasó en producción de vuelta con lo que el motor de búsqueda genera después: el conocimiento se queda atrapado en un reporte que alguien tendría que leer, interpretar y traducir a mano en una regla nueva. Mientras tanto, el generador sigue produciendo candidatas con el mismo defecto estructural, generación tras generación.
+
+**La solución (técnica):** un detector que vigila rupturas de correlación entre estrategias activas, agrupa por similitud de comportamiento para encontrar familias enteras con el mismo perfil de riesgo frágil (agrupamiento por componentes principales), y somete al sistema a escenarios patológicos generados a propósito para encontrar dónde se rompe. Cada hallazgo se traduce, sin intervención manual, en una restricción genética concreta —un veto— que el motor evolutivo respeta desde la siguiente corrida.
+
+**Explicado sin tecnicismos:** imagina un maestro que corrige exámenes y encuentra que diez alumnos distintos cometieron exactamente el mismo error de razonamiento. Un maestro mediocre pone una tacha a cada examen y sigue. Un maestro que de verdad enseña se pregunta *por qué* se repite el error, y cambia la próxima clase para que no vuelva a pasar.
+
+Esta pieza es ese segundo maestro, pero automático. No solo detecta que una estrategia falló: encuentra el patrón detrás de varios fallos parecidos y le dice al criadero de `CAP-03`, en el lenguaje que entiende, "deja de producir esto". Es la diferencia entre una fábrica que tropieza con la misma piedra mil veces y una que aprende a esquivarla.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Detecta **Rupturas de Correlación** masivas entre estrategias.

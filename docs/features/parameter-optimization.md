@@ -14,6 +14,22 @@ Busca los parámetros óptimos de una estrategia usando Grid Search (exhaustivo)
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-03` — Búsqueda automática en el espacio de estrategias
+
+**Historia de usuario:** Como investigador de estrategias, quiero encontrar los valores numéricos óptimos de una estrategia ya definida —el periodo de un indicador, un umbral— sin tener que probarlos a mano uno por uno, para no dejar sobre la mesa una configuración mejor solo porque no se me ocurrió probarla.
+
+**El problema (técnico):** una estrategia con varios parámetros numéricos tiene un espacio de combinaciones que crece rápido; probar a mano una decena de valores por instinto no garantiza encontrar la mejor combinación, y probarlas todas a mano es impráctico.
+
+**La solución (técnica):** dos métodos intercambiables para recorrer el espacio de parámetros ya definido por el usuario: búsqueda exhaustiva (recorre cada combinación de la rejilla, lenta pero sin puntos ciegos) o búsqueda bayesiana (aprende de cada resultado dónde seguir buscando, más rápida cuando el espacio es grande). Ninguna combinación se evalúa fuera del espacio declarado, y ninguna se reporta sin haber sido evaluada.
+
+**Explicado sin tecnicismos:** es como ajustar la perilla de la ducha para dar con la temperatura exacta. Puedes probar cada posición de la perilla una por una hasta encontrarla —tardado pero seguro—, o puedes ir acercándote más rápido recordando qué tan caliente salió el agua en cada intento anterior.
+
+Esta pieza hace exactamente eso con los números que definen tu estrategia, en vez de que tengas que adivinarlos a mano uno por uno.
+
+---
+
 ## Comportamientos Observables
 
 - [ ] Usuario define espacio de parámetros: periodo RSI = [5, 10, 15, 20], threshold = [40, 50, 60]

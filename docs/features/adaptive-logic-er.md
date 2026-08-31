@@ -15,6 +15,20 @@ El Adaptive Logic basado en el Efficiency Ratio (ER) de Kaufman es un filtro de 
 
 ---
 
+## Narrativa de Producto
+
+**Capacidad:** `CAP-04` — El guantelete de robustez
+
+**Historia de usuario:** Como investigador de estrategias, quiero que el sistema bloquee las señales de entrada cuando el mercado se está moviendo sin dirección clara, para no operar sobre ruido disfrazado de tendencia.
+
+**El problema (técnico):** muchas señales falsas ocurren en zonas donde el precio se mueve mucho vela tras vela, pero termina prácticamente en el mismo lugar donde empezó — puro vaivén sin dirección neta. Una estrategia que no distingue esa condición del mercado de una tendencia genuina entra y sale constantemente persiguiendo ruido, generando comisiones y pérdidas pequeñas repetidas sin ninguna ventaja real detrás.
+
+**La solución (técnica):** mide qué tan "recto" fue el camino del precio en una ventana reciente, comparando el movimiento neto contra la suma de todos los movimientos absolutos que le tomó llegar ahí — un camino recto da un valor cercano a uno, un camino errático que va y viene da un valor cercano a cero. Si ese valor cae debajo de un umbral configurable, bloquea la señal por considerarla ruido, y el reporte de validación certifica el promedio de esta medida a lo largo de todas las operaciones de la estrategia.
+
+**Explicado sin tecnicismos:** imagina medir qué tan eficiente fue el trayecto de alguien caminando de un punto a otro. Si camina en línea recta, su eficiencia es máxima. Si da vueltas, retrocede y avanza en zigzag para terminar casi en el mismo lugar donde empezó, su eficiencia es prácticamente cero, sin importar cuántos pasos haya dado.
+
+Esta pieza mide esa misma eficiencia en el camino que recorre el precio antes de cada señal. Si el precio solo dio vueltas en el mismo lugar, bloquea la señal — sin importar qué tan convincente se vea el indicador que la generó, porque el terreno debajo no tenía dirección real que aprovechar.
+
 ## Comportamientos Observables
 
 - [ ] El sistema calcula el Efficiency Ratio (ER) de Kaufman para la ventana temporal de la señal.
