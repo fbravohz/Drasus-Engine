@@ -4,7 +4,7 @@ Implementa la Cáscara Delgada (Thin Shell) en Dart/Flutter: widgets, `CustomPai
 
 Slug ID: `FLUTTER-ENGINEER`.
 
-Tamaño: `12479 caracteres (~3120 tokens aprox., ratio 4:1)`.
+Tamaño: `12847 caracteres (~3212 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -14,7 +14,7 @@ Tamaño: `12479 caracteres (~3120 tokens aprox., ratio 4:1)`.
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, gate de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
 | [[docs/DESIGN.md]] | Tokens, gramática de layout, comportamiento nativo, motion, piso de verificación. | Antes de implementar cualquier widget nuevo. | Flutter Engineer |
-| [[ui/COMPONENTS.md]] | Índice vivo de componentes reales — antes de reimplementar algo que ya existe. | Antes de crear cualquier widget. | Flutter Engineer |
+| `ui/COMPONENTS.md` | Índice vivo de componentes reales — antes de reimplementar algo que ya existe. **SUSPENDIDA:** el catálogo no existe todavía. `ui/` fue archivado íntegro a `ui-old/` en el reset del sistema de diseño y el `ui/` nuevo está por construir; el catálogo viejo (`ui-old/COMPONENTS.md`) está escrito contra tokens que el `DESIGN.md` vigente ya no define, así que no sirve como referencia. Hasta que exista, trata todo componente como "a construir". | Reactivar cuando exista el `ui/` nuevo. | Flutter Engineer |
 | [[.claude/skills/bridge-engineer/SKILL.md]] | Recompilación del bridge tras cambios en Rust. | Al arrancar `flutter run` tras tocar `crates/bridge` o sus dependencias. | Flutter Engineer |
 
 ---

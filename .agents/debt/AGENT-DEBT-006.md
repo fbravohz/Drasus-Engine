@@ -7,4 +7,6 @@
 - **Causa raíz:** descuido de formato durante el refactor masivo.
 - **Disparador de pago:** próxima edición de cualquiera de los dos archivos.
 - **Plan:** renumerar el ítem a `-1.1`/`-4.1` respectivamente.
-- **Estado:** Abierta.
+- **Estado:** ✅ Pagada en sus dos mitades. `commenting-policy.md` renumera su viñeta a `COMMENTING-POLICY-1.1` y `partner/SKILL.md` la suya a `PARTNER-4.1`. En ambos casos se verificó por `grep` que ninguna otra regla citaba el ID viejo como referencia normativa.
+
+- **Pendiente derivado:** el hook sigue sin detectar esta colisión (bloque y viñeta con el mismo ID). Si vuelve a ocurrir, no hay quien avise — candidato a regla nueva en `validate-agent-docs.py`.

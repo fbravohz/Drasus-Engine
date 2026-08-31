@@ -18,12 +18,12 @@
 
 | ID | Severidad | Resumen | Estado | Ficha |
 |---|---|---|---|---|
-| AGENT-DEBT-001 | 🔴 Alta | 6 skills conservan el formato legacy pese a que el commit 972bab5 declara "armonización de 13" — bloquean el hook `validate-agent-docs.py` | Abierta | [detalle](./debt/AGENT-DEBT-001.md) |
-| AGENT-DEBT-002 | 🔴 Alta | `debt-management.md` referencia una lectura de `.agents/memory/` que `memory-policy.md` prohíbe expresamente | Abierta | [detalle](./debt/AGENT-DEBT-002.md) |
-| AGENT-DEBT-003 | 🟠 Media | `ui-designer/SKILL.md` (worktree) — pérdida de salvaguarda FFI, prohibición absoluta debilitada a condicional, ADRs vinculantes perdidos | Abierta | [detalle](./debt/AGENT-DEBT-003.md) |
+| AGENT-DEBT-001 | 🔴 Alta | Skills en formato legacy que bloquean el hook `validate-agent-docs.py` — quedan `rust-engineer` y `tech-lead` (4 violaciones duras) | 🟠 Parcial | [detalle](./debt/AGENT-DEBT-001.md) |
+| AGENT-DEBT-002 | 🔴 Alta | `debt-management.md` referencia una lectura de `.agents/memory/` que `memory-policy.md` prohíbe expresamente | ✅ Pagada | [detalle](./debt/AGENT-DEBT-002.md) |
+| AGENT-DEBT-003 | 🟠 Media | `ui-designer/SKILL.md` — pérdida de salvaguarda FFI, prohibición absoluta debilitada a condicional, ADRs vinculantes perdidos | ✅ Pagada | [detalle](./debt/AGENT-DEBT-003.md) |
 | AGENT-DEBT-004 | 🟡 Baja | 5 knowledge docs nuevos huérfanos — ningún skill los cita por wikilink, la copia vieja duplicada sigue siendo la que se lee | Abierta | [detalle](./debt/AGENT-DEBT-004.md) |
-| AGENT-DEBT-005 | 🟡 Baja | Referencias muertas a `ui/COMPONENTS.md` en `flutter-engineer` y `ui-designer` (worktree) tras el reset `ui/`→`ui-old/` | Abierta | [detalle](./debt/AGENT-DEBT-005.md) |
-| AGENT-DEBT-006 | 🟡 Baja | IDs de ítem que reutilizan el ID del bloque padre en `commenting-policy.md` y `partner/SKILL.md` | Abierta | [detalle](./debt/AGENT-DEBT-006.md) |
+| AGENT-DEBT-005 | 🟡 Baja | Referencias muertas a `ui/COMPONENTS.md` en `flutter-engineer` y `ui-designer` tras el reset `ui/`→`ui-old/` | ✅ Pagada | [detalle](./debt/AGENT-DEBT-005.md) |
+| AGENT-DEBT-006 | 🟡 Baja | IDs de ítem que reutilizan el ID del bloque padre en `commenting-policy.md` y `partner/SKILL.md` | ✅ Pagada | [detalle](./debt/AGENT-DEBT-006.md) |
 | AGENT-DEBT-007 | 🟠 Media | Etapas de `tech-lead/SKILL.md` mal numeradas — bloque obligatorio sin número entre Etapa 6 y 7; revisión completa pendiente | Abierta | [detalle](./debt/AGENT-DEBT-007.md) |
 | AGENT-DEBT-008 | 🟡 Baja | `qa-engineer/SKILL.md` en formato legacy — sin bloque `-FV`, rutas sin wikilink, lenguaje de bitácora (avisos blandos del hook) | Abierta | [detalle](./debt/AGENT-DEBT-008.md) |
 
@@ -31,6 +31,12 @@
 
 ## Deudas pagadas (resumen)
 
-Ninguna todavía — registro abierto el 2026-08-20 a partir de la auditoría del commit `972bab5` y del worktree de `.agents/` en curso ese día.
+Registro abierto el 2026-08-20 a partir de la auditoría del commit `972bab5` y del worktree de `.agents/` en curso ese día.
+
+- **AGENT-DEBT-002** — la contradicción entre `debt-management.md` y la suspensión de memoria quedó resuelta marcando el puntero como histórico suspendido.
+- **AGENT-DEBT-003** — `ui-designer` recupera la verificación de binding FFI, la prohibición absoluta y las tres citas de ADR. Su disparador ("antes de comitear") se había incumplido: la pérdida llegó a `HEAD` y se pagó después.
+- **AGENT-DEBT-006** — colisión de IDs resuelta en sus dos mitades.
+- **AGENT-DEBT-005** — las referencias al catálogo de componentes quedan declaradas como suspendidas hasta que exista el `ui/` nuevo, en vez de apuntar a la nada.
+- **AGENT-DEBT-001** — parcial: `architect`, `social-strategist`, `bridge-engineer` y `quant-engineer` salieron del formato legacy; siguen `rust-engineer` y `tech-lead`.
 
 > Las fichas de las deudas pagadas se conservan en `.agents/debt/` con su historia completa y Estado ✅ Pagada.

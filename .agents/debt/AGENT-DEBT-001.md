@@ -7,4 +7,15 @@
 - **Causa raíz:** el commit de refactorización masiva priorizó los skills de mayor volumen (`general-counsel`, `partner`, `refactoring-engineer`) y no completó el resto antes de comitear.
 - **Disparador de pago:** antes de la siguiente edición de cualquiera de los 6 archivos (el hook lo forzará), o en un pase dedicado de `context-engineer`.
 - **Plan:** `context-engineer` reestructura cada uno de los 6 al formato canónico (`<DOC>-0/-FV/reglas/-EJ`, Slug ID, Tamaño) siguiendo `.claude/rules/agents-docs-format.md`; corrige el conteo en `plans/` y `sessions/` si se re-audita esa cifra.
-- **Estado:** Abierta.
+- **Estado:** 🟠 Parcialmente pagada — quedan **2 archivos / 4 violaciones duras**, no 6 / 12.
+
+  | Skill | Estado |
+  |---|---|
+  | `architect` | Cabecera canónica puesta. Falta su bloque `-FV` y purgar 5 marcas de bitácora. Sin violaciones duras. |
+  | `social-strategist` | ✅ Canonizado. Sus plantillas de salida dejan de ser encabezados que contaminaban el índice. |
+  | `bridge-engineer` | ✅ Canonizado. |
+  | `quant-engineer` | ✅ Canonizado. |
+  | `rust-engineer` | ❌ Intacto — 2 violaciones duras, 13 marcas de bitácora. |
+  | `tech-lead` | ❌ Intacto — 2 violaciones duras, 36 marcas, 85 489 caracteres. Su canonización incluye partirlo: el Pipeline de Ejecución y el Gate de Coherencia salen a knowledge docs propios (decisión del propietario). |
+
+- **Nota sobre el conteo:** la cifra original de esta ficha (6 archivos / 12 violaciones) ya era correcta al escribirse. La de `plans/` y `sessions/` ("9 skills / 18 violaciones") sigue siendo errónea y no se ha corregido.

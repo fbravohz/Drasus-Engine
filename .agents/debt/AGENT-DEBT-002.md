@@ -7,4 +7,4 @@
 - **Causa raíz:** el refactor que introdujo la suspensión de memoria (`memory-policy.md`) no barrió las referencias salientes hacia `.agents/memory/` en otros documentos del mismo commit.
 - **Disparador de pago:** inmediato — es contradicción de gobernanza vigente, no una condición futura. Se registra como ficha (en vez de corregirse en el acto) por decisión explícita del propietario de auditar primero y aplicar en un pase posterior.
 - **Plan:** quitar el puntero de `DEBT-MANAGEMENT-5` o marcarlo explícitamente como histórico/suspendido, igual que `MEMORY-POLICY-14` hace consigo mismo.
-- **Estado:** Abierta.
+- **Estado:** ✅ Pagada. El puntero de `DEBT-MANAGEMENT-5` quedó marcado explícitamente como histórico con lectura suspendida (`MEMORY-POLICY-14.3`), mismo tratamiento que `MEMORY-POLICY-14` se aplica a sí mismo. La contradicción de gobernanza ya no existe.

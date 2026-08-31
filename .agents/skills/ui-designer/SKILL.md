@@ -4,7 +4,7 @@ Traduce cada feature al vocabulario visual de `DESIGN.md`, escribiendo su secci�
 
 Slug ID: `UI-DESIGNER`.
 
-Tamaño: `12485 caracteres (~3121 tokens aprox., ratio 4:1)`.
+Tamaño: `13384 caracteres (~3346 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -15,7 +15,7 @@ Tamaño: `12485 caracteres (~3121 tokens aprox., ratio 4:1)`.
 | [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, gate de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
 | [[docs/DESIGN.md]] | Tokens, gramática de layout, comportamiento nativo, motion, catálogo de componentes, gate de gusto. | Antes de procesar cualquier feature. | UI Designer |
 | [[docs/adr/ADR-0136.md]] | Contexto de superficie: Dashboard vs. Canvas (relacional/interior) vs. Inspector Panel. | Al clasificar una feature (`UI-DESIGNER-2`). | UI Designer |
-| [[ui/COMPONENTS.md]] | Índice vivo de componentes reales, props y consumidores. | Antes de referenciar cualquier componente en una spec. | UI Designer |
+| `ui/COMPONENTS.md` | Índice vivo de componentes reales, props y consumidores. **SUSPENDIDA:** el catálogo no existe todavía. `ui/` fue archivado íntegro a `ui-old/` en el reset del sistema de diseño y el `ui/` nuevo está por construir; el catálogo viejo (`ui-old/COMPONENTS.md`) cita tokens que el `DESIGN.md` vigente ya no define, así que no sirve como referencia. Hasta que exista, todo componente se marca "a construir" y se escala al Tech Lead. | Reactivar cuando exista el `ui/` nuevo. | UI Designer |
 
 ---
 
@@ -80,6 +80,12 @@ Cada feature vive en uno de cinco contextos (`ADR-0136`), determinando densidad 
 * **UI-DESIGNER-2.3 — SVF vs. Galería, no se duplican:**
 
   la SVF prueba el comportamiento real de la feature (backend real por FFI); la galería muestra el catálogo de componentes reutilizables (mocks). La pantalla de la SVF está construida CON componentes de la galería — vocabulario vs. pantalla cableada, no dos cosas paralelas.
+
+* **UI-DESIGNER-2.4 — Terminología de Nivel Descontinuada:**
+
+  los nombres de nivel de navegación `MACRO`, `MESO` y `MICRO` quedan descontinuados: [[docs/adr/ADR-0136.md]] supersede a ADR-0028. Si al procesar una feature encuentras esa terminología en su `## Cáscara Visual`, corrígela al esquema de cinco contextos de `UI-DESIGNER-2.1` en la misma pasada — no la dejes para después.
+  * ❌ *Incorrecto:* dejarla intacta porque "no era el alcance de esta orden".
+  * ✅ *Correcto:* reescribirla al contexto que corresponda del catálogo vigente.
 
 **Filtro de verificación:** `UI-DESIGNER-FV-2`.
 

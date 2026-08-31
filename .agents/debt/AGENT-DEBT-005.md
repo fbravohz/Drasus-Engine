@@ -7,4 +7,4 @@
 - **Causa raíz:** el reset de `ui/` → `ui-old/` (Architect, 2026-08-14) no se propagó a estas referencias.
 - **Disparador de pago:** cuando exista un `ui/COMPONENTS.md` real en el `ui/` nuevo, o antes si algún agente intenta seguir esa lectura y falla.
 - **Plan:** declarar explícitamente en ambos skills que la ruta apunta al `ui/` nuevo aún por construir (nota transitoria), o apuntar temporalmente a `ui-old/COMPONENTS.md` si el catálogo viejo sigue siendo consultable como referencia histórica.
-- **Estado:** Abierta.
+- **Estado:** ✅ Pagada. Decisión del propietario: **marcar como suspendida**, no redirigir a `ui-old/`. La fila de Lecturas Obligatorias de ambos skills declara ahora que el catálogo no existe todavía, por qué el viejo no sirve de sustituto (cita tokens que el `DESIGN.md` vigente ya no define), y qué hacer mientras tanto: tratar todo componente como "a construir" y escalar al Tech Lead. Se reactiva cuando exista el `ui/` nuevo.
