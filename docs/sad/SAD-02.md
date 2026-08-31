@@ -59,13 +59,13 @@ El sistema está optimizado para hardware de alto rendimiento doméstico (Sovere
 | **Autoencoder** (10K trades) | CPU Rust puro (`candle`) | `candle` (GPU dinámica) | Red pequeña; no requiere libtorch |
 *Regla de Carga:* la ausencia de GPU jamás impide la ejecución; toda carga corre en CPU preservando el determinismo (ADR-0107).
 
-*   **Laboratorio de IA Soberano (Hybrid Genesis Engine):**
+*   **Laboratorio de IA Soberano (Hybrid Genesis Engine):** el conjunto de estrategias de búsqueda conectadas al **Puerto de Estrategia de Búsqueda (ADR-0113)**, no una lista cerrada de motores. Las que siguen son las implementaciones especificadas hoy; cualquier método que pase el gate de admisión de ADR-0113 entra como par, sin subordinarse a ellas.
     *   **HPC Monte Carlo Híbrido (CPU `ndarray`/Rayon):** Motor de simulación que ejecuta las permutaciones matriciales y la lógica de mutación dinámica en CPU multihilo; GPU opcional vía `candle` solo si un benchmark lo justifica (ADR-0061/0112).
-    *   **Sinergia GA-DRL:** El motor utiliza agentes de Aprendizaje por Refuerzo Profundo (PPO/DQN) para descubrir "Regímenes de Recompensa" y proponer una "Tesis de Alpha" (Macro-lógica). El Genetic Builder (NSGA-II) realiza el ajuste fino (Tuning) de umbrales y topologías de grafos para garantizar paridad operativa.
+    *   **Sinergia GA-DRL (composición, no jerarquía):** dos estrategias de búsqueda encadenadas sobre el mismo espacio — agentes de Aprendizaje por Refuerzo Profundo (PPO/DQN) descubren "Regímenes de Recompensa" y proponen una "Tesis de Alpha" (Macro-lógica), y el motor NSGA-II realiza el ajuste fino de umbrales y topologías. Es **una composición posible entre varias**; cómo se coordinan las estrategias entre sí es punto abierto declarado en ADR-0113.
     *   **Sovereign AI Wizard (Copilot):** Asistente **opcional** de LLM local soberano (vía `candle` embebido, nunca Ollama como requisito — ADR-0115) para la construcción guiada del Grafo de Lógica (Strategy AST); nunca para veredictos ni datos operativos. Actúa como fontanero determinista (ej. *"Crea filtro de spread"*) eliminando alucinaciones, y ofrece **Strategy Self-Explanation** para auditar en lenguaje humano los modelos complejos.
     *   **Descubrimiento No-Template:** Descubrimiento de ineficiencias matemáticas sin hipótesis humanas previas, ensamblando bloques funcionales o aprendiendo directamente de la serie temporal.
     *   **Compilador AST de Lógica Procedural:** Conversión automática de grafos lógicos en Árboles de Sintaxis Abstracta (AST) optimizados para ejecución vectorizada en CPU (Rust SIMD); aceleración GPU opcional vía `candle` (ADR-0112), nunca requisito.
-    *   **Minería Simbólica (Rust nativo, ADR-0113):** Descubrimiento de ecuaciones matemáticas Alpha ($Alpha = f(x)$) como **modo del motor genético NSGA-II sobre el AST** (no PySR), priorizando la transparencia sobre "cajas negras". La minería simbólica de forma libre se difiere a moonshot (`egg`).
+    *   **Minería Simbólica (Rust nativo, ADR-0113):** Descubrimiento de ecuaciones matemáticas Alpha ($Alpha = f(x)$) como **implementación par del Puerto de Búsqueda sobre el AST** (no PySR), priorizando la transparencia sobre "cajas negras". Comparte maquinaria con el motor evolutivo sin subordinarse a él.
     *   **Fit-to-Portfolio Search:** Búsqueda proactiva que inyecta presión evolutiva para castigar correlaciones > 0.3 con el portafolio actual durante la fase generativa, forzando diversificación estructural temprana.
     *   **NSGA-II (Rust Native):** Descubrimiento multiobjetivo (Sharpe vs DD) para optimización de Pareto.
     *   **Motor de Lógica Difusa:** Sustitución de reglas binarias por evaluación probabilística continua (SignalConfidence 0.0-1.0) para mitigar el ruido (Whipsaws).
@@ -185,7 +185,7 @@ Para garantizar escalabilidad y eficiencia extrema, el módulo `validate` no uti
 
 #### Modelo de Scoring Ponderado de Robustez (Anti-Parálisis) y Robustness Verdict Engine
 
-El sistema reemplaza el enfoque binario de "Muerte Súbita" (descartar estrategias por fallar un solo test) por un **Scoring Ponderado (0-100)** que evita la parálisis por análisis. El score determina también el dimensionamiento de posición inicial.
+El sistema reemplaza el enfoque binario de "Descarte Inmediato" (descartar estrategias por fallar un solo test) por un **Scoring Ponderado (0-100)** que evita la parálisis por análisis. El score determina también el dimensionamiento de posición inicial.
 
 **Matriz de Tests y Pesos:**
 
@@ -224,7 +224,7 @@ Infraestructura de datos embebida y de alto rendimiento que elimina la necesidad
 #### El Databank — Data Lake de R&D (Alta Eficiencia)
 El sistema divide radicalmente el entorno de Investigación y Desarrollo (R&D) del entorno de Producción:
 *   **Entorno R&D (Efímero):** Las estrategias mutadas (millones) no se guardan como JSON AST masivos. Viven exclusivamente en RAM durante los milisegundos del backtest. Una vez finalizado, se guardan en archivos Parquet (Catálogo y Trades) únicamente las métricas y la "Semilla de ADN" paramétrica de la estrategia.
-*   **Entorno Producción (Hall de la Fama):** SQLite se reserva exclusivamente para almacenar estrategias promovidas, que son rehidratadas bajo demanda desde su Semilla de ADN hacia el JSON AST completo mediante el Orquestador Rust. Esto incluye la columna `node_preview_cache` que persiste un JSON blob con las curvas de equidad reducidas y métricas resumidas (Sharpe, Retornos) de las estrategias/nodos del editor visual para un acceso sub-milisegundo.
+*   **Entorno Producción (Banco de Estrategias Promovidas):** SQLite se reserva exclusivamente para almacenar estrategias promovidas, que son rehidratadas bajo demanda desde su Semilla de ADN hacia el JSON AST completo mediante el Orquestador Rust. Esto incluye la columna `node_preview_cache` que persiste un JSON blob con las curvas de equidad reducidas y métricas resumidas (Sharpe, Retornos) de las estrategias/nodos del editor visual para un acceso sub-milisegundo.
 *   **Embudos con Memoria (Derived Databanks):** El pipeline evolutivo crea catálogos derivados en Parquet sin destruir los anteriores (`Databank_A` → `Databank_B`), posibilitando la trazabilidad masiva vía DuckDB y WebSockets. En consultas analíticas temporales, DuckDB aprovecha la indexación Hive-style del data lake en archivos Parquet particionados para realizar poda de particiones (partition pruning) al vuelo, cargando selectivamente los trades de periodos específicos.
 
 #### Versionado Git-Like de Estrategias (Immutable Strategy IDs)

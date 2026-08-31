@@ -68,7 +68,7 @@ Verificar que el Filtro de Relevancia por Perfil (ADR-0020) se aplicó bien en l
 Respuesta: **SÍ, hay candidatos transversales que probablemente deban entrar al catálogo** vía el Mecanismo de Mantenimiento del ADR-0020 (requiere justificar que ≥3 features lo piden; lo valida el Architect, no se inventa a la ligera):
 | Campo detectado | Aparece en | Propuesta |
 |---|---|---|
-| `compliance_status_id` | toxicity-purifier, copy-trading-engine, prop-firm-grader, multiplatform-execution-bridge | **Candidato a AÑADIR** (Grupo V Forense o II) — transversal a cumplimiento |
+| `compliance_status_id` | toxicity-purifier, copy-trading-engine, prop-firm-grader, multiplatform-execution-bridge | **Candidato a AÑADIR** (Grupo V — Auditoría & Ejecución, subset "Cumplimiento", ya resuelto en ADR-0020) |
 | `portfolio_container_id` | fit-to-portfolio-search, cross-market-validation, federated-portfolio | **Candidato a AÑADIR** (Grupo II o IV) — agrupador de portafolio |
 | `parent_id` / `parent_strategy_id` / `parent_test_id` | strategy-versioning, incremental-test-engine, databank-lake | **Candidato a AÑADIR** un campo de linaje jerárquico (Grupo III) |
 | `signature_hash` | notification, secure-updater | Evaluar: ¿mapear a `audit_hash` o nuevo (integridad cripto)? |

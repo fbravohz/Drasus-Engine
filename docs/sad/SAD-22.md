@@ -77,7 +77,7 @@ Undécimo cimiento: promueve el moonshot [`instance-continuity`](../features/ins
 1. **Respaldo cifrado client-side** de la base de datos local hacia el almacén de objetos del proveedor — el proveedor jamás puede leerlo (ADR-0093).
 2. **Maestro itinerante (relevo de custodia):** la misma cuenta maestra opera alternadamente desde varias máquinas activadas, cediendo/reclamando la titularidad de la cadena de auditoría al cerrar/abrir sesión — nunca dos máquinas escriben la misma cadena a la vez. Si la máquina anterior murió, la titularidad se libera desde el panel de cuenta central (mismo flujo self-service que liberar un cupo de activación en `licensing-system`).
 
-Motivo de urgencia: el pilar #10 ya genera datos irremplazables (firma de atestación soberana); sin este cimiento, un disco muerto en tier Sovereign los pierde para siempre.
+Motivo de urgencia: el pilar #10 ya genera datos irremplazables (firma de atestación soberana); sin este cimiento, un disco averiado en tier Sovereign los pierde para siempre.
 
 ### 22.8 Jerarquía Organizacional de Cuentas Maestras (cimiento #12, ADR-0147)
 

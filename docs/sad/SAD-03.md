@@ -20,7 +20,7 @@
 | **ADR-0029** | Patrón Todo en Uno (Rust + Flutter FFI) | Aplicación compilada nativamente como un único ejecutable, eliminando latencia FFI/gRPC/DOM. |
 | **ADR-0086** | Minería Descentralizada (La Colmena) | Arquitectura cliente-servidor para crowdsourcing de cómputo GPU/CPU de exploración de estrategias. |
 | **ADR-0087** | El Guardián & El Centinela | Validador de riesgo pre-trade global (<1ms) y Shadow Watchdog e interruptor automático de emergencia en Rust. |
-| **ADR-0088** | Protocolo de Incubación & Cono de Silencio | Cuarentena acelerada de 7 días con Eutanasia Predictiva (MAE), bandas de confianza Monte Carlo y Broken Strategy Flag. |
+| **ADR-0088** | Protocolo de Incubación & Cono de Silencio | Cuarentena acelerada de 7 días con Retiro Anticipado (MAE), bandas de confianza Monte Carlo y Broken Strategy Flag. |
 | **ADR-0089** | Optimización & Rebalanceo de Portfolio | Asignación adaptativa HRP/Markowitz, Hedging Cointegrativo Tick-by-Tick (+0.85), Router de Liquidez y Auto-Rebalancing Daemon. |
 
 

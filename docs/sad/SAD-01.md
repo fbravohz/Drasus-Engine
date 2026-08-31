@@ -13,7 +13,7 @@ La generación de Alpha es un problema **combinatorialmente explosivo** y plagad
 
 #### Propuesta de Valor
 Drasus Engine es **infraestructura soberana** para el descubrimiento automático de Alpha:
-1. **Descubrimiento:** Sin hipótesis humanas (NSGA-II + regresión simbólica nativa sobre el AST, ADR-0113).
+1. **Descubrimiento:** Sin hipótesis humanas, por un **puerto abierto de estrategias de búsqueda** (ADR-0113) cuyas primeras implementaciones son NSGA-II y la regresión simbólica nativa sobre el AST; cualquier método que pase el gate de admisión entra como par.
 2. **Validación:** Rigor institucional (WFA, Monte Carlo, CPCV).
 3. **Ejecución:** Protección multinivel (10 risk steps, kill switch < 5s).
 4. **Aprendizaje:** Cierre de ciclo causal (Regime Aware + Feedback).

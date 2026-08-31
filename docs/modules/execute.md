@@ -606,7 +606,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 
 **Consumido por:**
 - [`withdraw`](../modules/withdraw.md) — para la monitorización de degradación en tiempo real.
-- [`feedback`](../modules/feedback.md) — para la autopsia de ejecuciones y latencias.
+- [`feedback`](../modules/feedback.md) — para el análisis de causa raíz de ejecuciones y latencias.
 ---
 
 ## Operación Paralela

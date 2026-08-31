@@ -10,7 +10,7 @@
 
 El módulo de validación es el entorno de certificación de robustez de las estrategias. Una estrategia candidata llega aquí y se somete a un **guantelete de 5 tests estadísticos** con pesos diferenciados. El objetivo es asegurarse de que la estrategia no solo funcionó bien en el pasado por suerte, sino que tiene robustez real y puede funcionar con datos nuevos.
 
-El enfoque es un **Scoring Ponderado (0-100)** que reemplaza la vieja "Muerte Súbita" binaria. Los 5 tests reciben pesos configurables (WFA 30%, MC Trades 25%, MC Tóxico 20%, CPCV/PBO 15%, Ockham 10%) y se consolidan en un score final. Estrategias con score > 75 son "Aprobables".
+El enfoque es un **Scoring Ponderado (0-100)** que reemplaza la vieja "Descarte Inmediato" binaria. Los 5 tests reciben pesos configurables (WFA 30%, MC Trades 25%, MC Tóxico 20%, CPCV/PBO 15%, Ockham 10%) y se consolidan en un score final. Estrategias con score > 75 son "Aprobables".
 
 Un **LLM local** genera un veredicto en lenguaje natural, identifica puntos de ruptura y explica el score.
 
@@ -263,7 +263,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
     * **HPC Execution:** Coordina la permutación masiva y las 10 perturbaciones dinámicas en **CPU (`ndarray` + Rust SIMD/Rayon)** por defecto; GPU vía `candle` solo como acelerador opcional si un benchmark lo justifica (ADR-0061/0112).
     * **CPCV Protocol:** Invoca al [`cpcv-analyzer`](../features/cpcv-analyzer.md) para particionar la historia en miles de caminos no lineales, aplicando **Purging** y **Embargo** (ADR-0063).
     * **Decagonal Protocol:** Asegura la aplicación de las 10 transformaciones obligatorias (Trade Reordering, Shock Injection 3.5x ATR, Outlier Removal, etc.).
-    * **Toxic Funnel:** Inyecta las reglas de "Muerte Súbita" intradiaria (Drawdown > 4.5%) durante la corrida de simulación para descartar cohortes inoperables.
+    * **Toxic Funnel:** Inyecta las reglas de "Descarte Inmediato" intradiaria (Drawdown > 4.5%) durante la corrida de simulación para descartar cohortes inoperables.
     * Cada test produce un score individual normalizado (0-100) que se pasa al [`robustness-score-aggregator`](../features/robustness-score-aggregator.md).
 *   **Entrada:** `trade_fill_log`.
 *   **Salida:** `individual_test_scores` (5 scores 0-100), `mc_distribution_curves`.

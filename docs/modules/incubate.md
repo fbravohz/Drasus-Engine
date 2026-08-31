@@ -172,7 +172,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 ### **TTR-004: Orquestación de Gestión de Sesión (Incubation Manager)**
 *   **Descripción:** Utiliza [`incubation-manager`](../features/incubation-manager.md) para controlar la persistencia, ciclo de vida dual (Legacy vs Quarantine Sandbox), cono de silencio y interruptores automáticos.
 *   **Reglas de Orquestación:**
-    * El orquestador evalúa barra a barra el desvío MAE en el Sandbox de Cuarentena (7 días). Dispara eutanasia predictiva si excede el umbral (+15% MAE flotante).
+    * El orquestador evalúa barra a barra el desvío MAE en el Sandbox de Cuarentena (7 días). Dispara retiro anticipado si excede el umbral (+15% MAE flotante).
     * Dibuja y proyecta las bandas estadísticas (1, 2, 3 sigmas) basadas en Monte Carlo en caliente.
     * Si la equidad cruza el límite inferior (-1 sigma), marca de forma inmediata la estrategia con la Broken Strategy Flag, cerrando posiciones virtuales/reales vía [`order-fsm`](../features/order-fsm.md) en <1ms.
     * Asegura que los datos de la sesión sobrevivan a reinicios del sistema y emite eventos inmutables de cambio de estado atados a un identificador único (ADR-0020).

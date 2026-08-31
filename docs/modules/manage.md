@@ -201,7 +201,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Entrada:** `optimal_weights_vector`, `active_strategies`.
 *   **Salida:** `portfolio_snapshot_id`.
 *   **Precondición:** TTR-001 y TTR-002 exitosos.
-*   **Postcondición:** Configuración del portafolio recuperable para futuras autopsias.
+*   **Postcondición:** Configuración del portafolio recuperable para futuros análisis de causa raíz.
 
 ### **TTR-005: Orquestación de Daemon de Rebalanceo Automático (Portfolio Optimizer)**
 *   **Descripción:** Invoca a [`portfolio-optimizer`](../features/portfolio-optimizer.md) para coordinar el Auto-Rebalancing Daemon gobernado por triggers.

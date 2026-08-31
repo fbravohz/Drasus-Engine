@@ -68,7 +68,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 |---|---|---|
 | TTR-001 | **EPIC-7** | Reconciliación de operativa (Trade Reconciler) |
 | TTR-002 | **EPIC-7** | Veredicto de continuidad (Pardo Comparison) |
-| TTR-003 | **EPIC-7** | Autopsia de anomalías (Anomaly Detector) |
+| TTR-003 | **EPIC-7** | Análisis de Causa Raíz de anomalías (Anomaly Detector) |
 | TTR-004 | **EPIC-7** | Auditoría masiva (Queryable Audit Shell) |
 | TTR-005 | **EPIC-7** | Atribución (Factor Decomposition) |
 | TTR-006 | **EPIC-7** | Rastreo (Equity Curve Tracker) |
@@ -128,7 +128,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 - **[`notification`](../features/notification.md)** — Emisión de recomendaciones y reportes EOD.
 - **[`run-replay`](../features/run-replay.md)** — Repetición de una corrida pasada para análisis de fallos.
 - **[`duckdb-sql-engine`](../features/duckdb-sql-engine.md)** — Reconciliación masiva Out-of-Core de historiales operativos.
-- **[`audit-log`](../features/audit-log.md)** — Registro inmutable de autopsias de sesión.
+- **[`audit-log`](../features/audit-log.md)** — Registro inmutable de análisis de causa raíz de sesión.
 - **[`robust-reporting`](../features/robust-reporting.md)** — Generación de reportes detallados JSON/HTML enriquecidos.
 - **[`kinetic-micro-management`](../features/kinetic-micro-management.md)** — Módulo defensivo hostil de scale out y z-score trailing.
 - **[`autopilot-metrics-provider`](../features/autopilot-metrics-provider.md)** — Métricas dinámicas en tiempo real del Autopilot.
@@ -161,7 +161,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Precondición:** Suficiente historial operativo (> 100 trades o > 30 días).
 *   **Postcondición:** Marcado del nodo de versión como `DEPRECATED` en el DAG si falla.
 
-### **TTR-003: Orquestación de Autopsia de Anomalías (Anomaly Detector)**
+### **TTR-003: Orquestación del Análisis de Causa Raíz de Anomalías (Anomaly Detector)**
 *   **Descripción:** Invoca a [`anomaly-detector`](../features/anomaly-detector.md) para identificar fallos estructurales.
 *   **Reglas de Orquestación:**
     * Traducir anomalías detectadas en `negative_constraints` para el módulo `generate`.
@@ -218,7 +218,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** Alerta de concentración.
 
 ### **TTR-009: Orquestación de Avisos (Notification)**
-*   **Descripción:** Invoca a [`notification`](../features/notification.md) al completar la autopsia.
+*   **Descripción:** Invoca a [`notification`](../features/notification.md) al completar el análisis de causa raíz.
 *   **Reglas de Orquestación:**
     *   Envía resumen de KPIs y veredicto de continuidad.
 *   **Entrada:** `daily_report`.
@@ -245,12 +245,12 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** Conformidad regulatoria.
 
 ### **TTR-012: Orquestación de Reporte Robusto (Robust Reporting)**
-*   **Descripción:** Invoca a [`robust-reporting`](../features/robust-reporting.md) para generar manifiestos estáticos del veredicto final o autopsias de sesión.
+*   **Descripción:** Invoca a [`robust-reporting`](../features/robust-reporting.md) para generar manifiestos estáticos del veredicto final o análisis de causa raíz de sesión.
 *   **Reglas de Orquestación:**
     *   El reporte incluye el `audit_hash` y se comprime como evidencia histórica soberana.
 *   **Entrada:** `continuity_verdict`, `anomaly_report`, `trade_history`.
 *   **Salida:** `static_html_report`, `json_metadata_export`.
-*   **Precondición:** Autopsia completada.
+*   **Precondición:** Análisis de causa raíz completado.
 *   **Postcondición:** Reporte estático persistido en disco y vinculado al `version_node_id`.
 
 ### **TTR-013: Orquestación de Monitoreo Cinético**
@@ -285,21 +285,21 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Descripción:** Invoca a [`interactive-stress-lab`](../features/interactive-stress-lab.md) para reconstruir qué nivel de fricción (slippage/spread) explica una degradación detectada en la operativa real.
 *   **Reglas de Orquestación:**
     *   Carga la curva esperada del backtest y permite mover los deslizadores hasta empatar la curva real degradada.
-    *   El vector de deslizadores que reproduce la degradación se registra como evidencia de la autopsia.
+    *   El vector de deslizadores que reproduce la degradación se registra como evidencia del análisis de causa raíz.
 *   **Entrada:** `expected_equity_curve`, `live_degraded_curve`.
-*   **Salida:** `friction_explaining_vector`, `autopsy_snapshot`.
+*   **Salida:** `friction_explaining_vector`, `root_cause_snapshot`.
 *   **Precondición:** Degradación detectada (TTR-002/TTR-003).
-*   **Postcondición:** Evidencia táctil de fricción adjunta a la autopsia de sesión.
+*   **Postcondición:** Evidencia táctil de fricción adjunta al análisis de causa raíz de sesión.
 
 ### **TTR-017: Orquestación de Diagnóstico de Pureza (Alpha Purity Analyzer)**
 *   **Descripción:** Invoca a [`alpha-purity-analyzer`](../features/alpha-purity-analyzer.md) para diagnosticar la causa de una degradación detectada en vivo.
 *   **Reglas de Orquestación:**
-    *   Distingue si la caída se debe a muerte del Alpha (la lógica perdió eficacia) o al apagado del Beta (el mercado/régimen dejó de empujar).
+    *   Distingue si la caída se debe a agotamiento del Alpha (la lógica perdió eficacia) o al apagado del Beta (el mercado/régimen dejó de empujar).
     *   El diagnóstico alimenta el veredicto de continuidad/retiro (TTR-002).
 *   **Entrada:** `live_returns`, `benchmark_series`.
 *   **Salida:** `alpha_decay_diagnosis`.
 *   **Precondición:** Degradación detectada (TTR-002/TTR-003).
-*   **Postcondición:** Causa raíz (Alpha vs Beta) registrada en la autopsia de sesión.
+*   **Postcondición:** Causa raíz (Alpha vs Beta) registrada en el análisis de causa raíz de sesión.
 
 ### **TTR-018: Orquestación de Acceso Agéntico vía MCP (Cabina Dual)**
 *   **Descripción:** Invoca a [`agentic-mcp-gateway`](../features/agentic-mcp-gateway.md) para evaluar el permiso antes de aceptar una llamada proveniente del canal MCP sobre la `public_interface` de este módulo.

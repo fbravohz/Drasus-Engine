@@ -178,7 +178,7 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** Base de datos de "fallos" alimentada.
 
 ### **TTR-006: Orquestación de Detección Macro (HMM Regime Detection)**
-*   **Descripción:** Invoca a [`hmm-regime-detection`](../features/hmm-regime-detection.md) en el análisis post-mortem.
+*   **Descripción:** Invoca a [`hmm-regime-detection`](../features/hmm-regime-detection.md) en el análisis de cierre.
 *   **Reglas de Orquestación:**
     *   Si el retiro fue forzado por el régimen, registra cuál fue el régimen que "mató" la estrategia.
 *   **Entrada:** `current_market_regime`.
@@ -196,11 +196,11 @@ Las tablas propias de este módulo (una por feature/TTR, en sus propias migracio
 *   **Postcondición:** Detención sangría global.
 
 ### **TTR-008: Orquestación de Alerta Terminal (Notification)**
-*   **Descripción:** Invoca a [`notification`](../features/notification.md) informando el funeral de la estrategia.
+*   **Descripción:** Invoca a [`notification`](../features/notification.md) informando el retiro de la estrategia.
 *   **Reglas de Orquestación:**
-    *   Envia reporte del PnL total generado y razón de muerte.
+    *   Envia reporte del PnL total generado y razón de retiro.
 *   **Entrada:** `retirement_reason`, `terminal_equity_snapshot`.
-*   **Salida:** `discord_funeral_alert`.
+*   **Salida:** `discord_retirement_alert`.
 *   **Precondición:** Retiro confirmado.
 *   **Postcondición:** Cierre del ciclo comunicacional.
 

@@ -15,7 +15,7 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 2. generate: Generar candidatos [Proceso batch offline]
    ├─► Features consumidas: [nsga2-optimizer], [hmm-regime-detection], [zero-crossing-filter], [strategy-ensemble], [audit-log]
    ├─► Lógica pura: Evolución multi-objetivo NSGA-II
-   ├─► Lógica pura: Descubrimiento de ecuaciones por regresión simbólica nativa (modo NSGA-II, ADR-0113)
+   ├─► Lógica pura: Descubrimiento de ecuaciones por regresión simbólica nativa (par del Puerto de Búsqueda, ADR-0113)
    ├─► Lógica pura: Filtrado ortogonal de señales (independent de factores)
    ├─► Síntesis: Ensemble (NSGA + simbólica nativa + HMM) → Estrategias híbridas
    └─► Acceso datos: Guardar candidatos → estado = Pendiente
@@ -33,7 +33,7 @@ FLUJO DE EJECUCIÓN DURANTE EL DÍA:
 
 4. incubate: Ejecución paper trading [Quarantine 7 Días, Extended 21 Días o Legacy 3-6 meses — ADR-0088]
    ├─► Features consumidas: [paper-trader], [incubation-manager], [backtest-engine], [slippage-models], [equity-curve-tracker], [institutional-metrics], [trade-reconciler], [order-fsm], [audit-log]
-   ├─► Simulación forward: Trading simulado con spreads reales (Paper Trading tradicional o Cuarentena Acelerada de 7 Días con Eutanasia Predictiva por MAE flotante).
+   ├─► Simulación forward: Trading simulado con spreads reales (Paper Trading tradicional o Cuarentena Acelerada de 7 Días con Retiro Anticipado por MAE flotante).
    ├─► Cono de Silencio: Proyección de bandas de confianza Monte Carlo (1, 2 y 3 sigmas) para auditar la equidad en caliente.
    ├─► Broken Strategy Flag: Kill Switch automático (pausa, liquidación y reasignación) si la equidad cruza el límite inferior de -1 sigma.
    ├─► Tracking & Eficiencias: Medición de Return Efficiency y Drawdown Efficiency vs backtest.
