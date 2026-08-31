@@ -4,7 +4,7 @@ Molde canónico para crear o tocar una tabla append-only (registro inmutable con
 
 Slug ID: `LEDGER-PATTERN`.
 
-Tamaño: `7703 caracteres (~1926 tokens aprox., ratio 4:1)`.
+Tamaño: `7883 caracteres (~1971 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -72,7 +72,7 @@ Un ledger cuya inmutabilidad depende de que nadie escriba el `UPDATE` equivocado
 
 * **LEDGER-PATTERN-3.1 — Sin Candados en Base de Datos No Es Append-Only:**
 
-  la inmutabilidad se garantiza con constraints/triggers en la propia base de datos, nunca solo con la disciplina de quien escribe el código de aplicación. Las migraciones `0006` (`sovereign-data-fetcher`) y `0021` (`hybrid-data-transformer`) nacieron sin candados: la `0021` ya los tiene corregidos; la `0006` sigue pendiente (`DEBT-032`).
+  la inmutabilidad se garantiza con constraints/triggers en la propia base de datos, nunca solo con la disciplina de quien escribe el código de aplicación. Las migraciones `0006` (`sovereign-data-fetcher`) y `0021` (`hybrid-data-transformer`) nacieron sin candados: la `0021` ya los tiene corregidos; la `0006` sigue pendiente (`DEBT-032`). Los ledgers posteriores — migraciones `0010`, `0014`, `0015`, `0016`, `0018`, `0019` y `0020` — ya corrigieron este hueco por su cuenta antes de que existiera este molde canónico.
 
 **Filtro de verificación:** `LEDGER-PATTERN-FV-3`.
 

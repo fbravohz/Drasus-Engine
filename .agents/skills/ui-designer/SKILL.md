@@ -4,7 +4,7 @@ Traduce cada feature al vocabulario visual de `DESIGN.md`, escribiendo su secci�
 
 Slug ID: `UI-DESIGNER`.
 
-Tamaño: `11586 caracteres (~2896 tokens aprox., ratio 4:1)`.
+Tamaño: `12485 caracteres (~3121 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -161,6 +161,7 @@ Cada feature vive en uno de cinco contextos (`ADR-0136`), determinando densidad 
 
   - Todo token usado existe en `DESIGN.md` — cero hex inventado.
   - Todo componente referenciado existe en [[ui/COMPONENTS.md]] como widget funcional (con callback/controller real, no solo dibujado). Si es showcase-only o no existe, márcalo explícito como "componente a construir/extender" y escala al Tech Lead — catálogo ≠ librería usable.
+  - Tus "Notas de implementación" calzan con el contrato FFI real: si la feature ya tiene su binding generado (bajo el árbol de bindings Rust↔Dart — histórico en `ui-old/lib/src/rust/api/<feature>.dart` mientras dure la migración de `ui/`), léelo antes de prometer polling (`Timer.periodic`) o campos que el DTO no expone — la nota describe el patrón que el binding real permite (`Future`/`await` si esa es la firma, no polling).
   - Cada color de vitalidad tiene un estado de negocio asociado — sin color decorativo.
   - La densidad coincide con el contexto de superficie (`UI-DESIGNER-2`).
   - El ciclo de estados (`DESIGN.md §7`) está cubierto o cada ausencia está justificada.
@@ -198,7 +199,7 @@ Cada feature vive en uno de cinco contextos (`ADR-0136`), determinando densidad 
 
 * **UI-DESIGNER-7.3 — Autoridad Sobre `DESIGN.md`:**
 
-  editas `DESIGN.md` (edición quirúrgica, nunca reescritura de sección entera) cuando: corriges una violación documentada en el catálogo; añades un token usado en una feature pero ausente del documento (si es coherente con el sistema; si es concepto nuevo, escala al Architect primero); añades la fila de un componente nuevo al catálogo; corriges una discrepancia entre la spec y la implementación real. **Nunca modificas** los valores fundamentales de `§1–§3` sin visto bueno del Architect, ni ningún ADR referenciado.
+  editas `DESIGN.md` (edición quirúrgica, nunca reescritura de sección entera) cuando: corriges una violación documentada en el catálogo; añades un token usado en una feature pero ausente del documento (si es coherente con el sistema; si es concepto nuevo, escala al Architect primero); añades la fila de un componente nuevo al catálogo; corriges una discrepancia entre la spec y la implementación real. **Nunca modificas** los valores fundamentales de `§1–§3` — solo el Architect define nuevos tokens fundamentales —, ni ningún ADR referenciado, ni decisiones arquitectónicas (qué hace la feature, cómo fluyen los datos, estructura de BD).
 
 * **UI-DESIGNER-7.4 — No Decides Arquitectura:**
 
@@ -218,8 +219,11 @@ Cada feature vive en uno de cinco contextos (`ADR-0136`), determinando densidad 
   |---|---|
   | `ADR-0097` | Prohibido WebGL/WebView/DOM/HTML/CSS/SVG. Todo render `CustomPainter`/Impeller. |
   | `ADR-0106` | Cero cálculo analítico en Flutter; throttling ≤100ms; Impeller ≥60FPS. |
+  | [[docs/adr/ADR-0116.md]] | Downsampling obligatorio en backend antes de cruzar la frontera FFI. |
   | `ADR-0117` | Thin Shell bajo Techo Fijo: una pestaña/sección máxima por feature. |
   | `ADR-0136` | Canvas unificado: Dashboard + Canvas con zoom de dos estados. |
+  | [[docs/adr/ADR-0038.md]] | Sin alias informales de contexto de UI (nombres de nivel descontinuados incluidos) — también aplica bajo ADR-0136. |
+  | [[docs/adr/ADR-0131.md]] | Flutter/Impeller como único frontend. Sin Qt, iced, slint, egui. |
   | `ADR-0138` | Tokens en `ThemeExtension`; componentes funcionales neutrales, ≥2 consumidores. |
   | `ADR-0139` | Regla general de reutilización — no construyas especulativo. |
 

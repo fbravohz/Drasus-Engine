@@ -4,7 +4,15 @@ El propietario del proyecto debe poder leer cualquier archivo de código y enten
 
 Slug ID: `COMMENTING-POLICY`.
 
-Tamaño: `12900 caracteres (~3225 tokens aprox., ratio 4:1)`.
+Tamaño: `13187 caracteres (~3297 tokens aprox., ratio 4:1)`.
+
+---
+
+## COMMENTING-POLICY-0 — Lecturas Obligatorias
+
+| Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
+|---|---|---|---|
+| [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 
 ---
 
@@ -28,7 +36,7 @@ De ser satisfactoria cada validación de la lista, declara `COMMENTING-POLICY - 
 
 ## COMMENTING-POLICY-1 — Declaración de Lectura
 
-* **COMMENTING-POLICY-1 — Declaración de Lectura:** declara explícitamente que leíste este archivo antes de aplicar sus reglas a la tarea en curso.
+* **COMMENTING-POLICY-1.1 — Declaración de Lectura:** declara explícitamente que leíste este archivo antes de aplicar sus reglas a la tarea en curso.
 
 **Filtro de verificación:** `COMMENTING-POLICY-FV-1`.
 
@@ -137,7 +145,7 @@ El comentario describe el resultado de la operación y los casos que maneja, no 
 
   una referencia a un documento externo (ADR, Story, ticket) siempre va acompañada de la explicación inline — el ID solo, sin contexto, no le sirve a quien lee el código sin abrir otro documento.
   * ❌ *Incorrecto:* `// STORY-009` — `// ADR-0003`
-  * ✅ *Correcto:* `// Auditoría de permisos implementada en STORY-009 (ver [[docs/execution/STORY-009.md]])`
+  * ✅ *Correcto:* `// Auditoría de permisos implementada en STORY-009 (ver [[docs/execution/STORY-009-cli-app.md]])`
 
 * **COMMENTING-POLICY-5.3 — Prohibido Abstracciones Sin Anclaje:**
 

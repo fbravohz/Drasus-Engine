@@ -4,7 +4,7 @@ Qué gate de compilación exige cada API específica de plataforma, y cuáles so
 
 Slug ID: `CROSS-PLATFORM-RUST`.
 
-Tamaño: `4614 caracteres (~1154 tokens aprox., ratio 4:1)`.
+Tamaño: `4630 caracteres (~1158 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -30,7 +30,7 @@ De ser satisfactoria cada validación de la lista, declara `CROSS-PLATFORM-RUST 
 
 ## CROSS-PLATFORM-RUST-1 — Toda API de Plataforma Lleva Su Gate
 
-El despliegue es Linux (ADR-0016), pero el desarrollo también ocurre en Windows. El workspace **debe compilar en ambos**. No es opcional, y el compilador de una sola plataforma no lo detecta.
+El despliegue es Linux ([[docs/adr/ADR-0016.md]]), pero el desarrollo también ocurre en Windows. El workspace **debe compilar en ambos**. No es opcional, y el compilador de una sola plataforma no lo detecta.
 
 **Aplica a:** Rust-Engineer al escribir, y QA al auditar cualquier crate del workspace.
 

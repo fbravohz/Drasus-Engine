@@ -1,10 +1,10 @@
 # Modelo de Verificación de UI — SVF y Galería
 
-Cómo se estratifican la Superficie de Verificación Funcional (SVF) y la Galería de componentes, y el Contrato de Integración UI (ADR-0117) que clasifica cada feature entre Superficie propia y plomería.
+Cómo se estratifican la Superficie de Verificación Funcional (SVF) y la Galería de componentes, y el Contrato de Integración UI ([[docs/adr/ADR-0117.md]]) que clasifica cada feature entre Superficie propia y plomería.
 
 Slug ID: `UI-VERIFICATION-MODEL`.
 
-Tamaño: `9311 caracteres (~2328 tokens aprox., ratio 4:1)`.
+Tamaño: `9423 caracteres (~2356 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -55,7 +55,7 @@ La SVF y la Galería resuelven preguntas distintas sobre la misma UI — no son 
 
 * **UI-VERIFICATION-MODEL-1.4 — Ninguna de las Dos Depende de Adaptadores Diferidos:**
 
-  ni la SVF ni los mocks de Galería dependen de adaptadores de red diferidos (p. ej. la Cabina de Mando del proveedor, ADR-0143). Se diseñan y corren contra el backend local real. "El adaptador es futuro" nunca es excusa para diferir la SVF o la Galería — la SVF prueba el backend local que sí existe hoy.
+  ni la SVF ni los mocks de Galería dependen de adaptadores de red diferidos (p. ej. la Cabina de Mando del proveedor, [[docs/adr/ADR-0143.md]]). Se diseñan y corren contra el backend local real. "El adaptador es futuro" nunca es excusa para diferir la SVF o la Galería — la SVF prueba el backend local que sí existe hoy.
 
 **Filtro de verificación:** `UI-VERIFICATION-MODEL-FV-1`.
 
@@ -69,7 +69,7 @@ Toda feature declara en su spec ([[docs/templates/FEATURE.md]] → "Dependencias
 
 * **UI-VERIFICATION-MODEL-2.1 — Superficie Propia:**
 
-  la feature tiene pantalla → activa Etapas 0.5/3/4 (UI-Designer + Bridge + Flutter). Todo feature-node con Superficie propia abre un **Inspector Panel** lateral con su UI (ADR-0136).
+  la feature tiene pantalla → activa Etapas 0.5/3/4 (UI-Designer + Bridge + Flutter). Todo feature-node con Superficie propia abre un **Inspector Panel** lateral con su UI ([[docs/adr/ADR-0136.md]]).
 
 * **UI-VERIFICATION-MODEL-2.2 — Ventana de Verificación (Plomería):**
 
@@ -77,7 +77,7 @@ Toda feature declara en su spec ([[docs/templates/FEATURE.md]] → "Dependencias
 
 * **UI-VERIFICATION-MODEL-2.3 — Test de Clasificación:**
 
-  una feature es plomería (Ventana de Verificación) **solo si** NO produce un tipo de dominio del catálogo ADR-0137 **Y** NO toma configuración del usuario — son los tipos de infraestructura sin puerto de dominio (`clock`, `audit-log`, `telemetry`, etc., ADR-0137 §plomería). Si **produce un tipo de dominio** (`Tick`, `Bars`, `Signal`, `BacktestResult`…) y/o **recibe parámetros del usuario** (símbolo, rango, timeframe, broker), es un nodo del canvas con **Superficie propia = Inspector Panel** — activa Etapas 0.5/3/4, aunque su motor de cálculo ya esté completo en backend.
+  una feature es plomería (Ventana de Verificación) **solo si** NO produce un tipo de dominio del catálogo [[docs/adr/ADR-0137.md]] **Y** NO toma configuración del usuario — son los tipos de infraestructura sin puerto de dominio (`clock`, `audit-log`, `telemetry`, etc., [[docs/adr/ADR-0137.md]] §plomería). Si **produce un tipo de dominio** (`Tick`, `Bars`, `Signal`, `BacktestResult`…) y/o **recibe parámetros del usuario** (símbolo, rango, timeframe, broker), es un nodo del canvas con **Superficie propia = Inspector Panel** — activa Etapas 0.5/3/4, aunque su motor de cálculo ya esté completo en backend.
   * ❌ *Incorrecto:* clasificar como plomería una feature que produce `Tick`/`Bars` y toma configuración de broker/símbolo/fechas, solo porque su parte de backend luce como un motor de descarga.
   * ✅ *Correcto:* aplicar las dos preguntas del test — tipo de dominio producido, configuración de usuario recibida — antes de fijar la clasificación.
 
@@ -87,7 +87,7 @@ Toda feature declara en su spec ([[docs/templates/FEATURE.md]] → "Dependencias
 
 ## UI-VERIFICATION-MODEL-3 — Definición de Terminado Depende de la Clasificación
 
-Una feature no se marca `Completado` sin su Superficie de Verificación Funcional (ADR-0117) — es el único canal que permite probar el round-trip front→FFI→back→DB sin leer código.
+Una feature no se marca `Completado` sin su Superficie de Verificación Funcional ([[docs/adr/ADR-0117.md]]) — es el único canal que permite probar el round-trip front→FFI→back→DB sin leer código.
 
 **Aplica a:** Tech-Lead, al auditar el cierre de cualquier Story.
 
@@ -101,7 +101,7 @@ Una feature no se marca `Completado` sin su Superficie de Verificación Funciona
 
 * **UI-VERIFICATION-MODEL-3.3 — Canal #2 No Reemplaza la SVF:**
 
-  el subcomando `drasus verify <feature>` (probador CLI, ADR-0142) es complementario, no sustituto: terminal para el desarrollador, GUI para probar sin leer código. Cerrar una feature con solo el Canal #2 y diferir la SVF es violación de la DoD.
+  el subcomando `drasus verify <feature>` (probador CLI, [[docs/adr/ADR-0142.md]]) es complementario, no sustituto: terminal para el desarrollador, GUI para probar sin leer código. Cerrar una feature con solo el Canal #2 y diferir la SVF es violación de la DoD.
 
 * **UI-VERIFICATION-MODEL-3.4 — Gate de Integración:**
 

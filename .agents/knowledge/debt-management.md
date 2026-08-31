@@ -6,7 +6,7 @@ Registro canónico: [[docs/DEBT.md]] es el índice (una fila por deuda) y [[docs
 
 Slug ID: `DEBT-MANAGEMENT`.
 
-Tamaño: `19060 caracteres (~4765 tokens aprox., ratio 4:1)`.
+Tamaño: `19318 caracteres (~4830 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -50,7 +50,7 @@ Un aplazamiento sin disparador escrito está olvidado.
 
 ## DEBT-MANAGEMENT-2 — Regla de Promoción al Cumplirse el Disparador
 
-Un disparador que se cumple y nadie promueve queda dormido — indistinguible de uno que aún no aplica.
+Un disparador que se cumple y nadie promueve queda dormido — indistinguible de uno que aún no aplica: `DEBT-005` cumplió el suyo ("al cerrar los backends del substrato") sin ser promovida — siguió marcada 🟡 Baja, no apareció como "lo que sigue", y se recomendó el siguiente EPIC en su lugar.
 
 **Aplica a:** Tech-Lead, al cerrar cualquier hito o al responder "¿qué sigue?".
 
@@ -143,7 +143,7 @@ Dos capas de aplazamiento deliberado, según quién controla el techo del proble
 
 **Filtro de verificación:** `DEBT-MANAGEMENT-FV-3`.
 
-**Lectura bajo demanda:** [[.agents/knowledge/commenting-policy.md]] — al escribir un comentario de Capa 1-3 en código. [[.agents/knowledge/ponytail.md]] — al usar la sintaxis `ponytail:` (Capa 3). [[.agents/memory/comentarios-ponytail-reconciliacion.md]] — si necesitas el historial de reconciliación de comentarios `ponytail:` heredados.
+**Lectura bajo demanda:** [[.agents/knowledge/commenting-policy.md]] — al escribir un comentario de Capa 1-3 en código. [[.agents/knowledge/ponytail.md]] — al usar la sintaxis `ponytail:` (Capa 3). [[.agents/memory/comentarios-ponytail-reconciliacion.md]] — histórico, lectura suspendida (`MEMORY-POLICY-14.3`); el contenido vigente de la reconciliación vive en este documento y en `ponytail.md`.
 
 ---
 
@@ -260,7 +260,7 @@ Cuando una Orden de Trabajo diga "sigue el patrón de X", se refiere al document
 
 * **DEBT-MANAGEMENT-10.1 — El Molde Es el Documento, No el Código:**
 
-  ningún archivo del repositorio es "el ejemplo a seguir" completo: el código es la foto de lo que alguien entendió un día concreto; el molde es el documento. Elegir referencia por antigüedad — "la primera que se construyó" — propaga defectos por copia a través de las implementaciones siguientes. Si un ejemplo de código se cita, se cita para un punto concreto y auditado, nunca como plantilla entera.
+  ningún archivo del repositorio es "el ejemplo a seguir" completo: el código es la foto de lo que alguien entendió un día concreto; el molde es el documento. Elegir referencia por antigüedad — "la primera que se construyó" — propagó dos defectos por copia durante meses a través de catorce implementaciones. Si un ejemplo de código se cita, se cita para un punto concreto y auditado, nunca como plantilla entera.
   * ❌ *Incorrecto:* "copia cómo lo hizo la feature Y" para implementar un ledger append-only.
   * ✅ *Correcto:* seguir el documento de knowledge del patrón como molde; citar la feature Y solo para un punto concreto ya auditado.
 

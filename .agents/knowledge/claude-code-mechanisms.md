@@ -4,7 +4,7 @@ Qué son y cuándo usar cada uno de los cinco mecanismos de extensión de Claude
 
 Slug ID: `CLAUDE-CODE-MECHANISMS`.
 
-Tamaño: `13229 caracteres (~3307 tokens aprox., ratio 4:1)`.
+Tamaño: `13225 caracteres (~3306 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -249,7 +249,7 @@ Caso real: ¿`commenting-policy.md` debería migrar a un mecanismo nativo? — d
 * **Pregunta 6.1 (se resuelve primero):** ¿hay una parte mecánicamente verificable? Sí — la Capa 3 (Ponytail) exige un formato exacto de comentario inline (`ponytail: <razón>, escalar si <condición>`) que un Hook `PostToolUse` puede validar por regex sobre cualquier `Edit`/`Write` a `crates/**/*.rs` o `ui/**/*.dart`, y bloquear (`exit 2`) si el comentario no matchea. Esa porción va a Hook, independiente de lo que pase con el resto.
 * **Pregunta 6.2:** ¿el resto aplica sin ningún skill activo? Sí — ocurre cada vez que Claude edita código directamente sin pasar por un skill de rol de ingeniero. Punto a favor de un Rule con `paths:` para el resumen de las 4 capas.
 * **Pero:** la política completa tiene matices de precedencia entre capas — no cabe entera en un Rule de texto plano sin volverlo largo y caro de inyectar en cada archivo tocado, incluso cuando el trabajo no necesita esa profundidad.
-* **Conclusión:** tres piezas, no una — un Hook que valida el formato de Ponytail mecánicamente, un Rule corto (`.claude/rules/comments.md`, `paths: **/*.rs, **/*.dart`) con el resumen de 3 líneas de las capas 1-2, y `commenting-policy.md` intacto para el detalle completo de las 4 capas y sus matices de precedencia — que sigue exigiendo juicio, no verificación mecánica.
+* **Conclusión:** tres piezas, no una — un Hook que valida el formato de Ponytail mecánicamente, un Rule corto propuesto (`paths: **/*.rs, **/*.dart`, aún sin crear) con el resumen de 3 líneas de las capas 1-2, y `commenting-policy.md` intacto para el detalle completo de las 4 capas y sus matices de precedencia — que sigue exigiendo juicio, no verificación mecánica.
 
 ---
 
