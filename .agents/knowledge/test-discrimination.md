@@ -4,7 +4,7 @@ Cómo se demuestra que una prueba discrimina de verdad, y los cuatro patrones de
 
 Slug ID: `TEST-DISCRIMINATION`.
 
-Tamaño: `7368 caracteres (~1842 tokens aprox., ratio 4:1)`.
+Tamaño: `7378 caracteres (~1844 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -13,7 +13,7 @@ Tamaño: `7368 caracteres (~1842 tokens aprox., ratio 4:1)`.
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
-| [[.agents/knowledge/mutation-gate.md]] | Quién corre el gate de mutación y cómo se juzga un superviviente. | Al cerrar una Story con lógica de correctitud, o al juzgar supervivientes. | TL + QA |
+| [[.agents/knowledge/mutation-filter.md]] | Quién corre el filtro de mutación y cómo se juzga un superviviente. | Al cerrar una Story con lógica de correctitud, o al juzgar supervivientes. | TL + QA |
 | [[.agents/knowledge/ledger-pattern.md]] | Las cuatro pruebas que el patrón de ledger append-only exige. | Al crear o tocar una tabla append-only. | TL + ingenieros |
 
 ---
@@ -101,7 +101,7 @@ Concurrencia, recuperación, atomicidad y límites de recursos no se prueban afi
 
 ## TEST-DISCRIMINATION-4 — Valor Fijado Sin Justificar Es Deuda Disfrazada de Cobertura
 
-Una prueba escrita para cerrar un gate bajo presión, que fija un valor sin explicar por qué ese valor es el correcto, es peor que no tenerla: viene con el número verde que hace que nadie vuelva a mirar.
+Una prueba escrita para cerrar un filtro bajo presión, que fija un valor sin explicar por qué ese valor es el correcto, es peor que no tenerla: viene con el número verde que hace que nadie vuelva a mirar.
 
 **Aplica a:** todos los ingenieros al escribir pruebas, y al QA al auditarlas.
 
@@ -109,9 +109,9 @@ Una prueba escrita para cerrar un gate bajo presión, que fija un valor sin expl
 
   el valor fijado se deriva de la especificación, de un cálculo mostrado, o de una fuente citada — nunca de "lo que salió al correrlo".
 
-* **TEST-DISCRIMINATION-4.2 — El QA lo Reporta Aunque el Gate Pase:**
+* **TEST-DISCRIMINATION-4.2 — El QA lo Reporta Aunque el Filtro Pase:**
 
-  este olor no lo detecta ninguna métrica de cobertura ni el gate de mutación. Se reporta igual.
+  este olor no lo detecta ninguna métrica de cobertura ni el filtro de mutación. Se reporta igual.
 
 **Filtro de verificación:** `TEST-DISCRIMINATION-FV-4`.
 

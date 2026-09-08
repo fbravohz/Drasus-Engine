@@ -4,7 +4,7 @@ Traduce cada feature al vocabulario visual de `DESIGN.md`, escribiendo su secci�
 
 Slug ID: `UI-DESIGNER`.
 
-Tamaño: `13384 caracteres (~3346 tokens aprox., ratio 4:1)`.
+Tamaño: `15226 caracteres (~3807 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -12,8 +12,9 @@ Tamaño: `13384 caracteres (~3346 tokens aprox., ratio 4:1)`.
 
 | Documento | De qué va | Cuándo leerlo | Alcance |
 |---|---|---|---|
-| [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, gate de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
-| [[docs/DESIGN.md]] | Tokens, gramática de layout, comportamiento nativo, motion, catálogo de componentes, gate de gusto. | Antes de procesar cualquier feature. | UI Designer |
+| [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, filtro de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
+| [[.agents/knowledge/hard-prohibitions.md]] | Prohibiciones absolutas — sin lenguaje de bitácora, sin lenguaje mortuorio, sin numeral de sección, sin "Gate" para procesos de validación. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| [[docs/DESIGN.md]] | Tokens, gramática de layout, comportamiento nativo, motion, catálogo de componentes, filtro de gusto. | Antes de procesar cualquier feature. | UI Designer |
 | [[docs/adr/ADR-0136.md]] | Contexto de superficie: Dashboard vs. Canvas (relacional/interior) vs. Inspector Panel. | Al clasificar una feature (`UI-DESIGNER-2`). | UI Designer |
 | `ui/COMPONENTS.md` | Índice vivo de componentes reales, props y consumidores. **SUSPENDIDA:** el catálogo no existe todavía. `ui/` fue archivado íntegro a `ui-old/` en el reset del sistema de diseño y el `ui/` nuevo está por construir; el catálogo viejo (`ui-old/COMPONENTS.md`) cita tokens que el `DESIGN.md` vigente ya no define, así que no sirve como referencia. Hasta que exista, todo componente se marca "a construir" y se escala al Tech Lead. | Reactivar cuando exista el `ui/` nuevo. | UI Designer |
 
@@ -26,10 +27,29 @@ Tamaño: `13384 caracteres (~3346 tokens aprox., ratio 4:1)`.
 * **UI-DESIGNER-FV-1:** ¿leí `governance.md` y `DESIGN.md` en este turno y declaré la lectura (`GOVERNANCE-1.5`)?
 * **UI-DESIGNER-FV-2:** ¿clasifiqué el contexto de superficie (`UI-DESIGNER-2`) antes de diseñar?
 * **UI-DESIGNER-FV-3:** ¿todo token y componente que usé existe en `DESIGN.md`/[[ui/COMPONENTS.md]] — cero hex o nombre inventado (`UI-DESIGNER-5`)?
-* **UI-DESIGNER-FV-4:** ¿pasé el Gate de Gusto de `DESIGN.md §10` antes de cerrar la sección (`UI-DESIGNER-5`)?
+* **UI-DESIGNER-FV-4:** ¿pasé el Filtro de Gusto de `DESIGN.md §10` antes de cerrar la sección (`UI-DESIGNER-5`)?
 * **UI-DESIGNER-FV-5:** ¿respeté qué NUNCA se toca de la feature (`UI-DESIGNER-7`)?
 
 De ser satisfactoria cada validación, declara `UI-DESIGNER - FILTRO DE VERIFICACION APROBADO`.
+
+---
+
+## UI-DESIGNER-P — Pipeline de Ejecución
+
+Secuencia obligatoria, en este orden, para toda invocación — salvo flujo anormal declarado explícitamente.
+
+**Aplica a:** el UI Designer, en toda invocación.
+
+1. **Filtro de arranque:** lee `governance.md` completo, declara `[leído: governance.md]` + rol (`GOVERNANCE-1.1`, `-1.4`).
+2. **Lecturas obligatorias:** lee `DESIGN.md` y `ADR-0136` antes de procesar cualquier feature (`UI-DESIGNER-0`).
+3. **Confirmación del trigger:** verifica que la feature declara Superficie propia o que su Cáscara Visual está desactualizada contra el `DESIGN.md` vigente (`UI-DESIGNER-1.3`).
+4. **Clasificación de superficie:** asigna la feature a uno de los cinco contextos de `ADR-0136` (`UI-DESIGNER-2`).
+5. **Bifurcación de Plomería:** si el contexto es Plomería, documenta solo su entrada en la SVF/galería, sin diseñar UI de producto completa, y salta al paso 9 (`UI-DESIGNER-2.2`). Si la feature tiene Superficie propia, continúa al paso siguiente.
+6. **Detección de violaciones:** identifica y corrige violaciones arquitectónicas de UI antes de diseñar (`UI-DESIGNER-3`).
+7. **Redacción de la Cáscara Visual:** escribe la sección con la estructura exacta (`UI-DESIGNER-4`).
+8. **Validación pre-escritura:** pasa el checklist completo antes de guardar el archivo (`UI-DESIGNER-5`).
+9. **Inserción posicional:** coloca o reemplaza la sección en su posición fija dentro del archivo de la feature (`UI-DESIGNER-6`).
+10. **Reporte al Tech Lead:** entrega el resultado — contexto de superficie, componentes, violaciones corregidas (`UI-DESIGNER-1.4`).
 
 ---
 
@@ -171,7 +191,7 @@ Cada feature vive en uno de cinco contextos (`ADR-0136`), determinando densidad 
   - Cada color de vitalidad tiene un estado de negocio asociado — sin color decorativo.
   - La densidad coincide con el contexto de superficie (`UI-DESIGNER-2`).
   - El ciclo de estados (`DESIGN.md §7`) está cubierto o cada ausencia está justificada.
-  - Pasaste el Gate de Gusto (`DESIGN.md §10`): restraint, jerarquía, referencia real, consistencia entre pantallas.
+  - Pasaste el Filtro de Gusto (`DESIGN.md §10`): restraint, jerarquía, referencia real, consistencia entre pantallas.
   - Las violaciones de `UI-DESIGNER-3` están corregidas.
   - El Flutter Engineer podría implementar la Cáscara sin consultar `DESIGN.md` directamente.
 

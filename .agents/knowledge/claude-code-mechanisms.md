@@ -4,7 +4,7 @@ Qué son y cuándo usar cada uno de los cinco mecanismos de extensión de Claude
 
 Slug ID: `CLAUDE-CODE-MECHANISMS`.
 
-Tamaño: `13225 caracteres (~3306 tokens aprox., ratio 4:1)`.
+Tamaño: `13227 caracteres (~3307 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -218,7 +218,7 @@ Antes de proponer migrar contenido de `.agents/knowledge/` o `.claude/skills/` a
 
 * **CLAUDE-CODE-MECHANISMS-6.2 — ¿Aplica Sin Ningún Skill Activo?:**
 
-  para lo que quede fuera de un Hook: si el contenido debe regir incluso cuando Claude edita un archivo directamente, fuera de cualquier flujo de skill → Rule con `paths:` (`CLAUDE-CODE-MECHANISMS-1.2`). El gate actual de `.agents/knowledge/README.md` solo dispara **dentro** de un skill que declare la lectura — si el criterio real es la ruta del archivo, no el rol activo, un Rule nativo lo garantiza sin depender de que el skill correcto haya sido invocado.
+  para lo que quede fuera de un Hook: si el contenido debe regir incluso cuando Claude edita un archivo directamente, fuera de cualquier flujo de skill → Rule con `paths:` (`CLAUDE-CODE-MECHANISMS-1.2`). El filtro actual de `.agents/knowledge/README.md` solo dispara **dentro** de un skill que declare la lectura — si el criterio real es la ruta del archivo, no el rol activo, un Rule nativo lo garantiza sin depender de que el skill correcto haya sido invocado.
 
 * **CLAUDE-CODE-MECHANISMS-6.3 — ¿Es Un Procedimiento Invocable?:**
 

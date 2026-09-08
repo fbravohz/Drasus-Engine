@@ -4,7 +4,7 @@ Molde canónico para crear o tocar una tabla append-only (registro inmutable con
 
 Slug ID: `LEDGER-PATTERN`.
 
-Tamaño: `7883 caracteres (~1971 tokens aprox., ratio 4:1)`.
+Tamaño: `7885 caracteres (~1971 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -53,7 +53,7 @@ El patrón exige distinguir dos clases de error de escritura.
 
 * **LEDGER-PATTERN-2.2 — El Hueco: Probar el Síntoma, No la Función:**
 
-  una prueba que nunca llama a la función clasificadora, y en su lugar verifica el mensaje de un `INSERT` crudo, no prueba el clasificador — solo prueba indirectamente un síntoma. El gate de mutación demuestra que ese clasificador puede mutarse a devolver siempre "transitorio" sin que ninguna prueba falle.
+  una prueba que nunca llama a la función clasificadora, y en su lugar verifica el mensaje de un `INSERT` crudo, no prueba el clasificador — solo prueba indirectamente un síntoma. El filtro de mutación demuestra que ese clasificador puede mutarse a devolver siempre "transitorio" sin que ninguna prueba falle.
   * Consecuencia si se rompiera: el ledger reintentaría en bucle una escritura que jamás puede tener éxito, hasta agotar los intentos, y reportaría contención donde hay un error permanente de datos.
 
 * **LEDGER-PATTERN-2.3 — La Forma Correcta:**

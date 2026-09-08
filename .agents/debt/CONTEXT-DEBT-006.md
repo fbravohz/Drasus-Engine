@@ -1,4 +1,4 @@
-### AGENT-DEBT-006 · IDs de ítem que reutilizan el ID del bloque padre
+### CONTEXT-DEBT-006 · IDs de ítem que reutilizan el ID del bloque padre
 
 - **Severidad:** 🟡 Baja
 - **Origen:** Auditoría ad hoc del commit `972bab5f31d64cbdd28e70aee8962cd0198cd36b`, 2026-08-20.

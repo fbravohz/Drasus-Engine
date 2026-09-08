@@ -1,0 +1,16 @@
+### CONTEXT-DEBT-010 · Citas huérfanas a sub-IDs de `CONTEXT-ENGINEER` retirados por el aligeramiento de formato
+- **Severidad:** 🟡 Baja
+- **Origen:** reescritura de `.agents/skills/context-engineer/SKILL.md` al formato ligero de `write-like-gemini.md` — el nuevo formato no admite sub-ID de bullet (`<DOC>-N.M`) ni bloque `<DOC>-FV`, así que toda cita a un sub-ID o a un ítem `-FV-N` de ese skill quedó apuntando a un ID que ya no existe como tal (el contenido sigue vivo, fusionado en prosa dentro de la sección `<DOC>-N` contenedora).
+- **Descripción:** citas detectadas por `grep -rnoE` sobre `*.md` fuera del propio `SKILL.md`:
+  - `.agents/knowledge/hard-prohibitions.md:34` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/plans/analiza-los-cambios-en-optimized-stream.md:11,58` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/plans/refactor-masiva-agents.md:105` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/plans/coontinua-en-modo-plan-serene-diffie.md:79` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/plans/auditoria-forense-commits-972bab5-3007f92.md:203` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/plans/analiza-los-cambios-en-curried-oasis.md:9` → `CONTEXT-ENGINEER-3.2`
+  - `.agents/memory/context-engineer-rename-y-campo-tamano.md:15,23` → `CONTEXT-ENGINEER-1.1`, `CONTEXT-ENGINEER-5.3`
+- **Impacto actual:** ninguno en gobernanza — la regla citada (ej. "prohibido cortar contenido") sigue vigente en `CONTEXT-ENGINEER-3` completa; el hueco es que la cita ya no resuelve a un bloque citable exacto, solo a la sección que lo contiene.
+- **Causa raíz:** decisión deliberada de aligerar el formato (retirar sub-IDs y bloque FV) sin remapear en la misma tarea las citas externas que apuntaban a esos sub-IDs — mismo patrón ya aceptado para los ~1123 casos equivalentes documentados en `.agents/plans/coontinua-en-modo-plan-serene-diffie.md` al aligerar los templates.
+- **Disparador de pago:** la próxima vez que cualquiera de los archivos listados se toque por otro motivo, corregir ahí mismo la cita para que apunte a la sección `CONTEXT-ENGINEER-N` correcta (`CONTEXT-ENGINEER-6` de `SKILL.md`, regla "Citas huérfanas o IDs mal apuntados").
+- **Plan:** al tocar cada archivo, reemplazar el sub-ID huérfano por el ID de sección vigente (`CONTEXT-ENGINEER-1`, `-3` o `-5` según el caso) o por una remisión en prosa si el punto exacto ya no es citable por separado.
+- **Estado:** Abierta.

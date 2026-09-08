@@ -4,7 +4,7 @@
 > **Estructura (patrón ADR):** este archivo es el **índice**; la ficha completa de cada deuda vive en `docs/debt/DEBT-XXX.md`. Para leer una deuda concreta, abre su archivo (≈10–30 líneas) — no hace falta cargar todo el registro.
 > **Relación con `PROGRESS.md`:** la bitácora del Tech-Lead (`.agents/state/tech-lead/PROGRESS.md`) *narra* cuándo se halló una deuda; **este registro es el canónico**. Las entradas de PROGRESS apuntan a los `DEBT-XXX` de aquí. Si una deuda no está aquí, no está rastreada.
 > **Mantenimiento:** el Tech-Lead crea/cierra la ficha en `docs/debt/` al abrir o pagar una deuda y actualiza la fila del índice. Estado: `Abierta` · `En pago` · `Pagada` (con enlace a la Story que la saldó). Al cerrar un hito se **barre** el índice y se promueve toda deuda cuyo disparador se cumplió (ver `.agents/knowledge/debt-management.md` §Regla de Promoción).
-> **Alcance:** deuda de código y producto — features, ADRs, código ya construido. Deuda de gobernanza de agentes (skills, knowledge docs, hooks, contradicciones entre reglas) vive en `.agents/DEBT.md`, registro hermano con el mismo patrón (`DEBT-MANAGEMENT-11`).
+> **Alcance:** deuda de código y producto — features, ADRs, código ya construido. Deuda de gobernanza de agentes (skills, knowledge docs, hooks, contradicciones entre reglas) vive en `.agents/CONTEXT-DEBT.md`, registro hermano con el mismo patrón (`DEBT-MANAGEMENT-11`).
 
 ## Convención de severidad
 
@@ -66,6 +66,7 @@
 | DEBT-044 | 🟡 Baja | La zona de carga del asistente parece aceptar archivos soltados y no los acepta: no hay arrastre real cableado (el texto ya dejó de prometerlo) | Abierta | [detalle](./debt/DEBT-044.md) |
 | DEBT-045 | 🟠 Media | Los nodos del lienzo son nombres pelados: no dicen qué consume ni qué produce cada feature — costó una sesión de prueba completa del propietario, que abrió la feature vecina | ✅ Pagada (2026-08-02) | [detalle](./debt/DEBT-045.md) |
 | DEBT-046 | 🟡 Baja | 7 features (`run-replay`, `live-strategy-view`, `sovereign-data-fetcher`, `instrument-catalog`, `verification-bench`, `data-import-wizard`, `hybrid-data-transformer`) tienen `## Cáscara Visual` escrita contra el `DESIGN.md`/catálogo archivados en `ui-old/_docs-archive/` — vocabulario y tokens ya no existen en el `DESIGN.md` vigente | Abierta | [detalle](./debt/DEBT-046.md) |
+| DEBT-047 | 🟠 Media | `licensing-system` cerrada (STORY-028) sin pasar por Etapa 0.5 — no tiene `## Cáscara Visual`, a diferencia de `central-identity` del mismo cierre | Abierta | [detalle](./debt/DEBT-047.md) |
 
 ---
 

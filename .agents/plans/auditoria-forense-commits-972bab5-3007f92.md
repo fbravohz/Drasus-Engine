@@ -25,11 +25,11 @@ Auditoría de detective sobre el rango `972bab5^..HEAD` (5 commits, 2026-08-11 �
 **Fuera de eso, el patrón dominante no es la calidad — es el cierre.** Cuatro síntomas del mismo hábito:
 
 1. **Trabajo incompleto comiteado como completo.** El mensaje de `972bab5` declara "armonización de 13 skills"; el propio plan del commit declaraba en su cuerpo "Pendiente — 9 skills". Hoy siguen **5 skills fuera del canon**, bloqueados por el hook que ese mismo commit introdujo.
-2. **Una deuda con disparador "pagar antes de comitear" que se comiteó igual** (`AGENT-DEBT-003`). Su impacto dejó de ser hipotético: la pérdida ya está en `HEAD`.
+2. **Una deuda con disparador "pagar antes de comitear" que se comiteó igual** (`CONTEXT-DEBT-003`). Su impacto dejó de ser hipotético: la pérdida ya está en `HEAD`.
 3. **Un error auto-confesado por escrito y no corregido en tres semanas** (N-4): los punteros temáticos mal redirigidos en 4 skills, anotados en la propia bitácora de sesión.
 4. **Un rename masivo de carpeta sin barrido de referencias.** 44 referencias vivas a `ui/` quedaron rotas.
 
-**Buena noticia que conviene decir explícita:** una auditoría previa (2026-08-20) ya detectó gran parte de esto y lo registró como `AGENT-DEBT-001..008`. Este plan **no la repite** — la verifica, corrige sus cifras desfasadas y añade lo que no cubrió.
+**Buena noticia que conviene decir explícita:** una auditoría previa (2026-08-20) ya detectó gran parte de esto y lo registró como `CONTEXT-DEBT-001..008`. Este plan **no la repite** — la verifica, corrige sus cifras desfasadas y añade lo que no cubrió.
 
 ---
 
@@ -75,7 +75,7 @@ Queda en el skill la identidad, el mandato y las referencias.
 
 ## 📍 Estado de ejecución (2026-08-31)
 
-**Hecho y verificado** — hook `validate-agent-docs.py`: de 10 violaciones duras a **4**.
+**Hecho y verificado** — hook `validate-agent-docs.py`: de 10 violaciones duras a **2** (solo `rust-engineer`).
 
 - ✅ **N-2** `general-counsel` recupera sus Modos (`GENERAL-COUNSEL-6` + `-FV-7`).
 - ✅ **N-4** punteros temáticos corregidos en `bridge-engineer` y `quant-engineer` (→ `mentorship-modes.md` / `commenting-policy.md`).
@@ -85,42 +85,43 @@ Queda en el skill la identidad, el mandato y las referencias.
 - ✅ **N-11** `brief.md` indexado en `.agents/knowledge/README.md`.
 - ✅ **N-12** `STORY-009-cli-app.md` y la promesa de `.claude/rules/comments.md` (reformulada, ya no promete un archivo inexistente).
 - ✅ **N-13** `PARTNER-FV-7` añadido, `PARTNER-4.1` renumerado, checklist de Modo Revisión repuesto en `refactoring-engineer` (con su umbral de 400 líneas).
-- ✅ **AGENT-DEBT-002** contradicción de memoria resuelta (puntero marcado como histórico suspendido).
-- ✅ **AGENT-DEBT-003** pagada: verificación FFI repuesta, `UI-DESIGNER-7.3` de vuelta a prohibición absoluta, ADR-0116/0038/0131 repuestos.
-- ✅ **AGENT-DEBT-006** resuelta en sus dos mitades (`commenting-policy` y `partner`).
+- ✅ **CONTEXT-DEBT-002** contradicción de memoria resuelta (puntero marcado como histórico suspendido).
+- ✅ **CONTEXT-DEBT-003** pagada: verificación FFI repuesta, `UI-DESIGNER-7.3` de vuelta a prohibición absoluta, ADR-0116/0038/0131 repuestos.
+- ✅ **CONTEXT-DEBT-006** resuelta en sus dos mitades (`commenting-policy` y `partner`).
 - ✅ **Canonizados:** `social-strategist`, `bridge-engineer`, `quant-engineer` (más `architect` en un commit previo).
+- ✅ **D-5** `tech-lead` canonizado y partido en `.agents/knowledge/order-compliance-gate.md` + `.agents/knowledge/execution-protocol.md` (ambos nuevos, canónicos); salda `CONTEXT-DEBT-007` y la parte de `CONTEXT-DEBT-004` correspondiente a `tech-lead`.
 
 **Pendiente.**
 
 | Qué | Bloqueado por | Dueño |
 |---|---|---|
 | Canonizar `rust-engineer` (2 violaciones duras) | — listo para ejecutar | `context-engineer` |
-| Canonizar `tech-lead` + partirlo en piezas (2 violaciones duras) | — listo, con alcance de D-5 | `context-engineer` |
-| Canonizar `qa-engineer` (`AGENT-DEBT-008`, avisos blandos) | — listo para ejecutar | `context-engineer` |
+| ~~Canonizar `tech-lead` + partirlo en piezas~~ | ✅ Hecho — 0 violaciones duras, 0 avisos. Partido en `order-compliance-gate.md` + `execution-protocol.md` (nuevos), ambos canónicos | `context-engineer` |
+| Canonizar `qa-engineer` (`CONTEXT-DEBT-008`, avisos blandos) | — listo para ejecutar | `context-engineer` |
 | ADR de separación de procesos + entrada bloqueante en `ROADMAP` | — listo, con alcance de D-1 | `architect` |
 | Marcar como suspendidas las 44 referencias a `ui/` | — listo, con alcance de D-3 | `architect` (docs) + `context-engineer` (.agents) + `tech-lead` (`docs/TEST.md`) |
 | Borrar `base.md` en 4 pasos | — listo, con alcance de D-4 | `context-engineer` |
-| `AGENT-DEBT-004` wikilinks a los 5 knowledge nuevos | — listo para ejecutar | `context-engineer` |
-| `AGENT-DEBT-007` numeración de etapas de `tech-lead` | Se resuelve dentro de D-5 | `context-auditor` audita → `context-engineer` corrige |
+| `CONTEXT-DEBT-004` wikilinks a los 5 knowledge nuevos | 🟠 Parcial — `tech-lead` saldó su parte (4 de 5 docs); siguen `architect`, `qa-engineer`, `rust-engineer`, `ui-designer`, `flutter-engineer` | `context-engineer` |
+| ~~`CONTEXT-DEBT-007` numeración de etapas de `tech-lead`~~ | ✅ Pagada — resuelta dentro de D-5 | `context-auditor` audita → `context-engineer` corrige |
 | `N-7` reformatear `DEBT-046` | — listo para ejecutar | `architect` |
-| Actualizar fichas `AGENT-DEBT-001/003/008` y abrir `009` | Tras cerrar lo anterior | `context-engineer` |
+| Actualizar fichas `CONTEXT-DEBT-001/003/008` y abrir `009` | Tras cerrar lo anterior | `context-engineer` |
 
 ---
 
-## Parte 0 — Estado real de la auditoría previa (`AGENT-DEBT-001..008`)
+## Parte 0 — Estado real de la auditoría previa (`CONTEXT-DEBT-001..008`)
 
 Las 8 fichas se verificaron una por una contra el árbol actual. **Las 8 siguen abiertas y son legítimas**, pero dos necesitan corrección:
 
 | Ficha | Estado verificado hoy | Acción |
 |---|---|---|
-| `AGENT-DEBT-001` | **Cifras desfasadas.** Dice "6 skills / 12 violaciones duras". Real hoy: **5 skills / 10 violaciones** — `architect` ya fue corregido (tiene `Slug ID` y `Tamaño`, cambio *staged* sin comitear). Los 5 vigentes: `bridge-engineer`, `quant-engineer`, `rust-engineer`, `social-strategist`, `tech-lead`. | Corregir cifras en la ficha |
-| `AGENT-DEBT-002` | **Vigente.** `debt-management.md:146` sigue mandando leer `[[.agents/memory/comentarios-ponytail-reconciliacion.md]]`, que `MEMORY-POLICY-14.3` prohíbe. La línea 216 del mismo archivo sí está alineada — la contradicción es interna. | Sin cambio, pagar |
-| `AGENT-DEBT-003` | **ESCALAR a 🔴 Alta.** Su disparador era "antes de comitear este archivo" y **se comiteó igual** el 2026-08-24. Verificado en `HEAD`: `UI-DESIGNER-7.3` quedó como condicional ("sin visto bueno del Architect" en vez de prohibición absoluta); `ADR-0131` y `ADR-0038` tienen **0 menciones**; la verificación FFI (`rust/api`) tiene **0 menciones**. El impacto ya no es nulo. | Reescribir impacto + subir severidad |
-| `AGENT-DEBT-004` | **Vigente y confirmada.** Los 5 knowledge nuevos siguen citados por **0 skills**. Están correctamente indexados en `README.md`, pero nadie los lee: el contenido duplicado inline sigue siendo la copia efectiva. | Sin cambio, pagar |
-| `AGENT-DEBT-005` | **Vigente.** 6 referencias a `ui/COMPONENTS.md` en `flutter-engineer` y `ui-designer`. | Absorber en la deuda nueva de rutas (abajo) |
-| `AGENT-DEBT-006` | **Vigente.** `commenting-policy.md:31` (`COMMENTING-POLICY-1` como ítem) y `partner/SKILL.md:114` (`PARTNER-4` como ítem). | Sin cambio, pagar |
-| `AGENT-DEBT-007` | **Vigente.** `tech-lead/SKILL.md:310` — "Barrido de Cierre Documental (OBLIGATORIO...)" sigue sin número de etapa. | Sin cambio, pagar |
-| `AGENT-DEBT-008` | **Vigente.** `qa-engineer` tiene `Slug`/`Tamaño` pero sin bloque `-FV` y con 3 marcas de bitácora. | Sin cambio, pagar |
+| `CONTEXT-DEBT-001` | **Cifras desfasadas.** Dice "6 skills / 12 violaciones duras". Real hoy: **5 skills / 10 violaciones** — `architect` ya fue corregido (tiene `Slug ID` y `Tamaño`, cambio *staged* sin comitear). Los 5 vigentes: `bridge-engineer`, `quant-engineer`, `rust-engineer`, `social-strategist`, `tech-lead`. | Corregir cifras en la ficha |
+| `CONTEXT-DEBT-002` | **Vigente.** `debt-management.md:146` sigue mandando leer `[[.agents/memory/comentarios-ponytail-reconciliacion.md]]`, que `MEMORY-POLICY-14.3` prohíbe. La línea 216 del mismo archivo sí está alineada — la contradicción es interna. | Sin cambio, pagar |
+| `CONTEXT-DEBT-003` | **ESCALAR a 🔴 Alta.** Su disparador era "antes de comitear este archivo" y **se comiteó igual** el 2026-08-24. Verificado en `HEAD`: `UI-DESIGNER-7.3` quedó como condicional ("sin visto bueno del Architect" en vez de prohibición absoluta); `ADR-0131` y `ADR-0038` tienen **0 menciones**; la verificación FFI (`rust/api`) tiene **0 menciones**. El impacto ya no es nulo. | Reescribir impacto + subir severidad |
+| `CONTEXT-DEBT-004` | **Vigente y confirmada.** Los 5 knowledge nuevos siguen citados por **0 skills**. Están correctamente indexados en `README.md`, pero nadie los lee: el contenido duplicado inline sigue siendo la copia efectiva. | Sin cambio, pagar |
+| `CONTEXT-DEBT-005` | **Vigente.** 6 referencias a `ui/COMPONENTS.md` en `flutter-engineer` y `ui-designer`. | Absorber en la deuda nueva de rutas (abajo) |
+| `CONTEXT-DEBT-006` | **Vigente.** `commenting-policy.md:31` (`COMMENTING-POLICY-1` como ítem) y `partner/SKILL.md:114` (`PARTNER-4` como ítem). | Sin cambio, pagar |
+| `CONTEXT-DEBT-007` | **Vigente.** `tech-lead/SKILL.md:310` — "Barrido de Cierre Documental (OBLIGATORIO...)" sigue sin número de etapa. | Sin cambio, pagar |
+| `CONTEXT-DEBT-008` | **Vigente.** `qa-engineer` tiene `Slug`/`Tamaño` pero sin bloque `-FV` y con 3 marcas de bitácora. | Sin cambio, pagar |
 
 ---
 
@@ -161,7 +162,7 @@ Resultado: si una Orden de Trabajo declara Modo Mentor, Revisión o Docente para
 | `.agents/skills/tech-lead/SKILL.md` | 5 | Instrucción operativa activa |
 | `docs/features/verification-bench.md` | 4 | |
 | `docs/features/hybrid-data-transformer.md` | 4 | |
-| `.agents/skills/ui-designer/SKILL.md` | 4 | `AGENT-DEBT-005` |
+| `.agents/skills/ui-designer/SKILL.md` | 4 | `CONTEXT-DEBT-005` |
 | `.agents/knowledge/ui-verification-model.md` | 4 | Doc canónico nuevo, nace roto |
 | `docs/ROADMAP.md` | 3 | |
 | `docs/features/sovereign-data-fetcher.md` | 3 | |
@@ -169,7 +170,7 @@ Resultado: si una Orden de Trabajo declara Modo Mentor, Revisión o Docente para
 | `.agents/skills/qa-engineer/SKILL.md` | 3 | |
 | `docs/TEST.md` | 2 | **Runbook roto** |
 | `docs/adr/ADR-0117.md` | 2 | |
-| `.agents/skills/flutter-engineer/SKILL.md` | 2 | `AGENT-DEBT-005` |
+| `.agents/skills/flutter-engineer/SKILL.md` | 2 | `CONTEXT-DEBT-005` |
 | `.agents/skills/bridge-engineer/SKILL.md` | 2 | Instrucción operativa activa |
 | `docs/features/data-import-wizard.md`, `docs/DEBT.md`, `docs/adr/ADR-0152.md` | 1 c/u | |
 
@@ -228,7 +229,7 @@ Sus 7 vecinos (`DEBT-037`, `040`–`045`) usan uniformemente: título `# DEBT-NN
 
 `ui-verification-model.md` cita ADR en texto plano en 7 puntos (L3, L58, L72, L80 ×2, L90, L104) mientras usa `[[docs/adr/ADR-0117.md]]` correctamente en su propia tabla de Lecturas Obligatorias. `cross-platform-rust.md` tiene 1 caso (L33, ADR-0016). Viola la regla explícita de `.claude/rules/agents-docs-format.md`.
 
-### 🟠 N-10 · `AGENT-DEBT-008` subestima su propio alcance
+### 🟠 N-10 · `CONTEXT-DEBT-008` subestima su propio alcance
 
 La ficha registra la ruta rota `.claude/skills/tech-lead.md` (el archivo real es `.claude/skills/tech-lead/SKILL.md`) solo para `qa-engineer`. Verificado por grep: el mismo path roto está también en `rust-engineer/SKILL.md`, `bridge-engineer/SKILL.md` y `quant-engineer/SKILL.md`. **Son 4 archivos, no 1** — y en todos es doble violación: ruta inexistente y sin wikilink.
 
@@ -262,7 +263,7 @@ Vale registrarlo para que nadie lo vuelva a auditar:
 - **Los 14 skills declaran `governance.md`** — el gate de arranque roto que motivó todo el refactor está efectivamente reparado.
 - **El "misterio ponytail" no es pérdida.** El diffstat `SKILL.md | 0` alarmaba. Rastreada la cadena completa: el skill real (206 líneas) se tradujo íntegro a `.agents/knowledge/ponytail.md` el 2026-07-09 (commit `9a8312e`), que además creó `.agents/skills/ponytail/SKILL.md` **ya vacío**. Estuvo huérfano y en 0 bytes un mes. `972bab5` solo borró el cadáver. Cero referencias huérfanas hoy. **El mensaje del commit es impreciso** ("integrado en ponytail.md" sugiere que la integración ocurrió ahí), pero no hubo pérdida.
 - **Los 14 stubs `.claude/skills/`: correspondencia 1:1 perfecta** con `.agents/skills/`, en ambas direcciones, cada uno apuntando al destino correcto. Sin desajustes.
-- **`d6f6b8b` y `6d1055e`: limpios.** Las 8 fichas `AGENT-DEBT` son consistentes entre índice y contenido, numeración sin huecos, formato uniforme. El skill `context-auditor` cumple el formato canónico completo (`Tamaño` verificado exacto). La línea añadida a `docs/DEBT.md` es un campo de Alcance que delimita los dos registros — no contaminación. Los 3 micro-cambios de `6d1055e` son correctos y sin contradicción interna.
+- **`d6f6b8b` y `6d1055e`: limpios.** Las 8 fichas `CONTEXT-DEBT` son consistentes entre índice y contenido, numeración sin huecos, formato uniforme. El skill `context-auditor` cumple el formato canónico completo (`Tamaño` verificado exacto). La línea añadida a `docs/DEBT.md` es un campo de Alcance que delimita los dos registros — no contaminación. Los 3 micro-cambios de `6d1055e` son correctos y sin contradicción interna.
 
 ---
 
@@ -316,14 +317,14 @@ Regla de dominio, verificada en cada skill:
 | N-12 · dos referencias rotas | `context-engineer` | |
 | N-13 · `PARTNER-FV` y hueco de `refactoring-engineer` | `context-engineer` | |
 | Canonizar los 5 skills legacy | `context-engineer` | Bloqueado por D-5 solo para `tech-lead` |
-| `AGENT-DEBT-001` · corregir cifras | `context-engineer` | |
-| `AGENT-DEBT-002` · contradicción de memoria | `context-engineer` | |
-| `AGENT-DEBT-003` · restaurar FFI, revertir `7.3`, reponer ADRs | `context-engineer` | La ficha ya especifica qué restaurar |
-| `AGENT-DEBT-004` · wikilinks a los 5 knowledge nuevos | `context-engineer` | |
-| `AGENT-DEBT-006` · IDs colisionados | `context-engineer` | |
-| `AGENT-DEBT-007` · numeración de `tech-lead` | `context-auditor` audita → `context-engineer` corrige | La ficha nombra al auditor para el diagnóstico |
-| `AGENT-DEBT-008` · corregir alcance + canonizar `qa-engineer` | `context-engineer` | |
-| Abrir `AGENT-DEBT-009` (refs `ui/`) | quien lo pague primero | El registro admite que cualquier rol abra ficha |
+| `CONTEXT-DEBT-001` · corregir cifras | `context-engineer` | |
+| `CONTEXT-DEBT-002` · contradicción de memoria | `context-engineer` | |
+| `CONTEXT-DEBT-003` · restaurar FFI, revertir `7.3`, reponer ADRs | `context-engineer` | La ficha ya especifica qué restaurar |
+| `CONTEXT-DEBT-004` · wikilinks a los 5 knowledge nuevos | `context-engineer` | |
+| `CONTEXT-DEBT-006` · IDs colisionados | `context-engineer` | |
+| `CONTEXT-DEBT-007` · numeración de `tech-lead` | `context-auditor` audita → `context-engineer` corrige | La ficha nombra al auditor para el diagnóstico |
+| `CONTEXT-DEBT-008` · corregir alcance + canonizar `qa-engineer` | `context-engineer` | |
+| Abrir `CONTEXT-DEBT-009` (refs `ui/`) | quien lo pague primero | El registro admite que cualquier rol abra ficha |
 | N-6 · commit masivo | — | No se arregla retroactivamente; es regla para el futuro |
 
 **Lectura práctica:** el 80 % de la lista es un solo despacho a `context-engineer`, que puede hacerse en lotes. `architect` tiene 3 ítems. `tech-lead` uno. Nada exige coordinar a los tres a la vez.
@@ -340,16 +341,16 @@ Las cinco decisiones (D-1 a D-5) están arriba, en su propia sección. **D-1 blo
 
 2. **Reparar N-2 (`general-counsel` sin Modos operables).** Dos salidas: restaurar en el skill la definición propia del rol legal, o ampliar el Alcance declarado de `mentorship-modes.md` para incluir roles no-ingeniero. La primera es más fiel a lo que se perdió.
 3. **Reparar el runbook de QA (N-3).** `docs/TEST.md` (L35, L37, L43, L295): decidir si el comando apunta a `ui-old/` mientras se reconstruye `ui/`, o marcar el bloque como suspendido. No dejarlo dando una orden que falla.
-4. **Actualizar `AGENT-DEBT-003`:** subir a 🔴 Alta, reescribir "Impacto actual" (ya no es hipotético, está en `HEAD`) y ejecutar su plan: restaurar la verificación FFI en `UI-DESIGNER-5.1`, revertir `UI-DESIGNER-7.3` a prohibición absoluta, reponer las citas de `ADR-0131`, `ADR-0116` y `ADR-0038`.
-5. **Corregir las cifras de `AGENT-DEBT-001`** (5 skills / 10 violaciones, no 6 / 12) **y el alcance de `AGENT-DEBT-008`** (N-10: 4 archivos con la ruta rota, no 1).
+4. **Actualizar `CONTEXT-DEBT-003`:** subir a 🔴 Alta, reescribir "Impacto actual" (ya no es hipotético, está en `HEAD`) y ejecutar su plan: restaurar la verificación FFI en `UI-DESIGNER-5.1`, revertir `UI-DESIGNER-7.3` a prohibición absoluta, reponer las citas de `ADR-0131`, `ADR-0116` y `ADR-0038`.
+5. **Corregir las cifras de `CONTEXT-DEBT-001`** (5 skills / 10 violaciones, no 6 / 12) **y el alcance de `CONTEXT-DEBT-008`** (N-10: 4 archivos con la ruta rota, no 1).
 
 ### Prioridad 2 — Deuda que crece si se ignora
 
 6. **Corregir los punteros temáticos (N-4)** en `bridge`, `qa`, `quant` y `rust`: Protocolo de Lecciones → `mentorship-modes.md`, Política de Comentarios → `commenting-policy.md`. Está identificado por escrito desde hace tres semanas.
-7. **Abrir `AGENT-DEBT-009`** para las 44 referencias rotas a `ui/` (N-3), absorbiendo `AGENT-DEBT-005` (subconjunto). Barrido único: separar referencias vivas (se corrigen) de historial (se deja).
+7. **Abrir `CONTEXT-DEBT-009`** para las 44 referencias rotas a `ui/` (N-3), absorbiendo `CONTEXT-DEBT-005` (subconjunto). Barrido único: separar referencias vivas (se corrigen) de historial (se deja).
 8. **Canonizar los 5 skills legacy**, en el orden que el plan original ya fijó: `social-strategist` → `bridge` → `quant` → `rust` → `tech-lead` al final. Cada uno desbloquea su archivo del hook.
 9. **Restaurar la evidencia perdida (N-5):** el caso `DEBT-005` y las cifras de `DEBT-032` en `debt-management.md`, la lista de migraciones en `ledger-pattern.md`, el puntero a `governance.md` en `commenting-policy.md`.
-10. **Pagar `AGENT-DEBT-004`:** reemplazar los bloques duplicados inline por wikilinks a los 5 docs canónicos. Hoy nadie los lee.
+10. **Pagar `CONTEXT-DEBT-004`:** reemplazar los bloques duplicados inline por wikilinks a los 5 docs canónicos. Hoy nadie los lee.
 
 ### Prioridad 3 — Higiene
 
@@ -360,7 +361,7 @@ Las cinco decisiones (D-1 a D-5) están arriba, en su propia sección. **D-1 blo
 15. **Reformatear `DEBT-046`** a la plantilla de `docs/debt/` (N-7).
 16. **Wikilinks faltantes** en `ui-verification-model.md` (7) y `cross-platform-rust.md` (1) — N-9.
 17. **Corregir N-13:** el `PARTNER-FV` que no cubre `PARTNER-3.1`, y el hueco de Modo Revisión/Docente en `refactoring-engineer`.
-18. **`AGENT-DEBT-006`, `-007`** según su propio plan.
+18. **`CONTEXT-DEBT-006`, `-007`** según su propio plan.
 
 ### Nota sobre agrupación de commits
 
@@ -374,4 +375,4 @@ Al pagar esto, **no repetir el error de N-6**: `feat` (fichas nuevas), `docs` (c
 - `grep -rnoE '\bui/[a-zA-Z0-9_./-]+' <docs vivos> | grep -v ui-old` → cero, o cada superviviente justificado.
 - Cada uno de los 5 knowledge nuevos citado por wikilink desde al menos un skill.
 - `docs/TEST.md`: todo comando del runbook ejecutable, o marcado como suspendido.
-- Las 8 fichas `AGENT-DEBT` reflejan el estado real del árbol.
+- Las 8 fichas `CONTEXT-DEBT` reflejan el estado real del árbol.

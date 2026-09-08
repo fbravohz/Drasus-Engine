@@ -4,7 +4,7 @@ Cómo redirigir a un archivo el texto que un agente escribiría en el chat, deja
 
 Slug ID: `SESSION-REPORTING`.
 
-Tamaño: `13906 caracteres (~3477 tokens aprox., ratio 4:1)`.
+Tamaño: `13908 caracteres (~3477 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -279,6 +279,6 @@ Casos reales de esta sesión. No reemplazan los ❌/✅ atómicos de cada regla 
 * **Incorrecto:** eco en verde que dice "trabajo avanzado, ver reporte", con el bloqueo escondido en la sección de pendientes del archivo.
 * **Correcto:**
   ```
-  🔴 Detenido — el gate de mutación no corre: falta autorización para el crate nuevo.
+  🔴 Detenido — el filtro de mutación no corre: falta autorización para el crate nuevo.
   → .agents/sessions/2026-08-02-reporte-de-sesion.md (turno 5)
   ```

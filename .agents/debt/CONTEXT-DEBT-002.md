@@ -1,4 +1,4 @@
-### AGENT-DEBT-002 · `debt-management.md` referencia una lectura que `memory-policy.md` prohíbe
+### CONTEXT-DEBT-002 · `debt-management.md` referencia una lectura que `memory-policy.md` prohíbe
 
 - **Severidad:** 🔴 Alta
 - **Origen:** Auditoría ad hoc del commit `972bab5f31d64cbdd28e70aee8962cd0198cd36b`, 2026-08-20.

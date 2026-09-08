@@ -1,4 +1,4 @@
-### AGENT-DEBT-004 · 5 knowledge docs nuevos huérfanos — nadie los cita, la copia vieja sigue siendo la que se lee
+### CONTEXT-DEBT-004 · 5 knowledge docs nuevos huérfanos — nadie los cita, la copia vieja sigue siendo la que se lee
 
 - **Severidad:** 🟡 Baja
 - **Origen:** Auditoría ad hoc del commit `972bab5f31d64cbdd28e70aee8962cd0198cd36b`, 2026-08-20.
@@ -7,4 +7,4 @@
 - **Causa raíz:** el refactor extrajo el contenido a un documento canónico pero no completó el segundo paso (reemplazar el bloque inline del skill de origen por un wikilink).
 - **Disparador de pago:** antes de la próxima edición de cualquiera de los 5 temas, o en un pase dedicado de `context-engineer`.
 - **Plan:** `context-engineer` reemplaza cada bloque inline duplicado por un wikilink al doc canónico correspondiente, en los 6 skills señalados.
-- **Estado:** Abierta.
+- **Estado:** 🟠 Parcialmente pagada — `tech-lead` y `architect` saldan su parte dentro de `CONTEXT-DEBT-001` (canonización + partición): sus bloques duplicados de `coherence-sweep.md`, `execution-vocabulary.md`, `ui-verification-model.md` y `test-discrimination.md` quedaron reemplazados por wikilink. `rust-engineer` y `qa-engineer` fueron canonizados en el mismo pase de `CONTEXT-DEBT-001`/`-008`, pero esa tarea no incluyó dedupe explícito contra estos 5 docs — verificar aparte antes de darlos por saldados. Siguen abiertos, sin tocar: `ui-designer`, `flutter-engineer`.

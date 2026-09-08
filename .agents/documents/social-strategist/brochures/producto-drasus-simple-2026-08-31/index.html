@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha de Admisión — Drasus Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,440;0,9..144,560;0,9..144,640;1,9..144,500&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14150F;
+    --ink-soft:#3C3E33;
+    --paper:#ECEFE4;
+    --paper-raised:#F6F7F0;
+    --brass:#A8742E;
+    --brass-dim:#C9A466;
+    --survive:#45614A;
+    --reject:#8C4231;
+    --line:#C6C9B4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#3C3E33;}
+  body{
+    font-family:"Archivo",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  @page{ size:210mm 297mm; margin:0; }
+
+  .page{
+    width:210mm;
+    height:297mm;
+    background:var(--paper);
+    position:relative;
+    display:flex;
+    page-break-after:always;
+    overflow:hidden;
+  }
+  .page:last-child{ page-break-after:auto; }
+
+  .spine{
+    width:15mm;
+    flex:none;
+    border-right:0.6pt solid var(--line);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:16mm;
+  }
+  .spine__label{
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:8.4pt;
+    letter-spacing:0.22em;
+    color:var(--brass);
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+
+  .content{
+    flex:1;
+    padding:15mm 16mm 12mm 13mm;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:8.6pt;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:0.6pt solid var(--line);
+    padding-bottom:5mm;
+    margin-bottom:8mm;
+  }
+  .eyebrow span:last-child{ color:var(--ink-soft); }
+
+  h1.headline{
+    font-family:"Fraunces",Georgia,serif;
+    font-optical-sizing:auto;
+    font-weight:560;
+    font-size:25pt;
+    line-height:1.16;
+    text-wrap:balance;
+    margin:0 0 4mm;
+    max-width:150mm;
+  }
+  h1.headline em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--brass);
+  }
+  .subhead{
+    font-size:11.6pt;
+    color:var(--ink-soft);
+    max-width:120mm;
+    line-height:1.48;
+    margin:0 0 7mm;
+  }
+
+  section{
+    border-top:0.6pt solid var(--line);
+    padding-top:4mm;
+    margin-bottom:5mm;
+  }
+  section:last-of-type{ margin-bottom:0; }
+
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:3mm;
+    margin-bottom:4mm;
+  }
+  .section-num{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9pt;
+    color:var(--brass);
+    letter-spacing:0.05em;
+  }
+  .section-title{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:600;
+    font-size:15pt;
+    letter-spacing:0.01em;
+  }
+
+  p{ margin:0 0 3mm; font-size:10pt; line-height:1.58; color:var(--ink); }
+  p.tight{ margin-bottom:0; }
+  .lede{ font-size:10.6pt; }
+
+  /* ---- Sección 1: el problema de las mil monedas ---- */
+  .problem-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8mm;
+    align-items:start;
+    margin-top:3mm;
+  }
+  .coin-row{ display:flex; gap:2mm; margin-bottom:2mm; }
+  .coin{
+    width:8mm; height:8mm; border-radius:50%;
+    background:var(--brass);
+    border:0.7pt solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:7pt; font-weight:600; color:var(--paper-raised);
+  }
+  .coin-caption{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:7.6pt;
+    color:var(--ink-soft);
+    letter-spacing:0.03em;
+    margin-top:2mm;
+  }
+  .odds-grid{
+    display:grid;
+    grid-template-columns:repeat(20,1fr);
+    gap:0.9mm;
+    margin-bottom:2mm;
+  }
+  .dot{ width:2.6mm; height:2.6mm; border-radius:50%; background:var(--line); }
+  .dot.hit{ background:var(--brass); }
+
+  /* ---- Sección 2: pull quote ---- */
+  .pullquote{
+    font-family:"Fraunces",Georgia,serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:17pt;
+    line-height:1.32;
+    color:var(--ink);
+    max-width:140mm;
+    text-wrap:balance;
+    margin:0 0 3mm;
+  }
+  .pullquote::before{ content:"“"; color:var(--brass); }
+  .pullquote::after{ content:"”"; color:var(--brass); }
+
+  /* ---- Sección 3: ciclo Darwin ---- */
+  .cycle{
+    display:flex;
+    align-items:center;
+    gap:0;
+    margin:4mm 0 3mm;
+  }
+  .cycle-node{
+    flex:1;
+    text-align:center;
+    padding:3mm 1mm;
+  }
+  .cycle-node .n{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:8pt;
+    color:var(--brass);
+    display:block;
+    margin-bottom:1mm;
+  }
+  .cycle-node .t{
+    font-family:"Archivo",sans-serif;
+    font-weight:600;
+    font-size:9pt;
+  }
+  .cycle-arrow{
+    font-family:"IBM Plex Mono",monospace;
+    color:var(--brass-dim);
+    font-size:11pt;
+    flex:none;
+    padding:0 1mm;
+  }
+
+  /* ---- Sección 4: el examen (gauntlet) ---- */
+  .gate{
+    display:flex;
+    gap:4mm;
+    padding:2.3mm 0;
+    border-bottom:0.5pt dotted var(--line);
+  }
+  .gate:last-of-type{ border-bottom:none; }
+  .gate-tag{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9pt;
+    color:var(--brass);
+    flex:none;
+    width:8mm;
+    padding-top:0.3mm;
+  }
+  .gate-body strong{ font-size:10pt; }
+  .gate-body p{ margin:0.6mm 0 0; font-size:9.3pt; color:var(--ink-soft); }
+
+  .verdicts{
+    display:flex;
+    gap:6mm;
+    margin-top:3mm;
+  }
+  .stamp{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9.5pt;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    border:1.4pt solid;
+    padding:2.4mm 5mm;
+    border-radius:1.5mm;
+    display:inline-block;
+  }
+  .stamp.pass{ color:var(--survive); border-color:var(--survive); transform:rotate(-2deg); }
+  .stamp.fail{ color:var(--reject); border-color:var(--reject); transform:rotate(2deg); text-decoration:line-through; opacity:0.85; }
+
+  /* ---- Sección 5: protecciones ---- */
+  .guard-list{ display:flex; flex-direction:column; gap:2.6mm; margin-top:2mm; }
+  .guard-item{ display:flex; gap:3mm; align-items:baseline; }
+  .guard-item .n{ font-family:"IBM Plex Mono",monospace; color:var(--brass); font-size:8.6pt; flex:none; width:6mm; }
+  .guard-item p{ margin:0; font-size:9.6pt; }
+
+  /* ---- Sección 6: soberanía ---- */
+  .sovereign-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:2.5mm;
+    border:1pt solid var(--ink);
+    padding:2.6mm 5mm;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9.4pt;
+    letter-spacing:0.05em;
+    margin:2mm 0 3mm;
+  }
+  .sovereign-badge .dot-live{ width:2.4mm; height:2.4mm; border-radius:50%; background:var(--survive); }
+
+  .disclosure{
+    border-top:0.6pt solid var(--line);
+    padding-top:4mm;
+  }
+  .closing-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .disclosure .cap{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:7.4pt;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:2mm;
+    display:block;
+  }
+  .disclosure ul{ margin:0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:x 0; row-gap:1.4mm; column-gap:5mm; }
+  .disclosure li{ font-size:8pt; color:var(--ink-soft); line-height:1.4; }
+  .disclosure li::before{ content:"— "; color:var(--brass); }
+
+  .closing{
+    padding-top:8mm;
+    border-top:0.6pt solid var(--line);
+  }
+  .closing .pullquote{ font-size:19pt; line-height:1.38; max-width:150mm; }
+  .closing .byline{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9.5pt;
+    letter-spacing:0.06em;
+    color:var(--brass);
+    margin-top:5mm;
+  }
+
+  .folio{
+    position:absolute;
+    right:16mm;
+    bottom:9mm;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:7.6pt;
+    color:var(--ink-soft);
+    letter-spacing:0.08em;
+  }
+
+  .audience{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4mm 6mm;
+    margin-top:1mm;
+  }
+  .audience div{ font-size:9pt; color:var(--ink-soft); }
+  .audience strong{ color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+
+  <!-- PÁGINA 1 -->
+  <div class="page">
+    <div class="spine"><span class="spine__label">Drasus Engine · Ficha de Admisión</span></div>
+    <div class="content">
+      <div class="eyebrow">
+        <span>Laboratorio de Estrategias</span>
+        <span>Ficha 01 / 03 — Origen</span>
+      </div>
+
+      <h1 class="headline">Un programa que crea estrategias para operar los mercados —<br>y luego intenta <em>destruirlas</em>.</h1>
+      <p class="subhead">Solo las que sobreviven a un examen diseñado para reprobarlas llegan a tocar dinero real. Todo corre en tu propia computadora, nunca en un servidor ajeno.</p>
+
+      <section>
+        <div class="section-head"><span class="section-num">01</span><span class="section-title">El problema de las mil monedas</span></div>
+        <p class="lede">Si mil personas lanzan una moneda diez veces cada una, es casi seguro que a alguna le salgan diez caras seguidas. Esa persona no tiene una moneda mágica: tuvo suerte, y la suerte era esperable porque hubo mil intentos.</p>
+        <p>Eso, exactamente eso, es lo que pasa en el trading automático. Si pruebas diez mil estrategias sobre el pasado, algunas se ven espectaculares por pura casualidad. La gente les mete dinero real, y pierden — porque nunca hubo nada ahí.</p>
+        <div class="problem-grid">
+          <div>
+            <div class="coin-row">
+              <div class="coin">C</div><div class="coin">C</div><div class="coin">C</div><div class="coin">C</div><div class="coin">C</div>
+              <div class="coin">C</div><div class="coin">C</div><div class="coin">C</div><div class="coin">C</div><div class="coin">C</div>
+            </div>
+            <div class="coin-caption">10 caras seguidas — ¿don o casualidad?</div>
+          </div>
+          <div>
+            <div class="odds-grid" id="odds"></div>
+            <div class="coin-caption">1 afortunada entre mil intentos</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><span class="section-num">02</span><span class="section-title">La apuesta de Drasus</span></div>
+        <p class="pullquote">El valor no está en generar ideas. Está en descartarlas bien.</p>
+        <p class="tight">Drasus invierte el esfuerzo de la industria: generar candidatos es una etapa, examinarlos es el producto. Toda estrategia es culpable hasta que demuestre lo contrario.</p>
+      </section>
+
+      <section>
+        <div class="section-head"><span class="section-num">03</span><span class="section-title">El método — selección natural</span></div>
+        <p>Miles de estrategias nacen con reglas al azar, compiten contra la historia del mercado, y solo las mejores se reproducen. Ninguna es diseñada a mano.</p>
+        <div class="cycle">
+          <div class="cycle-node"><span class="n">i.</span><span class="t">Nacen</span></div>
+          <div class="cycle-arrow">→</div>
+          <div class="cycle-node"><span class="n">ii.</span><span class="t">Compiten</span></div>
+          <div class="cycle-arrow">→</div>
+          <div class="cycle-node"><span class="n">iii.</span><span class="t">Se reproducen</span></div>
+          <div class="cycle-arrow">→</div>
+          <div class="cycle-node"><span class="n">iv.</span><span class="t">Mutan</span></div>
+          <div class="cycle-arrow">→</div>
+          <div class="cycle-node"><span class="n">v.</span><span class="t">Se repite</span></div>
+        </div>
+        <p class="tight coin-caption" style="font-size:8.4pt;">Sin diseño humano de por medio — no hay un solo "mejor", el sistema entrega el abanico completo y tú eliges viendo las opciones reales.</p>
+      </section>
+    </div>
+    <div class="folio">01 / 03</div>
+  </div>
+
+  <!-- PÁGINA 2 -->
+  <div class="page">
+    <div class="spine"><span class="spine__label">Drasus Engine · Ficha de Admisión</span></div>
+    <div class="content">
+      <div class="eyebrow">
+        <span>Laboratorio de Estrategias</span>
+        <span>Ficha 02 / 03 — El Examen y las Salvaguardas</span>
+      </div>
+
+      <section style="border-top:none; padding-top:0;">
+        <div class="section-head"><span class="section-num">04</span><span class="section-title">El examen diseñado para reprobarte</span></div>
+        <p class="lede">Una serie de pruebas independientes, cada una atacando una forma distinta de haber tenido suerte. Van de la más barata a la más cara: quien reprueba una, no presenta las siguientes.</p>
+
+        <div class="gate"><div class="gate-tag">01</div><div class="gate-body"><strong>El profesor tramposo.</strong><p>Se parte la historia en pedazos y se calcula la probabilidad de que la estrategia ganadora sea, en realidad, del montón.</p></div></div>
+        <div class="gate"><div class="gate-tag">02</div><div class="gate-body"><strong>Avanzar en el tiempo.</strong><p>Se afina con el pasado, se opera el mes siguiente, y se repite durante años — la única situación real.</p></div></div>
+        <div class="gate"><div class="gate-tag">03</div><div class="gate-body"><strong>Mil vidas paralelas.</strong><p>Se revuelven sus operaciones miles de veces: ¿el resultado está en el centro del abanico, o fue la vida afortunada?</p></div></div>
+        <div class="gate"><div class="gate-tag">04</div><div class="gate-body"><strong>Descuento por intentos.</strong><p>Si probaste diez mil configuraciones, la ganadora se castiga en proporción — el examen que casi nadie aplica.</p></div></div>
+        <div class="gate"><div class="gate-tag">05</div><div class="gate-body"><strong>El mercado hermano.</strong><p>Se corre en otro mercado parecido, sin ajustar nada. Lo que memorizó casualidades se derrumba.</p></div></div>
+        <div class="gate"><div class="gate-tag">06</div><div class="gate-body"><strong>Terreno firme.</strong><p>Si mover una perilla 1% derrumba el resultado, la estrategia está parada en la punta de un alfiler.</p></div></div>
+
+        <div class="verdicts">
+          <span class="stamp pass">Superviviente</span>
+          <span class="stamp fail">Descartada</span>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><span class="section-num">05</span><span class="section-title">Antes de arriesgar un peso</span></div>
+        <p class="tight">Antes de operar con dinero real, la estrategia opera en vivo pero en falso durante un período de prueba, comparado sin parar contra lo que su examen predijo. Y una vez que arriesga, capas de protección independientes:</p>
+        <div class="guard-list">
+          <div class="guard-item"><span class="n">→</span><p>Once revisiones antes de cada orden, en menos de una milésima de segundo.</p></div>
+          <div class="guard-item"><span class="n">→</span><p>Un vigilante que vive fuera del programa principal — si algo se rompe, corta todo.</p></div>
+          <div class="guard-item"><span class="n">→</span><p>Tus contraseñas de casa de bolsa jamás salen de tu computadora, en ningún plan.</p></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><span class="section-num">06</span><span class="section-title">De quién es tu trabajo</span></div>
+        <div class="sovereign-badge"><span class="dot-live"></span>Corre en tu computadora. No en la nube de nadie.</div>
+        <p class="tight" style="font-size:9pt; line-height:1.45; margin-top:1.5mm;"><strong>Para ti si</strong> pruebas ideas con datos, no corazonadas · buscas una cuenta fondeada y necesitas pasar su prueba · manejas más de una cuenta o el dinero de alguien más.</p>
+      </section>
+    </div>
+    <div class="folio">02 / 03</div>
+  </div>
+
+  <!-- PÁGINA 3 — Contraportada -->
+  <div class="page">
+    <div class="spine"><span class="spine__label">Drasus Engine · Ficha de Admisión</span></div>
+    <div class="content">
+      <div class="eyebrow">
+        <span>Laboratorio de Estrategias</span>
+        <span>Ficha 03 / 03 — Cierre</span>
+      </div>
+
+      <div class="closing-wrap">
+        <div class="closing">
+          <p class="pullquote">¿Sabes que si mil personas lanzan una moneda diez veces, a alguna le salen diez caras seguidas? Su moneda no es mágica. Hubo mil intentos.</p>
+          <p class="byline">DRASUS ENGINE — el laboratorio que detecta a esa afortunada y la reprueba.</p>
+        </div>
+      </div>
+
+      <div class="disclosure">
+        <span class="cap">Lo que esto no es</span>
+        <ul>
+          <li>No vende datos del mercado</li>
+          <li>No maneja tu dinero</li>
+          <li>No promete que vas a ganar</li>
+          <li>No es una caja negra</li>
+          <li>No corre en la nube</li>
+        </ul>
+      </div>
+    </div>
+    <div class="folio">03 / 03</div>
+  </div>
+
+<script>
+  // Rejilla de 20x5 puntos = 100, resalta 1 solo punto (el "afortunado" entre los intentos).
+  var grid = document.getElementById('odds');
+  var HIGHLIGHT_INDEX = 47;
+  for (var i = 0; i < 100; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === HIGHLIGHT_INDEX ? ' hit' : '');
+    grid.appendChild(d);
+  }
+</script>
+</body>
+</html>

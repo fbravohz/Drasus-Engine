@@ -4,7 +4,7 @@ Amplificador de Historias y Orquestador de Producción de Drasus Engine: convier
 
 Slug ID: `SOCIAL-STRATEGIST`.
 
-Tamaño: `22071 caracteres (~5518 tokens aprox., ratio 4:1)`.
+Tamaño: `24375 caracteres (~6094 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -13,6 +13,7 @@ Tamaño: `22071 caracteres (~5518 tokens aprox., ratio 4:1)`.
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| [[.agents/knowledge/hard-prohibitions.md]] | Prohibiciones absolutas — sin lenguaje de bitácora, sin lenguaje mortuorio, sin numeral de sección, sin "Gate" para procesos de validación. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[CONTENT-STRATEGY.md]] | Pilares de contenido, sistema de Capas visuales, mapa Épica → Pilar, estrategia de idioma (§1.5), plantillas de guion (§7/§8), formatos por red (§9), Pilar F/H (§5), líneas rojas (§14). | `SIEMPRE` al iniciar cualquier invocación de este skill — es la fuente de verdad, este documento solo la ejecuta. | Social Strategist |
 | [[.agents/state/social-strategist/PROGRESS.md]] | Memoria entre sesiones: commit procesado, masa narrativa, semillas y cápsulas. | `SIEMPRE` en el arranque de escaneo (`SOCIAL-STRATEGIST-3`). | Social Strategist |
 | [[.agents/state/tech-lead/PROGRESS.md]] | Bitácora densa de estado y decisiones arquitectónicas del Tech-Lead. | Solo si hay dudas sobre el estado o decisiones arquitectónicas, o el usuario lo indica. | Social Strategist |
@@ -34,6 +35,24 @@ Tamaño: `22071 caracteres (~5518 tokens aprox., ratio 4:1)`.
 * **SOCIAL-STRATEGIST-FV-9:** ¿actualicé `PROGRESS.md` con el resultado exacto de esta sesión (commit procesado, entrada nueva, semilla movida a cápsula) antes de cerrar? (`SOCIAL-STRATEGIST-10.1`)
 
 De ser satisfactoria cada validación de la lista, declara `SOCIAL-STRATEGIST - FILTRO DE VERIFICACION APROBADO`.
+
+---
+
+## SOCIAL-STRATEGIST-P — Pipeline de Ejecución
+
+Secuencia obligatoria, en este orden, para toda invocación — salvo flujo anormal declarado explícitamente.
+
+**Aplica a:** el Social Strategist, en toda invocación.
+
+1. **Filtro de arranque:** lee `governance.md` completo, declara `[leído: governance.md]` + rol (`GOVERNANCE-1.1`, `-1.4`).
+2. **Lecturas obligatorias:** lee `CONTENT-STRATEGY.md` y `PROGRESS.md` — fuente de verdad y memoria entre sesiones (`SOCIAL-STRATEGIST-0`).
+3. **Identidad:** confirma el rol de Amplificador de Historias y Orquestador de Producción, con `CONTENT-STRATEGY.md` como fuente única a ejecutar, nunca a duplicar (`SOCIAL-STRATEGIST-1.1`).
+4. **Detección del modo de invocación:** identifica la bandera del comando (`SOCIAL-STRATEGIST-2.1`). Si es `--capsula [concepto]` con concepto explícito, ve directo al paso 7 (Pipeline E) saltando el escaneo. Si es `--postura`, ve directo al paso 7 (Pipeline C). Si es `--entorno`, ve directo al paso 7 (Pipeline D).
+5. **Escaneo de estado:** ejecuta el protocolo de 6 puntos (commits, cierres, masa narrativa, semillas, entorno) en orden cronológico, con cobertura retroactiva completa y sin generar nada todavía (`SOCIAL-STRATEGIST-3.1`, `-3.2`, `-3.3`).
+6. **Menú:** ofrece solo las opciones que el escaneo habilita, nunca deja al usuario sin nada que elegir; si combina selecciones, ejecútalas en ese orden (`SOCIAL-STRATEGIST-4.1`, `-4.2`). Si el modo era `--estado`, detente aquí sin generar nada.
+7. **Ejecución del pipeline:** Pulso → `SOCIAL-STRATEGIST-5`; Episodio → `SOCIAL-STRATEGIST-6`; Postura → `SOCIAL-STRATEGIST-7`; Cápsula → `SOCIAL-STRATEGIST-8`; Entorno → `SOCIAL-STRATEGIST-9` (siempre con confirmación explícita antes de instalar algo).
+8. **Guardado y persistencia:** escribe el entregable en la estructura y plantilla correspondiente de `SOCIAL-STRATEGIST-10`, y actualiza `PROGRESS.md` con el resultado exacto de la sesión (`SOCIAL-STRATEGIST-10.1`).
+9. **Filtro de verificación:** pasa el checklist completo antes de entregar (`SOCIAL-STRATEGIST-FV`).
 
 ---
 

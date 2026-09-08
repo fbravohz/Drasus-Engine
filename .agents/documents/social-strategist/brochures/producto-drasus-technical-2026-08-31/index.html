@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha Técnica — Drasus Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Tokens — copiados 1:1 de docs/DESIGN.md §1-§3. Cero hex inventado.
+     ============================================================ */
+  :root{
+    --canvas:#0B0D12;
+    --surface:#12141B;
+    --surface-raised:#181B24;
+    --border:#242832;
+    --border-strong:#343A47;
+
+    --text-primary:#EDEFF3;
+    --text-secondary:#A6ACBA;
+    --text-muted:#6B7180;
+    --text-on-accent:#0B0D12;
+
+    --accent:#4C8DFF;
+    --accent-rgb:76,141,255;
+
+    --status-ok:#3DD68C;      --status-ok-rgb:61,214,140;
+    --status-pending:#7C8CFF; --status-pending-rgb:124,140,255;
+    --status-warn:#E8A93D;    --status-warn-rgb:232,169,61;
+    --status-error:#E8543D;   --status-error-rgb:232,84,61;
+
+    /* Escala de espaciado DESIGN.md §3 (4·8·12·16·24·32·48·64px),
+       escalada x1.35 para legibilidad en papel A4 a distancia de lectura. */
+    --sp-1:5.4px; --sp-2:11px; --sp-3:16px; --sp-4:22px;
+    --sp-6:32px; --sp-8:43px; --sp-12:65px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#000; }
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+  }
+  @page{ size:210mm 297mm; margin:0; }
+
+  .mono{ font-family:"JetBrains Mono",ui-monospace,Consolas,monospace; }
+
+  .page{
+    width:210mm; height:297mm;
+    background:var(--canvas);
+    position:relative;
+    page-break-after:always;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .page:last-child{ page-break-after:auto; }
+
+  /* ---- barra de sistema (chrome de app, en miniatura) ---- */
+  .sysbar{
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10mm 16mm 0;
+  }
+  .sysbar-left{ display:flex; align-items:center; gap:var(--sp-3); }
+  .wordmark{ font-weight:700; font-size:11pt; letter-spacing:0.02em; color:var(--text-primary); }
+  .crumb{ font-family:"JetBrains Mono",monospace; font-size:8pt; color:var(--text-muted); }
+  .crumb b{ color:var(--text-secondary); font-weight:500; }
+  .pill{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:7.6pt; letter-spacing:0.04em;
+    padding:3px 9px; border-radius:999px;
+    background:rgba(var(--status-ok-rgb),0.12);
+    border:1px solid rgba(var(--status-ok-rgb),0.35);
+    color:var(--status-ok);
+  }
+  .pill .dot{ width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .content{
+    flex:1;
+    padding:8mm 16mm 16mm;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    max-width:178mm;
+  }
+
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:8pt; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:var(--sp-2);
+  }
+
+  h1.hl{
+    font-weight:800;
+    font-size:26pt;
+    line-height:1.16;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    color:var(--text-primary);
+    margin:0 0 var(--sp-3);
+    max-width:150mm;
+  }
+  .subhead{
+    font-size:11pt; line-height:1.55; color:var(--text-secondary);
+    max-width:135mm; margin:0 0 var(--sp-6);
+  }
+
+  section{ margin-bottom:16px; }
+  section:last-of-type{ margin-bottom:0; }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:2px solid var(--accent);
+    border-radius:10px;
+    padding:var(--sp-4) var(--sp-6);
+  }
+
+  .section-head{ display:flex; align-items:baseline; gap:var(--sp-2); margin-bottom:var(--sp-3); }
+  .cap-tag{ font-family:"JetBrains Mono",monospace; font-size:9pt; color:var(--accent); font-weight:600; }
+  .section-title{ font-weight:700; font-size:14.5pt; color:var(--text-primary); }
+  .section-sub{ font-family:"JetBrains Mono",monospace; font-size:8pt; color:var(--text-muted); margin-left:auto; }
+
+  p{ margin:0 0 var(--sp-3); font-size:9.6pt; line-height:1.54; color:var(--text-secondary); }
+  p:last-child{ margin-bottom:0; }
+  p b, li b, td b{ color:var(--text-primary); font-weight:600; }
+  .lede{ font-size:10.2pt; color:var(--text-primary); }
+
+  .rule{ height:1px; background:var(--border); border:none; margin:var(--sp-4) 0; }
+
+  /* ---- listas de problema con marcador de estado ---- */
+  .problem-list{ display:flex; flex-direction:column; gap:var(--sp-3); }
+  .problem-item{ display:flex; gap:var(--sp-3); align-items:flex-start; }
+  .marker{
+    flex:none; width:16px; height:16px; border-radius:4px; margin-top:2px;
+    background:rgba(var(--status-error-rgb),0.14);
+    border:1px solid rgba(var(--status-error-rgb),0.4);
+    display:flex; align-items:center; justify-content:center;
+    font-family:"JetBrains Mono",monospace; font-size:7.5pt; font-weight:600; color:var(--status-error);
+  }
+  .problem-item p{ margin:0; font-size:9.4pt; }
+
+  .pullquote{
+    font-weight:600;
+    font-size:15pt;
+    line-height:1.4;
+    color:var(--text-primary);
+    max-width:140mm;
+    margin:0;
+  }
+  .pullquote .accent{ color:var(--accent); }
+
+  /* ---- tabla técnica genérica ---- */
+  table.data{ width:100%; border-collapse:collapse; }
+  table.data th{
+    text-align:left; font-family:"JetBrains Mono",monospace; font-size:7.4pt;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);
+    font-weight:500; padding:0 var(--sp-2) var(--sp-2); border-bottom:1px solid var(--border);
+  }
+  table.data td{
+    padding:var(--sp-2) var(--sp-2); border-bottom:1px solid var(--border);
+    font-size:9pt; color:var(--text-secondary); vertical-align:top;
+  }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data td.num{ font-family:"JetBrains Mono",monospace; text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* ---- comparación de dos columnas (weighted-sum vs pareto) ---- */
+  .compare{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-4); }
+  .compare .col{ border:1px solid var(--border); border-radius:10px; padding:var(--sp-3) var(--sp-4); }
+  .compare .col.bad{ border-color:rgba(var(--status-error-rgb),0.3); }
+  .compare .col.good{ border-color:rgba(var(--status-ok-rgb),0.3); }
+  .compare h4{ margin:0 0 var(--sp-2); font-size:9.6pt; }
+  .compare .col.bad h4{ color:var(--status-error); }
+  .compare .col.good h4{ color:var(--status-ok); }
+  .compare p{ font-size:8.8pt; margin:0; }
+
+  /* ---- lista de guantelete ---- */
+  .gate-list{ display:flex; flex-direction:column; }
+  .gate-row{ display:flex; gap:var(--sp-3); padding:6px 0; border-bottom:1px solid var(--border); }
+  .gate-row:last-child{ border-bottom:none; }
+  .gate-n{ flex:none; width:9mm; font-family:"JetBrains Mono",monospace; font-size:8.6pt; color:var(--accent); padding-top:1px; }
+  .gate-row b{ font-size:9.2pt; }
+  .gate-row p{ margin:0.8mm 0 0; font-size:8.5pt; line-height:1.36; }
+
+  .verdicts{ display:flex; gap:var(--sp-4); margin-top:var(--sp-3); }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:"JetBrains Mono",monospace; font-size:8.6pt; letter-spacing:0.04em;
+    padding:5px 12px; border-radius:6px;
+  }
+  .chip.ok{ background:rgba(var(--status-ok-rgb),0.12); border:1px solid rgba(var(--status-ok-rgb),0.35); color:var(--status-ok); }
+  .chip.err{ background:rgba(var(--status-error-rgb),0.12); border:1px solid rgba(var(--status-error-rgb),0.35); color:var(--status-error); }
+  .chip .dot{ width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .guard-list{ display:flex; flex-direction:column; gap:var(--sp-2); }
+  .guard-item{ display:flex; gap:var(--sp-3); }
+  .guard-item .g{ flex:none; color:var(--accent); font-family:"JetBrains Mono",monospace; font-size:9pt; }
+  .guard-item p{ margin:0; font-size:9pt; }
+
+  .plane-table{ width:100%; border-collapse:collapse; margin-bottom:12px; }
+  .plane-table td{ border:1px solid var(--border); padding:5px 10px; font-size:8.3pt; color:var(--text-secondary); vertical-align:top; }
+  .plane-table td.h{ font-family:"JetBrains Mono",monospace; font-size:7.6pt; color:var(--text-primary); font-weight:600; background:var(--surface-raised); width:32mm; }
+
+  .tier{ display:flex; gap:var(--sp-2); align-items:baseline; margin-bottom:1px; }
+  .tier .k{ font-family:"JetBrains Mono",monospace; font-size:7.4pt; color:var(--text-muted); width:32mm; flex:none; }
+  .tier p{ margin:0; font-size:8.3pt; line-height:1.42; }
+
+  .roadmap-row{ display:flex; align-items:center; gap:var(--sp-3); padding:2px 0; border-bottom:1px solid var(--border); }
+  .roadmap-row:last-child{ border-bottom:none; }
+  .roadmap-row .ep{ font-family:"JetBrains Mono",monospace; font-size:7.6pt; color:var(--text-muted); width:16mm; flex:none; }
+  .roadmap-row .desc{ flex:1; font-size:8.4pt; color:var(--text-secondary); }
+  .roadmap-row .desc b{ color:var(--text-primary); }
+  .status-chip{
+    flex:none; font-family:"JetBrains Mono",monospace; font-size:6.8pt; letter-spacing:0.03em;
+    padding:1.5px 7px; border-radius:999px; white-space:nowrap;
+  }
+  .status-chip.done{ background:rgba(var(--status-ok-rgb),0.12); border:1px solid rgba(var(--status-ok-rgb),0.35); color:var(--status-ok); }
+  .status-chip.wip{ background:rgba(var(--status-pending-rgb),0.14); border:1px solid rgba(var(--status-pending-rgb),0.4); color:var(--status-pending); }
+  .status-chip.next{ background:transparent; border:1px solid var(--border-strong); color:var(--text-muted); }
+
+  .footnote{ font-size:7.6pt; color:var(--text-muted); line-height:1.4; }
+  .footnote b{ color:var(--text-secondary); font-weight:600; }
+
+  .folio{
+    position:absolute; right:16mm; bottom:9mm;
+    font-family:"JetBrains Mono",monospace; font-size:7.6pt; color:var(--text-muted); letter-spacing:0.06em;
+  }
+  .spine-label{
+    position:absolute; left:16mm; bottom:9mm;
+    font-family:"JetBrains Mono",monospace; font-size:7.6pt; color:var(--text-muted); letter-spacing:0.06em;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============================================================ PÁGINA 1 -->
+  <div class="page">
+    <div class="sysbar">
+      <div class="sysbar-left">
+        <span class="wordmark">DRASUS ENGINE</span>
+        <span class="crumb">/ <b>ficha-tecnica</b> / 01</span>
+      </div>
+      <span class="pill"><span class="dot"></span>LOCAL-FIRST · ZERO-CLOUD-COMPUTE</span>
+    </div>
+    <div class="content">
+      <div class="eyebrow">Definición de producto — nivel técnico</div>
+      <h1 class="hl">Una fábrica de estrategias de trading que corre entera en tu propia máquina.</h1>
+      <p class="subhead">Las descubre por búsqueda automática, las somete a un guantelete de pruebas estadísticas diseñado para reprobarlas, y solo deja operar dinero real a las que sobreviven. Todo el cómputo ocurre en el hardware del usuario — el proveedor nunca ejecuta nada.</p>
+
+      <section>
+        <div class="section-head"><span class="section-title">El problema estructural</span><span class="section-sub">CAP-00 · contexto</span></div>
+        <div class="panel">
+          <div class="problem-list">
+            <div class="problem-item"><span class="marker">!</span><p><b>El sobreajuste es la norma.</b> Cualquier curva de capital hermosa buscando lo suficiente en histórico es ruido con forma de señal — se derrumba en el primer mes de dinero real.</p></div>
+            <div class="problem-item"><span class="marker">!</span><p><b>Las herramientas optimizan la búsqueda, no el filtro.</b> Generar diez mil candidatas ya está resuelto. Saber cuáles merecen capital es el problema difícil y el menos atendido.</p></div>
+            <div class="problem-item"><span class="marker">!</span><p><b>Nadie descuenta los intentos.</b> Sin contar cuántas configuraciones se probaron, la mejor estadística reportada está inflada por selección — y nadie lo sabe.</p></div>
+            <div class="problem-item"><span class="marker">!</span><p><b>El dato del usuario no es del usuario.</b> Las plataformas en la nube ven las estrategias, parámetros y resultados de quien las opera.</p></div>
+            <div class="problem-item"><span class="marker">!</span><p><b>La simulación miente sin auditoría.</b> Costos idealizados, ejecución instantánea, cero deslizamiento — el backtest promedio no se parece a la operación real.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><span class="section-title">La tesis</span><span class="section-sub">principio rector</span></div>
+        <p class="pullquote">El valor no está en generar estrategias. Está en <span class="accent">destruirlas correctamente</span>.</p>
+        <p style="margin-top:var(--sp-3);">Drasus invierte la proporción habitual de esfuerzo: la generación es una fase, la validación es el producto. Principio hostil — toda estrategia es culpable hasta que sobrevive la prueba — y compromiso de soberanía: cómputo, datos y estrategias viven en la máquina del usuario.</p>
+      </section>
+    </div>
+    <div class="spine-label">DRASUS ENGINE · FICHA TÉCNICA</div>
+    <div class="folio">01 / 04</div>
+  </div>
+
+  <!-- ============================================================ PÁGINA 2 -->
+  <div class="page">
+    <div class="sysbar">
+      <div class="sysbar-left">
+        <span class="wordmark">DRASUS ENGINE</span>
+        <span class="crumb">/ <b>ficha-tecnica</b> / 02</span>
+      </div>
+      <span class="pill"><span class="dot"></span>DETERMINISTIC · MULTI-OBJECTIVE</span>
+    </div>
+    <div class="content">
+      <section style="margin-top:2mm;">
+        <div class="section-head"><span class="cap-tag">CAP-02</span><span class="section-title">Un simulador que no miente</span></div>
+        <p class="lede">El backtest promedio es optimista por construcción: llena órdenes al precio deseado, ignora el deslizamiento y con frecuencia calcula la señal con el cierre de una vela para ejecutar en esa misma vela — información que en la realidad todavía no existía.</p>
+        <div class="panel" style="margin-top:var(--sp-3);">
+          <div class="guard-list">
+            <div class="guard-item"><span class="g">→</span><p><b>Motor dual:</b> ruta express vectorizada para descartar a escala, ruta secuencial dirigida por eventos para fidelidad total — con contrato de consistencia conservadora: la rápida nunca reporta mejor que la fiel.</p></div>
+            <div class="guard-item"><span class="g">→</span><p><b>Invariante de alineación a la apertura:</b> señal calculada al cierre de la vela N se ejecuta en la apertura de N+1 — siempre, sin excepción configurable.</p></div>
+            <div class="guard-item"><span class="g">→</span><p><b>Determinismo bit a bit:</b> dos corridas idénticas producen el mismo hash. Sin esa propiedad no hay auditoría posible.</p></div>
+            <div class="guard-item"><span class="g">→</span><p><b>Registro de procedencia (<span class="mono">expedition-ledger</span>):</b> ata cada corrida a sus artefactos — el insumo que la corrección estadística de CAP-04 necesita para contar cuántas veces se buscó.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="rule">
+
+      <section>
+        <div class="section-head"><span class="cap-tag">CAP-03</span><span class="section-title">Búsqueda multiobjetivo del espacio de estrategias</span></div>
+        <p class="lede">El motor de referencia es <b>NSGA-II</b>: parte de una población aleatoria, evalúa, cruza y muta a las mejores, y repite por generaciones — pero nunca colapsa la calidad a un solo número.</p>
+        <div class="compare" style="margin-top:var(--sp-3);">
+          <div class="col bad">
+            <h4>Puntaje ponderado (StrategyQuant X)</h4>
+            <p>Suma objetivos con pesos fijos decididos <b>antes</b> de buscar. La decisión es arbitraria, esconde la frontera real de compromisos y sesga la búsqueda hacia una región elegida a ciegas.</p>
+          </div>
+          <div class="col good">
+            <h4>Frente de Pareto (NSGA-II)</h4>
+            <p>Mantiene el conjunto donde ninguna estrategia es mejor que otra en <b>todos</b> los objetivos a la vez. La decisión sobre el compromiso rentabilidad/riesgo se difiere hasta que hay evidencia real.</p>
+          </div>
+        </div>
+        <p style="margin-top:var(--sp-3);"><b>Puerto abierto, no motor único:</b> optimización bayesiana (procesos gaussianos, evaluación cara), búsqueda exhaustiva (referencia sin puntos ciegos), optimización jerárquica (evita explosión combinatoria), regresión simbólica (descubre la forma de la fórmula) y búsqueda topológica (meseta ancha, no pico estrecho) — catálogo vigente en <span class="mono">ADR-0113</span>.</p>
+        <p><b>Filtro de admisión no negociable:</b> todo método de búsqueda debe reportar su presupuesto de intentos consumido desde la primera corrida. Contarlo después es imposible, y sin ese número la corrección estadística de CAP-04 es inválida.</p>
+      </section>
+    </div>
+    <div class="spine-label">DRASUS ENGINE · FICHA TÉCNICA</div>
+    <div class="folio">02 / 04</div>
+  </div>
+
+  <!-- ============================================================ PÁGINA 3 -->
+  <div class="page">
+    <div class="sysbar">
+      <div class="sysbar-left">
+        <span class="wordmark">DRASUS ENGINE</span>
+        <span class="crumb">/ <b>ficha-tecnica</b> / 03</span>
+      </div>
+      <span class="pill" style="background:rgba(var(--status-pending-rgb),0.14); border-color:rgba(var(--status-pending-rgb),0.4); color:var(--status-pending);"><span class="dot"></span>CASCADE · EARLY-ABANDON</span>
+    </div>
+    <div class="content">
+      <section style="margin-top:2mm;">
+        <div class="section-head"><span class="cap-tag">CAP-04</span><span class="section-title">El guantelete de robustez</span></div>
+        <p class="lede">Si buscas lo suficiente, encontrarás algo que se ve bien y no vale nada. La cascada ataca cada modo de falla por separado, ordenada por costo computacional — quien reprueba una, no llega a las siguientes.</p>
+
+        <div class="panel" style="margin-top:var(--sp-3); padding-top:var(--sp-3); padding-bottom:var(--sp-2);">
+          <div class="gate-list">
+            <div class="gate-row"><span class="gate-n">01</span><div><b>CPCV + PBO.</b><p>Validación cruzada combinatoria purgada — prueba todas las combinaciones de bloques entrenamiento/prueba y estima la probabilidad de sobreajuste del backtest.</p></div></div>
+            <div class="gate-row"><span class="gate-n">02</span><div><b>Walk-forward.</b><p>Optimiza en una ventana, opera la siguiente, avanza. Mide si funciona cuando solo puede ver el pasado — la única condición real.</p></div></div>
+            <div class="gate-row"><span class="gate-n">03</span><div><b>Monte Carlo.</b><p>Reordena y perturba las operaciones miles de veces. ¿El resultado está en el centro de la distribución o en la cola afortunada?</p></div></div>
+            <div class="gate-row"><span class="gate-n">04</span><div><b>Sharpe deflactado.</b><p>Corrección por pruebas múltiples: descuenta el Sharpe reportado según cuántas configuraciones se probaron.</p></div></div>
+            <div class="gate-row"><span class="gate-n">05</span><div><b>Validación cruzada de mercados.</b><p>Corre en mercados hermanos sin reoptimizar parámetros. Lógica genuina degrada con gracia; lógica sobreajustada se desploma.</p></div></div>
+            <div class="gate-row"><span class="gate-n">06</span><div><b>Ablación de reglas.</b><p>Desactiva componentes uno por uno. Si quitar una regla no cambia el resultado, esa regla es decoración sobreajustada.</p></div></div>
+            <div class="gate-row"><span class="gate-n">07</span><div><b>Agente de ruido adversario.</b><p>Perturba deliberadamente los datos de entrada buscando romper la estrategia — un equipo rojo automatizado.</p></div></div>
+            <div class="gate-row"><span class="gate-n">08</span><div><b>Gradiente de fragilidad.</b><p>Si mover un parámetro 1% derrumba el resultado, la estrategia está sobre un pico, no una meseta.</p></div></div>
+            <div class="gate-row"><span class="gate-n">09</span><div><b>Evaluador de firma de fondeo.</b><p>Aplica las reglas exactas de la firma (pérdida diaria máxima, objetivo de beneficio) antes de arriesgar la evaluación pagada.</p></div></div>
+          </div>
+        </div>
+
+        <div class="verdicts">
+          <span class="chip ok"><span class="dot"></span>robustness_verdict: PASS</span>
+          <span class="chip err"><span class="dot"></span>robustness_verdict: FAIL</span>
+        </div>
+        <p style="margin-top:var(--sp-3);">Todo converge en un <b>agregador de score de robustez</b> con veredicto en lenguaje natural — determinista, sin modelo de lenguaje en la ruta crítica. Es la diferencia entre "se ve bien" y "sobrevivió doce intentos independientes de destruirlo".</p>
+      </section>
+    </div>
+    <div class="spine-label">DRASUS ENGINE · FICHA TÉCNICA</div>
+    <div class="folio">03 / 04</div>
+  </div>
+
+  <!-- ============================================================ PÁGINA 4 -->
+  <div class="page">
+    <div class="sysbar">
+      <div class="sysbar-left">
+        <span class="wordmark">DRASUS ENGINE</span>
+        <span class="crumb">/ <b>ficha-tecnica</b> / 04</span>
+      </div>
+      <span class="pill"><span class="dot"></span>SOBERANÍA · ROADMAP</span>
+    </div>
+    <div class="content">
+      <section style="margin-top:2mm;">
+        <div class="section-head"><span class="cap-tag">CAP-05/06/07</span><span class="section-title">Cuarentena, defensa y portafolio</span></div>
+        <p>Antes de un peso real, la estrategia opera en simulación en vivo (por defecto siete días) mientras la <b>prueba de Pardo</b> contrasta su comportamiento real contra la proyección del backtest — si la degradación cruza el umbral, se retira sin esperar a que termine el período.</p>
+        <p>En producción: <b>once filtros pre-operación</b> en menos de un milisegundo, un <b>vigilante en un proceso separado</b> con interruptor de emergencia, y credenciales de bróker que <b>nunca salen de la máquina, en ningún nivel de suscripción</b>. La asignación de capital entre estrategias usa <b>paridad de riesgo jerárquica (HRP)</b> — agrupa por similitud de comportamiento en vez de invertir una matriz de covarianzas inestable.</p>
+      </section>
+
+      <hr class="rule">
+
+      <section>
+        <div class="section-head"><span class="cap-tag">CAP-10</span><span class="section-title">Soberanía, identidad y modelo de negocio</span></div>
+        <table class="plane-table">
+          <tr><td class="h">Interfaz</td><td>La aplicación que el usuario ve — corre en su máquina.</td></tr>
+          <tr><td class="h">Ejecución</td><td>Todo el cómputo: backtests, generación, órdenes — su hardware, PC o servidor privado.</td></tr>
+          <tr><td class="h">Cabina de Mando</td><td>Autenticación, licencias, facturación, agregación de telemetría. <b>Nunca computa nada</b> — servidor del proveedor.</td></tr>
+        </table>
+        <div class="tier"><span class="k mono">GRATUITO</span><p>El trabajo del usuario fluye al proveedor y es suyo por términos de servicio. El usuario paga con datos.</p></div>
+        <div class="tier"><span class="k mono">PAGO AL CORRIENTE</span><p>La telemetría de trabajo se suprime en origen. Privacidad real, no una promesa.</p></div>
+        <div class="tier"><span class="k mono">PAGO VENCIDO</span><p>La emisión se reactiva. El entorno del usuario nunca se borra.</p></div>
+        <div class="tier"><span class="k mono">TODO NIVEL</span><p>Credenciales de bróker y direcciones de máquinas en producción jamás salen de la máquina del usuario.</p></div>
+      </section>
+
+      <hr class="rule">
+
+      <section>
+        <div class="section-head"><span class="section-title">Roadmap — Alpha-First</span><span class="section-sub">acortar código→dinero real</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-0</span><span class="desc"><b>Fundación</b> — esqueleto compilable, primera interfaz</span><span class="status-chip done">✓ CERRADA</span></div>
+        <div class="roadmap-row"><span class="ep">CIMIENTOS</span><span class="desc"><b>Substrato de negocio</b> — CAP-10</span><span class="status-chip wip">● EN CURSO</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-1</span><span class="desc"><b>Soberanía de datos</b> — CAP-01</span><span class="status-chip wip">● EN CURSO</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-2</span><span class="desc"><b>Motor de backtest</b> — CAP-02</span><span class="status-chip next">PENDIENTE</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-3</span><span class="desc"><b>Generación</b> — CAP-03</span><span class="status-chip next">PENDIENTE</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-4</span><span class="desc"><b>Guantelete de robustez</b> — CAP-04</span><span class="status-chip next">PENDIENTE</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-5</span><span class="desc"><b>Primer dinero real</b> — CAP-05, CAP-06</span><span class="status-chip next">PENDIENTE</span></div>
+        <div class="roadmap-row"><span class="ep">EPIC-6/7</span><span class="desc"><b>Flota, capital y ciclo cerrado 24/7</b> — CAP-07, CAP-08</span><span class="status-chip next">PENDIENTE</span></div>
+      </section>
+
+      <div class="footnote" style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
+        <b>Frontera de investigación:</b> ~40 líneas exploratorias (IA, minería distribuida, opciones, cómputo cuántico) — hipótesis, no roadmap comprometido.
+        &nbsp;·&nbsp; Drasus no vende datos, no gestiona capital de terceros ni promete rentabilidad: valida, no promete.
+      </div>
+    </div>
+    <div class="spine-label">DRASUS ENGINE · FICHA TÉCNICA</div>
+    <div class="folio">04 / 04</div>
+  </div>
+
+</body>
+</html>

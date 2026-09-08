@@ -4,7 +4,7 @@ Cómo se estratifican la Superficie de Verificación Funcional (SVF) y la Galer�
 
 Slug ID: `UI-VERIFICATION-MODEL`.
 
-Tamaño: `9423 caracteres (~2356 tokens aprox., ratio 4:1)`.
+Tamaño: `9425 caracteres (~2356 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -103,7 +103,7 @@ Una feature no se marca `Completado` sin su Superficie de Verificación Funciona
 
   el subcomando `drasus verify <feature>` (probador CLI, [[docs/adr/ADR-0142.md]]) es complementario, no sustituto: terminal para el desarrollador, GUI para probar sin leer código. Cerrar una feature con solo el Canal #2 y diferir la SVF es violación de la DoD.
 
-* **UI-VERIFICATION-MODEL-3.4 — Gate de Integración:**
+* **UI-VERIFICATION-MODEL-3.4 — Filtro de Integración:**
 
   antes de cerrar una feature consumidora, se revisa si alguna feature de plomería completada previamente la declaró como su Ventana de Verificación. Si la hay, el observable correspondiente DEBE quedar visible en su Cáscara Delgada — si no, la Etapa 4 no está completa.
 

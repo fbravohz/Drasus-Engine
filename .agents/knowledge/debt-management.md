@@ -2,11 +2,11 @@
 
 La deuda técnica deliberada es sana en greenfield: permite avanzar en el camino crítico sin frenar por cosas que aún no muerden, siempre que quede registrada con su causa, impacto y disparador de pago.
 
-Registro canónico: [[docs/DEBT.md]] es el índice (una fila por deuda) y [[docs/debt/DEBT-XXX.md]] la ficha completa de cada una (patrón, un archivo por deuda) — el único lugar descubrible.
+Registro canónico: [[docs/DEBT.md]] es el índice (una fila por deuda) y [[docs/debt/DEBT-XXX.md]] la ficha completa de cada una (patrón, un archivo por deuda) — el único lugar descubrible. Deuda de agentes vive en [[.agents/CONTEXT-DEBT.md]] con el mismo patrón (`CONTEXT-DEBT-NNN`).
 
 Slug ID: `DEBT-MANAGEMENT`.
 
-Tamaño: `19318 caracteres (~4830 tokens aprox., ratio 4:1)`.
+Tamaño: `19486 caracteres (~4872 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -20,7 +20,7 @@ Tamaño: `19318 caracteres (~4830 tokens aprox., ratio 4:1)`.
 * **DEBT-MANAGEMENT-FV-4:** ¿está registrada en [[docs/DEBT.md]] y su ficha en `docs/debt/`, no solo en código o chat (`DEBT-MANAGEMENT-8`)?
 * **DEBT-MANAGEMENT-FV-5:** ¿la severidad es realista, no minimizada (`DEBT-MANAGEMENT-7`)?
 * **DEBT-MANAGEMENT-FV-6:** ¿el impacto actual es honesto — "nulo" solo si es verdad, "limitación" si es verdad (`DEBT-MANAGEMENT-6`)?
-* **DEBT-MANAGEMENT-FV-7:** ¿elegí el registro correcto — `DEBT-NNN` para código/producto, `AGENT-DEBT-NNN` para agentes/documentación (`DEBT-MANAGEMENT-11`)?
+* **DEBT-MANAGEMENT-FV-7:** ¿elegí el registro correcto — `DEBT-NNN` para código/producto ([[docs/DEBT.md]]), `CONTEXT-DEBT-NNN` para agentes/documentación ([[.agents/CONTEXT-DEBT.md]]) (`DEBT-MANAGEMENT-11`)?
 
 De ser satisfactoria cada validación de la lista, declara `DEBT-MANAGEMENT - FILTRO DE VERIFICACION APROBADO`.
 
@@ -339,17 +339,17 @@ Deuda de código/producto y deuda de gobernanza de agentes no se mezclan — cad
 
 * **DEBT-MANAGEMENT-11.1 — Criterio de Enrutamiento:**
 
-  | | **DEBT-NNN** ([[docs/DEBT.md]] / `docs/debt/`) | **AGENT-DEBT-NNN** ([[.agents/DEBT.md]] / `.agents/debt/`) |
+  | | **DEBT-NNN** ([[docs/DEBT.md]] / `docs/debt/`) | **CONTEXT-DEBT-NNN** ([[.agents/CONTEXT-DEBT.md]] / `.agents/debt/`) |
   |---|---|---|
   | Dominio | Código, features, ADRs — producto ya construido | Skills, knowledge docs, hooks, plantillas — gobernanza de agentes |
   | Ejemplo | Falta paginación en un endpoint | Un knowledge doc nuevo sin ningún skill que lo cite |
   | Cierra con | Una Story | Una edición quirúrgica del documento afectado, o una Story si toca herramienta/hook |
 
   * ❌ *Incorrecto:* registrar un skill con formato legacy en [[docs/DEBT.md]] junto a huecos de una feature.
-  * ✅ *Correcto:* `AGENT-DEBT-NNN` en [[.agents/DEBT.md]] para el mismo hallazgo.
+  * ✅ *Correcto:* `CONTEXT-DEBT-NNN` en [[.agents/CONTEXT-DEBT.md]] para el mismo hallazgo.
 
 * **DEBT-MANAGEMENT-11.2 — Mismo Protocolo, Prefijo Distinto:**
 
-  `AGENT-DEBT-NNN` sigue exactamente `DEBT-MANAGEMENT-1` a `DEBT-MANAGEMENT-10` (Regla de Oro, promoción, DEBT vs. TASK, `ponytail:` vs. DEBT, estructura de 8 campos, severidad, registro, cierre) — solo cambia dónde vive el índice y la ficha, y el prefijo, para que citarlo suelto en prosa nunca se confunda con deuda de código.
+  `CONTEXT-DEBT-NNN` sigue exactamente `DEBT-MANAGEMENT-1` a `DEBT-MANAGEMENT-10` (Regla de Oro, promoción, DEBT vs. TASK, `ponytail:` vs. DEBT, estructura de 8 campos, severidad, registro, cierre) — solo cambia dónde vive el índice y la ficha, y el prefijo, para que citarlo suelto en prosa nunca se confunda con deuda de código.
 
 **Filtro de verificación:** `DEBT-MANAGEMENT-FV-7`.

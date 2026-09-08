@@ -1,0 +1,9 @@
+### CONTEXT-DEBT-009 · `brief.md` referencia secciones de la Orden de Trabajo por numeral `§N` baneado
+- **Severidad:** 🟡 Baja
+- **Origen:** corrección de `.agents/skills/tech-lead/SKILL.md` (auditoría de pérdida de bitácora en el split del skill), al intentar insertar en `brief.md` la regla de Orden con numeración de secciones legada (`P-1`).
+- **Descripción:** `brief.md` cita las secciones de la Orden de Trabajo con el numeral `§N` (`§7`, `§8` ×2, `§9`) — el mismo patrón que usa hoy `docs/execution/_TEMPLATE.md` (`## 7. Registro de ejecución`, `## 8. Pendientes...`, `## 9. Cierre ejecutivo`). El propietario indica que esa notación está baneada en el proyecto (el criterio vigente es `SLUG-ID`) y pide un criterio de reemplazo para referenciar secciones de una Orden de Trabajo sin depender de su número posicional.
+- **Impacto actual:** ninguno en ejecución — `brief.md` sigue siendo legible y funcional; el hueco es de consistencia de convención, no de corrección.
+- **Causa raíz:** la plantilla de Orden de Trabajo (`docs/execution/_TEMPLATE.md`) numera sus secciones `0`-`9`, y `brief.md` heredó esa notación al citarlas. No hay todavía un criterio alternativo definido para reemplazar el numeral.
+- **Disparador de pago:** cuando el propietario/Architect defina el criterio de referencia a secciones de una Orden de Trabajo (ej. por nombre estable en vez de número, o un slug propio por sección) — se aplica entonces a `brief.md` (5 ocurrencias) y se evalúa si `docs/execution/_TEMPLATE.md` y las Órdenes ya existentes en `docs/execution/` necesitan el mismo tratamiento.
+- **Plan:** (1) decidir el criterio de reemplazo; (2) reescribir las 5 referencias de `brief.md`; (3) barrer `docs/execution/_TEMPLATE.md` y Órdenes existentes por el mismo patrón si el criterio nuevo aplica retroactivamente.
+- **Estado:** Abierta.

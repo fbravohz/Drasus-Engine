@@ -1,10 +1,10 @@
 # Razonamiento Crítico de Dominio
 
-Gate obligatorio antes de sellar una decisión de dominio cuantitativo, estadístico, financiero, criptográfico, de microestructura, fiscal o legal — 7 comprobaciones que atrapan el modelo que se rompe en el límite o el framing de generalista que un especialista nunca validó. Documento de lectura bajo demanda (no forma parte de `governance.md`); al consultarlo, declara al invocador que lo hiciste.
+Filtro obligatorio antes de sellar una decisión de dominio cuantitativo, estadístico, financiero, criptográfico, de microestructura, fiscal o legal — 7 comprobaciones que atrapan el modelo que se rompe en el límite o el framing de generalista que un especialista nunca validó. Documento de lectura bajo demanda (no forma parte de `governance.md`); al consultarlo, declara al invocador que lo hiciste.
 
 Slug ID: `CRITICAL-DOMAIN-REASONING`.
 
-Tamaño: `5672 caracteres (~1418 tokens aprox., ratio 4:1)`.
+Tamaño: `5676 caracteres (~1419 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -29,7 +29,7 @@ Antes de sellar cualquier decisión en un dominio cuantitativo, estadístico, fi
 
   obligatoria. Empuja cada parámetro al extremo (N→∞, T→0, corridas→∞, usuarios→∞, tiempo→∞, saldo→0). Si el resultado es absurdo (condena universal, coste infinito, bloqueo total, división por cero conceptual), el modelo está incompleto, no "aproximadamente bien". Escribe la prueba y su resultado.
 
-* **CRITICAL-DOMAIN-REASONING-1.2 — Gate de Especialista de Dominio:**
+* **CRITICAL-DOMAIN-REASONING-1.2 — Filtro de Especialista de Dominio:**
 
   el Architect y el Tech-Lead son generalistas. Toda decisión dentro de un dominio con especialista (Quant-engineer = estadística/finanzas cuantitativas; Bridge/cripto; microestructura; fiscal/legal) DEBE pasar por ese skill ANTES de codificarse como canon. Un framing "que suena riguroso" de un generalista no es fuente válida en dominio especialista.
 

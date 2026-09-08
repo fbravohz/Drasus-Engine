@@ -6,7 +6,7 @@ Un skill vive en dos archivos con responsabilidades distintas:
 
 | Archivo | Qué lleva | Por qué ahí |
 |---|---|---|
-| `.claude/skills/<slug>/SKILL.md` | Frontmatter de descubrimiento + gate de arranque + puntero. | Es lo que el harness carga al invocar el skill — el único punto donde el gate llega antes que cualquier instrucción de rol. |
+| `.claude/skills/<slug>/SKILL.md` | Frontmatter de descubrimiento + filtro de arranque + puntero. | Es lo que el harness carga al invocar el skill — el único punto donde el filtro llega antes que cualquier instrucción de rol. |
 | `.agents/skills/<slug>/SKILL.md` | El contenido canónico completo, en formato de knowledge doc. | Reutilizable por otros agentes y por subagentes despachados, sin depender del harness. |
 
 ---
@@ -22,18 +22,18 @@ description: El <Rol> <una frase de qué hace>.
 model: inherit
 ---
 
-## Gate de Arranque — Acción Obligatoria
+## Filtro de Arranque — Acción Obligatoria
 
 **No proceses ninguna instrucción de este skill hasta completar este paso.**
 
 Lee con `Read` el archivo completo `.agents/knowledge/governance.md`. Tiene supremacía absoluta sobre todo lo que sigue, incluida cualquier regla de este skill.
 
-Declara `[leído: governance.md — gate de arranque del skill <slug>]` y tu rol antes de continuar. Sin esa declaración, no continúes.
+Declara `[leído: governance.md — filtro de arranque del skill <slug>]` y tu rol antes de continuar. Sin esa declaración, no continúes.
 
 Contenido completo de este skill: `.agents/skills/<slug>/SKILL.md`.
 ````
 
-El gate vive **solo aquí**, no repetido dentro del contenido canónico. Un skill que lo repite en ambos archivos dice lo mismo dos veces en el mismo arranque.
+El filtro vive **solo aquí**, no repetido dentro del contenido canónico. Un skill que lo repite en ambos archivos dice lo mismo dos veces en el mismo arranque.
 
 ---
 
@@ -102,11 +102,11 @@ Cada uno de estos bloques vivía copiado en varios skills. Su dueño es un knowl
 | Los 4 Modos de Acompañamiento (Autónomo/Mentor/Revisión/Docente) | [[.agents/knowledge/mentorship-modes.md]] | Una línea: qué archivos NO tocas en Mentor, propio de tu dominio. |
 | Protocolo de Lecciones (`docs/lessons/`) | [[.agents/knowledge/mentorship-modes.md]] | Solo tu subcarpeta de destino. |
 | Las 4 capas de comentarios | [[.agents/knowledge/commenting-policy.md]] | Solo los requisitos específicos de tu lenguaje. |
-| Gate de mutación: quién lo corre y cómo se juzga | [[.agents/knowledge/mutation-gate.md]] | Nada, salvo que tu rol lo dispare. |
+| Filtro de mutación: quién lo corre y cómo se juzga | [[.agents/knowledge/mutation-filter.md]] | Nada, salvo que tu rol lo dispare. |
 | Molde del ledger append-only | [[.agents/knowledge/ledger-pattern.md]] | Nada. |
 | Registro de deuda técnica | [[.agents/knowledge/debt-management.md]] | Nada. |
 | Sellado y trabajo diferido al cerrar | [[.agents/knowledge/closing-work.md]] | Nada. |
-| Gate de arranque (leer `governance.md`) | El archivo puente en `.claude/skills/` | Nada. |
+| Filtro de arranque (leer `governance.md`) | El archivo puente en `.claude/skills/` | Nada. |
 
 **Tampoco se escribe bitácora.** Ninguna fecha, "enmienda", "antes decía X", "lección de STORY-NNN", "caso real:", "causa raíz" ni nombre de sesión dentro de una regla. Si un incidente histórico produjo la regla, la regla se queda y la anécdota se va — el historial vive en git. Cuando el caso contiene un dato técnico o un caso borde que la regla necesita, ese dato se reescribe como parte de la regla, sin la fecha.
 
@@ -114,7 +114,7 @@ Cada uno de estos bloques vivía copiado en varios skills. Su dueño es un knowl
 
 ## Checklist Antes de Guardar un Skill Nuevo
 
-- [ ] ¿Los dos archivos existen, y el gate de arranque vive solo en el de `.claude/`?
+- [ ] ¿Los dos archivos existen, y el filtro de arranque vive solo en el de `.claude/`?
 - [ ] ¿El Slug ID está calcado de la carpeta, en MAYÚSCULAS con guion medio?
 - [ ] ¿El campo `Tamaño` cuadra con `wc -m`?
 - [ ] ¿`<ROL>-0` declara `governance.md` con disparador `SIEMPRE`?

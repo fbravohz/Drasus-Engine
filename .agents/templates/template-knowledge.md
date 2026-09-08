@@ -1,110 +1,47 @@
-# Plantilla de Documento — Formato Estándar para `.agents/knowledge/`
+# Plantilla de Documento de Knowledge
 
-Cómo estructurar un documento completo de `.agents/knowledge/` (no un bloque suelto — para eso, [[.agents/templates/template-instruction-formats.md]]). Un documento de knowledge es un contenedor de bloques, en orden fijo: Lecturas Obligatorias → Filtro de Verificación → N reglas sin límite → Ejemplos al cierre si aplican. El Filtro de Verificación va segundo (no al final) para que agregar reglas nunca lo desplace ni obligue a reordenar nada; Ejemplos, en namespace propio `<DOC>-EJ-N` (igual mecánica que el Filtro, ver [[.agents/templates/template-instruction-formats.md]]), vive siempre al cierre físico sin competir por número con las reglas que se agreguen después.
+- Cómo se ensambla un documento completo de `.agents/knowledge/` — no un bloque suelto, para eso [[.agents/templates/template-instruction-formats.md]].
+- SLUG-ID: `TEMPLATE-KNOWLEDGE`
+- Tamaño: `2137 caracteres (~534 tokens aprox., ratio 4:1)`
+- Lecturas:
+  - [[.agents/templates/template-instruction-formats.md]] -> SIEMPRE -> Context Engineer
 
-**Regla de oro:** todo documento de knowledge usa los formatos de [[.agents/templates/template-instruction-formats.md]] para cada bloque que contiene. Esta plantilla no repite esos campos — dice cómo se ensamblan varios bloques en un documento coherente.
+## TEMPLATE-KNOWLEDGE-1: Estructura
 
----
-
-## Estructura del Documento
+Título + cabecera → `<DOC>-P` (Pipeline, opcional, solo si el orden de pasos no es inferible de las secciones mismas) → N secciones `<DOC>-N: <Título>` sin límite → Ejemplos al cierre si aplican, namespace propio `<DOC>-EJ`, nunca compite por número con las secciones.
 
 ```
-# <Título del Documento>
+# <Título>
 
-<Descripción rápida: 1-2 líneas, qué agrupa este documento y para quién — sin backstory, WRITING-EFFICIENCY-5.1>
+- <Objetivo: 1-2 líneas, qué agrupa y para quién — sin backstory>
+- SLUG-ID: `<DOC>`
+- Tamaño: `<N> caracteres (~<M> tokens aprox.)`
+- Tags: `tag-uno`, `tag-dos` (opcional — solo si ya tiene tags asignados del vocabulario controlado)
+- Lecturas:
+  - [[ruta/doc1.md]] -> SIEMPRE -> Todos
+  - [[ruta/doc2.md]] -> `keyword1`, `keyword2` -> <alcance>
 
-Slug ID: `<DOC>`.
+## <DOC>-1: <Título de la sección>
 
-Tamaño: `<N> caracteres (~<M> tokens aprox., ratio 4:1)`.
+- **<Nombre corto>:** cuerpo en una línea.
+- **<Nombre corto>:** cuerpo en una línea.
 
----
+## <DOC>-N: <Título de la sección N-ésima — secuencia sin límite, append-only>
 
-## <DOC>-0 — Lecturas Obligatorias
-<Tabla de 4 columnas — ver [[.agents/templates/template-instruction-formats.md#Formato: Lecturas Obligatorias]]. Se omite el bloque entero si el documento no tiene lecturas propias distintas de governance.md.>
+## <DOC>-EJ: Ejemplos
 
----
+**Caso: <qué transforma>**
 
-## <DOC>-FV — Filtro de Verificación
-<Debe existir siempre, segunda sección del documento (o primera si no hay Lecturas Obligatorias) — se puebla con un ítem `<DOC>-FV-N` por cada regla que se agregue más abajo. Ver [[.agents/templates/template-instruction-formats.md#Formato: Filtro de Verificación]].>
+**Antes:**
+> <texto>
 
----
-
-## <DOC>-1 — <Primera regla, formato Completo o Ligero según corresponda>
-
-...
-
-## <DOC>-2 — <Segunda regla, formato Completo o Ligero según corresponda>
-
-...
-
-## <DOC>-N — <Regla N-ésima — la secuencia no tiene límite, append-only>
-
----
-
-## <DOC>-EJ — Ejemplos
-
-### <DOC>-EJ-K — <Título del bloque de casos>
-<Ver "Sección de Ejemplos" abajo y [[.agents/templates/template-instruction-formats.md#Formato: Ejemplos]]>
+**Después:**
+> <texto, con medición real inline si existe>
 ```
 
----
+## TEMPLATE-KNOWLEDGE-2: Notas
 
-## Campo Tamaño: Cómo Calcularlo y Cuándo Actualizarlo
-
-**Cómo calcularlo:** cuenta los caracteres del archivo completo (`wc -m <archivo>` o equivalente) — nunca a ojo. El equivalente en tokens es una proyección declarada, no una medición: se calcula dividiendo por 4 (ratio 4:1 caracteres/token, aproximación estándar para texto en español con tokenizadores BPE) y siempre se marca `aprox.` — nunca como cifra exacta. Un tokenizador real (ej. `tiktoken`) da una cifra más precisa, pero no es obligatorio correrlo en cada edición.
-
-**Cuándo actualizarlo:** en cada edición que cambie el contenido del archivo, como parte de esa misma edición — no una tarea aparte ni diferida. Una edición que solo reordena o corrige formato sin alterar el conteo no obliga a recalcular.
-
----
-
-## Sección de Ejemplos: Al Final del Documento, No Por Regla
-
-**Decisión:** los ejemplos compuestos van en una sección única al cierre del documento — no repetidos dentro de cada regla.
-
-* **Por qué no por regla:** el formato Regla de [[.agents/templates/template-instruction-formats.md#Formato: Regla]] ya exige (cuando aplica) un par ❌/✅ atómico por cada definición específica. Ese ejemplo prueba la regla aislada. Un ejemplo *compuesto* — texto real donde 2+ reglas del documento actúan juntas — es información nueva, no una repetición; meterlo dentro de cada regla la infla y duplica contenido entre reglas vecinas.
-* **Por qué al final:** las reglas de un documento rara vez se aplican una por una — se aplican juntas sobre el mismo párrafo. Un ejemplo o varios al cierre puede mostrar eso (texto antes/después citando qué IDs de regla intervinieron) sin que ninguna regla individual cargue con el peso de la demostración completa.
-
-**Formato de cada ejemplo (idéntico a `WRITING-EFFICIENCY-EJ` en [[.agents/knowledge/writing-efficiency.md]]):**
-
-`````
-### <DOC>-EJ-K — <Título del bloque de casos>
-
-<Intro: qué son los casos compuestos de esta sección y qué NO reemplazan
-(los ❌/✅ atómicos de cada regla) — 1-2 líneas>
-
-**Caso: <qué texto real se transformó> — demuestra `<DOC>-N.N`, `<DOC>-N.N` [...].**
-
-* **Sin estas reglas (<X tokens>):** "<texto real o representativo, sin aplicar las reglas>"
-* **Aplicando `<DOC>-N.N`, `<DOC>-N.N` — <Y tokens>:**
-  ```
-  <mismo contenido, reglas aplicadas>
-  ```
-`````
-
-Si hay medición real disponible (tokens, palabras, tiempo), agrégala como tabla debajo del caso — no la inventes; si no la mediste, omite la fila en vez de estimar.
-
----
-
-## Ejemplo Aplicado (Retrofit Real)
-
-Así se ve esta plantilla aplicada — [[.agents/knowledge/writing-efficiency.md]] es el primer documento retrofitteado con este formato:
-
-* Filtro de Verificación en namespace propio (`WRITING-EFFICIENCY-FV-1` a `-FV-6`), como segunda sección del documento.
-* 7 reglas (`WRITING-EFFICIENCY-1` a `-7`), cada una con el formato Regla — Completo o Ligero de [[.agents/templates/template-instruction-formats.md#Formato: Regla]] según lo que necesita.
-* Una sección `## WRITING-EFFICIENCY-EJ — Ejemplos` en namespace propio, física al cierre del documento, con sub-ID `### WRITING-EFFICIENCY-EJ-1 — Casos Compuestos` y un caso compuesto citando `WRITING-EFFICIENCY-1.1`, `-1.2` y `-2.1` a la vez, más la tabla de medición real (`wc -w -m`) embebida en el propio documento.
-
----
-
-## Checklist Antes de Guardar un Documento de Knowledge Nuevo
-
-- [ ] ¿El documento tiene un slug `<DOC>` único, declarado cerca del título?
-- [ ] ¿El campo `Tamaño` refleja el conteo real de caracteres del archivo final, con el estimado de tokens marcado `aprox.` (no como cifra exacta)?
-- [ ] Si el documento tiene lecturas propias distintas de `governance.md`, ¿lleva `<DOC>-0 — Lecturas Obligatorias` ([[.agents/templates/template-instruction-formats.md#Formato: Lecturas Obligatorias]])?
-- [ ] ¿El Filtro de Verificación vive en `<DOC>-FV-N`, como segunda sección (o primera si no hay Lecturas Obligatorias) — nunca al final?
-- [ ] ¿Cada regla dentro eligió Completo o Ligero según lo que necesita, no por costumbre ([[.agents/templates/template-instruction-formats.md#Formato: Regla]])?
-- [ ] ¿Los IDs de regla son `<DOC>-N` (máximo 2 segmentos con sus sub-ítems, `<DOC>-N.M`) y append-only — ver [[.agents/templates/template-instruction-formats.md#Niveles de ID]] y [[.agents/templates/template-instruction-formats.md#Estabilidad de IDs (Append-Only)]]?
-- [ ] ¿La sección `## <DOC>-EJ — Ejemplos` vive en namespace propio, física al final del documento — después de la última Regla, sin competir por número con ellas —, no repetida dentro de cada regla, y sin `Aplica a`/`Precedencia`/`Filtro de verificación` ([[.agents/templates/template-instruction-formats.md#Formato: Ejemplos]])?
-- [ ] ¿Toda referencia directa a otro documento es un wikilink `[[ruta/archivo.md]]` (con ancla `#Encabezado` si apunta a una sección puntual)?
-- [ ] ¿Cada sub-ID `### <DOC>-EJ-K` de Ejemplos lleva su título pegado, con el párrafo de intro antes del primer Caso?
-- [ ] ¿Cada ejemplo compuesto cita los IDs de regla que demuestra?
-- [ ] ¿Toda medición mostrada es real (con fuente), nunca estimada sin decirlo?
+- Cabecera, Secciones, IDs y espaciado siguen el catálogo completo, sin excepción aquí: [[.agents/templates/template-instruction-formats.md]].
+- Único matiz propio de un documento de knowledge: el campo Tamaño se recalcula (`wc -m`) en cada edición que cambie el contenido — `validate-agent-docs.py --audit` solo compara y avisa si quedó desfasado, no lo corrige.
+- Toda referencia a otro documento es wikilink `[[ruta/archivo.md]]`, nunca ruta suelta en texto plano.
+- Campo Tags (cuando aplica): valor debe existir en [[.agents/knowledge/tags-vocabulary.md]] — vocabulario controlado, append-only, con 4 tags semilla. La asignación real sobre el corpus es progresiva (ver plan de aligeramiento, Sección H).

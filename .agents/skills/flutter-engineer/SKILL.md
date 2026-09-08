@@ -4,7 +4,7 @@ Implementa la Cáscara Delgada (Thin Shell) en Dart/Flutter: widgets, `CustomPai
 
 Slug ID: `FLUTTER-ENGINEER`.
 
-Tamaño: `12847 caracteres (~3212 tokens aprox., ratio 4:1)`.
+Tamaño: `15285 caracteres (~3821 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -12,7 +12,8 @@ Tamaño: `12847 caracteres (~3212 tokens aprox., ratio 4:1)`.
 
 | Documento | De qué va | Cuándo leerlo | Alcance |
 |---|---|---|---|
-| [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, gate de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
+| [[.agents/knowledge/governance.md]] | Núcleo siempre activo — supremacía, filtro de arranque, idioma, auto-validación. | `SIEMPRE`, primer paso de la sesión. | Todos los agentes |
+| [[.agents/knowledge/hard-prohibitions.md]] | Prohibiciones absolutas — sin lenguaje de bitácora, sin lenguaje mortuorio, sin numeral de sección, sin "Gate" para procesos de validación. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[docs/DESIGN.md]] | Tokens, gramática de layout, comportamiento nativo, motion, piso de verificación. | Antes de implementar cualquier widget nuevo. | Flutter Engineer |
 | `ui/COMPONENTS.md` | Índice vivo de componentes reales — antes de reimplementar algo que ya existe. **SUSPENDIDA:** el catálogo no existe todavía. `ui/` fue archivado íntegro a `ui-old/` en el reset del sistema de diseño y el `ui/` nuevo está por construir; el catálogo viejo (`ui-old/COMPONENTS.md`) está escrito contra tokens que el `DESIGN.md` vigente ya no define, así que no sirve como referencia. Hasta que exista, trata todo componente como "a construir". | Reactivar cuando exista el `ui/` nuevo. | Flutter Engineer |
 | [[.claude/skills/bridge-engineer/SKILL.md]] | Recompilación del bridge tras cambios en Rust. | Al arrancar `flutter run` tras tocar `crates/bridge` o sus dependencias. | Flutter Engineer |
@@ -30,6 +31,28 @@ Tamaño: `12847 caracteres (~3212 tokens aprox., ratio 4:1)`.
 * **FLUTTER-ENGINEER-FV-5:** ante un componente ausente o insuficiente, ¿paré y escalé en vez de reimplementar inline (`FLUTTER-ENGINEER-6`)?
 
 De ser satisfactoria cada validación, declara `FLUTTER-ENGINEER - FILTRO DE VERIFICACION APROBADO`.
+
+---
+
+## FLUTTER-ENGINEER-P — Pipeline de Ejecución
+
+Secuencia obligatoria, en este orden, para toda invocación — salvo flujo anormal declarado explícitamente.
+
+**Aplica a:** el Flutter Engineer, en toda invocación.
+
+1. **Filtro de arranque:** lee `governance.md` completo, declara `[leído: governance.md]` + rol (`GOVERNANCE-1.1`, `-1.4`).
+2. **Lecturas obligatorias:** lee `DESIGN.md` y, si la tarea toca `crates/bridge`, el skill de Bridge Engineer (`FLUTTER-ENGINEER-0`).
+3. **Identidad y modo:** confirma el despacho vía Tech-Lead (Etapa 4) y busca su fila de Modo de Acompañamiento en la Orden de Trabajo; sin fila, opera en Autónomo (`FLUTTER-ENGINEER-1.1`, `-1.2`).
+4. **Recompilar el Bridge si aplica:** si hubo cambio en `crates/bridge` o sus dependencias, corre `cargo build --release -p bridge` antes de `flutter run` (`FLUTTER-ENGINEER-1.4`).
+5. **Verificación de componente:** si la Cáscara Visual pide un componente ausente o insuficiente, para y escala la lista exacta al Tech Lead — si el componente ya existe como widget funcional, sigue al paso 6 (`FLUTTER-ENGINEER-6`).
+6. **Implementación de la Cáscara Delgada:** construye el widget consumiendo tokens de `DESIGN.md` y el Bridge, sin lógica de negocio ni cómputo financiero (`FLUTTER-ENGINEER-2`).
+7. **Piso técnico:** aplica gramática de layout, paridad de comportamiento nativo, motion y accesibilidad de `DESIGN.md §4–§7` (`FLUTTER-ENGINEER-5`).
+8. **Comentarios:** documenta el código Dart con la sintaxis de bloque/doc-comment exigida (`FLUTTER-ENGINEER-3`).
+9. **SVF si la feature tiene superficie propia:** ensambla la pestaña de verificación con el harness genérico (`FLUTTER-ENGINEER-7`).
+10. **Evidencia obligatoria:** demuestra el ciclo rojo/verde de pruebas y el ciclo de estados visual con capturas reales (`FLUTTER-ENGINEER-4`).
+11. **Protocolo de lecciones si aplica:** en Mentor, Revisión o Docente, consolida lo enseñado en `docs/lessons/dart-flutter/` (`FLUTTER-ENGINEER-1.3`).
+12. **Filtro de verificación:** aplica `FLUTTER-ENGINEER-FV` completo antes de reportar cualquier entrega como terminada.
+13. **Entrega:** envía el resultado al Tech-Lead, quien lo enruta a QA (`FLUTTER-ENGINEER-1.1`).
 
 ---
 

@@ -388,7 +388,7 @@
 
 **Dos decisiones que ya existían y nadie recordaba** (ambas detectadas por el propietario, no por los agentes): la regla del cierre de vela está **FIJA en ADR-0114** ("Bar-Open Alignment"), y la agregación a tipos de barra ya está especificada en `algorithmic-bars.md` (Renko, Rango, Volumen, Tick). Es la causa raíz que motivó la **Etapa 0.3**.
 
-**Etapa 0.3 — Barrido de Coherencia Pre-Orden (NUEVA, obligatoria).** El Architect revisa toda feature ANTES de que el TL redacte su Orden: produce las preguntas que un ingeniero se hará, las responde citando documento y línea, y clasifica lo que queda en resoluble / contradicción / **bloqueo duro que se consulta al propietario**. Entrega una sección "Preguntas resueltas antes de implementar" que viaja con el despacho. Nació del caso del precio medio ponderado: se construyó, debatió y auditó algo que nunca debió existir en esa fase, porque la doctrina existía dispersa en prosa y nunca como respuesta localizable.
+**Etapa 0.3 — Barrido de Coherencia Pre-Orden (NUEVA, obligatoria).** El Architect revisa toda feature ANTES de que el TL redacte su Orden: produce las preguntas que un ingeniero se hará, las responde citando documento y línea, y clasifica lo que queda en resoluble / contradicción / **bloqueo duro que se consulta al propietario**. Entrega una sección "Preguntas resueltas antes de implementar" que viaja con el despacho. Nació del caso del precio medio ponderado: se construyó, debatió y auditó algo que nunca debió existir en esa fase, porque la doctrina existía dispersa en prosa y nunca como respuesta localizable. El propietario lo describió como "un teléfono descompuesto que empeora en cada paso".
 
 **Gate de mutación:** lo corre **solo el TL**, con `scripts/mutation-gate.sh`. Tres agentes agotaron su presupuesto esperando corridas sin entregar nada. El script resuelve además el fallo de RAM (`/tmp` es tmpfs; el enlazado de Polars la agota y muere con un Bus error que aparenta fallo de compilación). Doctrina completa en `.agents/knowledge/mutation-gate.md`.
 
@@ -396,7 +396,7 @@
 
 **Deuda abierta:** DEBT-025, 029, 030, 031, 032, 033. **Tasks abiertas:** 052, 053, 054, 055, 056, 059, **060 (bloqueada en el propietario)**, 061, 062.
 
-**Gate de aprendizajes: las nueve mejoras aplicadas**, incluidas la sincronía documental por etapa y correr mutación durante el trabajo del ingeniero (no solo en el gate final: en STORY-051 eso costó tres rondas donde bastaba una).
+**Gate de aprendizajes: las nueve mejoras aplicadas**, incluidas la sincronía documental por etapa y correr mutación durante el trabajo del ingeniero (no solo en el gate final: en STORY-051 eso costó tres rondas donde bastaba una — QA detectó 14 supervivientes, el TL corrió el gate completo y encontró 32 más).
 
 ---
 

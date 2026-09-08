@@ -33,7 +33,7 @@ El Filtro de Verificación va **segundo**, nunca al final, y usa namespace propi
 
 - **Tope de 2 segmentos por ID:** `<DOC>-N` o `<DOC>-N.M`. `<DOC>-N.M.K` está prohibido — si un ítem necesita su propia lista citable, promuévelo a bloque de primer nivel.
 - **IDs append-only:** un ID publicado nunca se renumera ni se reutiliza. Regla nueva = siguiente número libre. Renumerar exige reescritura completa autorizada por el usuario en el turno actual.
-- **Sin lenguaje de bitácora:** ninguna fecha, "enmienda", "antes decía X", nombre de sesión ni caso histórico dentro de una regla. Esa historia vive en git. Preserva la regla; corta la anécdota.
+- **Sin lenguaje de bitácora:** ninguna fecha, referencia a una versión previa del texto, nombre de sesión ni caso histórico dentro de una regla. Esa historia vive en git. Preserva la regla; corta la anécdota. Regla canónica completa (con las demás prohibiciones duras globales): `.agents/knowledge/hard-prohibitions.md` `HARD-PROHIBITIONS-1`.
 - **Campo de cierre ausente = no aplica.** Nunca escribas `N/A` en `Precedencia`, `Filtro de verificación`, `Lectura bajo demanda` ni `Plantilla de referencia`.
 - **`Documento extendido` fue retirado.** Usa `Lectura bajo demanda` con su disparador explícito.
 - **Wikilinks:** toda referencia a otro documento es `[[ruta/al/archivo.md]]`, nunca una ruta suelta en texto plano.

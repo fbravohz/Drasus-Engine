@@ -1,4 +1,4 @@
-### AGENT-DEBT-007 · Las etapas de `tech-lead/SKILL.md` están mal numeradas
+### CONTEXT-DEBT-007 · Las etapas de `tech-lead/SKILL.md` están mal numeradas
 
 - **Severidad:** 🟠 Media
 - **Origen:** señalado directamente por el propietario.
@@ -7,4 +7,4 @@
 - **Causa raíz:** el documento creció por adiciones sucesivas de reglas del usuario sin una pasada de renumeración/reestructuración.
 - **Disparador de pago:** próxima revisión dedicada de `tech-lead/SKILL.md` — candidato natural para `context-auditor` en Modo Documental.
 - **Plan:** auditar la sección completa de etapas, corregir la numeración (asignar número de etapa al "Barrido de Cierre Documental" o declarar explícitamente por qué no lleva uno), y verificar que no haya más huecos de secuencia en el resto del documento.
-- **Estado:** Abierta.
+- **Estado:** ✅ Pagada — resuelta dentro de la canonización de `tech-lead` (`CONTEXT-DEBT-001`). El Pipeline completo se extrajo a `.agents/knowledge/execution-protocol.md`; ahí el "Barrido de Cierre Documental" es `EXECUTION-PROTOCOL-23`, declarado explícitamente como gate transversal obligatorio con su propio ID y trigger ("tras APTO de QA/Quant, Etapa 5 o 6, y antes de proponer commits"), en secuencia entre `EXECUTION-PROTOCOL-22` (Etapa 5) y `EXECUTION-PROTOCOL-24` (Etapa 6). Se verificó el resto de la secuencia de Etapas (0/0.3/0.4/0.5/1-7) sin otro hueco de numeración.

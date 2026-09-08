@@ -62,7 +62,7 @@ Todo el diseño vive bajo `docs/`. Tamaños aproximados para decidir cómo leer:
 
 Lee bajo demanda, nunca en masa. Si necesitas comentarios, lee `commenting-policy.md` (~40 líneas). Si necesitas deuda, lee `debt-management.md` (~50 líneas). Si necesitas memoria, lee `memory-policy.md` (~130 líneas). Si necesitas gobernanza meta, lee `governance.md` (el único documento `SIEMPRE`). Si vas a **sellar una decisión de dominio** (cuant/estadística/cripto/fiscal/legal), lee `critical-domain-reasoning.md`.
 
-**Gate de Reportaje de Conocimiento (OBLIGATORIO):** toda lectura bajo demanda y toda aplicación de sus reglas se declaran explícitamente al invocador — mecánica y formato exactos en `GOVERNANCE-1.5` (`.agents/knowledge/governance.md`). `governance.md` se declara siempre al arrancar; los demás documentos, cuando se consultan.
+**Filtro de Reportaje de Conocimiento (OBLIGATORIO):** toda lectura bajo demanda y toda aplicación de sus reglas se declaran explícitamente al invocador — mecánica y formato exactos en `GOVERNANCE-1.5` (`.agents/knowledge/governance.md`). `governance.md` se declara siempre al arrancar; los demás documentos, cuando se consultan.
 
 ---
 
@@ -88,7 +88,7 @@ El objetivo es traer **solo el fragmento exacto** que el trabajo necesita, no ar
 
 ## 5. Governance — Fuente Única de Verdad
 
-Las reglas operativas canónicas (rigor, anti-alucinación, gate de arranque, edición quirúrgica, idioma) viven en **`.agents/knowledge/governance.md`** — el único documento `SIEMPRE`, que gobierna a todos los skills. El resto de la gobernanza operativa (uso de herramientas, cierre de trabajo, modos de acompañamiento, persistencia verificable, doc-first, bypass del provider) se repartió en documentos por tema — índice completo en `.agents/knowledge/README.md`. Ninguno de estos es una skill invocable — son conocimiento base referenciado por cada skill según su disparador. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `governance.md` o al índice; si algo de aquí contradice a esos documentos, ganan ellos. La instrucción explícita del usuario gana siempre.
+Las reglas operativas canónicas (rigor, anti-alucinación, filtro de arranque, edición quirúrgica, idioma) viven en **`.agents/knowledge/governance.md`**, y las prohibiciones absolutas que aplican sin excepción de dominio viven en **`.agents/knowledge/hard-prohibitions.md`** — los dos únicos documentos `SIEMPRE`, pares entre sí, que gobiernan a todos los skills. El resto de la gobernanza operativa (uso de herramientas, cierre de trabajo, modos de acompañamiento, persistencia verificable, doc-first, bypass del provider) se repartió en documentos por tema — índice completo en `.agents/knowledge/README.md`. Ninguno de estos es una skill invocable — son conocimiento base referenciado por cada skill según su disparador. **No se replican aquí** para evitar deriva: ante cualquier duda de governance, ve a `governance.md`/`hard-prohibitions.md` o al índice; si algo de aquí contradice a esos documentos, ganan ellos. La instrucción explícita del usuario gana siempre.
 
 Recordatorio mínimo siempre activo (el detalle está en `governance.md`): no inventes nombres, rutas ni snippets; edita con `Edit` en bloques pequeños, nunca reescribas un documento entero; lee bajo demanda (§3); español con acentos en prosa; en código, identificadores en inglés y comentarios en español (ADR-0121).
 

@@ -2,7 +2,7 @@
 
 ## Contexto
 
-El plan de auditoría ya existe y está completo en cuanto a hallazgos: `.agents/plans/auditoria-forense-commits-972bab5-3007f92.md` (13 hallazgos nuevos + las 8 fichas `AGENT-DEBT` verificadas). Pero hoy no se puede retomar en frío: no dice **quién arregla qué** ni separa **lo que el propietario tiene que decidir** de lo que un agente puede ejecutar solo.
+El plan de auditoría ya existe y está completo en cuanto a hallazgos: `.agents/plans/auditoria-forense-commits-972bab5-3007f92.md` (13 hallazgos nuevos + las 8 fichas `CONTEXT-DEBT` verificadas). Pero hoy no se puede retomar en frío: no dice **quién arregla qué** ni separa **lo que el propietario tiene que decidir** de lo que un agente puede ejecutar solo.
 
 Objetivo: que el propietario abra ese archivo dentro de un mes, en una sesión limpia, y sepa exactamente a qué skill despachar cada cosa y qué se le está preguntando a él — sin depender de este chat.
 
@@ -95,14 +95,14 @@ Regla de dominio, verificada en cada skill:
 | N-12 · dos referencias rotas | `context-engineer` | |
 | N-13 · `PARTNER-FV` y hueco de `refactoring-engineer` | `context-engineer` | |
 | Canonizar los 5 skills legacy | `context-engineer` | Bloqueado por D-5 solo para `tech-lead` |
-| `AGENT-DEBT-001` · corregir cifras | `context-engineer` | |
-| `AGENT-DEBT-002` · contradicción de memoria | `context-engineer` | |
-| `AGENT-DEBT-003` · restaurar FFI, revertir `7.3`, reponer ADRs | `context-engineer` | La ficha ya especifica qué restaurar |
-| `AGENT-DEBT-004` · wikilinks a los 5 knowledge nuevos | `context-engineer` | |
-| `AGENT-DEBT-006` · IDs colisionados | `context-engineer` | |
-| `AGENT-DEBT-007` · numeración de `tech-lead` | `context-auditor` audita → `context-engineer` corrige | La ficha nombra al auditor para el diagnóstico |
-| `AGENT-DEBT-008` · corregir alcance + canonizar `qa-engineer` | `context-engineer` | |
-| Abrir `AGENT-DEBT-009` (refs `ui/`) | quien lo pague primero | El registro admite que cualquier rol abra ficha |
+| `CONTEXT-DEBT-001` · corregir cifras | `context-engineer` | |
+| `CONTEXT-DEBT-002` · contradicción de memoria | `context-engineer` | |
+| `CONTEXT-DEBT-003` · restaurar FFI, revertir `7.3`, reponer ADRs | `context-engineer` | La ficha ya especifica qué restaurar |
+| `CONTEXT-DEBT-004` · wikilinks a los 5 knowledge nuevos | `context-engineer` | |
+| `CONTEXT-DEBT-006` · IDs colisionados | `context-engineer` | |
+| `CONTEXT-DEBT-007` · numeración de `tech-lead` | `context-auditor` audita → `context-engineer` corrige | La ficha nombra al auditor para el diagnóstico |
+| `CONTEXT-DEBT-008` · corregir alcance + canonizar `qa-engineer` | `context-engineer` | |
+| Abrir `CONTEXT-DEBT-009` (refs `ui/`) | quien lo pague primero | El registro admite que cualquier rol abra ficha |
 | N-6 · commit masivo | — | No se arregla retroactivamente; es regla para el futuro |
 
 **Lectura práctica:** el 80 % de la lista es un solo despacho a `context-engineer`, que puede hacerse en lotes. `architect` tiene 3 ítems. `tech-lead` uno. Nada exige coordinar a los tres a la vez.

@@ -1,4 +1,4 @@
-### AGENT-DEBT-003 · `ui-designer/SKILL.md` (worktree) — salvaguarda FFI perdida, prohibición debilitada, ADRs perdidos
+### CONTEXT-DEBT-003 · `ui-designer/SKILL.md` (worktree) — salvaguarda FFI perdida, prohibición debilitada, ADRs perdidos
 
 - **Severidad:** 🟠 Media
 - **Origen:** Auditoría ad hoc del worktree sin commitear de `.agents/`, 2026-08-20.

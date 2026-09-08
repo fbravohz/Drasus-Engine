@@ -1,298 +1,108 @@
-# Formatos de Instrucción — Catálogo Estándar para Knowledge/Skills
+# Catálogo de Formatos de Bloque
 
-Todo documento consumido por agents o skills combina formatos de bloque — hoy Lecturas Obligatorias, Regla, Filtro de Verificación, Ejemplos — catalogados aquí para ser encontrables por ID y aplicables sin ambigüedad. Ninguno reemplaza a otro: cada uno resuelve un tipo de contenido distinto, y un documento normal usa varios. El catálogo es abierto — ver "Cómo Agregar un Formato Nuevo".
+- Todo documento consumido por agentes combina formatos de bloque — hoy Lecturas, Secciones, Pipeline, Ejemplos — catalogados aquí para ser encontrables por ID y aplicables sin ambigüedad.
+- SLUG-ID: `TEMPLATE-INSTRUCTION-FORMATS`
+- Tamaño: `8483 caracteres (~2121 tokens aprox., ratio 4:1)`
+- Lecturas:
+  - [[.agents/templates/template-knowledge.md]] -> SIEMPRE -> Context Engineer
 
-Todo formato con ID usa el mismo identificador legible y único en todo el proyecto: `<DOC>-N` o `<DOC>-N.N` (ej. `EJEMPLO-2.2`). `<DOC>` es un slug en mayúsculas **con guion medio, calcado del nombre de archivo** — nunca guion bajo: un archivo `memory-policy.md` usa slug `MEMORY-POLICY`, no `MEMORY_POLICY`, para que archivo y slug se lean igual. No cambia después.
+## TEMPLATE-INSTRUCTION-FORMATS-1: Catálogo
 
----
-
-## Catálogo de Formatos
-
-Referencia rápida — elige por lo que el contenido necesita, no por costumbre.
-
-| Formato | Cuándo usarlo | Posición típica | Lleva | No lleva |
-|---|---|---|---|---|
-| Lecturas Obligatorias | El documento debe declarar qué otros documentos leer, y cuándo. | `<DOC>-0`, al inicio. | Tabla de 4 columnas. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
-| Regla — Completo | La instrucción compite con otra, tiene doc satélite, plantilla de salida, o 2+ definiciones citables por sub-ID. | `<DOC>-N`, en el cuerpo. | Descripción, `Aplica a`, definiciones con sub-ID; campos de cierre solo si aplican. | Campos de cierre sin contenido real (se omiten, nunca `N/A`). |
-| Regla — Ligero | Una sola idea, sin conflicto, sin doc satélite, sin plantilla. | `<DOC>-N`, en el cuerpo. | Una línea: etiqueta + cuerpo. | Descripción rápida, `Aplica a` propio, campos de cierre. |
-| Filtro de Verificación | El documento necesita un chequeo de pre-salida que consolide sus reglas. | `<DOC>-FV-N`, namespace propio — segunda sección, justo después de Lecturas Obligatorias (o primera si no hay tabla). | Lista numerada de preguntas, cada una citando la regla que verifica. | `Precedencia`, `Plantilla de referencia`. |
-| Ejemplos | Mostrar 2+ reglas del documento actuando juntas sobre un texto real. | `<DOC>-EJ-N`, namespace propio — cierre del documento, después de la última Regla. | Intro + casos con `### <DOC>-EJ-K`, antes/después, medición real si existe. | `Aplica a`, `Precedencia`, `Filtro de verificación`. |
-
-### Cómo Agregar un Formato Nuevo
-
-Esta tabla no es cerrada — crece cuando aparece un tipo de contenido recurrente que ningún formato existente cubre bien.
-
-* **Cuándo:** un mismo "tipo de bloque" se repite en 2+ documentos con una forma propia (campos, posición, lo que lleva/no lleva) que forzarlo dentro de Regla, Lecturas Obligatorias, Filtro de Verificación o Ejemplos distorsiona.
-* **Cómo:** agrega una fila a "Catálogo de Formatos" (Formato / Cuándo usarlo / Posición típica / Lleva / No lleva) y su propia sección `## Formato: <Nombre>` con la misma estructura que las existentes — ID y posición, campos que lleva, campos que no lleva, formato del cuerpo, un ejemplo.
-* **Qué no cambia:** el formato nuevo sigue las reglas transversales de este documento — "Niveles de ID", "IDs para Sub-Ítems", "Espaciado y Saltos de Línea" — sin convención propia de ID o espaciado.
-
----
-
-## Niveles de ID
-
-**Tope duro: 2 segmentos, nunca 3.** `<DOC>-N` para un bloque de primer nivel (una Regla, un Filtro de Verificación, etc.), `<DOC>-N.M` para un ítem citable dentro de ese bloque (una definición, una pregunta). `<DOC>-N.M.K` está prohibido: si un ítem `.M` necesita a su vez su propia lista de sub-ítems citables, se promueve a su propio bloque de primer nivel (`<DOC>-N` nuevo) y su lista pasa a ser `<DOC>-N.1`, `<DOC>-N.2`... Un ID con punto implica un padre — nunca lo escribas si ese padre no existe como bloque real en el documento.
-
-* **`<DOC>-N`:** la unidad de primer nivel — un bloque `## <DOC>-N — <Título>`. Todo formato del catálogo (Regla, Filtro de Verificación, Ejemplos) vive en este nivel.
-* **`<DOC>-N.M`:** un ítem citable dentro del bloque `<DOC>-N` — una definición de una Regla, una pregunta de un Filtro de Verificación. Nunca más profundo.
-* **Agrupación visual no es nivel de ID:** si un documento grande organiza varios bloques bajo un título mayor (ej. "Identidad y Rol" en un SKILL.md extenso), ese título es lectura, no numeración — los bloques debajo siguen siendo `<DOC>-N` planos, en la misma secuencia.
-* **Posiciones fijas:** Lecturas Obligatorias siempre es `<DOC>-0`. Filtro de Verificación usa namespace propio `<DOC>-FV-N`, sin competir por número con las Reglas. Ejemplos usa namespace propio `<DOC>-EJ-N`, tampoco compite — por eso puede vivir físicamente al cierre del documento sin importar cuántas Reglas se agreguen después. El resto de las Reglas toma el siguiente número libre de su propia secuencia — ver "Estabilidad de IDs" abajo.
-
----
-
-## Estabilidad de IDs (Append-Only)
-
-**Un ID publicado es permanente — nunca se renumera, nunca se reutiliza**, igual que ya funcionan `ADR-XXXX` y `DEBT-XXX` en `docs/`. Insertar una regla nueva nunca desplaza a las que ya existen.
-
-* **Regla nueva = siguiente número libre de su propia secuencia**, sin importar dónde "lógicamente" iría en la lectura. Si un bloque se divide en dos, la mitad que conserva el tema original se queda con el número; la mitad nueva toma el siguiente número libre del documento — nunca uno ya usado por otro bloque.
-* **Retirar una regla no libera su número.** Si un bloque deja de aplicar, se borra y su número queda vacante para siempre — no se reasigna.
-* **Excepción única: reescritura completa de un documento, explícitamente autorizada por el usuario en el turno actual** (no una edición incremental). Ahí sí se renumera todo de una sola vez, porque las referencias externas se corrigen en el mismo movimiento.
-* **Nada de lenguaje de enmienda dentro de una regla.** Si una regla cambia, se edita directo — sin anotar "(antes decía X, ahora Y)" ni "enmienda del \<fecha\>" en su cuerpo. El historial vive en git, no en la prosa.
-
----
-
-## IDs para Listas Dentro de un Bloque
-
-Cualquier campo cuyo nombre termine en `_1..N` (definiciones de una Regla, preguntas de un Filtro de Verificación, pasos de una plantilla enumerada) puede tener más de un ítem, y cada ítem individual lleva **su propio ID** — nunca una referencia por posición. "Ítem 3" o "pregunta 2" no son texto único: no aparecen búscables en el documento, y si alguien inserta un ítem nuevo en el medio, la referencia queda apuntando a otro sin que nadie lo note.
-
-**Formato:** `<DOC>-N.M — <Mnemónico corto>`, donde `N` es el bloque contenedor y `M` la posición del ítem — el mismo nivel `<DOC>-N.M` de "Niveles de ID", nunca un tercer segmento.
-
-```
-1. **<DOC>-N.1 — <Mnemónico corto 1>:** <texto del ítem 1>.
-2. **<DOC>-N.2 — <Mnemónico corto 2>:** <texto del ítem 2>.
-```
-
-**Si uno de estos ítems necesita, a su vez, su propia lista de sub-ítems citables, no anides un tercer segmento — promuévelo.** El ítem completo pasa a ser su propio bloque `<DOC>-N` (siguiente número libre) y esa lista se convierte en sus `<DOC>-N.1`, `<DOC>-N.2`... Caso real: `GOVERNANCE-4.1` ("Auto-Validación Crítica") tenía 7 hijos `GOVERNANCE-4.1.1`–`4.1.7`; se promovió a su propia sección `GOVERNANCE-4`, con hijos planos `GOVERNANCE-4.1`–`4.7`.
-
-Cualquier `Filtro de verificación` que apunte a uno de estos ítems cita el ID exacto, nunca la posición.
-
----
-
-## Espaciado y Saltos de Línea
-
-Reglas de formato exactas, no estéticas — un agente que las rompe genera un documento inconsistente con el resto del proyecto.
-
-* **Etiqueta y cuerpo en líneas separadas (formato completo):** cada definición es `* **<ID> — <Título>:**` en su propia línea, una línea en blanco, y el cuerpo indentado 2 espacios en la línea siguiente.
-* **Una línea en blanco entre ítems.**
-* **Un `---` entre bloques:** cada formato nuevo dentro del mismo documento se separa del anterior con una línea `---` sola, con línea en blanco antes y después.
-* **Campos de cierre, cada uno en su propio párrafo**, separados por línea en blanco entre sí.
-* **`Plantilla de referencia` sin línea en blanco antes del bloque de código:** la etiqueta y el ` ``` ` que abre el bloque van en líneas consecutivas.
-
----
-
-## Formato: Lecturas Obligatorias
-
-Tabla de qué otros documentos leer antes de operar bajo este, y cuándo — un índice de disparadores local al documento, no solo el índice central (`governance.md`).
-
-* **ID y posición:** `## <DOC>-0 — Lecturas Obligatorias`, siempre antes del primer bloque numerado, justo después del Slug ID del documento.
-* **Campos que no lleva:** `Aplica a`, `Precedencia`, `Filtro de verificación` — es una tabla de datos, no una instrucción de comportamiento.
-* **Formato del cuerpo:**
-  ```
-  | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
-  |---|---|---|---|
-  | [[<ruta/al/doc.md>]] | <1 línea: qué resuelve> | `SIEMPRE` o el disparador puntual | <a quién aplica> |
-  ```
-* **`SIEMPRE` es valor reservado:** solo para el propio documento madre (`governance.md` u otro con supremacía declarada). Cualquier otra fila lleva un disparador concreto.
-* **No duplica `Lectura bajo demanda`:** ese campo de una Regla apunta al detalle de UNA regla puntual; esta tabla es el índice de lectura de TODO el documento.
-
-Ejemplo:
-
-```
-## CONTEXT-ENGINEER-0 — Lecturas Obligatorias
-
-| Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
+| Formato | Cuándo usarlo | Posición | ID |
 |---|---|---|---|
-| [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
-| [[.agents/knowledge/writing-efficiency.md]] | Economía de redacción, formato de bloques. | `SIEMPRE` — es la autoridad principal de este skill. | Context Engineer |
-```
+| Lecturas | El documento declara qué otros documentos leer, y cuándo. | Bajo el título, en la cabecera. | Sin ID propio. |
+| Pipeline | El skill ejecuta pasos en un orden fijo que importa. | `<DOC>-P`, tras la cabecera, antes de la primera Sección. | `<DOC>-P`, sin sub-numeración. |
+| Secciones | Contenido de comportamiento — bullets planos sobre un tema. | `<DOC>-N`, en el cuerpo. | `<DOC>-N`. |
+| Ejemplos | Mostrar 2+ bullets del documento actuando juntos sobre un caso real. | `<DOC>-EJ`, cierre del documento. | `<DOC>-EJ-K`. |
 
-Nota: `.agents/templates/template-instruction-formats.md` no aparece en esta tabla real — solo le importa a `CONTEXT-ENGINEER-2.3`, así que vive únicamente como `Lectura bajo demanda` de esa regla (ver "No duplica `Lectura bajo demanda`" arriba).
+Formato nuevo: agrega fila aquí + su propia `## Formato: <Nombre>`, solo si un tipo de bloque se repite en 2+ documentos con forma propia que ninguno de los cuatro cubre bien.
 
----
+## TEMPLATE-INSTRUCTION-FORMATS-2: IDs
 
-## Formato: Regla
+- `<DOC>` es el slug en mayúsculas con guion medio, calcado del nombre de archivo — nunca guion bajo.
+- Tope: `<DOC>-N` para una Sección de primer nivel. Sin sub-ID de bullet — ningún `<DOC>-N.M`: cada bullet dentro de una Sección no es citable por separado, solo la Sección completa.
+- Excepción: `<DOC>-EJ-K`, un ID por caso dentro de Ejemplos — namespace propio, no compite con las Secciones.
+- Append-only: un `<DOC>-N` publicado nunca se renumera ni se reutiliza. Sección nueva = siguiente número libre, Si importa el orden logico en la lectura. Retirar una Sección libera su número — pero tendra que buscarse dicho ID por toda la documentacion para actualizarlo.
+- Nada de lenguaje de enmienda dentro de un bullet — si cambia, se edita directo, sin "(antes decía X)". El historial vive en git.
 
-La instrucción de comportamiento — qué debe o no debe hacer un agente. Existe en dos variantes; elige por lo que el contenido necesita, no por costumbre. Aplicar el formato completo a una regla que no lo necesita infla el documento sin agregar información (medido: un documento pasó de 94 a 339 líneas, 3.6x, con 27 campos en `N/A` sobre 40 totales).
+## TEMPLATE-INSTRUCTION-FORMATS-3: Espaciado
 
-* **Completo:** la regla tiene precedencia real frente a otra, documento satélite real, plantilla de salida copiable, o 2+ definiciones que otra regla va a necesitar citar por sub-ID.
-* **Ligero:** la regla es una sola idea, sin conflicto con otra regla, sin documento satélite, sin plantilla de salida.
+- Sin `---` entre bloques — solo salto de línea en blanco.
+- Un bullet por línea, indentar el cuerpo en línea aparte.
+- Etiqueta en negrita pegada al inicio del bullet, seguida de dos puntos, cuerpo en la misma línea.
 
-Un documento puede mezclar ambos: ligero para lo simple, completo para lo que de verdad compite o tiene plantilla.
+## TEMPLATE-INSTRUCTION-FORMATS-4: Formato — Lecturas
 
-### Regla — Completo
-
-| Campo | Obligatorio | Qué va ahí |
-|---|---|---|
-| `ID` + `ENCABEZADO_REGLA` | Siempre | `## <DOC>-N — <Título>`. Sin paréntesis, sin dos puntos, sin subtítulo pegado. |
-| `DESCRIPCION_RAPIDA` | Siempre | 1-2 líneas de contexto — qué problema resuelve — **antes** de listar las definiciones. |
-| `APLICA_A` | Siempre | A qué rol, modo o agente aplica. Si no hay restricción, dice explícitamente "Todos los roles/skills". |
-| `DEFINICIONES_ESPECIFICAS_1..N` | Siempre | Las reglas concretas, con sub-ID propio (`<DOC>-N.1`, `<DOC>-N.2`...) — ver "IDs para Listas Dentro de un Bloque". Si una definición necesita su propia lista, se promueve a bloque nuevo — nunca un tercer segmento. |
-| `EJEMPLO_MAL_1..N` / `EJEMPLO_BIEN_1..N` | Solo si el error es real y no obvio | Se omite si la definición ya es autoexplicativa o el ejemplo saldría forzado — no es relleno obligatorio. |
-| `PRECEDENCIA` | Solo si compite con otra regla | **Si no compite con ninguna, el campo entero se omite** — la ausencia en cualquier regla del proyecto significa "no compite" (convención declarada aquí, ver Regla de Oro). |
-| `FILTRO_DE_VERIFICACION` | Solo si hay un chequeo dedicado | Cita el **ID exacto del ítem** en la sección Filtro de Verificación del documento. Se omite si no hay uno dedicado. |
-| `LECTURA_BAJO_DEMANDA` | Solo si esta regla remite a otro documento — la versión larga de esta misma regla, o una regla distinta que solo aplica si un caso puntual la dispara | Wikilink `[[ruta/al/archivo.md]]` + el disparador: "siempre que quieras el detalle completo" para una elaboración, el caso puntual concreto para una regla condicional. Puede repetirse si hay más de un caso. Se omite si no aplica. |
-| `PLANTILLA_EJEMPLO_COMPLETA` | Solo si hay una plantilla de salida copiable | Se omite si la regla no define una salida estructurada. Etiqueta y bloque de código en líneas consecutivas. |
-
-Cada campo de cierre (`Precedencia`, `Filtro de verificación`, `Lectura bajo demanda`, `Plantilla de referencia`) aparece **solo si tiene contenido real** — se omite entero, no se escribe `N/A`.
-
-**`Lectura bajo demanda` cubre dos casos en un solo campo — antes eran `Documento extendido` y `Lectura bajo demanda` por separado, y confundirlos era el problema real.** El disparador distingue el caso, no el nombre del campo:
-- Versión larga de ESTA MISMA regla: archivo satélite que elabora lo ya resumido — disparador "siempre que quieras el detalle completo".
-- Regla DISTINTA, en otro documento, que solo aplica si un caso puntual la dispara — disparador: la condición concreta.
-
-Ejemplo real: la regla de "rigor de archivos" cubría antes también dot-directories y lectura progresiva; ahora esos dos casos viven en `tool-usage.md`, con disparador "si vas a buscar dentro de una carpeta con punto, o a leer un archivo extenso" — no "siempre". Se repite la línea si hay más de un caso.
-
-**Toda referencia a otro archivo o a una regla ajena dentro de una Regla vive en un campo declarado o citada inline con su ID exacto — nunca una mención vaga sin ID ni ruta.** Lugares válidos:
-- El ❌/✅, si el archivo es parte del ejemplo de uso correcto/incorrecto.
-- `Lectura bajo demanda` o `Plantilla de referencia`.
-- Directo en el cuerpo de la definición, citando `<OTRO-DOC>-N`/`<OTRO-DOC>-N.M` exacto entre backticks.
-
-Mencionar un archivo o regla fuera de esos usos es señal de que falta declarar el campo correcto o el ID exacto — la prosa vaga no lo resuelve.
-
-**Referencias entre documentos pueden citar el ID interno de una regla ajena, no solo el archivo.** Los IDs son append-only y estables (ver "Estabilidad de IDs"): citar `<OTRO-DOC>-N`/`<OTRO-DOC>-N.M` directo ancla la referencia al ítem exacto, sin obligar a releer el documento completo — preferible cuando la regla que citas es puntual. `Lectura bajo demanda` sigue usando siempre una ruta (`<ruta/al/archivo.md>`), porque apunta a un documento entero, no a un ítem; la cita de ID puntual va suelta en el cuerpo de la definición, entre backticks. Citar tu propio `<DOC>-N`/`<DOC>-N.M` dentro del mismo documento (Precedencia, Filtro de verificación, IDs para listas) sigue siendo normal y obligatorio.
-
-**Toda referencia directa a otro documento se escribe como wikilink de Obsidian, nunca como ruta suelta en texto plano.** Formato: `[[ruta/relativa/al/archivo.md]]` — la misma ruta que ya usa el proyecto, con extensión, para que siga siendo grepeable fuera de Obsidian. Si la referencia apunta a una regla puntual, ancla el enlace al encabezado `## <DOC>-N` que la contiene: `[[ruta/al/archivo.md#<DOC>-N — <Título exacto del encabezado>]]`, copiando el título tal cual aparece — Obsidian resuelve el salto por coincidencia exacta de texto, no por el ID solo. Un sub-ID `<DOC>-N.M` no tiene encabezado propio (vive dentro del bloque `<DOC>-N`, ver "Niveles de ID"): enlaza al encabezado contenedor y deja el sub-ID exacto entre backticks junto al enlace, para ubicarlo dentro de esa sección al llegar. Si editas el texto de un `<Título>`, corrige todo wikilink `[[...#...]]` que citaba ese texto — exactamente el tipo de contradicción silenciosa que `CONTEXT-ENGINEER-6.1` existe para atrapar.
-
-`````
-## <DOC>-N — <Título de la regla>
-
-<Descripción: 1-2 líneas de contexto/problema, en prosa directa>
-
-**Aplica a:** <rol/modo/agente, o "Todos los roles/skills">
-
-* **<DOC>-N.1 — <Nombre de la definición 1>:** 
-
-  <texto de la regla, indentado 2 espacios bajo la etiqueta>
-  * ❌ *Incorrecto:* "<ejemplo malo, solo si el error no es obvio>"
-  * ✅ *Correcto:* "<ejemplo bueno>"
-
-* **<DOC>-N.2 — <Nombre de la definición 2>:** 
-
-  <texto de la regla, indentado 2 espacios bajo la etiqueta>
-
-**Precedencia:** <solo si choca con otra regla — se omite el campo si no compite con ninguna>
-
-**Filtro de verificación:** <solo si hay un chequeo dedicado — se omite si no lo hay; cita `<DOC>-FV-M`>
-
-**Lectura bajo demanda:** [[<ruta/al/archivo.md>]] — <disparador: "siempre que quieras el detalle completo" si es la versión larga de esta misma regla, o el caso puntual concreto si es una regla distinta y condicional. Se omite si no aplica; se repite la línea si hay más de un caso>
-
-**Plantilla de referencia:**
-```
-<bloque de código copiable tal cual — la sección entera se omite si la regla no define una salida estructurada>
-```
-`````
-
-### Regla — Ligero
-
-Una línea basta — sin descripción rápida separada, sin `Aplica a` propio (hereda el de la sección o documento que la contiene), sin campos de cierre.
+- Vive en la cabecera del documento, no como Sección `<DOC>-N`.
+- Una línea por documento: `[[ruta/al/doc.md]] -> <disparador> -> <alcance>`.
+- `SIEMPRE` solo para el propio documento madre con supremacía declarada (ej. `governance.md`). Cualquier otra fila lleva un disparador concreto — palabra clave, ruta de archivo, o caso puntual.
+- `SIEMPRE` con alcance `Todos` (los 2 universales) se carga solo: hook `SessionStart` ([[.agents/hooks/session-start-siempre.py]]) inyecta su contenido completo al inicio de cada sesión, sin depender de que el agente lo lea.
+- `SIEMPRE` acotado a un skill concreto se fuerza vía `PreToolUse` sobre el tool `Skill` ([[.agents/hooks/gate-skill-siempre.py]]): bloquea la invocación hasta que `PostToolUse` sobre `Read` ([[.agents/hooks/track-siempre-reads.py]]) confirme que ya se leyó.
+- Disparador por palabra clave se fuerza vía `UserPromptSubmit` ([[.agents/hooks/inject-context.py]]): indexa con SQLite FTS5, por Sección (`## <DOC>-N: `, no todo el archivo junto — un documento en formato legado cae indexado completo) `.agents/knowledge/*.md` y `.agents/skills/*/SKILL.md`, resuelve el prompt como query por palabras clave con ranking `bm25()`, y siempre inyecta un manifiesto de wikilinks — nunca contenido completo, el agente decide si los lee. El campo `Tags:` (cabecera o Sección) pondera repitiendo sus palabras dentro del texto indexado. No es semántico: un concepto parafraseado sin la palabra exacta no dispara nada ([[.agents/plans/haz-el-plan-de-agile-sketch.md]] Sección B3).
 
 ```
-* **<DOC>-N — <Título>:** <cuerpo en una línea, sin campos de cierre>.
+- Lecturas:
+  - [[.agents/knowledge/governance.md]] -> SIEMPRE -> Todos
+  - [[.agents/knowledge/writing-efficiency.md]] -> SIEMPRE -> Context Engineer
 ```
 
-**Única excepción: `Lectura bajo demanda`.** Si la regla de una línea, en un caso puntual, remite a otra regla que vive en otro documento, se agrega como segunda línea — sigue siendo Ligero, no obliga a subir a Completo solo por esto.
+## TEMPLATE-INSTRUCTION-FORMATS-5: Formato — Sección
+
+- `## <DOC>-N: <Título>` — dos puntos, sin paréntesis, sin subtítulo pegado. El `: ` inmediatamente tras el ID (sin guion largo de por medio) es lo que `inject-context.py` usa para partir el índice por Sección — un heading legado con `—` nunca dispara esa partición, cae indexado completo.
+- Primer bullet opcional `- Tags: \`tag-uno\`, \`tag-dos\`` — mismo campo y mismo vocabulario controlado que el de la cabecera (`TEMPLATE-KNOWLEDGE-1`, H1). Los tags de la cabecera ya aplican a toda Sección del documento; este bullet solo agrega tags propios de esta Sección específica, para rankear mejor esa Sección puntual en `inject-context.py` (Sección H3 del plan de aligeramiento).
+- Cuerpo: bullets planos, uno por línea. `- **<Nombre corto>:** <cuerpo>` — nombre en negrita si ayuda a escanear, se omite si el bullet ya es autoexplicativo.
+- Sin `Aplica a`, sin `Precedencia`, sin campo de cierre formal. Si un bullet remite a otro archivo, wikilink directo en el cuerpo, o línea suelta al cierre de la Sección en negrita asi: `**Referencias:** <wikilinks>` tantos bullets de lectura como referencias sean necesarias.
+- ❌/✅ solo con medición real o caso genuinamente no obvio — nunca por defecto.
+
+Ejemplo real (`HARD-PROHIBITIONS-2`):
 
 ```
-* **<DOC>-N — <Título>:** <cuerpo en una línea, sin campos de cierre>.
+## HARD-PROHIBITIONS-2: Lenguaje Mortuorio
 
-  **Lectura bajo demanda:** [[<ruta/al/archivo.md>]] — <disparador puntual>.
+- **Saneamiento inmediato:** al detectar el término, se reemplaza en el momento — nunca se abre un `DEBT-XXX`.
+- **Reemplazos fijados:** `Forense`/`Post-mortem`/`Simulación Forense` → `Repetición de Corrida`/`Reproducción`/`Revisión de Corrida`.
+- **Aplicar prohibiciones:** todas las prohibiciones del [[.agents/knowledge/write-like-gemini.md#WRITE-LIKE-GEMINI-3]]
+
+**Leer:** 
+- [[.agents/memory/prohibicion-lenguaje-mortuorio.md]].
+- [[.agents/knowledge/write-like-gemini.md]]
 ```
 
-### Ejemplo Aplicado (Regla, Genérico)
+## TEMPLATE-INSTRUCTION-FORMATS-6: Formato — Pipeline
 
-Mismo formato, con contenido sintético en vez de una regla real. Nota que `Precedencia` y `Lectura bajo demanda` no aparecen: esta regla no compite con nada y no tiene ningún archivo relacionado que citar, así que esos campos se omiten en vez de escribir `N/A`.
-
-```
-## EJEMPLO-1 — Regla de Muestra
-
-Toda regla nueva sigue este formato para ser encontrable por ID y aplicable sin ambigüedad.
-
-**Aplica a:** todos los roles/skills, al redactar una regla nueva.
-
-* **EJEMPLO-1.1 — Primer Ítem:** 
-
-  texto de la definición, indentado 2 espacios bajo la etiqueta.
-  * ❌ *Incorrecto:* "ejemplo que viola la definición."
-  * ✅ *Correcto:* "ejemplo que la cumple."
-
-* **EJEMPLO-1.2 — Segundo Ítem:** 
-
-  segunda definición — mismo patrón: etiqueta, línea en blanco, cuerpo indentado. Sin ❌/✅ porque el texto ya es autoexplicativo.
-
-**Filtro de verificación:** `EJEMPLO-FV-1`.
-```
-
-La misma idea en formato ligero, si ninguna de las dos definiciones necesitara sub-ID citable por otra regla:
+- `## <DOC>-P: Pipeline de Ejecución` — tras la cabecera, antes de la primera Sección. Solo si el skill ejecuta varios pasos en un orden que importa; si es una sola acción sin secuencia, se omite el bloque entero.
+- Cuerpo: lista numerada, un paso por línea. No repitas el ID de la Sección que lo detalla — el documento se lee completo y las Secciones siguen el mismo orden, así que ese ID no distingue nada; sin sub-IDs de bullet. Cita un ID entre paréntesis solo si el paso remite a otro documento, o a una Sección fuera del orden de lectura esperado.
+- Sin sub-numeración propia — sus pasos no son citables por otra regla.
+- Si un paso puede desviar la secuencia (rechazo temprano que salta el resto), decláralo explícito ahí mismo.
 
 ```
-## EJEMPLO-1 — Regla de Muestra
+## AUDITOR-P: Pipeline de Ejecución
 
-* **EJEMPLO-1.1 — Primer Ítem:** texto de la definición en una línea.
-* **EJEMPLO-1.2 — Segundo Ítem:** segunda definición en una línea.
+1. Filtro de arranque: lee `governance.md` completo, declara rol.
+2. Verificación de las tres anclas: si falta el plan, rechaza y no continúa.
+3. Auditoría ciega: aplica el criterio de evidencia sin leer aún la narrativa del agente auditado.
 ```
 
----
+## TEMPLATE-INSTRUCTION-FORMATS-7: Formato — Ejemplos
 
-## Formato: Filtro de Verificación
+- `## <DOC>-EJ: Ejemplos`, física al cierre del documento — después de la última Sección, sin importar su número.
+- IDs internos `<DOC>-EJ-1`, `<DOC>-EJ-2`... — namespace propio, append-only, título pegado al sub-ID.
+- Por cada caso: `**Caso: <qué transforma>**`, luego `**Antes:**` y `**Después:**`, cada uno con el texto citado en blockquote (`>`).
+- Medición real (tokens, palabras, tiempo) inline en el texto del caso si existe — nunca estimada, nunca en tabla aparte.
 
-El chequeo de pre-salida que consolida las reglas de un documento en una sola lista — el punto que cada regla individual cita en su propio campo `Filtro de verificación`. Usa un namespace propio, separado de la secuencia numérica de las Reglas, para no competir nunca por posición ni por número con ellas.
+```
+**Caso: <qué texto real se transformó>**
 
-* **ID y posición:** `## <DOC>-FV — Filtro de Verificación`, segunda sección del documento — justo después de Lecturas Obligatorias (`<DOC>-0`), o primera si el documento no tiene tabla de lecturas. Se puebla incrementalmente: cada regla nueva que se agregue más abajo suma su propio ítem aquí, sin límite — la sección nunca queda "al fondo estorbando" ni obliga a reordenar nada cuando el documento crece.
-* **IDs internos:** `<DOC>-FV-1`, `<DOC>-FV-2`... — secuencia propia, también append-only (ver "Estabilidad de IDs").
-* **Campos que no lleva:** `Precedencia`, `Plantilla de referencia` — no compite con nada y no tiene salida estructurada propia. Sí lleva `Aplica a` (normalmente "todo texto/respuesta que el agente produce, como último paso").
-* **Formato del cuerpo:** una pregunta por regla relevante, citando entre paréntesis qué regla verifica:
-  ```
-  * **<DOC>-FV-1:** ¿<pregunta de auto-chequeo>? (`<DOC>-N`)
-  * **<DOC>-FV-2:** ¿<pregunta de auto-chequeo>? (`<DOC>-M`)
-  ```
-* **Cobertura 1 a 1:** toda regla del documento cuyo campo `Filtro de verificación` cite un ítem de esta sección debe tener su pregunta correspondiente aquí — nunca al revés (una pregunta sin regla que la cite es ruido).
-* **Orden por regla referenciada:** los ítems de esta sección van en el mismo orden que las Reglas que citan — el ítem que verifica `<DOC>-1` antes que el que verifica `<DOC>-2`, y así en todo el documento. Si una edición agrega un ítem fuera de ese orden (ej. porque la regla que lo dispara se insertó después), esa misma edición reordena e renumera la sección entera para que vuelva a coincidir — no se deja el desorden "porque ya se agregó así".
+**Antes:**
+> <texto sin aplicar el formato>
 
-* **Declaración explícita de verificación:** se agrega siempre al final esta línea: "De ser satisfactoria cada validación de la lista, declara `<DOCUMENT-SLUG-ID> - FILTRO DE VERIFICACION APROBADO`".
+**Después:**
+> <mismo texto, formato aplicado>
+```
 
----
+## TEMPLATE-INSTRUCTION-FORMATS-8: Formatos Retirados
 
-## Formato: Ejemplos
-
-Casos compuestos: el mismo texto real transformado aplicando 2+ reglas del documento a la vez — no reemplazan los ❌/✅ de cada regla (esos son atómicos, uno por definición). Usa namespace propio, separado de la secuencia numérica de las Reglas, para no competir nunca por posición ni por número con ellas — el mismo motivo que el Filtro de Verificación, y lo que le permite vivir siempre al cierre físico del documento aunque se agreguen Reglas nuevas después.
-
-* **ID y posición:** `## <DOC>-EJ — Ejemplos` para la sección, física al cierre del documento — después de la última Regla, sin importar su número. Se puebla incrementalmente: cada caso nuevo suma su propio ítem aquí.
-* **IDs internos:** `<DOC>-EJ-1`, `<DOC>-EJ-2`... — secuencia propia, también append-only (ver "Estabilidad de IDs"), con título pegado al sub-ID igual que un ítem de Filtro de Verificación.
-* **Campos que no lleva:** `Aplica a`, `Precedencia`, `Filtro de verificación`. No define un bloque nuevo — solo muestra evidencia de reglas que ya existen en el mismo documento.
-* **Formato del cuerpo:** un párrafo de intro (qué son los casos, qué NO reemplazan) y, por cada caso:
-  ```
-  **Caso: <qué texto se transformó> — demuestra `<DOC>-N.N`, `<DOC>-N.N` [...].**
-  * **Antes:** "<texto sin aplicar las reglas>"
-  * **Después:** "<mismo texto, con las reglas aplicadas>"
-  ```
-  Si hay medición real (tokens, palabras, tiempo), se agrega una tabla debajo del caso — nunca una cifra estimada.
-
----
-
-## Regla de Oro
-
-**Un campo de cierre ausente significa "no aplica" — esa es la convención de todo el proyecto, declarada una sola vez aquí, no repetida como `N/A` en cada regla.** Escribe `Precedencia`, `Filtro de verificación`, `Lectura bajo demanda` o `Plantilla de referencia` solo cuando tengas contenido real que poner ahí. Lo mismo aplica al par ❌/✅: solo cuando el error es real y no obvio. Esto no es licencia para omitir `Aplica a` o la descripción rápida en una Regla — Completo: esos dos siguen siendo siempre obligatorios.
-
-## Checklist Antes de Guardar un Bloque Nuevo
-
-- [ ] ¿Elegiste el formato correcto del catálogo (Lecturas Obligatorias / Regla Completo / Regla Ligero / Filtro de Verificación / Ejemplos) según lo que el contenido necesita, no por costumbre?
-- [ ] ¿Tiene ID único y título sin paréntesis ni dos puntos?
-- [ ] En Regla — Completo: ¿la descripción rápida va ANTES de las definiciones, y `Aplica a` tiene valor explícito?
-- [ ] ¿Cada ❌/✅ que incluiste aporta claridad real, no relleno para llenar el campo?
-- [ ] ¿Omitiste los campos de cierre que no aplican, en vez de escribir `N/A`?
-- [ ] Si incluiste `Lectura bajo demanda`, ¿el archivo existe de verdad y el disparador dice cuándo aplica — "siempre que quieras el detalle completo" para una elaboración, o el caso puntual concreto para una regla distinta y condicional?
-- [ ] ¿Toda referencia a otro archivo vive en un campo declarado (❌/✅, `Lectura bajo demanda`, `Plantilla de referencia`) y ninguna quedó suelta en la descripción o el cuerpo de una definición?
-- [ ] ¿Toda referencia a otro documento — la ruta del archivo (`Lectura bajo demanda`) o el ID interno de una regla ajena citado inline — es exacta y verificable, nunca una mención vaga?
-- [ ] ¿Toda referencia directa a otro documento es un wikilink `[[ruta/archivo.md]]` (o `[[ruta/archivo.md#<DOC>-N — Título exacto>]]` si apunta a una regla puntual), nunca una ruta suelta en texto plano?
-- [ ] ¿El ID tiene máximo 2 segmentos (`<DOC>-N` o `<DOC>-N.M`) — ningún `<DOC>-N.M.K`?
-- [ ] Si editaste un documento existente, ¿respetaste que los IDs ya publicados son permanentes — la regla nueva toma el siguiente número libre, nunca uno ya usado, salvo reescritura completa autorizada en el turno actual?
-- [ ] Si el documento tiene Filtro de Verificación, ¿vive en `<DOC>-FV-N` (namespace propio), como segunda sección tras Lecturas Obligatorias?
-- [ ] Si el documento tiene una sección de Ejemplos, ¿vive en `<DOC>-EJ-N` (namespace propio), física al cierre del documento — después de la última Regla, sin competir por número con ellas?
-- [ ] Si incluiste una plantilla de ejemplo, ¿es copiable tal cual, sin placeholders sueltos?
-- [ ] ¿Respeté el espaciado exacto (etiqueta y cuerpo en líneas separadas, línea en blanco entre ítems, `---` entre bloques)?
-- [ ] Si es Filtro de Verificación: ¿cada pregunta corresponde a una regla real que la cita, y el orden de la sección coincide con el orden de las Reglas referenciadas?
-- [ ] Si es Ejemplos: ¿cada caso cita los IDs de regla que demuestra, y la medición (si existe) es real, no estimada?
-
----
-
-## Documentos Relacionados
-
-* `.agents/templates/template-knowledge.md` — cómo ensamblar varios bloques de este catálogo en un documento de knowledge completo (Lecturas Obligatorias → Filtro de Verificación → Reglas sin límite, con Ejemplos al cierre si aplican).
+- `Filtro de Verificación` por documento (namespace `<DOC>-FV`) — retirado del catálogo. Reemplazo previsto: juez `Stop` vía IA ([[.agents/plans/haz-el-plan-de-agile-sketch.md]], Sección G1), aún no implementado — hueco de auto-chequeo aceptado mientras tanto.
+- `Aplica a`, `Precedencia`, `Lectura bajo demanda`, `Plantilla de referencia` como campos de cierre formales — retirados. Si el contenido es real, va en prosa dentro del bullet o en línea suelta; si no hay contenido real, no se escribe nada.
+- Distinción Regla — Completo/Ligero — colapsada en un solo Formato: Sección (`TEMPLATE-INSTRUCTION-FORMATS-5`).
+- Sub-ID de bullet (`<DOC>-N.M`) dentro de una Sección — retirado. Toda cita a un bullet puntual pasa a citar la Sección completa que lo contiene.

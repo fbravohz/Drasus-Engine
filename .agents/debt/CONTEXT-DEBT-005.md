@@ -1,4 +1,4 @@
-### AGENT-DEBT-005 · Referencias muertas a `ui/COMPONENTS.md` en 2 skills
+### CONTEXT-DEBT-005 · Referencias muertas a `ui/COMPONENTS.md` en 2 skills
 
 - **Severidad:** 🟡 Baja
 - **Origen:** Auditoría ad hoc del worktree sin commitear de `.agents/`, 2026-08-20.

@@ -3,6 +3,12 @@
   "permissions": {
     "allow": [
       "Bash(grep *)"
+    ],
+    "deny": [
+      "Read(/.agents/state/.session-reads/**)",
+      "Edit(/.agents/state/.session-reads/**)",
+      "Bash(*rm*.session-reads*)",
+      "Bash(*mv*.session-reads*)"
     ]
   },
   "attribution": {
@@ -20,6 +26,65 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/validate-agent-docs.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/track-siempre-reads.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/gate-skill-siempre.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/enforce-essential-reads.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/session-start-siempre.py"
+          }
+        ]
+      },
+      {
+        "matcher": "compact|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/reset-session-reads.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/inject-context.py"
           }
         ]
       }

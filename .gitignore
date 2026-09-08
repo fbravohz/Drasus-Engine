@@ -28,6 +28,10 @@
 
 # --- Entorno / Secrets ---
 **/.env
+
+# --- Estado efimero de hooks (marcas de lectura por sesion) ---
+.agents/state/.session-reads/
+.agents/hooks/.fts-index.db
 **/.env.local
 **/.env.*.local
 

@@ -4,7 +4,7 @@
 
 Slug ID: `DOC-FIRST`.
 
-Tamaño: `2490 caracteres (~622 tokens aprox., ratio 4:1)`.
+Tamaño: `2494 caracteres (~624 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -34,10 +34,10 @@ De ser satisfactoria cada validación de la lista, declara `DOC-FIRST - FILTRO D
   * ❌ *Incorrecto:* "no hay nada documentado sobre esto" sin decir en qué carpetas se buscó.
   * ✅ *Correcto:* "Sin cobertura documental: busqué en `docs/adr/`, `docs/features/` y `docs/sad/` con `<patrón>`. Cero coincidencias → pregunta abierta."
 
-* **DOC-FIRST-1.3 — Lo Que Este Gate No Prohíbe:**
+* **DOC-FIRST-1.3 — Lo Que Este Filtro No Prohíbe:**
 
   no prohíbe improvisar. La iniciativa ha producido aciertos reales. Lo que prohíbe es improvisar sobre preguntas que ya tienen respuesta escrita — terreno virgen documentado como virgen, se puede improvisar y decirlo.
 
 **Filtro de verificación:** `DOC-FIRST-FV-1`.
 
-**Lectura bajo demanda:** [[.agents/knowledge/critical-domain-reasoning.md]] — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese gate adicional.
+**Lectura bajo demanda:** [[.agents/knowledge/critical-domain-reasoning.md]] — si la propuesta además sella una decisión de dominio cuant/estadístico/financiero/legal, aplica ese filtro adicional.

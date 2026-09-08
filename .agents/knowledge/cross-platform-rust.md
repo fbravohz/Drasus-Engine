@@ -1,10 +1,10 @@
 # Portabilidad de Compilación en Rust
 
-Qué gate de compilación exige cada API específica de plataforma, y cuáles son los targets reales del proyecto.
+Qué filtro de compilación exige cada API específica de plataforma, y cuáles son los targets reales del proyecto.
 
 Slug ID: `CROSS-PLATFORM-RUST`.
 
-Tamaño: `4630 caracteres (~1158 tokens aprox., ratio 4:1)`.
+Tamaño: `4650 caracteres (~1162 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -20,7 +20,7 @@ Tamaño: `4630 caracteres (~1158 tokens aprox., ratio 4:1)`.
 
 **Aplica a:** Rust-Engineer al entregar, y QA al auditar código Rust.
 
-* **CROSS-PLATFORM-RUST-FV-1:** ¿toda API específica de plataforma lleva su gate exacto, incluidos los tests que la usan? (`CROSS-PLATFORM-RUST-1`)
+* **CROSS-PLATFORM-RUST-FV-1:** ¿toda API específica de plataforma lleva su filtro exacto, incluidos los tests que la usan? (`CROSS-PLATFORM-RUST-1`)
 * **CROSS-PLATFORM-RUST-FV-2:** ¿cada API exclusiva tiene su stub para las demás plataformas, con el comentario que explica por qué existe? (`CROSS-PLATFORM-RUST-2`)
 * **CROSS-PLATFORM-RUST-FV-3:** ¿usé `#[cfg(unix)]` cuando la API es POSIX y `#[cfg(target_os = "linux")]` solo cuando de verdad es exclusiva de Linux? (`CROSS-PLATFORM-RUST-1.2`)
 
@@ -28,15 +28,15 @@ De ser satisfactoria cada validación de la lista, declara `CROSS-PLATFORM-RUST 
 
 ---
 
-## CROSS-PLATFORM-RUST-1 — Toda API de Plataforma Lleva Su Gate
+## CROSS-PLATFORM-RUST-1 — Toda API de Plataforma Lleva Su Filtro
 
 El despliegue es Linux ([[docs/adr/ADR-0016.md]]), pero el desarrollo también ocurre en Windows. El workspace **debe compilar en ambos**. No es opcional, y el compilador de una sola plataforma no lo detecta.
 
 **Aplica a:** Rust-Engineer al escribir, y QA al auditar cualquier crate del workspace.
 
-* **CROSS-PLATFORM-RUST-1.1 — Tabla de Gates Obligatorios:**
+* **CROSS-PLATFORM-RUST-1.1 — Tabla de Filtros Obligatorios:**
 
-  | Si usas... | Gate obligatorio |
+  | Si usas... | Filtro obligatorio |
   |---|---|
   | `std::os::unix::*`, `nix::*`, señales POSIX (SIGTERM, SIGKILL) | `#[cfg(unix)]` — cubre Linux + macOS |
   | `/proc/{pid}/stat`, `prctl` (syscalls exclusivas de Linux) | `#[cfg(target_os = "linux")]` |
@@ -47,13 +47,13 @@ El despliegue es Linux ([[docs/adr/ADR-0016.md]]), pero el desarrollo también o
 
 * **CROSS-PLATFORM-RUST-1.2 — `unix` No Es Sinónimo de `linux`:**
 
-  `#[cfg(unix)]` cubre Linux **y** macOS, y es el gate correcto para cualquier API POSIX. `#[cfg(target_os = "linux")]` queda reservado a lo que de verdad solo existe en Linux — `prctl`, `/proc`. Confundirlos produce un fallo latente que no aparece hasta compilar en la otra plataforma.
-  * ❌ *Incorrecto:* `prctl` sin gate, o bajo `#[cfg(unix)]` — compila en Linux y revienta en macOS.
+  `#[cfg(unix)]` cubre Linux **y** macOS, y es el filtro correcto para cualquier API POSIX. `#[cfg(target_os = "linux")]` queda reservado a lo que de verdad solo existe en Linux — `prctl`, `/proc`. Confundirlos produce un fallo latente que no aparece hasta compilar en la otra plataforma.
+  * ❌ *Incorrecto:* `prctl` sin filtro, o bajo `#[cfg(unix)]` — compila en Linux y revienta en macOS.
   * ✅ *Correcto:* `prctl` bajo `#[cfg(target_os = "linux")]`; una señal POSIX bajo `#[cfg(unix)]`.
 
-* **CROSS-PLATFORM-RUST-1.3 — El Gate Alcanza a los Tests:**
+* **CROSS-PLATFORM-RUST-1.3 — El Filtro Alcanza a los Tests:**
 
-  un test que ejercita una API de plataforma sin su gate rompe la compilación del workspace en la otra plataforma igual que el código de producción.
+  un test que ejercita una API de plataforma sin su filtro rompe la compilación del workspace en la otra plataforma igual que el código de producción.
 
 **Filtro de verificación:** `CROSS-PLATFORM-RUST-FV-1`, `CROSS-PLATFORM-RUST-FV-3`.
 
@@ -61,7 +61,7 @@ El despliegue es Linux ([[docs/adr/ADR-0016.md]]), pero el desarrollo también o
 
 ## CROSS-PLATFORM-RUST-2 — Toda API Exclusiva Necesita Su Stub
 
-Un gate sin contraparte deja la función inexistente en las demás plataformas, y el error aparece en el llamador, no donde está la causa.
+Un filtro sin contraparte deja la función inexistente en las demás plataformas, y el error aparece en el llamador, no donde está la causa.
 
 **Aplica a:** Rust-Engineer, cada vez que use una API exclusiva de una plataforma.
 

@@ -4,7 +4,7 @@ Supremacía y reglas que aplican a toda interacción, sin importar el dominio de
 
 Slug ID: `GOVERNANCE`.
 
-Tamaño: `13624 caracteres (~3406 tokens aprox., ratio 4:1)`.
+Tamaño: `13662 caracteres (~3416 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -76,7 +76,7 @@ Este documento tiene máxima prioridad sobre cualquier otra regla de cualquier s
 
 * **GOVERNANCE-1.7 — Modo de Escritura Activable (Gemini/Claude):**
 
-  el modo de escritura por defecto es "Claude" (el estilo actual). Si el usuario pide explícitamente cambiar de modo — "escribe/reescríbelo como Gemini", "modo gemini relajado", "modo gemini relajado + listas", "modo Claude" — en cualquier punto de la conversación, no solo al inicio, incluso pegado a la invocación de otro skill: lee [[.agents/knowledge/write-like-gemini.md]] completo y activa el modo pedido desde esa misma respuesta. El modo activado se mantiene para TODA escritura — respuesta de chat y archivo — mientras dure la conversación o el agente, hasta que el usuario pida cambiarlo; se declara cada ronda con su propio bracket (`GOVERNANCE-1.5`).
+  el modo de escritura por defecto es "Claude" (el estilo actual). Si el usuario pide explícitamente cambiar de modo — "escribe/reescríbelo como Gemini", "modo gemini relajado", "modo gemini relajado + listas", "modo Claude", o invoca `/write-like-gemini [modo]` — en cualquier punto de la conversación, no solo al inicio, incluso pegado a la invocación de otro skill: lee [[.agents/knowledge/write-like-gemini.md]] completo y activa el modo pedido desde esa misma respuesta. El modo activado se mantiene para TODA escritura — respuesta de chat y archivo — mientras dure la conversación o el agente, hasta que el usuario pida cambiarlo; se declara cada ronda con su propio bracket (`GOVERNANCE-1.5`).
   * ❌ *Incorrecto:* aplicar el modo Gemini en la respuesta donde se activó y volver a prosa Claude en la siguiente sin que el usuario lo haya pedido.
   * ✅ *Correcto:* mantener el modo activo y declararlo con su bracket en cada respuesta, hasta recibir instrucción explícita de cambiarlo.
 

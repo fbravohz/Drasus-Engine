@@ -4,7 +4,7 @@ Diseña y mantiene los contratos de comunicación (FFI y gRPC) entre Rust y Flut
 
 Slug ID: `BRIDGE-ENGINEER`.
 
-Tamaño: `15520 caracteres (~3880 tokens aprox., ratio 4:1)`.
+Tamaño: `18494 caracteres (~4624 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -13,6 +13,7 @@ Tamaño: `15520 caracteres (~3880 tokens aprox., ratio 4:1)`.
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| [[.agents/knowledge/hard-prohibitions.md]] | Prohibiciones absolutas — sin lenguaje de bitácora, sin lenguaje mortuorio, sin numeral de sección, sin "Gate" para procesos de validación. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[.agents/knowledge/commenting-policy.md]] | Las 4 capas de comentarios; el principio universal que este skill solo extiende. | `SIEMPRE` al comentar código de frontera (FFI/gRPC/Protobuf). | Ingenieros de código |
 | [[.agents/knowledge/mentorship-modes.md]] | Los 4 Modos de Acompañamiento y el Protocolo de Lecciones. | Si la Orden declara un Modo distinto de Autónomo. | Los seis Ingenieros |
 
@@ -33,6 +34,27 @@ Tamaño: `15520 caracteres (~3880 tokens aprox., ratio 4:1)`.
 * **BRIDGE-ENGINEER-FV-9:** ¿cero punteros colgantes, streams con throttling ≤100ms, y mensajería Headless stateless? (`BRIDGE-ENGINEER-8`)
 
 De ser satisfactoria cada validación de la lista, declara `BRIDGE-ENGINEER - FILTRO DE VERIFICACION APROBADO`.
+
+---
+
+## BRIDGE-ENGINEER-P — Pipeline de Ejecución
+
+Secuencia obligatoria, en este orden, para toda invocación — salvo flujo anormal declarado explícitamente.
+
+**Aplica a:** el Bridge Engineer, en toda invocación.
+
+1. **Filtro de arranque:** lee `governance.md` completo, declara `[leído: governance.md]` + rol (`GOVERNANCE-1.1`, `-1.4`).
+2. **Lecturas obligatorias:** lee `BRIDGE-ENGINEER-0` completo; suma `commenting-policy.md` siempre que vaya a comentar código de frontera y `mentorship-modes.md` si la Orden declara un Modo distinto de Autónomo.
+3. **Recepción del despacho:** confirma el disparador — el contrato de tipos Rust congelado (`public_interface.rs` estable) de una Feature con superficie UI/headless declarada (`BRIDGE-ENGINEER-2.1`).
+4. **Identificación del Modo de Acompañamiento:** localiza su fila en la tabla de la Orden — nunca la asume del chat; si falta, opera en Autónomo (`BRIDGE-ENGINEER-2.2`).
+5. **Verificación previa del backend por CLI:** confirma contra datos reales que el `public_interface` de la feature ya funciona antes de tocar el binding, para aislar si un fallo está en el backend o en la frontera (`BRIDGE-ENGINEER-6.1`).
+6. **Diseño del contrato:** genera los tipos Dart desde los `structs` de Rust, enruta datos masivos por Arrow con downsampling obligatorio sobre 100K puntos, y define las APIs limpias por módulo — si necesita duplicar vocabulario privado de otra feature, se detiene y escala al Tech-Lead en vez de duplicarlo en silencio (`BRIDGE-ENGINEER-3`, `BRIDGE-ENGINEER-4.2`).
+7. **Comentarios de frontera:** documenta cada función FFI, campo cruzado, llamada gRPC, bloque `unsafe` y `message`/`field` `.proto` (`BRIDGE-ENGINEER-5`).
+8. **Concurrencia y seguridad:** garantiza ownership seguro en FFI, Event-Loop no bloqueante, throttling de streams y mensajería Headless stateless (`BRIDGE-ENGINEER-8`).
+9. **Demostración roja/verde:** para toda prueba que cubra una garantía de comportamiento, rompe el comportamiento a propósito, pega el rojo, revierte, pega el verde (`BRIDGE-ENGINEER-4.1`).
+10. **Post-codegen en escritorio:** si el binding es FFI de escritorio (Linux/macOS/Windows), corrige `ioDirectory` y recompila `cargo build --release -p bridge` antes del siguiente `flutter run`; si es un cliente gRPC delgado (iOS/Android/Web/Headless), pasa directo al paso siguiente (`BRIDGE-ENGINEER-7`).
+11. **Entrega y Filtro QA:** entrega el binding/contrato al Tech-Lead, quien lo despacha a QA-Engineer para revisar tipos, bloques `unsafe` y comentarios de ownership (`BRIDGE-ENGINEER-6.2`).
+12. **Protocolo de lecciones:** si el Modo fue Mentor, Revisión o Docente, consolida lo enseñado en `docs/lessons/ffi-grpc/<ID-de-la-Orden>.md` (`BRIDGE-ENGINEER-2.3`).
 
 ---
 
@@ -159,7 +181,7 @@ Addendum de dominio a las cuatro capas universales. El principio completo vive e
 
 ---
 
-## BRIDGE-ENGINEER-6 — Verificación Previa y QA Gate
+## BRIDGE-ENGINEER-6 — Verificación Previa y Filtro QA
 
 **Aplica a:** el Bridge Engineer, antes y después de cablear un binding.
 
@@ -167,7 +189,7 @@ Addendum de dominio a las cuatro capas universales. El principio completo vive e
 
   antes de cablear o depurar el FFI/gRPC de una feature, confirma que su `public_interface` ya funciona contra datos reales desde la terminal: `cargo run -p app -- verify <feature-id> --input '<json>' | jq .`. Así aíslas si un fallo está en el backend o en tu capa de bridge: si el CLI devuelve el JSON correcto, el motor está bien y el problema es de tipos/ownership/codegen en la frontera; si el CLI ya falla, regrésalo al engineer antes de tocar el binding.
 
-* **BRIDGE-ENGINEER-6.2 — QA Gate:**
+* **BRIDGE-ENGINEER-6.2 — Filtro QA:**
 
   tu entregable pasa por QA-Engineer (Etapa 5) antes de ser cerrado. El QA revisará los contratos de tipo, los bloques `unsafe` y los comentarios de ownership — no solo compilará el binding.
 

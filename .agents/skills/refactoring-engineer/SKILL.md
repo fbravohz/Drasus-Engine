@@ -4,7 +4,7 @@ Optimiza la estructura del código, resuelve deuda técnica y gestiona el empaqu
 
 Slug ID: `REFACTORING-ENGINEER`.
 
-Tamaño: `8543 caracteres (~2136 tokens aprox., ratio 4:1)`.
+Tamaño: `11475 caracteres (~2869 tokens aprox., ratio 4:1)`.
 
 ---
 
@@ -13,6 +13,7 @@ Tamaño: `8543 caracteres (~2136 tokens aprox., ratio 4:1)`.
 | Documento | De qué va | Cuándo leerlo (disparador) | Alcance |
 |---|---|---|---|
 | [[.agents/knowledge/governance.md]] | Gobernanza meta, supremacía absoluta. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
+| [[.agents/knowledge/hard-prohibitions.md]] | Prohibiciones absolutas — sin lenguaje de bitácora, sin lenguaje mortuorio, sin numeral de sección, sin "Gate" para procesos de validación. | `SIEMPRE` al iniciar cualquier skill. | Todos los agentes |
 | [[.agents/knowledge/commenting-policy.md]] | Las 4 capas de comentarios; el principio universal que este skill solo extiende. | `SIEMPRE` al mover, dividir o comentar código. | Ingenieros de código |
 | [[.agents/knowledge/mentorship-modes.md]] | Los 4 Modos de Acompañamiento y el Protocolo de Lecciones. | Si la Orden declara un Modo distinto de Autónomo. | Los seis Ingenieros |
 
@@ -29,6 +30,27 @@ Tamaño: `8543 caracteres (~2136 tokens aprox., ratio 4:1)`.
 * **REFACTORING-ENGINEER-FV-5:** si moví un símbolo entre capas, ¿verifiqué con `grep` que la capa destino no importa la de origen? (`REFACTORING-ENGINEER-3.4`)
 
 De ser satisfactoria cada validación de la lista, declara `REFACTORING-ENGINEER - FILTRO DE VERIFICACION APROBADO`.
+
+---
+
+## REFACTORING-ENGINEER-P — Pipeline de Ejecución
+
+Secuencia obligatoria, en este orden, para toda invocación — salvo flujo anormal declarado explícitamente.
+
+**Aplica a:** el Refactoring Engineer, en toda invocación.
+
+1. **Filtro de arranque:** lee `governance.md` completo, declara `[leído: governance.md]` + rol (`GOVERNANCE-1.1`, `-1.4`).
+2. **Lecturas obligatorias:** lee `REFACTORING-ENGINEER-0` completo — `commenting-policy.md` siempre, `mentorship-modes.md` si la Orden declara un Modo distinto de Autónomo.
+3. **Identificación del disparador:** confirma bajo cuál de los dos disparadores llega el despacho lateral del Tech-Lead — saneamiento de código detectado en auditoría, o empaquetado/release de EPIC-8 (`REFACTORING-ENGINEER-2.1`, `-2.2`). Si es empaquetado, ve al paso 10; si es saneamiento, continúa al paso 4.
+4. **Confirmación de mandato:** fija el límite del trabajo — cambia la forma del código, nunca su comportamiento, sin proponer contenerización (`REFACTORING-ENGINEER-1.1`, `-1.3`).
+5. **Modo de acompañamiento:** si la Orden declara un Modo distinto de Autónomo, aplica su comportamiento — Mentor: sin `Edit`/`Write`, dicta el fragmento exacto y espera confirmación; Revisión: checklist de tres preguntas sin reescribir; Docente: ejecuta el refactor completo y enseña al cierre del bloque (`REFACTORING-ENGINEER-2.4`, `-2.5`, `-2.6`). En Autónomo, continúa directo al paso 6.
+6. **Verificación de tests antes:** confirma la suite de pruebas en verde antes de tocar el código (`REFACTORING-ENGINEER-3.3`).
+7. **Saneamiento del código:** fragmenta archivos de más de 400 líneas en módulos coherentes por responsabilidad, resuelve dependencias circulares sin alterar el comportamiento funcional, y al mover un símbolo lo mueve junto con sus sub-helpers privados (`REFACTORING-ENGINEER-3.1`, `-3.2`, `-3.4`).
+8. **Tratamiento de comentarios:** preserva los existentes junto al código que se mueve, añade los que falten, nunca inventa uno para código que no entiende, y deja la extracción autoexplicativa (`REFACTORING-ENGINEER-4.1` a `-4.4`).
+9. **Verificación de tests después:** confirma la suite de pruebas en verde después del cambio (`REFACTORING-ENGINEER-3.3`). Ve al paso 11.
+10. **Empaquetado y release:** configura los perfiles de compilación (LTO, `codegen-units`, `strip`), optimiza el arranque en frío y el peso del binario, y empaqueta para los tres sistemas objetivo (`REFACTORING-ENGINEER-5.1` a `-5.3`).
+11. **Filtro de verificación:** aplica `REFACTORING-ENGINEER-FV` completo antes de entregar.
+12. **Entrega:** entrega al Tech-Lead, que despacha la verificación funcional al QA-Engineer antes de cerrar (`REFACTORING-ENGINEER-2.3`).
 
 ---
 

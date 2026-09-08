@@ -121,6 +121,7 @@ El público objetivo es cualquiera que hable español O inglés — no solo hisp
 - La fuente hispana que explica *el cómo* (matemática, arquitectura, validación), no solo *el qué* (resultados, screenshots de ganancias).
 - Honestos sobre incertidumbre, fallos de diseño y decisiones revertidas. Los ADRs de "erradicación" (ADR-0112, ADR-0113, ADR-0115) son oro narrativo: *"consideramos X, lo descartamos, así fue por qué"*.
 - Constructores que usan IA para acelerar el desarrollo **sin sacrificar rigor** — y lo demuestran mostrando el proceso de auditoría (ADRs, Órdenes de Trabajo con criterios de aceptación, revisión Tech-Lead/QA — ver TASK-006).
+- Monetizamos aparte del trading, y lo decimos con el argumento financiero completo, no como cortina para parecer vende-humos: retirar capital de una cuenta que compone para cubrir gastos de vida frena el interés compuesto, y una porción relevante de esa ganancia retirada además se va en impuesto. Vivir de un producto con margen altísimo (software, capacitación, servicios) permite no tocar el capital, que sigue escalando, y reinvertir lo que sobra. Esa es la razón real — no la ocultamos, la explicamos (ver Pilar F, §5).
 
 **Lo que NO somos (líneas rojas):**
 - No vendemos estrategias, señales, "robots" ni resultados de cuentas en vivo como gancho.
@@ -197,6 +198,8 @@ Cada pilar mapea a material que **ya existe** en `docs/SAD.md` / `docs/ADR.md` /
 - **Desbloquea en:** Desde HOY (no depende del estado de Drasus — es contenido de "postura").
 - **Formato:** Shorts/Reels/TikTok, 30-60s.
 - **Ejemplo:** *"'Mi backtest tiene 95% de winrate' — esto es lo que NO te dicen"*
+- **Ángulo maestro — "¿Por qué vendes algo si haces trading?":** la objeción más dura y más honesta que recibe el nicho — responderla de frente es el diferenciador frente al vende-humos que la evade. Tesis: quien ya tiene capital que compone no debería vivir de retirarlo mes a mes — cada retiro (más el impuesto que se lleva una porción relevante de esa ganancia) es interés compuesto perdido para siempre. La jugada correcta es escalar el capital sin tocarlo y cubrir el gasto de vida con un producto de margen altísimo (software, capacitación, servicios) — y reinvertir lo que sobre. No es la coartada del gurú de curso con mensualidad; es la decisión financiera correcta cuando ya hay capital que compone. Un millón de dólares (o veinte millones de pesos mexicanos) no se vive sacándolo de la cuenta — se escala, y el ingreso mensual sale de otra fuente.
+  - **Formato:** postura directa a cámara o thread — cierra siempre nombrando la cifra ilustrativa de capital, nunca una tasa de impuesto fija (varía por jurisdicción — se decide caso por caso con el General Counsel antes de publicar un número).
 
 ### 🆕 Pilar G — "Building in Public: La Bitácora de la Fundación"
 - **Tesis:** El proceso mismo de construir un motor cuantitativo institucional, **desde absolutamente cero, con rigor documentado y asistido por IA**, es una historia con arco propio — y es el pilar **insignia mientras EPIC-0/1 están en curso**.
